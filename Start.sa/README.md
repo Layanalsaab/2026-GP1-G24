@@ -1,115 +1,100 @@
 # Start.sa
 
-<p align="center">
-  <img src="https://img.shields.io/badge/Platform-Android-green" alt="Platform">
-  <img src="https://img.shields.io/badge/Project-Start.sa-blue" alt="Project">
-  <img src="https://img.shields.io/badge/AI-Gemini-orange" alt="AI">
-</p>
+A mobile application connecting the Saudi startup ecosystem in one place: founders, investors, and startup seekers.
 
-## Overview
+## Introduction
 
-Start.sa is an Android-based startup and investment application designed to support the Saudi startup ecosystem.
+The Saudi startup ecosystem is fragmented. Information about support programmes, funding opportunities, and startups is spread across disconnected sources, and founders and investors largely find one another through personal networks. In our field study of 37 questionnaire respondents and 14 interview participants, every investor surveyed reported discovering startups through personal relationships and referrals, and every one agreed that searching for startups matching their criteria takes a long time.
 
-The platform provides a centralized environment for founders, investors, and startup seekers. It aims to make startup development, startup discovery, and connections between founders and investors more accessible and efficient.
+Start.sa addresses this by bringing startup discovery, founder–investor matching, and AI-assisted startup guidance into a single application.
 
-## Problem
+**Goal:** to reduce the dependence on personal networks in the Saudi startup ecosystem by providing a centralised platform where startups, investors, and contributors can find one another on the basis of stated criteria and reliable information.
 
-Saudi Arabia's startup ecosystem includes a growing number of startups, investors, organizations, and support initiatives. However, startup-related information, guidance, opportunities, and connections are often distributed across different platforms and channels.
+## Features
 
-Founders may need to search across multiple sources to find suitable guidance, support programs, and investors. Investors may also spend significant time searching for startups that match their investment criteria. At the same time, startup seekers may have difficulty discovering startups and identifying what each startup currently needs.
+- **Startup profiles** — founders present their startup's sector, stage, business model, and current needs, with control over what is publicly visible
+- **Search and discovery** — browse and filter Saudi startups by sector, stage, and location
+- **Explore** — a personalised For You section and a Trending view of the most active startups
+- **Matchmaking** — a hybrid recommendation system matching founders and investors on stated criteria
+- **Requests and chat** — fundraising and investment requests, each with a dedicated conversation
+- **Expression of interest** — startup seekers submit their details and proposed contribution to a founder
+- **Startup Mentor** — AI-assisted guidance on market research, competitor analysis, and business development
+- **Fundraising Calculator** — valuation and equity estimation appropriate to the startup's stage
 
-Start.sa addresses these challenges by bringing relevant startup activities and information into a centralized platform.
+## Technologies Used
 
-## Objectives
+| Layer | Technology |
+|---|---|
+| Mobile application | Flutter (Dart), Android |
+| Authentication and database | Firebase |
+| Backend services | Python |
+| Generative AI | Gemini API |
+| Design | Figma |
+| Project management | Jira |
 
-The main objectives of Start.sa are to:
+## Repository Structure
 
-- Provide founders with accessible startup development guidance.
-- Help founders discover potentially suitable investors.
-- Help investors discover and evaluate potential startup opportunities.
-- Help startup seekers discover Saudi startups.
-- Help startup seekers identify opportunities to contribute their skills and experience.
-- Reduce the need to search across multiple sources.
+```
+.
+├── app/                  # Flutter application
+│   ├── lib/
+│   │   ├── models/
+│   │   ├── screens/
+│   │   ├── services/
+│   │   ├── widgets/
+│   │   └── main.dart
+│   ├── assets/
+│   └── pubspec.yaml
+├── backend/              # Python services
+│   ├── api/
+│   ├── recommender/
+│   ├── mentor/
+│   └── requirements.txt
+├── docs/                 # Reports and documentation
+├── AUTHORS
+└── README.md
+```
 
-## User Groups
+## Launch Instructions
 
-### Founders
+### Prerequisites
 
-Founders can use Start.sa to:
+- Flutter SDK (3.x or later)
+- Android Studio with an Android emulator, or a physical Android device
+- Python 3.10 or later
+- A Firebase project with Authentication and Firestore enabled
 
-- Create and showcase their startup profile.
-- Receive AI-based startup development guidance.
-- Discover potentially suitable investors.
-- Receive relevant opportunities and investor-related notifications.
+### Running the application
 
-### Investors
+```bash
+git clone https://github.com/<organisation>/2026-GP-24.git
+cd 2026-GP-24/app
+flutter pub get
+flutter run
+```
 
-Investors can use Start.sa to:
+Firebase configuration files (`google-services.json`) are not committed to the repository. Obtain them from the Firebase console and place `google-services.json` in `app/android/app/`.
 
-- Discover startups.
-- Explore startup information.
-- Identify startups that match their investment interests and requirements.
-- Find potentially suitable investment opportunities.
+### Running the backend
 
-### Startup Seekers
+```bash
+cd backend
+python -m venv venv
+source venv/bin/activate        # On Windows: venv\Scripts\activate
+pip install -r requirements.txt
+python -m api.main
+```
 
-Startup seekers can use Start.sa to:
+API keys are read from environment variables and are not committed. Create a `.env` file in `backend/` based on `.env.example`.
 
-- Discover Saudi startups.
-- Explore startup information in one place.
-- Identify what startups currently need.
-- Find opportunities to contribute their skills, expertise, connections, or services.
+## Project Status
 
-## Main Services
+In development. Sprint 1 in progress.
 
-### Startup Development Guidance
+## Team
 
-Start.sa provides the Startup Mentor, an AI-based service that supports founders in developing and refining their startup ideas.
+See [AUTHORS](AUTHORS).
 
-The service guides founders through providing relevant information about their startup through the application interface. This information is then used through the Gemini API to generate tailored guidance in areas such as:
-
-- Market research
-- Market sizing
-- Competitor analysis
-- Business model development
-- Financial planning
-- MVP planning
-
-### Startup-Investor Matching
-
-Start.sa provides a matchmaking service that helps founders and investors identify potentially suitable investment connections.
-
-Founders provide information about their startups, while investors specify their investment interests and requirements. The platform uses this information to identify potential matches based on factors such as sector, startup stage, and other investment criteria.
-
-### Startup Discovery
-
-Start.sa provides startup seekers with a centralized environment for discovering Saudi startups.
-
-Startup seekers can explore information about startups, including:
-
-- Startup idea and sector
-- Founders
-- Current startup needs
-- Startup activity and development
-
-This allows startup seekers to identify startups that match their interests and find opportunities to contribute.
-
-## Technology
-
-- Android
-- Gemini API
-
-## Project Structure
-
-```text
-Start.sa/
-│
-├── README.md
-│
-├── app/
-│
-├── docs/
-│
-└── assets/
-    ├── screenshots/
-    └── diagrams/
+**Supervisor:** Dr. Ebtisam Alabdulqader
+**Course:** IT496 — Graduation Project
+**Institution:** King Saud University, College of Computer and Information Sciences, Department of Information Technology
