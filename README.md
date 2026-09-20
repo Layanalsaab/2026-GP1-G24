@@ -93,8 +93,18 @@ In development. Sprint 1 in progress.
 
 ## Team
 
-See [AUTHORS](AUTHORS).
 
-**Supervisor:** Dr. Ebtisam Alabdulqader
-**Course:** IT496 — Graduation Project
-**Institution:** King Saud University, College of Computer and Information Sciences, Department of Information Technology
+## Prepared by
+
+| Name | ID |
+|---|---|
+| Layan Alsaab | 445201356 |
+| Shahad Alabdulakrim | 445202212 |
+| Noura Alawwad | 445201445 |
+| Sara Alswailem | 445204223 |
+
+## Supervised by
+
+Dr. Ebtisam Alabdulqader
+
+
