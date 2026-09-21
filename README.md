@@ -32,28 +32,6 @@ Start.sa addresses this by bringing startup discovery, founder–investor matchi
 | Design | Figma |
 | Project management | Jira|
 
-## Repository Structure
-
-```
-.
-├── app/                  # Flutter application
-│   ├── lib/
-│   │   ├── models/
-│   │   ├── screens/
-│   │   ├── services/
-│   │   ├── widgets/
-│   │   └── main.dart
-│   ├── assets/
-│   └── pubspec.yaml
-├── backend/              # Python services
-│   ├── api/
-│   ├── recommender/
-│   ├── mentor/
-│   └── requirements.txt
-├── docs/                 # Reports and documentation
-├── AUTHORS
-└── README.md
-```
 
 ## Launch Instructions
 
@@ -64,28 +42,9 @@ Start.sa addresses this by bringing startup discovery, founder–investor matchi
 - Python 3.10 or later
 - A Firebase project with Authentication and Firestore enabled
 
-### Running the application
 
-```bash
-git clone https://github.com/<organisation>/2026-GP-24.git
-cd 2026-GP-24/app
-flutter pub get
-flutter run
-```
 
 Firebase configuration files (`google-services.json`) are not committed to the repository. Obtain them from the Firebase console and place `google-services.json` in `app/android/app/`.
-
-### Running the backend
-
-```bash
-cd backend
-python -m venv venv
-source venv/bin/activate        # On Windows: venv\Scripts\activate
-pip install -r requirements.txt
-python -m api.main
-```
-
-API keys are read from environment variables and are not committed. Create a `.env` file in `backend/` based on `.env.example`.
 
 ## Project Status
 
