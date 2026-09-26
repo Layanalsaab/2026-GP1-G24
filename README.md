@@ -4,47 +4,52 @@ A mobile application connecting the Saudi startup ecosystem in one place: founde
 
 ## Introduction
 
-The Saudi startup ecosystem is fragmented. Information about support programmes, funding opportunities, and startups is spread across disconnected sources, and founders and investors largely find one another through personal networks. In our field study of 37 questionnaire respondents and 14 interview participants, every investor surveyed reported discovering startups through personal relationships and referrals, and every one agreed that searching for startups matching their criteria takes a long time.
+The Saudi startup ecosystem is fragmented. Information about support programmes, funding opportunities, and startups is spread across disconnected sources, and founders and investors largely find one another through personal networks.
 
-Start.sa addresses this by bringing startup discovery, founder–investor matching, and AI-assisted startup guidance into a single application.
+Our field study of 37 questionnaire respondents and 14 interview participants found that every investor surveyed discovers startups through personal relationships and referrals, and every one agreed that searching for startups matching their criteria takes a long time. On the founder side, 56% reach investors through personal connections and 31% have never attempted to contact one.
 
-**Goal:** to reduce the dependence on personal networks in the Saudi startup ecosystem by providing a centralised platform where startups, investors, and contributors can find one another on the basis of stated criteria and reliable information.
+**Goal:** to reduce the dependence on personal networks in the Saudi startup ecosystem by providing a central platform where startups, investors, and contributors can find one another on the basis of stated criteria and reliable information.
 
 ## Features
 
-- **Startup profiles** — founders present their startup's sector, stage, business model, and current needs, with control over what is publicly visible
-- **Search and discovery** — browse and filter Saudi startups by sector, stage, and location
-- **Explore** — a personalised For You section and a Trending view of the most active startups
-- **Matchmaking** — a hybrid recommendation system matching founders and investors on stated criteria
-- **Requests and chat** — fundraising and investment requests, each with a dedicated conversation
-- **Expression of interest** — startup seekers submit their details and proposed contribution to a founder
-- **Startup Mentor** — AI-assisted guidance on market research, competitor analysis, and business development
-- **Fundraising Calculator** — valuation and equity estimation appropriate to the startup's stage
+| Feature | For | Description |
+|---|---|---|
+| Startup Management | Founders | Create and manage multiple startups, control public or private visibility, and state what each startup needs |
+| Startup Activity Dashboard | Founders | Views, bookmarks, and detail expansions for each startup |
+| Ask Gemini | Founders | AI-assisted answers to questions about the startup |
+| Fundraising Calculator | Founders, investors | Valuation and equity estimates, used by founders to plan a round and by investors to judge whether a deal is fair |
+| Support Directory | Founders | Accelerators, incubators, and support organisations in one place |
+| Investment Association | Founders, investors | A founder records an investor who backed the startup; the investor approves or rejects, and chooses once whether the link is public |
+| Investor–Startup Matchmaking | Founders, investors | Reciprocal matching on sector, stage, funding requirement, business model, and location, with a match score and an explanation |
+| Startup Hub | Founders, investors, startup seekers | A searchable directory of public Saudi startups |
+| Explore Page | Founders, investors | Personalised recommendations, alongside trending startups and investors |
+| Request Management | Founders, investors | Fundraising and investment requests, each with a dedicated chat |
+| Bookmark Management | Founders, investors | Save startups and investors for later |
+| Notification Management | Founders, investors | Alerts for requests, fundraising, and investment opportunities |
+| Expression of Interest | Startup seekers | Submit details and a proposed contribution to a founder |
 
-## Technologies Used
+Startup seekers use Start.sa without an account: they can browse the Startup Hub, view trending startups, and submit an Expression of Interest.
 
-| Layer | Technology |
-|---|---|
-| Mobile application | Flutter (Dart), Android |
-| Authentication and database | Firebase |
-| Backend services | Python |
-| Generative AI | Gemini API |
-| Design | Figma |
-| Project management | Jira|
+## Technologies
 
+| Layer | Technology | Purpose |
+|---|---|---|
+| Mobile application | Flutter (Dart), Android | Single codebase for the Android application |
+| Authentication, database, storage | Firebase | User accounts, Firestore data, and file storage |
+| Generative AI | Gemini Flash via Firebase AI Logic | Powers Ask Gemini, and keeps the API key off the device |
+| Recommender system | Python, scikit-learn, LightFM | Content-based ranking and the collaborative component |
+| Email | Gmail SMTP | Invitations to investors who do not yet have an account |
+| Design | Figma | Interface design and prototyping |
+| Project management | Jira, Confluence | Sprint planning, backlog, and documentation |
 
 ## Launch Instructions
 
 ### Prerequisites
 
-- Flutter SDK (3.x or later)
-- Android Studio with an Android emulator, or a physical Android device
+- Flutter SDK 3.x or later
+- Android Studio with an emulator, or a physical Android device
 - Python 3.10 or later
-- A Firebase project with Authentication and Firestore enabled
-
-
-
-Firebase configuration files (`google-services.json`) are not committed to the repository. Obtain them from the Firebase console and place `google-services.json` in `app/android/app/`.
+- A Firebase project with Authentication, Firestore, and AI Logic enabled
 
 ## Project Status
 
