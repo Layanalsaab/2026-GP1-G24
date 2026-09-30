@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "938448723456",
+    "project_id": "startsa-ea49e",
+    "storage_bucket": "startsa-ea49e.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:938448723456:android:ac296d037d3546c81582e5",
+        "android_client_info": {
+          "package_name": "com.example.startsa"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC7WlPAmIUI4jk5TzbtMBEtl5F5vXMNQrg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
