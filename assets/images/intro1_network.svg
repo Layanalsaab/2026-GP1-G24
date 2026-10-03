@@ -1,0 +1,9 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="280" height="260" viewBox="0 0 280 260" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Frame">
+<path id="Vector" d="M140 120L60 200L220 190L140 120ZM140 120V40" stroke="#C9A24A" stroke-opacity="0.5" stroke-width="1.5"/>
+<path id="Vector_2" d="M140 66C154.359 66 166 54.3594 166 40C166 25.6406 154.359 14 140 14C125.641 14 114 25.6406 114 40C114 54.3594 125.641 66 140 66Z" stroke="#C9A24A" stroke-width="2"/>
+<path id="Vector_3" d="M60 220C71.0457 220 80 211.046 80 200C80 188.954 71.0457 180 60 180C48.9543 180 40 188.954 40 200C40 211.046 48.9543 220 60 220Z" stroke="white" stroke-opacity="0.7" stroke-width="1.5"/>
+<path id="Vector_4" d="M220 210C231.046 210 240 201.046 240 190C240 178.954 231.046 170 220 170C208.954 170 200 178.954 200 190C200 201.046 208.954 210 220 210Z" stroke="white" stroke-opacity="0.7" stroke-width="1.5"/>
+<path id="Vector_5" d="M140 126C143.314 126 146 123.314 146 120C146 116.686 143.314 114 140 114C136.686 114 134 116.686 134 120C134 123.314 136.686 126 140 126Z" fill="#C9A24A"/>
+</g>
+</svg>
