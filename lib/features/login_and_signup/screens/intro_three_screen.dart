@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../../../navigation/app_router.dart';
 import '../../../shared_ui/theme/app_theme.dart';
 import '../../../shared_ui/common_widgets/design_canvas.dart';
 import '../../../shared_ui/common_widgets/onboarding_parts.dart';
@@ -13,8 +14,7 @@ class IntroThreeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // TODO: navigate to the Welcome screen once it exists.
-    void getStarted() {}
+    void getStarted() => AppRouter.finishIntro(context);
 
     return DesignCanvas(
       background: AppColors.cream,

@@ -1,15 +1,25 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 
-import '../../../shared_ui/theme/app_theme.dart';
+import '../../../data_access/repositories/app_settings_repository.dart';
+import '../../../data_access/repositories/auth_repository.dart';
+import '../../../models/app_user.dart';
+import '../../../navigation/app_router.dart';
 import '../../../shared_ui/common_widgets/design_canvas.dart';
-import '../../../shared_ui/common_widgets/svg_asset.dart';
+import '../../../shared_ui/common_widgets/gold_divider.dart';
+import '../../../shared_ui/common_widgets/house_rings.dart';
+import '../../../shared_ui/theme/app_theme.dart';
 import 'intro_one_screen.dart';
 
 /// Figma: "V2 · 01 · Splash"
+///
+/// While the logo shows, it waits for Firebase and checks for a saved session:
+/// a verified, signed-in user goes straight to their home; everyone else
+/// goes to Welcome, or to the intro screens on the very first launch.
 class SplashScreen extends StatefulWidget {
-  const SplashScreen({super.key});
+  const SplashScreen({super.key, this.firebaseReady});
+
+  /// Completes when Firebase has finished initializing. Null means ready.
+  final Future<void>? firebaseReady;
 
   @override
   State<SplashScreen> createState() => _SplashScreenState();
@@ -19,7 +29,6 @@ class _SplashScreenState extends State<SplashScreen>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
   late final Animation<double> _fade;
-  Timer? _timer;
 
   static const _sparkles = [
     Offset(48, 90),
@@ -38,46 +47,48 @@ class _SplashScreenState extends State<SplashScreen>
       duration: const Duration(milliseconds: 1200),
     )..forward();
     _fade = CurvedAnimation(parent: _controller, curve: Curves.easeOut);
-    _timer = Timer(const Duration(milliseconds: 2800), () {
-      if (!mounted) return;
+    _continueAfterSplash();
+  }
+
+  Future<void> _continueAfterSplash() async {
+    final minimumSplash = Future<void>.delayed(const Duration(milliseconds: 2800));
+
+    final introSeenFuture = AppSettingsRepository.instance.hasSeenIntro();
+
+    AppUser? user;
+    try {
+      await widget.firebaseReady;
+      user = await AuthRepository.instance.restoreSession();
+    } catch (_) {
+      user = null; // Any problem restoring the session just means "not signed in".
+    }
+    final introSeen = await introSeenFuture;
+    await minimumSplash;
+    if (!mounted) return;
+
+    if (user != null) {
+      AppRouter.openHome(context, user); // signed in: straight to their screen
+    } else if (introSeen) {
+      AppRouter.openStart(context); // returning visitor: skip the intros
+    } else {
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (_) => const IntroOneScreen()),
       );
-    });
+    }
   }
 
   @override
   void dispose() {
-    _timer?.cancel();
     _controller.dispose();
     super.dispose();
   }
-
-  Widget _goldLine(double left) => Positioned(
-        left: left,
-        top: 540,
-        width: 48,
-        height: 1.5,
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: AppColors.gold,
-            borderRadius: BorderRadius.circular(1),
-          ),
-        ),
-      );
 
   @override
   Widget build(BuildContext context) {
     return DesignCanvas(
       background: AppColors.cream,
       children: [
-        // Decorative house-shaped rings.
-        positionedSvg('splash_ring0.svg', left: 50, top: 79, width: 260, height: 325),
-        positionedSvg('splash_ring1.svg', left: -5, top: 48.5, width: 370, height: 462.5),
-        positionedSvg('splash_ring2.svg', left: -60, top: 18, width: 480, height: 600),
-        positionedSvg('splash_ring3.svg', left: -115, top: -12.5, width: 590, height: 737.5),
-        for (final p in _sparkles)
-          positionedSvg('sparkle.svg', left: p.dx, top: p.dy, width: 6, height: 6),
+        ...houseRings(sparkles: _sparkles),
         Positioned.fill(
           child: FadeTransition(
             opacity: _fade,
@@ -111,17 +122,7 @@ class _SplashScreenState extends State<SplashScreen>
                     style: AppText.sans(size: 15, color: AppColors.grey),
                   ),
                 ),
-                // Gold divider: line, diamond, line.
-                _goldLine(114.5),
-                Positioned(
-                  left: 178,
-                  top: 533,
-                  child: Transform.rotate(
-                    angle: -0.7853981633974483,
-                    child: Container(width: 7, height: 7, color: AppColors.gold),
-                  ),
-                ),
-                _goldLine(197.5),
+                ...goldDivider(lineTop: 540),
               ],
             ),
           ),

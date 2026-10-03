@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
+import '../../../navigation/app_router.dart';
 import '../../../shared_ui/theme/app_theme.dart';
 import '../../../shared_ui/common_widgets/design_canvas.dart';
 import '../../../shared_ui/common_widgets/onboarding_parts.dart';
 import '../../../shared_ui/common_widgets/svg_asset.dart';
-import 'intro_three_screen.dart';
 import 'intro_two_screen.dart';
 
 /// Figma: "V2 · 00a · Intro 1 — Connect"
@@ -44,9 +44,7 @@ class IntroOneScreen extends StatelessWidget {
         ),
         onboardingSkip(
           color: Colors.white.withValues(alpha: 0.6),
-          onTap: () => Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => const IntroThreeScreen()),
-          ),
+          onTap: () => AppRouter.finishIntro(context),
         ),
         onboardingNext(
           circleColor: AppColors.gold,

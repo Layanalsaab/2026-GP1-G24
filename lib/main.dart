@@ -3,11 +3,14 @@ import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'features/login_and_signup/screens/splash_screen.dart';
 
-void main() async {
+void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  // Show the splash immediately; Firebase initializes in the background so a
-  // slow or failed init can never leave the app on a blank screen.
-  runApp(const StartSaApp());
+  // Show the splash immediately; Firebase initializes while it plays. The
+  // splash waits for this before checking for a saved session.
+  runApp(StartSaApp(firebaseReady: _initFirebase()));
+}
+
+Future<void> _initFirebase() async {
   try {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
@@ -18,7 +21,10 @@ void main() async {
 }
 
 class StartSaApp extends StatelessWidget {
-  const StartSaApp({super.key});
+  const StartSaApp({super.key, this.firebaseReady});
+
+  /// Completes when Firebase is initialized. Null means "already ready" (tests).
+  final Future<void>? firebaseReady;
 
   @override
   Widget build(BuildContext context) {
@@ -31,7 +37,7 @@ class StartSaApp extends StatelessWidget {
         ),
         useMaterial3: true,
       ),
-      home: const SplashScreen(),
+      home: SplashScreen(firebaseReady: firebaseReady),
     );
   }
 }

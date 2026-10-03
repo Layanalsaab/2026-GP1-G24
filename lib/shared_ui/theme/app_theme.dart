@@ -10,6 +10,15 @@ class AppColors {
   static const gold = Color(0xFFC9A24A);
   static const ink = Color(0xFF1C1F1D);
   static const grey = Color(0xFF5B625D);
+
+  // Form / UI tokens (Figma: moss/*, neutral/*).
+  static const moss600 = Color(0xFF2F5D3A);
+  static const moss100 = Color(0xFFE6EFE7);
+  static const surface = Colors.white;
+  static const border = Color(0xFFE4E1DA);
+  static const borderStrong = Color(0xFF8C918D);
+  static const mutedFill = Color(0xFFF1EFEA);
+  static const error = Color(0xFFB3261E);
 }
 
 class AppText {

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../navigation/app_router.dart';
 import '../../../shared_ui/theme/app_theme.dart';
 import '../../../shared_ui/common_widgets/design_canvas.dart';
 import '../../../shared_ui/common_widgets/onboarding_parts.dart';
@@ -35,7 +36,10 @@ class IntroTwoScreen extends StatelessWidget {
           activeColor: AppColors.gold,
           inactiveColor: AppColors.ink.withValues(alpha: 0.2),
         ),
-        onboardingSkip(color: AppColors.grey, onTap: goNext),
+        onboardingSkip(
+          color: AppColors.grey,
+          onTap: () => AppRouter.finishIntro(context),
+        ),
         onboardingNext(
           circleColor: AppColors.green,
           arrowAsset: 'intro2_next_arrow.svg',

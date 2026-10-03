@@ -40,6 +40,7 @@ dependencies:
   firebase_storage: ^12.3.4
   flutter_svg: ^2.0.10
   google_fonts: ^6.2.1
+  shared_preferences: ^2.5.5
 
 dev_dependencies:
   flutter_test:
