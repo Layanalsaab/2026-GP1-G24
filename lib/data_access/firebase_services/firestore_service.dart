@@ -41,6 +41,10 @@ class FirestoreService {
   Future<void> deleteDocument(String collection, String id) =>
       _guard(() => _db.collection(collection).doc(id).delete());
 
+  /// Deletes the document. Deleting a document that doesn't exist is not an error.
+  Future<void> deleteDocument(String collection, String id) =>
+      _guard(() => _db.collection(collection).doc(id).delete());
+
   /// Returns the document's data, or null when it doesn't exist.
   Future<Map<String, dynamic>?> getDocument(String collection, String id) =>
       _guard(() async {

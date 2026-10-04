@@ -60,6 +60,24 @@ class AuthService {
   Future<void> sendPasswordReset(String email) =>
       _guard(() => _auth.sendPasswordResetEmail(email: email));
 
+  /// Confirms the signed-in user's password again. Firebase requires a recent
+  /// log in before sensitive actions (changing the password, deleting the
+  /// account). A wrong password fails with [AuthFailure.invalidCredentials].
+  Future<void> reauthenticate(String email, String password) => _guard(() async {
+        final user = _auth.currentUser;
+        if (user == null) throw const AuthException(AuthFailure.unknown);
+        await user.reauthenticateWithCredential(
+          EmailAuthProvider.credential(email: email, password: password),
+        );
+      });
+
+  /// Sets a new password for the signed-in user. Call [reauthenticate] first.
+  Future<void> updatePassword(String newPassword) => _guard(() async {
+        final user = _auth.currentUser;
+        if (user == null) throw const AuthException(AuthFailure.unknown);
+        await user.updatePassword(newPassword);
+      });
+
   Future<void> deleteCurrentAccount() => _guard(() async {
         await _auth.currentUser?.delete();
       });

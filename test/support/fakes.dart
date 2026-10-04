@@ -71,6 +71,24 @@ class FakeAuthService implements AuthService {
     if (resetFails != null) throw AuthException(resetFails!);
   }
 
+  /// Fails [reauthenticate] when set (e.g. a wrong current password).
+  AuthFailure? reauthFails;
+  AuthFailure? updatePasswordFails;
+  String? updatedPassword;
+
+  @override
+  Future<void> reauthenticate(String email, String password) async {
+    calls.add('reauth');
+    if (reauthFails != null) throw AuthException(reauthFails!);
+  }
+
+  @override
+  Future<void> updatePassword(String newPassword) async {
+    calls.add('updatePassword');
+    if (updatePasswordFails != null) throw AuthException(updatePasswordFails!);
+    updatedPassword = newPassword;
+  }
+
   @override
   Future<void> deleteCurrentAccount() async {
     calls.add('delete');
@@ -91,6 +109,10 @@ class FakeUserRepository implements UserRepository {
   bool createFails = false;
   AuthFailure? getFails;
 
+  /// When set, [getProfile] waits for it, so tests can control when a
+  /// profile reload finishes.
+  Future<void>? getProfileGate;
+
   @override
   Future<void> createProfile({
     required String uid,
@@ -109,6 +131,7 @@ class FakeUserRepository implements UserRepository {
 
   @override
   Future<AppUser?> getProfile(String uid) async {
+    await getProfileGate;
     if (getFails != null) throw AuthException(getFails!);
     return profiles[uid];
   }
@@ -127,6 +150,72 @@ class FakeUserRepository implements UserRepository {
     onboardingSaves++;
     if (onboardingFails != null) throw AuthException(onboardingFails!);
     savedOnboarding = {'sector': sector, 'stage': stage, 'city': city};
+  }
+
+  int investorOnboardingSaves = 0;
+  Map<String, Object>? savedInvestorOnboarding;
+
+  @override
+  Future<void> saveInvestorOnboarding({
+    required String uid,
+    required List<String> sectors,
+    required List<String> stages,
+    required String ticketSize,
+    required String city,
+  }) async {
+    investorOnboardingSaves++;
+    if (onboardingFails != null) throw AuthException(onboardingFails!);
+    savedInvestorOnboarding = {
+      'sectors': sectors,
+      'stages': stages,
+      'ticketSize': ticketSize,
+      'city': city,
+    };
+  }
+
+  int criteriaUpdates = 0;
+  Map<String, Object>? savedCriteria;
+
+  @override
+  Future<void> updateInvestmentCriteria({
+    required String uid,
+    required List<String> sectors,
+    required List<String> stages,
+    required String ticketSize,
+  }) async {
+    criteriaUpdates++;
+    if (updateFails != null) throw AuthException(updateFails!);
+    savedCriteria = {
+      'sectors': sectors,
+      'stages': stages,
+      'ticketSize': ticketSize,
+    };
+  }
+
+  int profileUpdates = 0;
+  AuthFailure? updateFails;
+  Map<String, String?>? savedProfile;
+
+  @override
+  Future<void> updateProfile({
+    required String uid,
+    required String fullName,
+    required String bio,
+    String? city,
+  }) async {
+    profileUpdates++;
+    if (updateFails != null) throw AuthException(updateFails!);
+    savedProfile = {'fullName': fullName, 'bio': bio, 'city': city};
+  }
+
+  final List<String> deletedProfiles = [];
+  AuthFailure? deleteProfileFails;
+
+  @override
+  Future<void> deleteProfile(String uid) async {
+    if (deleteProfileFails != null) throw AuthException(deleteProfileFails!);
+    deletedProfiles.add(uid);
+    profiles.remove(uid);
   }
 }
 
@@ -201,6 +290,29 @@ class FakeAuthRepository implements AuthRepository {
   @override
   Future<void> signOut() async {
     signOutCalls++;
+  }
+
+  int changePasswordCalls = 0;
+  AuthFailure? changePasswordFails;
+
+  @override
+  Future<void> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    changePasswordCalls++;
+    await gate;
+    if (changePasswordFails != null) throw AuthException(changePasswordFails!);
+  }
+
+  int deleteAccountCalls = 0;
+  AuthFailure? deleteAccountFails;
+
+  @override
+  Future<void> deleteAccount(String password) async {
+    deleteAccountCalls++;
+    await gate;
+    if (deleteAccountFails != null) throw AuthException(deleteAccountFails!);
   }
 }
 
