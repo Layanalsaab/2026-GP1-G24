@@ -35,7 +35,11 @@ class _FounderOnboardingScreenState extends State<FounderOnboardingScreen> {
   Future<void> _continue() async {
     final saved = await _viewModel.submit();
     if (!saved || !mounted) return;
-    AppRouter.openHome(context, widget.user.copyWith(onboardingCompleted: true));
+    // Pass the chosen city along so the Account tab shows it straight away.
+    AppRouter.openHome(
+      context,
+      widget.user.copyWith(onboardingCompleted: true, city: _viewModel.city),
+    );
   }
 
   Widget _group(

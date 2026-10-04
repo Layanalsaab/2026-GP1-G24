@@ -18,6 +18,7 @@ class FormPageScaffold extends StatelessWidget {
     this.contentTopPadding = 16,
     this.bottomTopPadding = 12,
     this.onBack,
+    this.title,
   });
 
   final Widget child;
@@ -33,6 +34,9 @@ class FormPageScaffold extends StatelessWidget {
 
   /// What the back arrow does. Defaults to going back one screen.
   final VoidCallback? onBack;
+
+  /// Optional page title shown in the top bar, next to the back button.
+  final String? title;
 
   @override
   Widget build(BuildContext context) {
@@ -53,11 +57,27 @@ class FormPageScaffold extends StatelessWidget {
                 height: 64,
                 child: Padding(
                   padding: const EdgeInsets.only(left: 4, top: 4),
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: _BackButton(
-                      onTap: onBack ?? () => Navigator.of(context).maybePop(),
-                    ),
+                  child: Row(
+                    children: [
+                      _BackButton(
+                        onTap: onBack ?? () => Navigator.of(context).maybePop(),
+                      ),
+                      if (title != null) ...[
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            title!,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppText.serif(
+                              size: 20,
+                              color: Colors.white,
+                              height: 26,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                 ),
               ),

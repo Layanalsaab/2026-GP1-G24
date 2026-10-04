@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:startsa/app_constants/app_strings.dart';
+import 'package:startsa/app_constants/investor_strings.dart';
 import 'package:startsa/data_access/repositories/app_settings_repository.dart';
 import 'package:startsa/data_access/repositories/auth_repository.dart';
 import 'package:startsa/data_access/repositories/user_repository.dart';
 import 'package:startsa/main.dart';
 import 'package:startsa/models/app_user.dart';
 import 'package:startsa/models/auth_failure.dart';
+import 'package:startsa/navigation/main_screen.dart';
 
 import 'support/fakes.dart';
 
@@ -115,15 +117,15 @@ void main() {
       repo.sessionUser = repo.onboardedFounder;
       await pumpApp(tester);
 
-      expect(find.text(AppStrings.founderHomeTitle), findsOneWidget);
+      expect(find.byType(MainScreen), findsOneWidget);
     });
 
     testWidgets('a restored session goes straight to the role home', (tester) async {
       repo.sessionUser = repo.onboardedFounder;
       await pumpApp(tester);
 
-      expect(find.text(AppStrings.founderHomeTitle), findsOneWidget);
-      expect(find.text('Welcome, Mohammed Ahmed'), findsOneWidget);
+      expect(find.byType(MainScreen), findsOneWidget);
+      expect(find.text('Mohammed Ahmed'), findsOneWidget); // on the Account tab
       expect(find.textContaining('Where Saudi startups'), findsNothing);
     });
 
@@ -131,7 +133,12 @@ void main() {
       repo.sessionUser = repo.onboardedFounder;
       await pumpApp(tester);
 
+      // Account tab -> Log out -> confirm in the dialog.
+      await tester.ensureVisible(find.text(AppStrings.logOut));
+      await tester.pumpAndSettle();
       await tester.tap(find.text(AppStrings.logOut));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(AppStrings.logOut).last);
       await tester.pumpAndSettle();
 
       expect(repo.signOutCalls, 1);
@@ -232,7 +239,7 @@ void main() {
       await tester.tap(find.text(AppStrings.loginButton));
       await tester.pumpAndSettle();
 
-      expect(find.text(AppStrings.founderHomeTitle), findsOneWidget);
+      expect(find.byType(MainScreen), findsOneWidget);
       expect(find.text(AppStrings.onboardingSectorTitle), findsNothing);
     });
 
@@ -244,7 +251,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text(AppStrings.onboardingSectorTitle), findsOneWidget);
-      expect(find.text(AppStrings.founderHomeTitle), findsNothing);
+      expect(find.byType(MainScreen), findsNothing);
 
       // Continuing without answers is refused.
       await tester.tap(find.text(AppStrings.onboardingContinue));
@@ -261,10 +268,12 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(users.savedOnboarding, {'sector': 'Fintech', 'stage': 'Seed', 'city': 'Jeddah'});
-      expect(find.text(AppStrings.founderHomeTitle), findsOneWidget);
+      expect(find.byType(MainScreen), findsOneWidget);
+      expect(find.text('Founder · Jeddah'), findsOneWidget); // city shown right away
     });
 
-    testWidgets('an investor skips founder onboarding', (tester) async {
+    testWidgets('a new investor answers the investor onboarding, then their home',
+        (tester) async {
       repo.loggedInUser = const AppUser(
         uid: 'uid2',
         role: AccountRole.investor,
@@ -278,7 +287,54 @@ void main() {
       await tester.tap(find.text(AppStrings.loginButton));
       await tester.pumpAndSettle();
 
-      expect(find.text(AppStrings.investorHomeTitle), findsOneWidget);
+      // The investor questions, not the founder ones.
+      expect(find.text(InvestorStrings.sectorsTitle), findsOneWidget);
+      expect(find.text(AppStrings.onboardingSectorTitle), findsNothing);
+      expect(find.byType(MainScreen), findsNothing);
+
+      // Continuing without answers is refused.
+      await tester.tap(find.text(AppStrings.onboardingContinue));
+      await tester.pumpAndSettle();
+      expect(find.text(InvestorStrings.onboardingIncomplete), findsOneWidget);
+      expect(users.investorOnboardingSaves, 0);
+
+      for (final answer in ['Fintech', 'HealthTech', 'Seed', 'SAR 100K–500K', 'Riyadh']) {
+        await tester.ensureVisible(find.text(answer));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text(answer));
+        await tester.pumpAndSettle();
+      }
+      await tester.tap(find.text(AppStrings.onboardingContinue));
+      await tester.pumpAndSettle();
+
+      expect(users.savedInvestorOnboarding, {
+        'sectors': ['HealthTech', 'Fintech'], // in list order, not tap order
+        'stages': ['Seed'],
+        'ticketSize': 'SAR 100K–500K',
+        'city': 'Riyadh',
+      });
+      expect(find.byType(MainScreen), findsOneWidget);
+      expect(find.text('Investor · Riyadh'), findsOneWidget);
+    });
+
+    testWidgets('an investor who finished onboarding goes straight to their home',
+        (tester) async {
+      repo.loggedInUser = const AppUser(
+        uid: 'uid2',
+        role: AccountRole.investor,
+        fullName: 'Sara',
+        email: 's@b.co',
+        onboardingCompleted: true,
+      );
+      await openLogin(tester);
+      await tester.enterText(field(0), 's@b.co');
+      await tester.enterText(field(1), 'Startup1');
+
+      await tester.tap(find.text(AppStrings.loginButton));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(MainScreen), findsOneWidget);
+      expect(find.text(InvestorStrings.sectorsTitle), findsNothing);
     });
 
     testWidgets('wrong or missing details show one generic message', (tester) async {
@@ -294,7 +350,7 @@ void main() {
       await tester.tap(find.text(AppStrings.loginButton));
       await tester.pumpAndSettle();
       expect(find.text(AppStrings.incorrectCredentials), findsOneWidget);
-      expect(find.text(AppStrings.founderHomeTitle), findsNothing);
+      expect(find.byType(MainScreen), findsNothing);
     });
 
     testWidgets('unverified email offers a resend and stays out of the app', (tester) async {
@@ -307,7 +363,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text(AppStrings.verifyEmailFirst), findsOneWidget);
-      expect(find.text(AppStrings.founderHomeTitle), findsNothing);
+      expect(find.byType(MainScreen), findsNothing);
 
       await tester.tap(find.text(AppStrings.resendVerification));
       await tester.pumpAndSettle();

@@ -18,4 +18,12 @@ class UserFields {
   static const sector = 'sector';
   static const stage = 'stage';
   static const city = 'city';
+
+  // Added when a user edits their account.
+  static const bio = 'bio';
+
+  // Added when an investor finishes onboarding (their investment criteria).
+  static const preferredSectors = 'preferredSectors';
+  static const preferredStages = 'preferredStages';
+  static const ticketSize = 'ticketSize';
 }

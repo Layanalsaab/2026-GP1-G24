@@ -44,4 +44,51 @@ class UserRepository {
         UserFields.city: city,
         UserFields.onboardingCompleted: true,
       });
+
+  /// Saves an investor's onboarding answers and marks onboarding as done.
+  Future<void> saveInvestorOnboarding({
+    required String uid,
+    required List<String> sectors,
+    required List<String> stages,
+    required String ticketSize,
+    required String city,
+  }) =>
+      _firestore.updateDocument(FirestoreCollections.users, uid, {
+        UserFields.preferredSectors: sectors,
+        UserFields.preferredStages: stages,
+        UserFields.ticketSize: ticketSize,
+        UserFields.city: city,
+        UserFields.onboardingCompleted: true,
+      });
+
+  /// Saves an investor's edited investment criteria (PBI 22).
+  Future<void> updateInvestmentCriteria({
+    required String uid,
+    required List<String> sectors,
+    required List<String> stages,
+    required String ticketSize,
+  }) =>
+      _firestore.updateDocument(FirestoreCollections.users, uid, {
+        UserFields.preferredSectors: sectors,
+        UserFields.preferredStages: stages,
+        UserFields.ticketSize: ticketSize,
+      });
+
+  /// Saves the fields a user can change on the Edit Account screen. The email
+  /// and role never change here. A null [city] leaves the stored city as it is.
+  Future<void> updateProfile({
+    required String uid,
+    required String fullName,
+    required String bio,
+    String? city,
+  }) =>
+      _firestore.updateDocument(FirestoreCollections.users, uid, {
+        UserFields.fullName: fullName,
+        UserFields.bio: bio,
+        UserFields.city: ?city,
+      });
+
+  /// Deletes the user's profile document (used when deleting the account).
+  Future<void> deleteProfile(String uid) =>
+      _firestore.deleteDocument(FirestoreCollections.users, uid);
 }

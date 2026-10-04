@@ -17,6 +17,9 @@ class AppTextField extends StatelessWidget {
     this.keyboardType,
     this.textInputAction,
     this.onSubmitted,
+    this.readOnly = false,
+    this.maxLines = 1,
+    this.maxLength,
   });
 
   final String label;
@@ -28,6 +31,16 @@ class AppTextField extends StatelessWidget {
   final TextInputType? keyboardType;
   final TextInputAction? textInputAction;
   final ValueChanged<String>? onSubmitted;
+
+  /// Shows a value that can't be edited (e.g. the login email) in a grey,
+  /// muted field. Different from [enabled]: false, which is used while loading.
+  final bool readOnly;
+
+  /// More than 1 makes a multi-line field (e.g. a bio).
+  final int maxLines;
+
+  /// When set, limits the length and shows a "0/150" counter under the field.
+  final int? maxLength;
 
   @override
   Widget build(BuildContext context) {
@@ -58,25 +71,37 @@ class AppTextField extends StatelessWidget {
           keyboardType: keyboardType,
           textInputAction: textInputAction,
           onSubmitted: onSubmitted,
+          readOnly: readOnly,
+          maxLines: maxLines,
+          maxLength: maxLength,
           cursorColor: AppColors.moss600,
           autocorrect: false,
           enableSuggestions: !obscureText,
-          style: AppText.sans(size: 16, color: AppColors.ink, height: 24),
+          style: AppText.sans(
+            size: 16,
+            color: readOnly ? AppColors.grey : AppColors.ink,
+            height: 24,
+          ),
           decoration: InputDecoration(
             isDense: true,
             filled: true,
-            fillColor: AppColors.surface,
+            fillColor: readOnly ? AppColors.mutedFill : AppColors.surface,
             hintText: hint,
             hintStyle: AppText.sans(size: 16, color: AppColors.grey, height: 24),
             contentPadding:
                 const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
             enabledBorder: border(
-              hasError ? AppColors.error : AppColors.borderStrong,
+              hasError
+                  ? AppColors.error
+                  : readOnly
+                      ? AppColors.border
+                      : AppColors.borderStrong,
               hasError ? 1.5 : 1,
             ),
             disabledBorder: border(AppColors.border, 1),
-            focusedBorder:
-                border(hasError ? AppColors.error : AppColors.moss600, 1.5),
+            focusedBorder: readOnly
+                ? border(AppColors.border, 1)
+                : border(hasError ? AppColors.error : AppColors.moss600, 1.5),
           ),
         ),
         if (hasError) ...[
