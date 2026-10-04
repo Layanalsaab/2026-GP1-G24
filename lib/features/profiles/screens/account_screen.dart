@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../../../app_constants/account_strings.dart';
 import '../../../app_constants/app_strings.dart';
+import '../../../app_constants/investor_strings.dart';
 import '../../../models/app_user.dart';
 import '../../../navigation/app_router.dart';
 import '../../../shared_ui/common_widgets/menu_row.dart';
@@ -12,6 +13,7 @@ import '../../../shared_ui/theme/app_theme.dart';
 import '../view_models/account_view_model.dart';
 import 'account_dialogs.dart';
 import 'edit_account_screen.dart';
+import 'edit_criteria_screen.dart';
 import 'settings_screen.dart';
 
 /// Figma: "V2 · 18 · Account — Founder" and "V2 · 19 · Account — Investor"
@@ -54,6 +56,17 @@ class _AccountScreenState extends State<AccountScreen> {
     );
   }
 
+  Future<void> _editCriteria() async {
+    final updated = await Navigator.of(context).push<AppUser>(
+      MaterialPageRoute(builder: (_) => EditCriteriaScreen(user: _user)),
+    );
+    if (updated == null || !mounted) return;
+    _viewModel.updateUser(updated);
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text(InvestorStrings.criteriaSaved)),
+    );
+  }
+
   void _openSettings() => Navigator.of(context).push(
         MaterialPageRoute(builder: (_) => SettingsScreen(user: _user)),
       );
@@ -87,6 +100,10 @@ class _AccountScreenState extends State<AccountScreen> {
                   children: [
                     _InfoCard(user: _user),
                     const SizedBox(height: 16),
+                    if (_user.role == AccountRole.investor) ...[
+                      _CriteriaCard(user: _user, onEdit: _editCriteria),
+                      const SizedBox(height: 16),
+                    ],
                     MenuCard(
                       children: [
                         MenuRow(
@@ -254,6 +271,153 @@ class _InfoCard extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Investors only (PBI 11): their investment criteria, with a link to edit
+/// them (PBI 22).
+class _CriteriaCard extends StatelessWidget {
+  const _CriteriaCard({required this.user, required this.onEdit});
+
+  final AppUser user;
+  final VoidCallback onEdit;
+
+  @override
+  Widget build(BuildContext context) {
+    final ticket = user.ticketSize;
+    // Material (not a plain box) so the Edit button's ripple shows.
+    return Material(
+      color: AppColors.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: const BorderSide(color: AppColors.border),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 4, 4, 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    InvestorStrings.criteriaTitle,
+                    style: AppText.sans(
+                      size: 15,
+                      color: AppColors.ink,
+                      weight: FontWeight.w600,
+                      height: 22,
+                    ),
+                  ),
+                ),
+                Semantics(
+                  button: true,
+                  label: '${InvestorStrings.edit} '
+                      '${InvestorStrings.criteriaTitle.toLowerCase()}',
+                  // The tap is hidden by excludeSemantics, so expose it here.
+                  onTap: onEdit,
+                  excludeSemantics: true,
+                  child: InkWell(
+                    onTap: onEdit,
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      constraints:
+                          const BoxConstraints(minWidth: 48, minHeight: 48),
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      alignment: Alignment.center,
+                      child: Text(
+                        InvestorStrings.edit,
+                        style: AppText.sans(
+                          size: 14,
+                          color: AppColors.moss600,
+                          weight: FontWeight.w600,
+                          height: 20,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            Padding(
+              padding: const EdgeInsets.only(right: 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _TagLine(
+                    label: InvestorStrings.sectorsLabel,
+                    values: user.preferredSectors,
+                  ),
+                  const SizedBox(height: 12),
+                  _TagLine(
+                    label: InvestorStrings.stagesLabel,
+                    values: user.preferredStages,
+                  ),
+                  const SizedBox(height: 12),
+                  _TagLine(
+                    label: InvestorStrings.ticketLabel,
+                    values: [?ticket],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// A grey label with its values as small green tags (Figma "Tag"), or
+/// "Not set yet" when there are none.
+class _TagLine extends StatelessWidget {
+  const _TagLine({required this.label, required this.values});
+
+  final String label;
+  final List<String> values;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: AppText.sans(size: 12, color: AppColors.grey, height: 16),
+        ),
+        const SizedBox(height: 6),
+        if (values.isEmpty)
+          Text(
+            InvestorStrings.notSetYet,
+            style: AppText.sans(size: 15, color: AppColors.grey, height: 22),
+          )
+        else
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: [
+              for (final value in values)
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppColors.moss100,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    value,
+                    style: AppText.sans(
+                      size: 12,
+                      color: AppColors.green,
+                      weight: FontWeight.w500,
+                      height: 16,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+      ],
     );
   }
 }

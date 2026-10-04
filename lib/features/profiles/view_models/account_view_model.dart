@@ -13,15 +13,20 @@ class AccountViewModel extends ChangeNotifier with SafeNotifier {
   final UserRepository _users;
   AppUser _user;
 
+  /// Counts edits shown with [updateUser], so a reload that started earlier
+  /// can't replace them with older data.
+  int _edits = 0;
+
   AppUser get user => _user;
 
   /// The user passed in may be older than what's saved (for example, after an
   /// edit made earlier in this session), so fetch the latest profile. If that
   /// fails (e.g. offline), keep showing what we already have.
   Future<void> reload() async {
+    final editsAtStart = _edits;
     try {
       final latest = await _users.getProfile(_user.uid);
-      if (latest == null) return;
+      if (latest == null || _edits != editsAtStart) return;
       _user = latest;
       notifyListeners();
     } catch (_) {
@@ -31,6 +36,7 @@ class AccountViewModel extends ChangeNotifier with SafeNotifier {
 
   /// Shows the details saved on the Edit Account screen.
   void updateUser(AppUser updated) {
+    _edits++;
     _user = updated;
     notifyListeners();
   }

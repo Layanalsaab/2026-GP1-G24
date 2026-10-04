@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:startsa/app_constants/account_strings.dart';
 import 'package:startsa/app_constants/app_strings.dart';
@@ -45,6 +47,21 @@ void main() {
       await vm.reload();
 
       expect(vm.user.fullName, 'Reem Al-Harbi');
+    });
+
+    test('a reload that finishes after an edit keeps the edit', () async {
+      final users = FakeUserRepository();
+      users.profiles['uid1'] = founder; // the older saved version
+      final slow = Completer<void>();
+      users.getProfileGate = slow.future;
+      final vm = AccountViewModel(user: founder, userRepository: users);
+
+      final reloading = vm.reload();
+      vm.updateUser(founder.copyWith(fullName: 'Reem Edited'));
+      slow.complete();
+      await reloading;
+
+      expect(vm.user.fullName, 'Reem Edited');
     });
   });
 

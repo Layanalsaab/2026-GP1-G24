@@ -45,6 +45,35 @@ class UserRepository {
         UserFields.onboardingCompleted: true,
       });
 
+  /// Saves an investor's onboarding answers and marks onboarding as done.
+  Future<void> saveInvestorOnboarding({
+    required String uid,
+    required List<String> sectors,
+    required List<String> stages,
+    required String ticketSize,
+    required String city,
+  }) =>
+      _firestore.updateDocument(FirestoreCollections.users, uid, {
+        UserFields.preferredSectors: sectors,
+        UserFields.preferredStages: stages,
+        UserFields.ticketSize: ticketSize,
+        UserFields.city: city,
+        UserFields.onboardingCompleted: true,
+      });
+
+  /// Saves an investor's edited investment criteria (PBI 22).
+  Future<void> updateInvestmentCriteria({
+    required String uid,
+    required List<String> sectors,
+    required List<String> stages,
+    required String ticketSize,
+  }) =>
+      _firestore.updateDocument(FirestoreCollections.users, uid, {
+        UserFields.preferredSectors: sectors,
+        UserFields.preferredStages: stages,
+        UserFields.ticketSize: ticketSize,
+      });
+
   /// Saves the fields a user can change on the Edit Account screen. The email
   /// and role never change here. A null [city] leaves the stored city as it is.
   Future<void> updateProfile({

@@ -5,6 +5,7 @@ import '../data_access/repositories/app_settings_repository.dart';
 import '../data_access/repositories/auth_repository.dart';
 import '../features/login_and_signup/screens/welcome_screen.dart';
 import '../features/profiles/screens/founder_onboarding_screen.dart';
+import '../features/profiles/screens/investor_onboarding_screen.dart';
 import '../models/app_user.dart';
 import 'main_screen.dart';
 
@@ -24,18 +25,20 @@ class AppRouter {
   }
 
   /// Where a signed-in user lands: the main screen with the bottom bar, or
-  /// the founder onboarding first if they haven't completed it yet.
+  /// their role's onboarding first if they haven't completed it yet.
   static void openHome(BuildContext context, AppUser user) {
     debugPrint(
       'openHome: role=${user.role.value} '
       'onboardingCompleted=${user.onboardingCompleted}',
     );
     final Widget home = switch (user.role) {
-      // A founder answers the onboarding questions once, before their home.
+      // Each role answers its onboarding questions once, before their home.
       AccountRole.founder => user.onboardingCompleted
           ? MainScreen(user: user)
           : FounderOnboardingScreen(user: user),
-      AccountRole.investor => MainScreen(user: user),
+      AccountRole.investor => user.onboardingCompleted
+          ? MainScreen(user: user)
+          : InvestorOnboardingScreen(user: user),
     };
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (_) => home),

@@ -21,4 +21,9 @@ class UserFields {
 
   // Added when a user edits their account.
   static const bio = 'bio';
+
+  // Added when an investor finishes onboarding (their investment criteria).
+  static const preferredSectors = 'preferredSectors';
+  static const preferredStages = 'preferredStages';
+  static const ticketSize = 'ticketSize';
 }

@@ -43,6 +43,10 @@ void main() {
   }
 
   Future<void> tapText(WidgetTester tester, String text) async {
+    // Scroll it into view first: the investor's criteria card can push the
+    // menu below the bottom of the test screen.
+    await tester.ensureVisible(find.text(text).last);
+    await tester.pumpAndSettle();
     await tester.tap(find.text(text).last);
     await tester.pumpAndSettle();
   }

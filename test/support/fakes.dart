@@ -141,6 +141,46 @@ class FakeUserRepository implements UserRepository {
     savedOnboarding = {'sector': sector, 'stage': stage, 'city': city};
   }
 
+  int investorOnboardingSaves = 0;
+  Map<String, Object>? savedInvestorOnboarding;
+
+  @override
+  Future<void> saveInvestorOnboarding({
+    required String uid,
+    required List<String> sectors,
+    required List<String> stages,
+    required String ticketSize,
+    required String city,
+  }) async {
+    investorOnboardingSaves++;
+    if (onboardingFails != null) throw AuthException(onboardingFails!);
+    savedInvestorOnboarding = {
+      'sectors': sectors,
+      'stages': stages,
+      'ticketSize': ticketSize,
+      'city': city,
+    };
+  }
+
+  int criteriaUpdates = 0;
+  Map<String, Object>? savedCriteria;
+
+  @override
+  Future<void> updateInvestmentCriteria({
+    required String uid,
+    required List<String> sectors,
+    required List<String> stages,
+    required String ticketSize,
+  }) async {
+    criteriaUpdates++;
+    if (updateFails != null) throw AuthException(updateFails!);
+    savedCriteria = {
+      'sectors': sectors,
+      'stages': stages,
+      'ticketSize': ticketSize,
+    };
+  }
+
   int profileUpdates = 0;
   AuthFailure? updateFails;
   Map<String, String?>? savedProfile;
