@@ -3,11 +3,10 @@ import 'package:flutter/material.dart';
 import '../app_constants/app_strings.dart';
 import '../data_access/repositories/app_settings_repository.dart';
 import '../data_access/repositories/auth_repository.dart';
-import '../features/explore_startups/screens/founder_home_screen.dart';
-import '../features/explore_startups/screens/investor_home_screen.dart';
 import '../features/login_and_signup/screens/welcome_screen.dart';
 import '../features/profiles/screens/founder_onboarding_screen.dart';
 import '../models/app_user.dart';
+import 'main_screen.dart';
 
 /// Moving between the top-level areas of the app. Each of these clears the
 /// navigation stack, so Back can never return to a screen the user left.
@@ -24,8 +23,8 @@ class AppRouter {
     openStart(context);
   }
 
-  /// Where a signed-in user lands: their role's home, or the founder
-  /// onboarding if they haven't completed it yet.
+  /// Where a signed-in user lands: the main screen with the bottom bar, or
+  /// the founder onboarding first if they haven't completed it yet.
   static void openHome(BuildContext context, AppUser user) {
     debugPrint(
       'openHome: role=${user.role.value} '
@@ -34,9 +33,9 @@ class AppRouter {
     final Widget home = switch (user.role) {
       // A founder answers the onboarding questions once, before their home.
       AccountRole.founder => user.onboardingCompleted
-          ? FounderHomeScreen(user: user)
+          ? MainScreen(user: user)
           : FounderOnboardingScreen(user: user),
-      AccountRole.investor => InvestorHomeScreen(user: user),
+      AccountRole.investor => MainScreen(user: user),
     };
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (_) => home),

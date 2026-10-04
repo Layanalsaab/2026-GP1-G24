@@ -24,6 +24,8 @@ class AppUser {
     required this.fullName,
     required this.email,
     this.onboardingCompleted = false,
+    this.city,
+    this.bio = '',
   });
 
   final String uid;
@@ -35,12 +37,26 @@ class AppUser {
   /// Missing in older profiles, which counts as not completed.
   final bool onboardingCompleted;
 
-  AppUser copyWith({bool? onboardingCompleted}) => AppUser(
+  /// Where the user is based. Null until they choose one.
+  final String? city;
+
+  /// A short "about me" text. Empty when the user hasn't written one.
+  final String bio;
+
+  AppUser copyWith({
+    String? fullName,
+    String? city,
+    String? bio,
+    bool? onboardingCompleted,
+  }) =>
+      AppUser(
         uid: uid,
         role: role,
-        fullName: fullName,
+        fullName: fullName ?? this.fullName,
         email: email,
         onboardingCompleted: onboardingCompleted ?? this.onboardingCompleted,
+        city: city ?? this.city,
+        bio: bio ?? this.bio,
       );
 
   /// Returns null when the document is missing a valid role, so callers never
@@ -55,6 +71,8 @@ class AppUser {
       fullName: (data['fullName'] as String?) ?? '',
       email: (data['email'] as String?) ?? '',
       onboardingCompleted: data['onboardingCompleted'] == true,
+      city: data['city'] as String?,
+      bio: (data['bio'] as String?) ?? '',
     );
   }
 }

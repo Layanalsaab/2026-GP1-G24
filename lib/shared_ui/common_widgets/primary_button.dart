@@ -9,10 +9,15 @@ class PrimaryButton extends StatelessWidget {
     required this.label,
     required this.onPressed,
     this.isLoading = false,
+    this.color = AppColors.moss600,
   });
 
   final String label;
   final VoidCallback? onPressed;
+
+  /// Fill color. Moss by default; [AppColors.error] for destructive actions
+  /// such as deleting an account.
+  final Color color;
 
   /// Shows a spinner and ignores taps, so a request can't be started twice.
   final bool isLoading;
@@ -31,7 +36,7 @@ class PrimaryButton extends StatelessWidget {
         ],
       ),
       child: Material(
-        color: AppColors.moss600,
+        color: color,
         borderRadius: BorderRadius.circular(12),
         child: InkWell(
           borderRadius: BorderRadius.circular(12),

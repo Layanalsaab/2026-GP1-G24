@@ -137,6 +137,36 @@ class AuthRepository {
 
   Future<void> signOut() => _auth.signOut();
 
+  /// Changes the signed-in user's password. The current password is checked
+  /// first; a wrong one fails with [AuthFailure.invalidCredentials] and nothing
+  /// changes.
+  Future<void> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    final account = _auth.currentAccount;
+    if (account == null) throw const AuthException(AuthFailure.unknown);
+    await _auth.reauthenticate(account.email, currentPassword);
+    await _auth.updatePassword(newPassword);
+  }
+
+  /// Permanently deletes the signed-in user: checks the password, deletes the
+  /// `users` profile, then the Auth account, and signs out.
+  ///
+  /// The profile is deleted first because the security rules only let a
+  /// signed-in user delete their own document. If any step fails, the steps
+  /// after it don't run, so a wrong password deletes nothing.
+  // TODO(Sprint 2+): also delete the founder's startups, requests and
+  // Investment Associations once those collections exist (PBI 13).
+  Future<void> deleteAccount(String password) async {
+    final account = _auth.currentAccount;
+    if (account == null) throw const AuthException(AuthFailure.unknown);
+    await _auth.reauthenticate(account.email, password);
+    await _users.deleteProfile(account.uid);
+    await _auth.deleteCurrentAccount();
+    await _safeSignOut();
+  }
+
   Future<AuthAccount> _signInOrGeneric(String email, String password) async {
     try {
       return await _auth.signIn(email, password);
