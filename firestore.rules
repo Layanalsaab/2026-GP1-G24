@@ -1,0 +1,94 @@
+rules_version = '2';
+
+// Deploy with: firebase deploy --only firestore:rules
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    // ---------------------------------------------------------------- users
+    // Each account reads and writes only its own profile (sign up, log in,
+    // founder onboarding).
+    match /users/{uid} {
+      allow read, write: if signedIn() && request.auth.uid == uid;
+    }
+
+    // ------------------------------------------------------------- startups
+    // - Anyone, signed in or not, can read a startup where isPublic == true.
+    // - A private startup can be read only by its founder.
+    // - A founder can create, update and delete only their own startups.
+    match /startups/{startupId} {
+      allow read: if resource.data.isPublic == true
+                  || (signedIn() && resource.data.founderId == request.auth.uid);
+
+      allow create: if signedIn()
+                    && request.resource.data.founderId == request.auth.uid
+                    && request.resource.data.createdAt == request.time
+                    && request.resource.data.updatedAt == request.time
+                    && validStartup(request.resource.data);
+
+      allow update: if signedIn()
+                    && resource.data.founderId == request.auth.uid
+                    // Ownership and creation time can never change.
+                    && request.resource.data.founderId == resource.data.founderId
+                    && request.resource.data.createdAt == resource.data.createdAt
+                    && request.resource.data.updatedAt == request.time
+                    && validStartup(request.resource.data);
+
+      allow delete: if signedIn() && resource.data.founderId == request.auth.uid;
+    }
+
+    // Mirrors the app's validation (lib/helpers/startup_validators.dart and
+    // the enums in lib/models/startup_enums.dart).
+    function validStartup(d) {
+      return d.keys().hasAll(['founderId', 'name', 'description', 'sector',
+                              'stage', 'businessModel', 'location',
+                              'lookingFor', 'isPublic'])
+        && d.keys().hasOnly(['founderId', 'name', 'tagline', 'description',
+                             'sector', 'stage', 'businessModel', 'location',
+                             'foundedYear', 'websiteUrl', 'lookingFor',
+                             'fundingRequirement', 'isPublic', 'logoUrl',
+                             'createdAt', 'updatedAt'])
+        && d.name is string && d.name.size() >= 3 && d.name.size() <= 60
+        && optionalString(d, 'tagline', 80)
+        && d.description is string
+        && d.description.size() >= 50 && d.description.size() <= 1000
+        && d.sector in ['fintech', 'ecommerce_retail', 'healthtech', 'edtech',
+                        'logistics_transport', 'food_beverage',
+                        'software_cloud', 'other']
+        && d.stage in ['idea', 'mvp', 'early_revenue', 'growth']
+        && d.businessModel in ['b2b', 'b2c', 'b2b2c', 'marketplace']
+        && d.location in ['riyadh', 'jeddah', 'dammam', 'khobar', 'mecca',
+                          'medina', 'tabuk', 'abha', 'other']
+        && d.lookingFor is list && d.lookingFor.size() >= 1
+        && d.lookingFor.hasOnly(['funding', 'partnerships', 'team_members',
+                                 'mentorship', 'services'])
+        && validFoundedYear(d)
+        && optionalString(d, 'websiteUrl', 2048)
+        && optionalString(d, 'logoUrl', 2048)
+        && validFunding(d)
+        && d.isPublic is bool;
+    }
+
+    function optionalString(d, field, maxLength) {
+      return !(field in d) || d[field] == null
+        || (d[field] is string && d[field].size() <= maxLength);
+    }
+
+    function validFoundedYear(d) {
+      return !('foundedYear' in d) || d.foundedYear == null
+        || (d.foundedYear is int && d.foundedYear >= 2000
+            && d.foundedYear <= request.time.year());
+    }
+
+    // fundingRequirement is required (> 0) when looking for Funding, and
+    // must be empty otherwise.
+    function validFunding(d) {
+      return ('funding' in d.lookingFor)
+        ? (d.fundingRequirement is int && d.fundingRequirement > 0)
+        : (!('fundingRequirement' in d) || d.fundingRequirement == null);
+    }
+  }
+}

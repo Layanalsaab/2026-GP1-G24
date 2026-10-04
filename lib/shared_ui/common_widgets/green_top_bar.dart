@@ -1,0 +1,116 @@
+import 'package:flutter/material.dart';
+
+import '../theme/app_theme.dart';
+
+/// Deep moss header used across the founder screens. It extends under the
+/// status bar, has an optional leading button, a serif title and actions,
+/// and can carry extra content below (e.g. a subtitle).
+class GreenTopBar extends StatelessWidget {
+  const GreenTopBar({
+    super.key,
+    required this.title,
+    this.leading,
+    this.actions = const [],
+    this.below,
+    this.color = AppColors.green,
+  });
+
+  final String title;
+  final Widget? leading;
+  final List<Widget> actions;
+  final Widget? below;
+
+  /// Transparent when the bar sits on top of another green header.
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: const BorderRadius.vertical(
+          bottom: Radius.circular(AppRadius.xl),
+        ),
+      ),
+      padding: EdgeInsets.only(
+        top: MediaQuery.paddingOf(context).top,
+        bottom: below == null ? AppSpacing.xs : AppSpacing.xl,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            height: AppSizes.topBarHeight,
+            child: Row(
+              children: [
+                SizedBox(
+                  width: leading == null ? AppSpacing.page : AppSpacing.xs,
+                ),
+                ?leading,
+                if (leading != null) const SizedBox(width: AppSpacing.xs),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: AppText.pageTitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                ...actions,
+                const SizedBox(width: AppSpacing.xs),
+              ],
+            ),
+          ),
+          if (below != null)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.page),
+              child: below,
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// A round, white line icon button for [GreenTopBar].
+class TopBarIconButton extends StatelessWidget {
+  const TopBarIconButton({
+    super.key,
+    required this.icon,
+    required this.tooltip,
+    required this.onPressed,
+  });
+
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      tooltip: tooltip,
+      onPressed: onPressed,
+      icon: Icon(icon, size: AppSizes.icon),
+      color: AppColors.onDark,
+      disabledColor: AppColors.onDarkMuted,
+      constraints: const BoxConstraints.tightFor(
+        width: AppSizes.touchTarget,
+        height: AppSizes.touchTarget,
+      ),
+    );
+  }
+}
+
+/// Back arrow for [GreenTopBar]. Uses maybePop, so PopScope guards apply.
+class TopBarBackButton extends StatelessWidget {
+  const TopBarBackButton({super.key, this.onPressed});
+
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) => TopBarIconButton(
+    icon: Icons.arrow_back_rounded,
+    tooltip: MaterialLocalizations.of(context).backButtonTooltip,
+    onPressed: onPressed ?? () => Navigator.of(context).maybePop(),
+  );
+}

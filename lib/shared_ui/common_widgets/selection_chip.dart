@@ -37,13 +37,19 @@ class SelectionChip extends StatelessWidget {
               svgIcon('check.svg', size: 16),
               const SizedBox(width: 6),
             ],
-            Text(
-              label,
-              style: AppText.sans(
-                size: 14,
-                color: selected ? AppColors.green : AppColors.ink,
-                weight: FontWeight.w500,
-                height: 20,
+            // Flexible + ellipsis: a long label on a narrow screen (or with
+            // large system text) shrinks instead of overflowing.
+            Flexible(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppText.sans(
+                  size: 14,
+                  color: selected ? AppColors.green : AppColors.ink,
+                  weight: FontWeight.w500,
+                  height: 20,
+                ),
               ),
             ),
           ],

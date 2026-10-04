@@ -1,4 +1,5 @@
-/// Everything that can go wrong in the auth flows, independent of Firebase.
+/// Everything that can go wrong in the auth flows and data access,
+/// independent of Firebase.
 enum AuthFailure {
   emailInUse,
   weakPassword,
@@ -9,6 +10,13 @@ enum AuthFailure {
   profileSaveFailed,
   tooManyRequests,
   network,
+
+  /// Firestore/Storage refused the request (security rules), or nobody is
+  /// signed in when an action needs an account.
+  permissionDenied,
+
+  /// The document or file no longer exists (e.g. deleted on another device).
+  notFound,
   unknown,
 }
 

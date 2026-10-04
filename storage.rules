@@ -1,0 +1,27 @@
+rules_version = '2';
+
+// Deploy with: firebase deploy --only storage
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // startup_logos/{founderId}/{startupId}/{fileName}
+    match /startup_logos/{founderId}/{startupId}/{fileName} {
+      function isFounder() {
+        return request.auth != null && request.auth.uid == founderId;
+      }
+
+      // The founder can always read; everyone else only while the startup
+      // is public. (Needs the Storage -> Firestore rules permission, which the
+      // Firebase CLI offers to grant on the first deploy.)
+      allow read: if isFounder()
+                  || firestore.get(/databases/(default)/documents/startups/$(startupId)).data.isPublic == true;
+
+      // Images only, at most 2 MB (same limit as LogoPickerService.maxBytes).
+      allow create, update: if isFounder()
+                            && request.resource.size <= 2 * 1024 * 1024
+                            && request.resource.contentType.matches('image/.*');
+
+      allow delete: if isFounder();
+    }
+  }
+}

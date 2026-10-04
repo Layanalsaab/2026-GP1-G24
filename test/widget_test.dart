@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:startsa/app_constants/app_strings.dart';
+import 'package:startsa/app_constants/startup_strings.dart';
 import 'package:startsa/data_access/repositories/app_settings_repository.dart';
 import 'package:startsa/data_access/repositories/auth_repository.dart';
+import 'package:startsa/data_access/repositories/startup_repository.dart';
 import 'package:startsa/data_access/repositories/user_repository.dart';
+import 'package:startsa/features/explore_startups/screens/founder_home_screen.dart';
 import 'package:startsa/main.dart';
 import 'package:startsa/models/app_user.dart';
 import 'package:startsa/models/auth_failure.dart';
@@ -25,6 +28,7 @@ void main() {
     UserRepository.instance = users;
     settings = FakeAppSettingsRepository();
     AppSettingsRepository.instance = settings;
+    StartupRepository.instance = FakeStartupRepository();
   });
 
   Future<void> pumpApp(WidgetTester tester) async {
@@ -115,15 +119,16 @@ void main() {
       repo.sessionUser = repo.onboardedFounder;
       await pumpApp(tester);
 
-      expect(find.text(AppStrings.founderHomeTitle), findsOneWidget);
+      expect(find.byType(FounderHomeScreen), findsOneWidget);
     });
 
     testWidgets('a restored session goes straight to the role home', (tester) async {
       repo.sessionUser = repo.onboardedFounder;
       await pumpApp(tester);
 
-      expect(find.text(AppStrings.founderHomeTitle), findsOneWidget);
-      expect(find.text('Welcome, Mohammed Ahmed'), findsOneWidget);
+      expect(find.byType(FounderHomeScreen), findsOneWidget);
+      // The founder lands on My Startups; with no startups, the empty state.
+      expect(find.text(StartupStrings.emptyTitle), findsOneWidget);
       expect(find.textContaining('Where Saudi startups'), findsNothing);
     });
 
@@ -131,6 +136,8 @@ void main() {
       repo.sessionUser = repo.onboardedFounder;
       await pumpApp(tester);
 
+      await tester.tap(find.byTooltip(StartupStrings.menuTooltip).first);
+      await tester.pumpAndSettle();
       await tester.tap(find.text(AppStrings.logOut));
       await tester.pumpAndSettle();
 
@@ -232,7 +239,7 @@ void main() {
       await tester.tap(find.text(AppStrings.loginButton));
       await tester.pumpAndSettle();
 
-      expect(find.text(AppStrings.founderHomeTitle), findsOneWidget);
+      expect(find.byType(FounderHomeScreen), findsOneWidget);
       expect(find.text(AppStrings.onboardingSectorTitle), findsNothing);
     });
 
@@ -244,7 +251,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text(AppStrings.onboardingSectorTitle), findsOneWidget);
-      expect(find.text(AppStrings.founderHomeTitle), findsNothing);
+      expect(find.byType(FounderHomeScreen), findsNothing);
 
       // Continuing without answers is refused.
       await tester.tap(find.text(AppStrings.onboardingContinue));
@@ -261,7 +268,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(users.savedOnboarding, {'sector': 'Fintech', 'stage': 'Seed', 'city': 'Jeddah'});
-      expect(find.text(AppStrings.founderHomeTitle), findsOneWidget);
+      expect(find.byType(FounderHomeScreen), findsOneWidget);
     });
 
     testWidgets('an investor skips founder onboarding', (tester) async {
@@ -294,7 +301,7 @@ void main() {
       await tester.tap(find.text(AppStrings.loginButton));
       await tester.pumpAndSettle();
       expect(find.text(AppStrings.incorrectCredentials), findsOneWidget);
-      expect(find.text(AppStrings.founderHomeTitle), findsNothing);
+      expect(find.byType(FounderHomeScreen), findsNothing);
     });
 
     testWidgets('unverified email offers a resend and stays out of the app', (tester) async {
@@ -307,7 +314,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text(AppStrings.verifyEmailFirst), findsOneWidget);
-      expect(find.text(AppStrings.founderHomeTitle), findsNothing);
+      expect(find.byType(FounderHomeScreen), findsNothing);
 
       await tester.tap(find.text(AppStrings.resendVerification));
       await tester.pumpAndSettle();

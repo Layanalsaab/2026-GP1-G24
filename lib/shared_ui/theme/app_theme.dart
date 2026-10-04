@@ -19,6 +19,17 @@ class AppColors {
   static const borderStrong = Color(0xFF8C918D);
   static const mutedFill = Color(0xFFF1EFEA);
   static const error = Color(0xFFB3261E);
+
+  // Startup management tokens, derived from the palette above.
+  static const moss400 = Color(0xFF5E8A68);
+  static const moss50 = Color(0xFFF2F7F3);
+  static const gold100 = Color(0xFFF7EDD5);
+  static const gold700 = Color(0xFF8A6A1F);
+  static const errorFill = Color(0xFFFBEAE9);
+  static const onDark = Colors.white;
+  static const onDarkMuted = Color(0xCCFFFFFF);
+  static const shadow = Color(0x1A1F3F27);
+  static const scrim = Color(0x661C1F1D);
 }
 
 class AppText {
@@ -52,4 +63,129 @@ class AppText {
         height: height == null ? null : height / size,
         letterSpacing: letterSpacing,
       );
+
+  // Named styles, so widgets never pick font sizes themselves. Colours can be
+  // changed per use with `.copyWith(color: ...)`.
+
+  /// Large serif title on a hero header (startup profile name).
+  static TextStyle get display =>
+      serif(size: 28, color: AppColors.onDark, height: 34);
+
+  /// Page title in a top bar.
+  static TextStyle get pageTitle =>
+      serif(size: 22, color: AppColors.onDark, height: 28);
+
+  /// Section heading inside a page (serif).
+  static TextStyle get sectionTitle =>
+      serif(size: 18, color: AppColors.ink, height: 24);
+
+  /// Startup name on a card.
+  static TextStyle get cardTitle =>
+      serif(size: 17, color: AppColors.ink, height: 22);
+
+  static TextStyle get body => sans(size: 15, color: AppColors.ink, height: 22);
+
+  static TextStyle get bodyMuted =>
+      sans(size: 14, color: AppColors.grey, height: 20);
+
+  /// Text typed into an input.
+  static TextStyle get input => sans(size: 16, color: AppColors.ink, height: 24);
+
+  /// Field label above an input.
+  static TextStyle get label =>
+      sans(size: 14, color: AppColors.ink, weight: FontWeight.w500, height: 20);
+
+  static TextStyle get caption =>
+      sans(size: 12, color: AppColors.grey, height: 16);
+
+  /// Small uppercase-ish tag text (badges, meta).
+  static TextStyle get badge => sans(
+        size: 12,
+        color: AppColors.ink,
+        weight: FontWeight.w600,
+        height: 16,
+        letterSpacing: 0.2,
+      );
+
+  static TextStyle get button => sans(
+        size: 16,
+        color: AppColors.onDark,
+        weight: FontWeight.w600,
+        height: 20,
+      );
+
+  static TextStyle get link => sans(
+        size: 14,
+        color: AppColors.moss600,
+        weight: FontWeight.w600,
+        height: 20,
+      );
+
+  /// Big number (funding amount).
+  static TextStyle get figure =>
+      serif(size: 24, color: AppColors.ink, height: 30);
+
+  /// Initial letter inside a logo placeholder; scaled to the circle size.
+  static TextStyle monogram(double circleSize) => serif(
+        size: circleSize * 0.42,
+        color: AppColors.onDark,
+        height: circleSize * 0.5,
+      );
+}
+
+/// Spacing scale (logical pixels).
+class AppSpacing {
+  AppSpacing._();
+
+  static const double xxs = 2;
+  static const double xs = 4;
+  static const double sm = 8;
+  static const double md = 12;
+  static const double lg = 16;
+  static const double xl = 20;
+  static const double xxl = 24;
+  static const double xxxl = 32;
+  static const double huge = 48;
+
+  /// Horizontal page padding used by every screen.
+  static const double page = 24;
+}
+
+/// Corner radii. Shapes are soft and rounded throughout.
+class AppRadius {
+  AppRadius._();
+
+  static const double sm = 8;
+  static const double md = 12;
+  static const double lg = 16;
+  static const double xl = 24;
+  static const double pill = 999;
+}
+
+/// Sizes that are part of the design (icons, avatars, controls).
+class AppSizes {
+  AppSizes._();
+
+  static const double iconSm = 16;
+  static const double icon = 22;
+  static const double iconLg = 28;
+  static const double touchTarget = 48;
+  static const double buttonHeight = 48;
+  static const double cardLogo = 56;
+  static const double formLogo = 96;
+  static const double profileLogo = 88;
+  static const double emptyStateIcon = 88;
+  static const double topBarHeight = 64;
+}
+
+class AppShadows {
+  AppShadows._();
+
+  static const card = [
+    BoxShadow(color: AppColors.shadow, offset: Offset(0, 4), blurRadius: 14),
+  ];
+
+  static const raised = [
+    BoxShadow(color: AppColors.shadow, offset: Offset(0, 8), blurRadius: 24),
+  ];
 }

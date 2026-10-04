@@ -1,9 +1,13 @@
+import 'dart:io';
+
 import 'package:startsa/data_access/firebase_services/auth_service.dart';
 import 'package:startsa/data_access/repositories/app_settings_repository.dart';
 import 'package:startsa/data_access/repositories/auth_repository.dart';
+import 'package:startsa/data_access/repositories/startup_repository.dart';
 import 'package:startsa/data_access/repositories/user_repository.dart';
 import 'package:startsa/models/app_user.dart';
 import 'package:startsa/models/auth_failure.dart';
+import 'package:startsa/models/startup.dart';
 
 /// In-memory stand-in for [AuthService]. Set the fields to script behaviour,
 /// and read [calls] to see what the code under test did.
@@ -14,8 +18,11 @@ class FakeAuthService implements AuthService {
   AuthAccount? signedIn;
 
   /// What [createAccount] / [signIn] / [reloadCurrentAccount] return.
-  AuthAccount account =
-      const AuthAccount(uid: 'uid1', email: 'a@b.co', emailVerified: false);
+  AuthAccount account = const AuthAccount(
+    uid: 'uid1',
+    email: 'a@b.co',
+    emailVerified: false,
+  );
 
   AuthFailure? createFails;
   AuthFailure? signInFails;
@@ -92,8 +99,12 @@ class FakeUserRepository implements UserRepository {
     required String email,
   }) async {
     if (createFails) throw const AuthException(AuthFailure.unknown);
-    profiles[uid] =
-        AppUser(uid: uid, role: role, fullName: fullName, email: email);
+    profiles[uid] = AppUser(
+      uid: uid,
+      role: role,
+      fullName: fullName,
+      email: email,
+    );
   }
 
   @override
@@ -145,7 +156,8 @@ class FakeAuthRepository implements AuthRepository {
   );
 
   /// A founder who already finished onboarding.
-  AppUser get onboardedFounder => loggedInUser.copyWith(onboardingCompleted: true);
+  AppUser get onboardedFounder =>
+      loggedInUser.copyWith(onboardingCompleted: true);
 
   @override
   Future<SignupResult> signUp({
@@ -201,4 +213,40 @@ class FakeAppSettingsRepository implements AppSettingsRepository {
 
   @override
   Future<void> markIntroSeen() async => introSeen = true;
+}
+
+/// In-memory stand-in for [StartupRepository].
+class FakeStartupRepository implements StartupRepository {
+  final List<Startup> startups = [];
+  AuthFailure? fetchFails;
+
+  @override
+  Future<List<Startup>> fetchMyStartups() async {
+    if (fetchFails != null) throw AuthException(fetchFails!);
+    return List.of(startups);
+  }
+
+  @override
+  Future<Startup> create(Startup startup, {File? logo}) async {
+    final saved = startup.copyWith(
+      id: 'new${startups.length}',
+      founderId: 'uid1',
+    );
+    startups.add(saved);
+    return saved;
+  }
+
+  @override
+  Future<Startup> update(
+    Startup startup, {
+    File? newLogo,
+    bool removeLogo = false,
+  }) async {
+    startups[startups.indexWhere((s) => s.id == startup.id)] = startup;
+    return startup;
+  }
+
+  @override
+  Future<void> delete(Startup startup) async =>
+      startups.removeWhere((s) => s.id == startup.id);
 }
