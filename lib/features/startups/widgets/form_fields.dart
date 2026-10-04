@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 
 import '../../../app_constants/startup_strings.dart';
 import '../../../shared_ui/common_widgets/form_message.dart';
-import '../../../shared_ui/common_widgets/selection_chip.dart';
 import '../../../shared_ui/theme/app_theme.dart';
 
 /// Label shown above every field: name, plus a gold * when required or an
@@ -90,7 +89,7 @@ class StartupTextField extends StatelessWidget {
   Widget build(BuildContext context) {
     final hasError = errorText != null;
     OutlineInputBorder border(Color color, double width) => OutlineInputBorder(
-      borderRadius: BorderRadius.circular(AppRadius.md),
+      borderRadius: BorderRadius.circular(AppRadius.sm),
       borderSide: BorderSide(color: color, width: width),
     );
 
@@ -184,132 +183,15 @@ class _Counter extends StatelessWidget {
   }
 }
 
-/// A labelled group of chips. Single- or multi-select depending on how
-/// [isSelected] and [onTap] are wired.
-class ChipGroupField<T> extends StatelessWidget {
-  const ChipGroupField({
-    super.key,
-    required this.label,
-    required this.options,
-    required this.labelOf,
-    required this.isSelected,
-    required this.onTap,
-    this.isRequired = true,
-    this.errorText,
-    this.helperText,
-    this.enabled = true,
-  });
+/// Small grey heading between groups of fields (BASICS, DETAILS, ...).
+class FieldGroupHeading extends StatelessWidget {
+  const FieldGroupHeading(this.text, {super.key});
 
-  final String label;
-  final List<T> options;
-  final String Function(T) labelOf;
-  final bool Function(T) isSelected;
-  final ValueChanged<T> onTap;
-  final bool isRequired;
-  final String? errorText;
-  final String? helperText;
-  final bool enabled;
+  final String text;
 
   @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        FieldLabel(label, isRequired: isRequired),
-        if (helperText != null) ...[
-          const SizedBox(height: AppSpacing.xxs),
-          Text(helperText!, style: AppText.caption),
-        ],
-        const SizedBox(height: AppSpacing.sm),
-        SizedBox(
-          width: double.infinity,
-          child: Wrap(
-            spacing: AppSpacing.sm,
-            runSpacing: AppSpacing.sm,
-            children: [
-              for (final option in options)
-                SelectionChip(
-                  label: labelOf(option),
-                  selected: isSelected(option),
-                  onTap: enabled ? () => onTap(option) : () {},
-                ),
-            ],
-          ),
-        ),
-        if (errorText != null) ...[
-          const SizedBox(height: AppSpacing.sm),
-          FormMessage.error(errorText!),
-        ],
-      ],
-    );
-  }
-}
-
-/// A white rounded card grouping related fields under a serif heading.
-class FormSectionCard extends StatelessWidget {
-  const FormSectionCard({
-    super.key,
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.children,
-  });
-
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final List<Widget> children;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(AppSpacing.xl),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(color: AppColors.border),
-        boxShadow: AppShadows.card,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: AppSizes.touchTarget - AppSpacing.sm,
-                height: AppSizes.touchTarget - AppSpacing.sm,
-                decoration: BoxDecoration(
-                  color: AppColors.gold100,
-                  borderRadius: BorderRadius.circular(AppRadius.md),
-                ),
-                child: Icon(
-                  icon,
-                  size: AppSizes.icon,
-                  color: AppColors.gold700,
-                ),
-              ),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(title, style: AppText.sectionTitle),
-                    Text(subtitle, style: AppText.caption),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.lg),
-          const Divider(height: 1, color: AppColors.border),
-          const SizedBox(height: AppSpacing.xl),
-          for (var i = 0; i < children.length; i++) ...[
-            if (i > 0) const SizedBox(height: AppSpacing.xl),
-            children[i],
-          ],
-        ],
-      ),
-    );
-  }
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(top: AppSpacing.sm),
+    child: Text(text, style: AppText.groupLabel),
+  );
 }

@@ -164,7 +164,7 @@ class _Hero extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     StartupLogo(
-                      initial: startup.initial,
+                      initials: startup.initials,
                       url: startup.logoUrl,
                       size: AppSizes.profileLogo,
                       ring: true,

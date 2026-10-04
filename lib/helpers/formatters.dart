@@ -27,14 +27,4 @@ class Formatters {
     return '$host$path';
   }
 
-  /// "just now", "5 minutes ago", "yesterday", "on 3 Mar 2026".
-  static String relativeTime(DateTime time, {DateTime? now}) {
-    final diff = (now ?? DateTime.now()).difference(time);
-    if (diff.inMinutes < 1) return StartupStrings.justNow;
-    if (diff.inHours < 1) return StartupStrings.minutesAgo(diff.inMinutes);
-    if (diff.inDays < 1) return StartupStrings.hoursAgo(diff.inHours);
-    if (diff.inDays < 7) return StartupStrings.daysAgo(diff.inDays);
-    final month = StartupStrings.months[time.month - 1];
-    return StartupStrings.onDate('${time.day} $month ${time.year}');
-  }
 }

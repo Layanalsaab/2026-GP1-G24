@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../../../app_constants/startup_strings.dart';
 import '../../../models/startup.dart';
-import '../../../navigation/placeholder_features.dart';
 import '../../../shared_ui/common_widgets/error_retry_view.dart';
 import '../../../shared_ui/common_widgets/green_top_bar.dart';
 import '../../../shared_ui/common_widgets/primary_button.dart';
+import '../../../shared_ui/common_widgets/selection_chip.dart';
 import '../../../shared_ui/theme/app_theme.dart';
 import '../view_models/my_startups_view_model.dart';
 import '../widgets/my_startup_card.dart';
@@ -14,27 +15,24 @@ import '../widgets/startup_form_page.dart';
 import 'add_startup_screen.dart';
 import 'edit_startup_screen.dart';
 
-/// The founder's startups, most recently edited first. Pull to refresh,
-/// FAB to add, tap a card to edit. Used as a tab of the founder home.
+/// Figma "V2 · 24 · My Startups", opened from the Services tab.
+/// The founder's startups, most recently edited first, with All / Public /
+/// Private chips, pull to refresh, and "Create new startup" under the list.
+/// Tapping a card opens Edit.
 class MyStartupsScreen extends StatelessWidget {
-  const MyStartupsScreen({super.key, required this.onOpenMenu});
-
-  /// Opens the founder home's side menu.
-  final VoidCallback onOpenMenu;
+  const MyStartupsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
       create: (_) => MyStartupsViewModel()..load(),
-      child: _MyStartupsView(onOpenMenu: onOpenMenu),
+      child: const _MyStartupsView(),
     );
   }
 }
 
 class _MyStartupsView extends StatelessWidget {
-  const _MyStartupsView({required this.onOpenMenu});
-
-  final VoidCallback onOpenMenu;
+  const _MyStartupsView();
 
   /// Reloads; if that fails while a list is already shown, says so in a
   /// snackbar with Retry (the full-page error is only for an empty list).
@@ -85,48 +83,21 @@ class _MyStartupsView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final vm = context.watch<MyStartupsViewModel>();
-    final showFab = !vm.isLoading && !(vm.error != null && vm.startups.isEmpty);
-    return Scaffold(
-      backgroundColor: AppColors.cream,
-      floatingActionButton: showFab
-          ? FloatingActionButton.extended(
-              onPressed: () => _add(context),
-              backgroundColor: AppColors.moss600,
-              foregroundColor: AppColors.onDark,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppRadius.lg),
-              ),
-              icon: const Icon(Icons.add_rounded),
-              label: Text(StartupStrings.addStartupFab, style: AppText.button),
-            )
-          : null,
-      body: Column(
-        children: [
-          GreenTopBar(
-            title: StartupStrings.myStartupsTitle,
-            leading: TopBarIconButton(
-              icon: Icons.menu_rounded,
-              tooltip: StartupStrings.menuTooltip,
-              onPressed: onOpenMenu,
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.light.copyWith(
+        statusBarColor: Colors.transparent,
+      ),
+      child: Scaffold(
+        backgroundColor: AppColors.cream,
+        body: Column(
+          children: [
+            const GreenTopBar(
+              title: StartupStrings.myStartupsTitle,
+              leading: TopBarBackButton(),
             ),
-            actions: [
-              TopBarIconButton(
-                icon: Icons.search_rounded,
-                tooltip: StartupStrings.searchTooltip,
-                onPressed: () => PlaceholderFeature.search.open(context),
-              ),
-              TopBarIconButton(
-                icon: Icons.notifications_none_rounded,
-                tooltip: StartupStrings.notificationsTooltip,
-                onPressed: () => PlaceholderFeature.notifications.open(context),
-              ),
-            ],
-            below: _HeaderSummary(
-              count: vm.isLoading ? null : vm.startups.length,
-            ),
-          ),
-          Expanded(child: _body(context, vm)),
-        ],
+            Expanded(child: _body(context, vm)),
+          ],
+        ),
       ),
     );
   }
@@ -149,68 +120,84 @@ class _MyStartupsView extends StatelessWidget {
       );
     }
     if (vm.isEmpty) {
+      // No startups at all (e.g. a new founder, or the last one was
+      // deleted): invite them to create their first one.
       return _FillRefreshable(
         onRefresh: () => _refresh(context),
         child: _EmptyState(onAdd: () => _add(context)),
       );
     }
+
+    final visible = vm.visibleStartups;
     return RefreshIndicator(
       color: AppColors.moss600,
       onRefresh: () => _refresh(context),
-      child: ListView.separated(
+      child: ListView(
         // Always scrollable, so pull-to-refresh works with one card too.
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(
+        padding: EdgeInsets.fromLTRB(
           AppSpacing.lg,
-          AppSpacing.xl,
           AppSpacing.lg,
-          // Leave room so the FAB never covers the last card.
-          AppSpacing.huge * 2,
+          AppSpacing.lg,
+          AppSpacing.xxl + MediaQuery.paddingOf(context).bottom,
         ),
-        itemCount: vm.startups.length,
-        separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.md),
-        itemBuilder: (context, index) {
-          final startup = vm.startups[index];
-          return MyStartupCard(
-            startup: startup,
-            onTap: () => _edit(context, startup),
-          );
-        },
+        children: [
+          _FilterChips(current: vm.filter, onSelect: vm.setFilter),
+          const SizedBox(height: AppSpacing.lg),
+          if (visible.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: AppSpacing.xl),
+              child: Text(
+                vm.filter == StartupFilter.public
+                    ? StartupStrings.noPublic
+                    : StartupStrings.noPrivate,
+                style: AppText.bodyMuted,
+                textAlign: TextAlign.center,
+              ),
+            ),
+          for (final startup in visible) ...[
+            MyStartupCard(
+              startup: startup,
+              onTap: () => _edit(context, startup),
+            ),
+            const SizedBox(height: AppSpacing.md),
+          ],
+          const SizedBox(height: AppSpacing.xs),
+          PrimaryButton(
+            label: StartupStrings.createNewStartup,
+            icon: Icons.add_rounded,
+            onPressed: () => _add(context),
+          ),
+        ],
       ),
     );
   }
 }
 
-class _HeaderSummary extends StatelessWidget {
-  const _HeaderSummary({required this.count});
+/// All / Public / Private, single choice (Figma "V2 · 24").
+class _FilterChips extends StatelessWidget {
+  const _FilterChips({required this.current, required this.onSelect});
 
-  /// Null while loading.
-  final int? count;
+  final StartupFilter current;
+  final ValueChanged<StartupFilter> onSelect;
+
+  static String _label(StartupFilter filter) => switch (filter) {
+    StartupFilter.all => StartupStrings.filterAll,
+    StartupFilter.public => StartupStrings.publicBadge,
+    StartupFilter.private => StartupStrings.privateBadge,
+  };
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    return Wrap(
+      spacing: AppSpacing.sm,
+      runSpacing: AppSpacing.sm,
       children: [
-        Expanded(
-          child: Text(
-            StartupStrings.myStartupsSubtitle,
-            style: AppText.bodyMuted.copyWith(color: AppColors.onDarkMuted),
-          ),
-        ),
-        if (count != null && count! > 0)
-          Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.sm + AppSpacing.xxs,
-              vertical: AppSpacing.xxs,
-            ),
-            decoration: BoxDecoration(
-              color: AppColors.gold,
-              borderRadius: BorderRadius.circular(AppRadius.pill),
-            ),
-            child: Text(
-              StartupStrings.startupCount(count!),
-              style: AppText.badge.copyWith(color: AppColors.green),
-            ),
+        for (final filter in StartupFilter.values)
+          SelectionChip(
+            label: _label(filter),
+            selected: filter == current,
+            onTap: () => onSelect(filter),
           ),
       ],
     );
@@ -256,27 +243,19 @@ class _EmptyState extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            padding: const EdgeInsets.all(AppSpacing.md),
-            decoration: const BoxDecoration(
-              color: AppColors.gold100,
-              shape: BoxShape.circle,
+            width: AppSizes.emptyStateIcon,
+            height: AppSizes.emptyStateIcon,
+            decoration: BoxDecoration(
+              color: AppColors.moss100,
+              borderRadius: BorderRadius.circular(AppRadius.lg),
             ),
-            child: Container(
-              width: AppSizes.emptyStateIcon,
-              height: AppSizes.emptyStateIcon,
-              decoration: BoxDecoration(
-                color: AppColors.surface,
-                shape: BoxShape.circle,
-                border: Border.all(color: AppColors.gold, width: 1.5),
-              ),
-              child: const Icon(
-                Icons.rocket_launch_outlined,
-                size: AppSizes.iconLg,
-                color: AppColors.moss600,
-              ),
+            child: const Icon(
+              Icons.business_center_outlined,
+              size: AppSizes.iconLg,
+              color: AppColors.green,
             ),
           ),
-          const SizedBox(height: AppSpacing.xxl),
+          const SizedBox(height: AppSpacing.xl),
           Text(
             StartupStrings.emptyTitle,
             style: AppText.sectionTitle,

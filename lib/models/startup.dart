@@ -50,12 +50,19 @@ class Startup {
 
   bool get seeksFunding => lookingFor.contains(LookingFor.funding);
 
-  /// First letter of the name, for the logo placeholder.
-  String get initial {
-    final trimmed = name.trim();
-    if (trimmed.isEmpty) return '?';
-    // runes, not [0], so a name starting with a non-Latin letter stays whole.
-    return String.fromCharCode(trimmed.runes.first).toUpperCase();
+  /// Initials for the logo placeholder (Figma: "Rafeeq Health" -> "RH").
+  String get initials => initialsOf(name);
+
+  /// First letter of the first two words, upper-cased; "?" for an empty name.
+  /// Static so the form can show initials while the name is being typed.
+  static String initialsOf(String name) {
+    final words = name.trim().split(RegExp(r'\s+')).where((w) => w.isNotEmpty);
+    if (words.isEmpty) return '?';
+    // runes, not [0], so a word starting with a non-Latin letter stays whole.
+    return words
+        .take(2)
+        .map((w) => String.fromCharCode(w.runes.first).toUpperCase())
+        .join();
   }
 
   /// The editable fields, as stored in Firestore. Timestamps are added by the

@@ -45,8 +45,7 @@ class PrimaryButton extends StatelessWidget {
               ],
       ),
       child: Material(
-        color: color,
-        color: disabled ? AppColors.mutedFill : AppColors.moss600,
+        color: disabled ? AppColors.mutedFill : color,
         borderRadius: BorderRadius.circular(12),
         child: InkWell(
           borderRadius: BorderRadius.circular(12),

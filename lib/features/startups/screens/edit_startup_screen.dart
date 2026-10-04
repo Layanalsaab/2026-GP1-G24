@@ -102,33 +102,24 @@ class _DeleteSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final vm = context.watch<StartupFormViewModel>();
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(AppSpacing.xl),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(color: AppColors.errorFill, width: 1.5),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            StartupStrings.dangerZone,
-            style: AppText.sectionTitle.copyWith(color: AppColors.error),
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          Text(StartupStrings.deleteHint, style: AppText.bodyMuted),
-          const SizedBox(height: AppSpacing.lg),
-          SecondaryButton(
-            label: StartupStrings.deleteButton,
-            icon: Icons.delete_outline_rounded,
-            color: AppColors.error,
-            isLoading: vm.isDeleting,
-            onPressed: vm.isBusy ? null : () => _delete(context),
-          ),
-        ],
-      ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          StartupStrings.dangerZone,
+          style: AppText.groupLabel.copyWith(color: AppColors.error),
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        Text(StartupStrings.deleteHint, style: AppText.caption),
+        const SizedBox(height: AppSpacing.md),
+        SecondaryButton(
+          label: StartupStrings.deleteButton,
+          icon: Icons.delete_outline_rounded,
+          color: AppColors.error,
+          isLoading: vm.isDeleting,
+          onPressed: vm.isBusy ? null : () => _delete(context),
+        ),
+      ],
     );
   }
 }

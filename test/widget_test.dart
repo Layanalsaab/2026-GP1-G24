@@ -3,12 +3,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:startsa/app_constants/app_strings.dart';
 import 'package:startsa/app_constants/investor_strings.dart';
-import 'package:startsa/app_constants/startup_strings.dart';
 import 'package:startsa/data_access/repositories/app_settings_repository.dart';
 import 'package:startsa/data_access/repositories/auth_repository.dart';
 import 'package:startsa/data_access/repositories/startup_repository.dart';
 import 'package:startsa/data_access/repositories/user_repository.dart';
-import 'package:startsa/features/explore_startups/screens/founder_home_screen.dart';
 import 'package:startsa/main.dart';
 import 'package:startsa/models/app_user.dart';
 import 'package:startsa/models/auth_failure.dart';
@@ -122,7 +120,6 @@ void main() {
       await pumpApp(tester);
 
       expect(find.byType(MainScreen), findsOneWidget);
-      expect(find.byType(FounderHomeScreen), findsOneWidget);
     });
 
     testWidgets('a restored session goes straight to the role home', (tester) async {
@@ -131,9 +128,6 @@ void main() {
 
       expect(find.byType(MainScreen), findsOneWidget);
       expect(find.text('Mohammed Ahmed'), findsOneWidget); // on the Account tab
-      expect(find.byType(FounderHomeScreen), findsOneWidget);
-      // The founder lands on My Startups; with no startups, the empty state.
-      expect(find.text(StartupStrings.emptyTitle), findsOneWidget);
       expect(find.textContaining('Where Saudi startups'), findsNothing);
     });
 
@@ -143,8 +137,6 @@ void main() {
 
       // Account tab -> Log out -> confirm in the dialog.
       await tester.ensureVisible(find.text(AppStrings.logOut));
-      await tester.pumpAndSettle();
-      await tester.tap(find.byTooltip(StartupStrings.menuTooltip).first);
       await tester.pumpAndSettle();
       await tester.tap(find.text(AppStrings.logOut));
       await tester.pumpAndSettle();
@@ -250,7 +242,6 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(MainScreen), findsOneWidget);
-      expect(find.byType(FounderHomeScreen), findsOneWidget);
       expect(find.text(AppStrings.onboardingSectorTitle), findsNothing);
     });
 
@@ -263,7 +254,6 @@ void main() {
 
       expect(find.text(AppStrings.onboardingSectorTitle), findsOneWidget);
       expect(find.byType(MainScreen), findsNothing);
-      expect(find.byType(FounderHomeScreen), findsNothing);
 
       // Continuing without answers is refused.
       await tester.tap(find.text(AppStrings.onboardingContinue));
@@ -282,7 +272,6 @@ void main() {
       expect(users.savedOnboarding, {'sector': 'Fintech', 'stage': 'Seed', 'city': 'Jeddah'});
       expect(find.byType(MainScreen), findsOneWidget);
       expect(find.text('Founder · Jeddah'), findsOneWidget); // city shown right away
-      expect(find.byType(FounderHomeScreen), findsOneWidget);
     });
 
     testWidgets('a new investor answers the investor onboarding, then their home',
@@ -364,7 +353,6 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text(AppStrings.incorrectCredentials), findsOneWidget);
       expect(find.byType(MainScreen), findsNothing);
-      expect(find.byType(FounderHomeScreen), findsNothing);
     });
 
     testWidgets('unverified email offers a resend and stays out of the app', (tester) async {
@@ -378,7 +366,6 @@ void main() {
 
       expect(find.text(AppStrings.verifyEmailFirst), findsOneWidget);
       expect(find.byType(MainScreen), findsNothing);
-      expect(find.byType(FounderHomeScreen), findsNothing);
 
       await tester.tap(find.text(AppStrings.resendVerification));
       await tester.pumpAndSettle();

@@ -1,18 +1,29 @@
 rules_version = '2';
 
 // Deploy with: firebase deploy --only firestore:rules
+// (or paste into Firebase console -> Firestore -> Rules -> Publish).
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    function signedIn() {
-      return request.auth != null;
-    }
-
     // ---------------------------------------------------------------- users
-    // Each account reads and writes only its own profile (sign up, log in,
-    // founder onboarding).
+    // Account management rules (same as the live console rules).
     match /users/{uid} {
-      allow read, write: if signedIn() && request.auth.uid == uid;
+      allow read: if request.auth != null && request.auth.uid == uid;
+
+      allow create: if request.auth != null && request.auth.uid == uid
+        && request.resource.data.role in ['founder', 'investor']
+        && request.resource.data.keys().hasOnly(['role', 'fullName',
+                                                 'email', 'createdAt']);
+
+      allow update: if request.auth != null && request.auth.uid == uid
+        && request.resource.data.role == resource.data.role
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['onboardingCompleted', 'sector', 'stage',
+                       'city', 'fullName', 'bio',
+                       'preferredSectors', 'preferredStages',
+                       'ticketSize']);
+
+      allow delete: if request.auth != null && request.auth.uid == uid;
     }
 
     // ------------------------------------------------------------- startups
@@ -21,15 +32,16 @@ service cloud.firestore {
     // - A founder can create, update and delete only their own startups.
     match /startups/{startupId} {
       allow read: if resource.data.isPublic == true
-                  || (signedIn() && resource.data.founderId == request.auth.uid);
+                  || (request.auth != null
+                      && resource.data.founderId == request.auth.uid);
 
-      allow create: if signedIn()
+      allow create: if request.auth != null
                     && request.resource.data.founderId == request.auth.uid
                     && request.resource.data.createdAt == request.time
                     && request.resource.data.updatedAt == request.time
                     && validStartup(request.resource.data);
 
-      allow update: if signedIn()
+      allow update: if request.auth != null
                     && resource.data.founderId == request.auth.uid
                     // Ownership and creation time can never change.
                     && request.resource.data.founderId == resource.data.founderId
@@ -37,7 +49,8 @@ service cloud.firestore {
                     && request.resource.data.updatedAt == request.time
                     && validStartup(request.resource.data);
 
-      allow delete: if signedIn() && resource.data.founderId == request.auth.uid;
+      allow delete: if request.auth != null
+                    && resource.data.founderId == request.auth.uid;
     }
 
     // Mirrors the app's validation (lib/helpers/startup_validators.dart and

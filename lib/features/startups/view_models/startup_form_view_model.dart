@@ -150,9 +150,8 @@ class StartupFormViewModel extends ChangeNotifier {
   void selectLocation(StartupLocation value) =>
       _change(() => location = value, StartupField.location);
 
-  void toggleLookingFor(LookingFor value) => _change(() {
-    lookingFor = {...lookingFor};
-    if (!lookingFor.remove(value)) lookingFor.add(value);
+  void setLookingFor(Set<LookingFor> values) => _change(() {
+    lookingFor = {...values};
     if (!seeksFunding) errors.remove(StartupField.funding);
   }, StartupField.lookingFor);
 

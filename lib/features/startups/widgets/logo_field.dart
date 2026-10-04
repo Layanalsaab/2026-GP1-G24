@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../../app_constants/startup_strings.dart';
 import '../../../shared_ui/common_widgets/form_message.dart';
 import '../../../shared_ui/theme/app_theme.dart';
+import '../../../models/startup.dart';
 import '../view_models/startup_form_view_model.dart';
 import 'form_fields.dart';
 import 'startup_logo.dart';
@@ -91,11 +92,8 @@ class _Preview extends StatelessWidget {
         ValueListenableBuilder<TextEditingValue>(
           valueListenable: vm.name,
           builder: (context, value, _) {
-            final name = value.text.trim();
             return StartupLogo(
-              initial: name.isEmpty
-                  ? '?'
-                  : String.fromCharCode(name.runes.first).toUpperCase(),
+              initials: Startup.initialsOf(value.text),
               size: AppSizes.formLogo,
               file: vm.newLogo,
               url: vm.existingLogoUrl,
@@ -106,9 +104,9 @@ class _Preview extends StatelessWidget {
           Container(
             width: AppSizes.formLogo,
             height: AppSizes.formLogo,
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               color: AppColors.scrim,
-              shape: BoxShape.circle,
+              borderRadius: BorderRadius.circular(AppSizes.formLogo * 0.22),
             ),
             child: const Center(
               child: CircularProgressIndicator(color: AppColors.onDark),

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
 
-/// Deep moss header used across the founder screens. It extends under the
+/// Flat deep moss header (Figma "V2 · 24 / 25 / 35" top bars). It extends under the
 /// status bar, has an optional leading button, a serif title and actions,
 /// and can carry extra content below (e.g. a subtitle).
 class GreenTopBar extends StatelessWidget {
@@ -26,15 +26,10 @@ class GreenTopBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: const BorderRadius.vertical(
-          bottom: Radius.circular(AppRadius.xl),
-        ),
-      ),
+      color: color,
       padding: EdgeInsets.only(
         top: MediaQuery.paddingOf(context).top,
-        bottom: below == null ? AppSpacing.xs : AppSpacing.xl,
+        bottom: below == null ? 0 : AppSpacing.lg,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -51,7 +46,7 @@ class GreenTopBar extends StatelessWidget {
                 Expanded(
                   child: Text(
                     title,
-                    style: AppText.pageTitle,
+                    style: AppText.topBarTitle,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),

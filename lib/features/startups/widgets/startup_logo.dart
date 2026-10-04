@@ -4,30 +4,31 @@ import 'package:flutter/material.dart';
 
 import '../../../shared_ui/theme/app_theme.dart';
 
-/// A startup's logo in a circle. Shows, in order of preference: a freshly
-/// picked [file], the uploaded [url], or the first letter of the name on a
-/// moss-green circle. A broken or slow URL falls back to the letter.
+/// A startup's logo in a rounded square (Figma "V2 · 24 · My Startups").
+/// Shows, in order of preference: a freshly picked [file], the uploaded
+/// [url], or the startup's initials on light moss. A broken or slow URL
+/// falls back to the initials.
 class StartupLogo extends StatelessWidget {
   const StartupLogo({
     super.key,
-    required this.initial,
+    required this.initials,
     required this.size,
     this.url,
     this.file,
     this.ring = false,
   });
 
-  final String initial;
+  final String initials;
   final double size;
   final String? url;
   final File? file;
 
-  /// Adds a white ring, for logos placed on the green header.
+  /// Adds a white ring and shadow, for logos placed on the green header.
   final bool ring;
 
   @override
   Widget build(BuildContext context) {
-    final placeholder = _Monogram(initial: initial, size: size);
+    final placeholder = _Initials(initials: initials, size: size);
     Widget content;
     if (file != null) {
       content = Image.file(file!, fit: BoxFit.cover);
@@ -45,40 +46,35 @@ class StartupLogo extends StatelessWidget {
       content = placeholder;
     }
 
+    // Corner radius grows with the logo, so small and large look alike.
+    final radius = BorderRadius.circular(size * 0.22);
     return Container(
       width: size,
       height: size,
       decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: AppColors.surface,
+        borderRadius: radius,
+        color: AppColors.moss100,
         border: ring
             ? Border.all(color: AppColors.surface, width: AppSpacing.xs)
-            : Border.all(color: AppColors.border),
+            : null,
         boxShadow: ring ? AppShadows.raised : null,
       ),
-      child: ClipOval(child: content),
+      child: ClipRRect(borderRadius: radius, child: content),
     );
   }
 }
 
-class _Monogram extends StatelessWidget {
-  const _Monogram({required this.initial, required this.size});
+class _Initials extends StatelessWidget {
+  const _Initials({required this.initials, required this.size});
 
-  final String initial;
+  final String initials;
   final double size;
 
   @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: const BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [AppColors.moss600, AppColors.green],
-        ),
-      ),
-      child: Center(child: Text(initial, style: AppText.monogram(size))),
+    return ColoredBox(
+      color: AppColors.moss100,
+      child: Center(child: Text(initials, style: AppText.initials(size))),
     );
   }
 }

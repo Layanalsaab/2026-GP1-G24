@@ -4,9 +4,11 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:startsa/app_constants/startup_strings.dart';
 import 'package:startsa/data_access/repositories/startup_repository.dart';
 import 'package:startsa/features/startups/screens/my_startups_screen.dart';
+import 'package:startsa/features/startups/widgets/my_startup_card.dart';
 import 'package:startsa/models/auth_failure.dart';
 import 'package:startsa/models/startup.dart';
 import 'package:startsa/models/startup_enums.dart';
+import 'package:startsa/shared_ui/common_widgets/selection_chip.dart';
 
 import '../../support/fakes.dart';
 
@@ -41,9 +43,7 @@ void main() {
     tester.view.physicalSize = const Size(1080, 2400);
     tester.view.devicePixelRatio = 3;
     addTearDown(tester.view.reset);
-    await tester.pumpWidget(
-      MaterialApp(home: MyStartupsScreen(onOpenMenu: () {})),
-    );
+    await tester.pumpWidget(MaterialApp(home: const MyStartupsScreen()));
     await tester.pumpAndSettle();
   }
 
@@ -57,17 +57,38 @@ void main() {
 
   Finder field(int index) => find.byType(TextField).at(index);
 
+  /// Opens a select field (shows "Choose <label>" while empty) and picks
+  /// [options]; a multi-select is confirmed with Done.
+  Future<void> choose(
+    WidgetTester tester,
+    String label,
+    List<String> options, {
+    bool multi = false,
+  }) async {
+    await tapText(tester, StartupStrings.choose(label));
+    for (final option in options) {
+      await tapText(tester, option);
+    }
+    if (multi) await tapText(tester, StartupStrings.done);
+  }
+
   Future<void> fillRequired(
     WidgetTester tester, {
     String name = 'Nakhla Pay',
   }) async {
     await tester.enterText(field(0), name);
     await tester.enterText(field(2), _description);
-    await tapText(tester, Sector.fintech.label);
-    await tapText(tester, StartupStage.mvp.label);
-    await tapText(tester, BusinessModel.b2b.label);
-    await tapText(tester, StartupLocation.jeddah.label);
-    await tapText(tester, LookingFor.mentorship.label);
+    await choose(tester, StartupStrings.sectorLabel, [Sector.fintech.label]);
+    await choose(tester, StartupStrings.stageLabel, [StartupStage.mvp.label]);
+    await choose(tester, StartupStrings.locationLabel, [
+      StartupLocation.jeddah.label,
+    ]);
+    await choose(tester, StartupStrings.businessModelLabel, [
+      BusinessModel.b2b.label,
+    ]);
+    await choose(tester, StartupStrings.lookingForLabel, [
+      LookingFor.mentorship.label,
+    ], multi: true);
   }
 
   bool saveEnabled(WidgetTester tester, String label) {
@@ -96,7 +117,13 @@ void main() {
     expect(repo.startups, hasLength(1));
     expect(repo.startups.single.isPublic, isFalse);
     expect(find.text('Nakhla Pay'), findsOneWidget);
-    expect(find.text(StartupStrings.privateBadge), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byType(MyStartupCard),
+        matching: find.text(StartupStrings.privateBadge),
+      ),
+      findsOneWidget,
+    );
   });
 
   testWidgets('funding amount is asked only when Funding is selected', (
@@ -107,7 +134,11 @@ void main() {
     await fillRequired(tester);
     expect(find.textContaining(StartupStrings.fundingLabel), findsNothing);
 
+    // The field now reads "Mentorship"; reopen it and add Funding.
+    await tapText(tester, LookingFor.mentorship.label);
     await tapText(tester, LookingFor.funding.label);
+    await tapText(tester, StartupStrings.done);
+    expect(find.text('Funding, Mentorship'), findsOneWidget);
     expect(find.textContaining(StartupStrings.fundingLabel), findsOneWidget);
     // Required now, so Save is disabled until an amount is entered.
     expect(saveEnabled(tester, StartupStrings.saveNew), isFalse);
@@ -152,7 +183,13 @@ void main() {
   ) async {
     repo.startups.add(_startup(isPublic: true));
     await pumpList(tester);
-    expect(find.text(StartupStrings.publicBadge), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byType(MyStartupCard),
+        matching: find.text(StartupStrings.publicBadge),
+      ),
+      findsOneWidget,
+    );
 
     await tapText(tester, 'Nakhla Pay');
     expect(find.text(StartupStrings.editTitle), findsWidgets);
@@ -209,5 +246,73 @@ void main() {
     repo.fetchFails = null;
     await tapText(tester, StartupStrings.retry);
     expect(find.text('Nakhla Pay'), findsOneWidget);
+  });
+
+  testWidgets(
+    'deleting the last startup brings back "Add your first startup"',
+    (tester) async {
+      repo.startups.add(_startup());
+      await pumpList(tester);
+      await tapText(tester, 'Nakhla Pay');
+      await tapText(tester, StartupStrings.deleteButton);
+      await tapText(tester, StartupStrings.deleteConfirm);
+
+      // Back to a clean slate: they can create their first startup again.
+      await tapText(tester, StartupStrings.emptyButton);
+      expect(find.text(StartupStrings.addTitle), findsOneWidget);
+    },
+  );
+
+  testWidgets('the public switch can be turned on while creating', (
+    tester,
+  ) async {
+    await pumpList(tester);
+    await tapText(tester, StartupStrings.emptyButton);
+    await fillRequired(tester);
+
+    final toggle = find.byType(Switch);
+    await tester.ensureVisible(toggle);
+    await tester.pumpAndSettle();
+    await tester.tap(toggle);
+    await tester.pumpAndSettle();
+    expect(find.text(StartupStrings.visibilityOn), findsOneWidget);
+
+    await tapText(tester, StartupStrings.saveNew);
+    expect(repo.startups.single.isPublic, isTrue);
+    expect(find.text(StartupStrings.publicBadge), findsWidgets);
+  });
+
+  testWidgets('All / Public / Private chips filter the list', (tester) async {
+    repo.startups
+      ..add(_startup(isPublic: true))
+      ..add(
+        Startup(
+          id: 's2',
+          founderId: 'uid1',
+          name: 'Naql',
+          description: _description,
+          sector: Sector.logisticsTransport,
+          stage: StartupStage.growth,
+          businessModel: BusinessModel.b2b,
+          location: StartupLocation.dammam,
+          lookingFor: const {LookingFor.services},
+        ),
+      );
+    await pumpList(tester);
+    expect(find.text('Nakhla Pay'), findsOneWidget);
+    expect(find.text('Naql'), findsOneWidget);
+
+    Finder chip(String label) => find.widgetWithText(SelectionChip, label);
+
+    await tester.tap(chip(StartupStrings.publicBadge));
+    await tester.pumpAndSettle();
+    expect(find.text('Nakhla Pay'), findsOneWidget);
+    expect(find.text('Naql'), findsNothing);
+
+    await tester.tap(chip(StartupStrings.privateBadge));
+    await tester.pumpAndSettle();
+    expect(find.text('Nakhla Pay'), findsNothing);
+    expect(find.text('Naql'), findsOneWidget);
+    expect(find.text('Logistics & Transport · Growth'), findsOneWidget);
   });
 }

@@ -1,51 +1,39 @@
-/// User-facing text for startup management (My Startups, Add/Edit, Profile)
-/// and the founder home shell, in one place.
+/// User-facing text for the Services hub, startup management (My Startups,
+/// Create/Edit, Profile) and the "coming soon" placeholders, in one place.
+/// Wording follows Figma "V2 · 24 / 25 / 25b / 35" where it exists.
 class StartupStrings {
   StartupStrings._();
-
-  // Founder home shell
-  static const tabExplore = 'Explore';
-  static const tabMyStartups = 'My Startups';
-  static const tabMatches = 'Matches';
-  static const tabBookmarks = 'Bookmarks';
-  static const menuTooltip = 'Menu';
-  static const searchTooltip = 'Search';
-  static const notificationsTooltip = 'Notifications';
-  static const menuTools = 'Tools';
-  static const menuAccount = 'Account';
 
   // Placeholders
   static const comingSoon = 'Coming in a later sprint';
   static const comingSoonBody =
       "We're still building this. Check back after the next update.";
 
-  // My Startups
+  // Services (Figma "V2 · 35 · Services")
+  static const servicesTitle = 'Services';
+  static const tileMyStartups = 'My Startups';
+  static const tileAssociations = 'Associations';
+  static const tileCalculator = 'Calculator';
+  static const tileAskGemini = 'Ask Gemini';
+  static const tileDashboard = 'Dashboard';
+
+  // My Startups (Figma "V2 · 24 · My Startups")
   static const myStartupsTitle = 'My Startups';
-  static const myStartupsSubtitle = 'Manage the startups you founded.';
-  static const addStartupFab = 'Add startup';
+  static const filterAll = 'All';
+  static const createNewStartup = 'Create new startup';
   static const emptyTitle = 'No startups yet';
   static const emptyBody =
       'Create a profile for your startup to start connecting with investors.';
   static const emptyButton = 'Add your first startup';
+  static const noPublic = 'None of your startups are public yet.';
+  static const noPrivate = 'None of your startups are private.';
   static const loadFailed = "We couldn't load your startups.";
   static const retry = 'Retry';
   static const publicBadge = 'Public';
   static const privateBadge = 'Private';
-  static String startupCount(int count) =>
-      count == 1 ? '1 startup' : '$count startups';
-  static String editedAgo(String when) => 'Edited $when';
-  static const justNow = 'just now';
-  static String minutesAgo(int m) => m == 1 ? '1 minute ago' : '$m minutes ago';
-  static String hoursAgo(int h) => h == 1 ? '1 hour ago' : '$h hours ago';
-  static String daysAgo(int d) => d == 1 ? 'yesterday' : '$d days ago';
-  static String onDate(String date) => 'on $date';
-  static const months = [
-    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
-  ];
 
-  // Add / Edit
-  static const addTitle = 'Add Startup';
+  // Create / Edit (Figma "V2 · 25 · Create Startup", "V2 · 25b · Edit Startup")
+  static const addTitle = 'Create Startup';
   static const editTitle = 'Edit Startup';
   static const saveNew = 'Create startup';
   static const saveChanges = 'Save changes';
@@ -58,16 +46,20 @@ class StartupStrings {
   static const fixErrors = 'Please fix the highlighted fields.';
   static const requiredMark = ' *';
   static const optional = 'Optional';
+  static const editPrivateBanner =
+      'This startup is Private — only you can see it.';
+  static const editPublicBanner =
+      'This startup is Public — investors and startup seekers can find it.';
 
-  // Sections
-  static const sectionBasics = 'Basics';
-  static const sectionBasicsHint = 'How your startup appears at first glance.';
-  static const sectionDetails = 'Details';
-  static const sectionDetailsHint = 'Help investors understand where you are.';
-  static const sectionLookingFor = "What you're looking for";
-  static const sectionLookingForHint = 'Choose everything that applies.';
-  static const sectionVisibility = 'Visibility';
-  static const sectionVisibilityHint = 'Decide who can find this startup.';
+  // Field groups (small headings between fields)
+  static const sectionBasics = 'BASICS';
+  static const sectionDetails = 'DETAILS';
+  static const sectionLookingFor = "WHAT YOU'RE LOOKING FOR";
+  static const sectionVisibility = 'VISIBILITY';
+
+  // Choosing from a list
+  static String choose(String label) => 'Choose ${label.toLowerCase()}';
+  static const done = 'Done';
 
   // Logo
   static const logoLabel = 'Logo';
@@ -82,8 +74,8 @@ class StartupStrings {
 
   // Fields
   static const nameLabel = 'Startup name';
-  static const nameHint = 'e.g. Nakhla Pay';
-  static const taglineLabel = 'Tagline';
+  static const nameHint = 'e.g. Rafeeq Health';
+  static const taglineLabel = 'One-liner description';
   static const taglineHint = 'One line that sums up what you do';
   static const descriptionLabel = 'Description';
   static const descriptionHint =
@@ -91,11 +83,11 @@ class StartupStrings {
   static const sectorLabel = 'Sector';
   static const stageLabel = 'Stage';
   static const businessModelLabel = 'Business model';
-  static const locationLabel = 'Location';
+  static const locationLabel = 'City';
   static const foundedYearLabel = 'Founded year';
   static const foundedYearHint = 'e.g. 2023';
   static const websiteLabel = 'Website';
-  static const websiteHint = 'e.g. nakhlapay.sa';
+  static const websiteHint = 'e.g. rafeeqhealth.sa';
   static const lookingForLabel = 'Looking for';
   static const fundingLabel = 'Funding requirement (SAR)';
   static const fundingHint = 'e.g. 500000';
@@ -109,8 +101,8 @@ class StartupStrings {
   static String nameLength(int min, int max) =>
       'Name must be $min to $max characters.';
   static String taglineTooLong(int max) =>
-      'Tagline must be $max characters or fewer.';
-  static const taglineOneLine = 'Tagline must fit on one line.';
+      'One-liner must be $max characters or fewer.';
+  static const taglineOneLine = 'One-liner must fit on one line.';
   static const descriptionRequired = 'Please describe your startup.';
   static String descriptionTooShort(int min, int count) =>
       'Description needs at least $min characters ($count so far).';
@@ -159,7 +151,7 @@ class StartupStrings {
   static const deleteConfirm = 'Delete';
   static String deleted(String name) => '$name was deleted.';
   static const deleteFailed = "We couldn't delete this startup.";
-  static const dangerZone = 'Danger zone';
+  static const dangerZone = 'DANGER ZONE';
 
   // Profile (preview)
   static const previewBanner = 'Preview: this is how others see your startup.';

@@ -58,8 +58,10 @@ void main() {
     expect(Startup.fromMap('s1', map), isNull);
   });
 
-  test('initial is the first letter, upper-cased', () {
-    expect(startup.initial, 'N');
-    expect(startup.copyWith(isPublic: true).initial, 'N');
+  test("initials are the first letters of the first two words (Figma RH)", () {
+    expect(startup.initials, "NP"); // Nakhla Pay
+    expect(Startup.initialsOf("rafeeq health app"), "RH");
+    expect(Startup.initialsOf("  Naql "), "N");
+    expect(Startup.initialsOf(""), "?");
   });
 }

@@ -108,9 +108,9 @@ class StartupFormPage extends StatelessWidget {
                   keyboardDismissBehavior:
                       ScrollViewKeyboardDismissBehavior.onDrag,
                   padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.page,
                     AppSpacing.lg,
-                    AppSpacing.xl,
-                    AppSpacing.lg,
+                    AppSpacing.page,
                     AppSpacing.xxl,
                   ),
                   child: Column(
@@ -146,10 +146,10 @@ class _SaveBar extends StatelessWidget {
         ? StartupStrings.saveDisabledHint
         : (vm.isEditing && !vm.isDirty ? StartupStrings.noChangesHint : null);
     return Container(
+      // Figma: the button sits on the page background, with a hairline above.
       decoration: const BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
-        boxShadow: AppShadows.raised,
+        color: AppColors.cream,
+        border: Border(top: BorderSide(color: AppColors.border)),
       ),
       padding: EdgeInsets.fromLTRB(
         AppSpacing.page,

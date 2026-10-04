@@ -75,6 +75,30 @@ class AppText {
   static TextStyle get pageTitle =>
       serif(size: 22, color: AppColors.onDark, height: 28);
 
+  /// Title in the flat green top bar (Figma: serif, left-aligned).
+  static TextStyle get topBarTitle =>
+      serif(size: 18, color: AppColors.onDark, height: 24);
+
+  /// Startup name on a list card, tile labels (Figma: Inter semibold).
+  static TextStyle get itemTitle =>
+      sans(size: 14, color: AppColors.ink, weight: FontWeight.w600, height: 20);
+
+  /// Initials inside a logo placeholder; scaled to the square size.
+  static TextStyle initials(double boxSize) => sans(
+        size: boxSize * 0.32,
+        color: AppColors.green,
+        weight: FontWeight.w700,
+      );
+
+  /// Small grey heading above a group of fields.
+  static TextStyle get groupLabel => sans(
+        size: 12,
+        color: AppColors.grey,
+        weight: FontWeight.w600,
+        height: 16,
+        letterSpacing: 0.6,
+      );
+
   /// Section heading inside a page (serif).
   static TextStyle get sectionTitle =>
       serif(size: 18, color: AppColors.ink, height: 24);
@@ -125,12 +149,6 @@ class AppText {
   static TextStyle get figure =>
       serif(size: 24, color: AppColors.ink, height: 30);
 
-  /// Initial letter inside a logo placeholder; scaled to the circle size.
-  static TextStyle monogram(double circleSize) => serif(
-        size: circleSize * 0.42,
-        color: AppColors.onDark,
-        height: circleSize * 0.5,
-      );
 }
 
 /// Spacing scale (logical pixels).
@@ -172,10 +190,13 @@ class AppSizes {
   static const double touchTarget = 48;
   static const double buttonHeight = 48;
   static const double cardLogo = 56;
-  static const double formLogo = 96;
+  static const double formLogo = 64;
   static const double profileLogo = 88;
   static const double emptyStateIcon = 88;
-  static const double topBarHeight = 64;
+  static const double topBarHeight = 56;
+  static const double listLogo = 40;
+  static const double tileIconBox = 40;
+  static const double fieldHeight = 44;
 }
 
 class AppShadows {
