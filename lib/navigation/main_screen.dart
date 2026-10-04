@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../features/explore_startups/screens/explore_screen.dart';
 import '../features/profiles/screens/account_screen.dart';
+import '../features/programs/screens/programs_screen.dart';
+import '../features/search/screens/hub_screen.dart';
 import '../features/services/screens/services_screen.dart';
 import '../models/app_user.dart';
 import '../shared_ui/common_widgets/app_bottom_bar.dart';
@@ -9,10 +12,9 @@ import '../shared_ui/theme/app_theme.dart';
 /// Where a signed-in founder or investor lands: the bottom bar plus the
 /// selected tab's screen.
 ///
-/// Built so far: Account (everyone) and, for founders, Services (Figma
-/// "V2 · 35", which leads to My Startups). The app opens on Account; the other
-/// tabs can't be opened yet. To switch a tab on later: add it to
-/// [_enabledTabs] and return its screen from [_screenFor].
+/// All five tabs are built. Hub, Programs and Explore show sample data for
+/// now, and Services is mostly design only (for founders it leads to My
+/// Startups). The app opens on Account.
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key, required this.user});
 
@@ -25,12 +27,8 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   AppTab _current = AppTab.account;
 
-  bool get _isFounder => widget.user.role == AccountRole.founder;
-
-  Set<AppTab> get _enabledTabs => {
-    AppTab.account,
-    if (_isFounder) AppTab.services,
-  };
+  /// Every tab is built, so every tab can be opened.
+  Set<AppTab> get _enabledTabs => AppTab.values.toSet();
 
   @override
   Widget build(BuildContext context) {
@@ -47,11 +45,9 @@ class _MainScreenState extends State<MainScreen> {
 
   Widget _screenFor(AppTab tab) => switch (tab) {
     AppTab.account => AccountScreen(user: widget.user),
-    AppTab.services when _isFounder => const ServicesScreen(),
-    // Not built yet; these tabs can't be selected (see _enabledTabs).
-    AppTab.hub ||
-    AppTab.programs ||
-    AppTab.explore ||
-    AppTab.services => const SizedBox.shrink(),
+    AppTab.hub => HubScreen(role: widget.user.role),
+    AppTab.programs => const ProgramsScreen(),
+    AppTab.explore => ExploreScreen(role: widget.user.role),
+    AppTab.services => ServicesScreen(role: widget.user.role),
   };
 }

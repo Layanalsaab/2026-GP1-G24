@@ -13,9 +13,14 @@ class GreenTopBar extends StatelessWidget {
     this.actions = const [],
     this.below,
     this.color = AppColors.green,
+    this.titleStyle,
   });
 
   final String title;
+
+  /// Overrides the default title style (the Explore and Hub bars use a larger
+  /// serif title than the other pages).
+  final TextStyle? titleStyle;
   final Widget? leading;
   final List<Widget> actions;
   final Widget? below;
@@ -46,7 +51,7 @@ class GreenTopBar extends StatelessWidget {
                 Expanded(
                   child: Text(
                     title,
-                    style: AppText.topBarTitle,
+                    style: titleStyle ?? AppText.topBarTitle,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),

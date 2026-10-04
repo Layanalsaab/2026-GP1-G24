@@ -35,8 +35,8 @@ void main() {
     city: 'Riyadh',
   );
 
-  // Services is built for founders (My Startups), so it is not listed here.
-  const notBuiltYet = [
+  // Hub, Programs and Explore are built (with sample data) for everyone.
+  const builtTabs = [
     NavigationStrings.hub,
     NavigationStrings.programs,
     NavigationStrings.explore,
@@ -56,7 +56,7 @@ void main() {
     await pumpMain(tester);
 
     for (final label in [
-      ...notBuiltYet,
+      ...builtTabs,
       NavigationStrings.services,
       NavigationStrings.account,
     ]) {
@@ -69,25 +69,29 @@ void main() {
     expect(find.bySemanticsLabel('Back'), findsNothing);
   });
 
-  testWidgets('tabs that are not built yet do nothing when tapped', (
-    tester,
-  ) async {
+  testWidgets('every tab opens its own screen', (tester) async {
     await pumpMain(tester);
 
-    for (final label in notBuiltYet) {
+    for (final label in [...builtTabs, NavigationStrings.services]) {
       await tester.tap(find.text(label));
       await tester.pumpAndSettle();
-      expect(
-        find.text('Shahad Alabdulkarim'),
-        findsOneWidget,
-      ); // still on Account
+      expect(find.text('Shahad Alabdulkarim'), findsNothing); // left Account
     }
+    await tester.tap(find.text(NavigationStrings.account));
+    await tester.pumpAndSettle();
+    expect(find.text('Shahad Alabdulkarim'), findsOneWidget);
   });
 
   testWidgets(
-    'screen readers hear which tab is open and which are unavailable',
+    'screen readers hear which tab is open, and that every tab is available',
     (tester) async {
-      await pumpMain(tester);
+      const investor = AppUser(
+        uid: 'uid2',
+        role: AccountRole.investor,
+        fullName: 'Sara Investor',
+        email: 'sara@example.com',
+      );
+      await pumpMain(tester, user: investor);
 
       expect(
         tester.getSemantics(find.bySemanticsLabel(NavigationStrings.account)),
@@ -98,10 +102,10 @@ void main() {
           isSelected: true,
         ),
       );
-      for (final label in notBuiltYet) {
+      for (final label in [...builtTabs, NavigationStrings.services]) {
         expect(
           tester.getSemantics(find.bySemanticsLabel(label)),
-          isSemantics(label: label, isButton: true, isEnabled: false),
+          isSemantics(label: label, isButton: true, isEnabled: true),
         );
       }
     },
@@ -175,25 +179,52 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byType(ServicesScreen), findsOneWidget);
 
-      // A tile that isn't built yet opens a placeholder instead of crashing.
-      await tester.tap(find.text(StartupStrings.tileCalculator));
-      await tester.pumpAndSettle();
-      expect(find.text(StartupStrings.comingSoon), findsOneWidget);
+      // Tiles that aren't built yet do nothing: no page, no message.
+      for (final tile in [
+        StartupStrings.tileAssociations,
+        StartupStrings.tileCalculator,
+        StartupStrings.tileAskGemini,
+        StartupStrings.tileDashboard,
+      ]) {
+        await tester.tap(find.text(tile));
+        await tester.pumpAndSettle();
+        expect(find.byType(ServicesScreen), findsOneWidget, reason: tile);
+        expect(find.text(StartupStrings.comingSoon), findsNothing, reason: tile);
+        expect(find.byType(SnackBar), findsNothing, reason: tile);
+      }
     },
   );
 
-  testWidgets('an investor\'s Services tab is not built yet', (tester) async {
-    const investor = AppUser(
-      uid: 'uid2',
-      role: AccountRole.investor,
-      fullName: 'Sara Investor',
-      email: 'sara@example.com',
-    );
-    await pumpMain(tester, user: investor);
+  testWidgets(
+    'an investor\'s Services tab shows Associations and Calculator, and does nothing',
+    (tester) async {
+      const investor = AppUser(
+        uid: 'uid2',
+        role: AccountRole.investor,
+        fullName: 'Sara Investor',
+        email: 'sara@example.com',
+      );
+      await pumpMain(tester, user: investor);
 
-    await tester.tap(find.text(NavigationStrings.services));
-    await tester.pumpAndSettle();
-    expect(find.byType(ServicesScreen), findsNothing);
-    expect(find.text('Sara Investor'), findsOneWidget); // still on Account
-  });
+      await tester.tap(find.text(NavigationStrings.services));
+      await tester.pumpAndSettle();
+      expect(find.byType(ServicesScreen), findsOneWidget);
+      expect(find.text(StartupStrings.tileAssociations), findsOneWidget);
+      expect(find.text(StartupStrings.tileCalculator), findsOneWidget);
+      // An investor has no startups, Gemini or dashboard here.
+      expect(find.text(StartupStrings.tileMyStartups), findsNothing);
+      expect(find.text(StartupStrings.tileAskGemini), findsNothing);
+      expect(find.text(StartupStrings.tileDashboard), findsNothing);
+
+      // Both tiles are design only: tapping them changes nothing.
+      for (final tile in [
+        StartupStrings.tileAssociations,
+        StartupStrings.tileCalculator,
+      ]) {
+        await tester.tap(find.text(tile));
+        await tester.pumpAndSettle();
+        expect(find.byType(ServicesScreen), findsOneWidget, reason: tile);
+      }
+    },
+  );
 }
