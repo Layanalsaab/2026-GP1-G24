@@ -17,7 +17,12 @@ class AppBottomBar extends StatelessWidget {
     required this.current,
     required this.enabledTabs,
     required this.onSelect,
+    this.tabs,
   });
+
+  /// Which tabs to show, in order. Defaults to all five; the seeker's bar
+  /// (Figma "Nav · Seeker") shows only Hub, Explore and Programs.
+  final List<AppTab>? tabs;
 
   /// The tab whose screen is showing (green pill behind its icon).
   final AppTab current;
@@ -51,6 +56,14 @@ class AppBottomBar extends StatelessWidget {
     ),
   ];
 
+  List<({AppTab tab, IconData icon, String label})> get _visibleItems {
+    final wanted = tabs;
+    if (wanted == null) return _items;
+    return [
+      for (final tab in wanted) _items.firstWhere((item) => item.tab == tab),
+    ];
+  }
+
   @override
   Widget build(BuildContext context) {
     return DecoratedBox(
@@ -64,7 +77,7 @@ class AppBottomBar extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(4, 9, 4, 12),
           child: Row(
             children: [
-              for (final item in _items)
+              for (final item in _visibleItems)
                 Expanded(
                   child: _BarItem(
                     icon: item.icon,

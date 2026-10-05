@@ -108,9 +108,6 @@ class AppStrings {
   static String welcomeUser(String name) => 'Welcome, $name';
   static const founderHomeTitle = 'Founder home';
   static const investorHomeTitle = 'Investor home';
-  static const seekerExploreTitle = 'Explore startups';
   static const comingSoon = 'This screen is coming soon.';
-  static const seekerNote =
-      "You're browsing as a guest. Startup seekers don't need an account.";
   static const logOut = 'Log out';
 }

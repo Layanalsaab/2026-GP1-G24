@@ -32,6 +32,11 @@ class MockStartups {
     ),
     sectorStage: 'HealthTech · Pre-seed',
     city: 'Riyadh',
+    teamSize: 2,
+    lookingForNote: 'A marketing specialist with experience in Saudi healthcare.',
+    associations: [
+      (name: 'Ahmad Hassan', subtitle: 'Angel Investor · Invested 2026'),
+    ],
   );
 
   static final mizan = StartupListing(

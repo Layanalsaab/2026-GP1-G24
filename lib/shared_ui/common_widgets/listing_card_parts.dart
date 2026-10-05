@@ -14,6 +14,10 @@ enum ListingStyle {
 
   /// Explore > Matches: "82% match" chip and a "Why" line.
   match,
+
+  /// The seeker's Explore (Figma "V2 · 11"): split sector / stage chips and
+  /// an "Express Interest" button.
+  seeker,
 }
 
 /// White rounded card (Figma list cards). Tapping works only when [onTap] is
@@ -206,10 +210,19 @@ class MatchChip extends StatelessWidget {
 /// "View Profile" and "Send Request" buttons at the bottom of a card.
 /// A button with no callback is shown but does nothing.
 class ListingFooter extends StatelessWidget {
-  const ListingFooter({super.key, this.onViewProfile, this.onSendRequest});
+  const ListingFooter({
+    super.key,
+    this.onViewProfile,
+    this.onSendRequest,
+    this.actionLabel = ExploreStrings.sendRequest,
+  });
 
   final VoidCallback? onViewProfile;
   final VoidCallback? onSendRequest;
+
+  /// The second button's text: "Send Request", or "Express Interest" for
+  /// seekers.
+  final String actionLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -225,7 +238,7 @@ class ListingFooter extends StatelessWidget {
         const SizedBox(width: AppSpacing.sm),
         Expanded(
           child: _FooterButton(
-            label: ExploreStrings.sendRequest,
+            label: actionLabel,
             filled: true,
             onTap: onSendRequest,
           ),

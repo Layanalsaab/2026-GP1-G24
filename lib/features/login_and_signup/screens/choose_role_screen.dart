@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../features/explore_startups/screens/seeker_explore_screen.dart';
 import '../../../models/app_user.dart';
+import '../../../navigation/seeker_main_screen.dart';
 import '../../../shared_ui/common_widgets/form_page_scaffold.dart';
 import '../../../shared_ui/common_widgets/primary_button.dart';
 import '../../../shared_ui/common_widgets/svg_asset.dart';
@@ -51,11 +51,11 @@ class _ChooseRoleScreenState extends State<ChooseRoleScreen> {
   UserRole _selected = UserRole.founder;
 
   /// Founders and investors create an account. Seekers have no account, so
-  /// they go straight to the guest explore page.
+  /// they go straight to the seeker's Hub / Explore / Programs.
   void _continue() {
     final accountRole = _selected.accountRole;
     final Widget next = accountRole == null
-        ? const SeekerExploreScreen()
+        ? const SeekerMainScreen()
         : SignupScreen(role: accountRole);
     Navigator.of(context).push(MaterialPageRoute(builder: (_) => next));
   }

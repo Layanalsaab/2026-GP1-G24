@@ -31,7 +31,7 @@ class InvestorCard extends StatelessWidget {
           ? const EdgeInsets.symmetric(horizontal: 16, vertical: 14)
           : const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       child: switch (style) {
-        ListingStyle.explore => _exploreBody(),
+        ListingStyle.explore || ListingStyle.seeker => _exploreBody(),
         ListingStyle.hub => _hubBody(),
         ListingStyle.match => _matchBody(),
       },

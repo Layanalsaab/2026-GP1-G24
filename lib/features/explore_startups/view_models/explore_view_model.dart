@@ -33,6 +33,12 @@ class ExploreEntry {
 class ExploreViewModel extends ChangeNotifier with SafeNotifier {
   ExploreViewModel({required this.role});
 
+  /// The startup seeker's Explore (Figma "V2 · 11"): a single ranked list of
+  /// trending startups, with no tabs.
+  ExploreViewModel.seeker() : role = AccountRole.investor {
+    tab = ExploreTab.trending;
+  }
+
   final AccountRole role;
 
   ExploreTab tab = ExploreTab.forYou;

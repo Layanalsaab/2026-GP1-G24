@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../app_constants/explore_strings.dart';
+import '../../../app_constants/seeker_strings.dart';
 import '../../../models/app_user.dart';
 import '../../../shared_ui/common_widgets/green_top_bar.dart';
 import '../../../shared_ui/common_widgets/investor_card.dart';
@@ -11,6 +12,7 @@ import '../../../shared_ui/common_widgets/startup_card.dart';
 import '../../../shared_ui/common_widgets/svg_asset.dart';
 import '../../../shared_ui/theme/app_theme.dart';
 import '../../profiles/screens/investor_profile_screen.dart';
+import '../../explore_startups/screens/seeker_startup_profile_screen.dart';
 import '../../startups/screens/startup_profile_screen.dart';
 import '../view_models/hub_view_model.dart';
 
@@ -19,9 +21,14 @@ import '../view_models/hub_view_model.dart';
 /// Design phase: the search box and filters are for show, the list is sample
 /// data, and only the first card opens a profile.
 class HubScreen extends StatefulWidget {
-  const HubScreen({super.key, required this.role});
+  const HubScreen({super.key, required this.role, this.isSeeker = false});
 
   final AccountRole role;
+
+  /// A startup seeker's Hub (Figma "V2 · 12c"): the same list of startups,
+  /// with "Express Interest" instead of "Send Request", opening the seeker's
+  /// startup profile.
+  final bool isSeeker;
 
   @override
   State<HubScreen> createState() => _HubScreenState();
@@ -111,8 +118,15 @@ class _HubScreenState extends State<HubScreen> {
           StartupCard(
             listing: startups[i],
             style: ListingStyle.hub,
+            actionLabel: widget.isSeeker
+                ? SeekerStrings.expressInterest
+                : ExploreStrings.sendRequest,
             onViewProfile: i == 0
-                ? () => _open(StartupProfileScreen(startup: startups[i].startup))
+                ? () => _open(
+                      widget.isSeeker
+                          ? SeekerStartupProfileScreen(listing: startups[i])
+                          : StartupProfileScreen(startup: startups[i].startup),
+                    )
                 : null,
           ),
         ],

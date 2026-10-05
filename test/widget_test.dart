@@ -7,6 +7,7 @@ import 'package:startsa/data_access/repositories/app_settings_repository.dart';
 import 'package:startsa/data_access/repositories/auth_repository.dart';
 import 'package:startsa/data_access/repositories/startup_repository.dart';
 import 'package:startsa/data_access/repositories/user_repository.dart';
+import 'package:startsa/features/explore_startups/screens/seeker_explore_screen.dart';
 import 'package:startsa/main.dart';
 import 'package:startsa/models/app_user.dart';
 import 'package:startsa/models/auth_failure.dart';
@@ -153,10 +154,10 @@ void main() {
   });
 
   group('roles', () {
-    testWidgets('a seeker goes to guest explore, not the sign-up form', (tester) async {
+    testWidgets('a seeker goes to the seeker Explore, not the sign-up form', (tester) async {
       await openSignupAs(tester, role: 'Startup Seeker');
 
-      expect(find.text(AppStrings.seekerExploreTitle), findsOneWidget);
+      expect(find.byType(SeekerExploreScreen), findsOneWidget);
       expect(find.text(AppStrings.signupTitle), findsNothing);
     });
 
