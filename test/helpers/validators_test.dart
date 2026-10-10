@@ -35,9 +35,9 @@ void main() {
 
   group('Validators.password', () {
     test('accepts a password meeting every rule', () {
-      expect(Validators.password('Startup1'), isNull);
-      expect(Validators.password('Abcdefg1'), isNull); // exactly 8
-      expect(Validators.password('Correct Horse 9 Battery'), isNull);
+      expect(Validators.password('Startup1!'), isNull);
+      expect(Validators.password('Abcdef1!'), isNull); // exactly 8
+      expect(Validators.password('Correct Horse 9 Battery!'), isNull);
     });
 
     test('requires a value', () {
@@ -46,31 +46,36 @@ void main() {
     });
 
     test('rejects fewer than 8 characters', () {
-      expect(Validators.password('Abcde1'), AppStrings.passwordTooShort);
-      expect(Validators.password('Abcdef1'), AppStrings.passwordTooShort); // 7
+      expect(Validators.password('Abcd1!'), AppStrings.passwordTooShort);
+      expect(Validators.password('Abcde1!'), AppStrings.passwordTooShort); // 7
     });
 
     test('requires an uppercase letter', () {
-      expect(Validators.password('startup12'), AppStrings.passwordNeedsUppercase);
+      expect(Validators.password('startup1!'), AppStrings.passwordNeedsUppercase);
     });
 
     test('requires a lowercase letter', () {
-      expect(Validators.password('STARTUP12'), AppStrings.passwordNeedsLowercase);
+      expect(Validators.password('STARTUP1!'), AppStrings.passwordNeedsLowercase);
     });
 
     test('requires a number', () {
-      expect(Validators.password('StartupPlan'), AppStrings.passwordNeedsNumber);
+      expect(Validators.password('StartupPlan!'), AppStrings.passwordNeedsNumber);
+    });
+
+    test('requires a special character', () {
+      expect(Validators.password('Startup12'), AppStrings.passwordNeedsSpecial);
+      expect(Validators.password('Startup 12'), AppStrings.passwordNeedsSpecial);
     });
 
     test('does not trim: spaces count as characters', () {
-      expect(Validators.password('Ab1    '), AppStrings.passwordTooShort); // 7
-      expect(Validators.password('Ab1     '), isNull); // 8, spaces included
+      expect(Validators.password('Ab1!   '), AppStrings.passwordTooShort); // 7
+      expect(Validators.password('Ab1!    '), isNull); // 8, spaces included
     });
   });
 
   group('Validators.confirmPassword', () {
     test('accepts a matching confirmation', () {
-      expect(Validators.confirmPassword('Startup1', 'Startup1'), isNull);
+      expect(Validators.confirmPassword('Startup1!', 'Startup1!'), isNull);
     });
 
     test('requires a confirmation', () {
@@ -93,6 +98,64 @@ void main() {
       expect(Validators.fullName(null), AppStrings.fullNameRequired);
       expect(Validators.fullName(''), AppStrings.fullNameRequired);
       expect(Validators.fullName('    '), AppStrings.fullNameRequired);
+    });
+
+    test('rejects one-letter names and names with digits or symbols', () {
+      expect(Validators.fullName('A'), AppStrings.fullNameTooShort);
+      expect(Validators.fullName('Sara 2'), AppStrings.fullNameLettersOnly);
+      expect(Validators.fullName('Sara@home'), AppStrings.fullNameLettersOnly);
+    });
+
+    test('accepts hyphens, apostrophes and Arabic names', () {
+      expect(Validators.fullName("Mary-Jane O'Neil"), isNull);
+      expect(Validators.fullName('سارة السويلم'), isNull);
+    });
+  });
+
+  group('Validators.phone', () {
+    test('accepts a 9-digit Saudi mobile number starting with 5', () {
+      expect(Validators.phone('512345678'), isNull);
+    });
+
+    test('rejects empty, short, long and wrong-prefix numbers', () {
+      expect(Validators.phone(''), AppStrings.phoneRequired);
+      expect(Validators.phone('51234567'), AppStrings.phoneInvalid);
+      expect(Validators.phone('5123456789'), AppStrings.phoneInvalid);
+      expect(Validators.phone('412345678'), AppStrings.phoneInvalid);
+      expect(Validators.phone('5123a5678'), AppStrings.phoneInvalid);
+    });
+  });
+
+  group('live rule checklists', () {
+    List<bool> met(List<FieldRule> rules) => [for (final r in rules) r.met];
+
+    test('password rules go green one by one', () {
+      expect(met(Validators.passwordRules('')), [false, false, false, false, false]);
+      expect(met(Validators.passwordRules('abc')), [false, false, true, false, false]);
+      expect(met(Validators.passwordRules('Abcdefg1!')), [true, true, true, true, true]);
+    });
+
+    test('email rules agree with the email validator', () {
+      for (final good in ['name@example.com', 'a.b+c@sub.example.sa']) {
+        expect(met(Validators.emailRules(good)), [true, true], reason: good);
+        expect(Validators.email(good), isNull);
+      }
+      for (final bad in ['plain', 'a@b', 'a@@b.com', 'a b@c.com', '@c.com']) {
+        expect(met(Validators.emailRules(bad)).every((m) => m), isFalse, reason: bad);
+        expect(Validators.email(bad), isNotNull);
+      }
+    });
+
+    test('phone rules', () {
+      expect(met(Validators.phoneRules('')), [false, false]);
+      expect(met(Validators.phoneRules('5')), [false, true]);
+      expect(met(Validators.phoneRules('512345678')), [true, true]);
+    });
+
+    test('confirm rule needs a non-empty match', () {
+      expect(met(Validators.confirmPasswordRules('Abc1!', '')), [false]);
+      expect(met(Validators.confirmPasswordRules('Abc1!', 'Abc1')), [false]);
+      expect(met(Validators.confirmPasswordRules('Abc1!', 'Abc1!')), [true]);
     });
   });
 }

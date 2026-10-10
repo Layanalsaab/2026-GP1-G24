@@ -73,16 +73,17 @@ class _ChooseRoleScreenState extends State<ChooseRoleScreen> {
           ),
           const SizedBox(height: 24),
           Text(
-            'I am a...',
-            style: AppText.serif(size: 28, color: AppColors.ink, height: 36),
+            'Choose your role',
+            style: AppText.sans(
+              size: 28,
+              color: AppColors.ink,
+              weight: FontWeight.w600,
+              height: 36,
+            ),
           ),
-          const SizedBox(height: 24),
-          Text(
-            'Choose your role to personalize your experience.',
-            textAlign: TextAlign.center,
-            style: AppText.sans(size: 16, color: AppColors.grey, height: 24),
-          ),
-          for (final role in UserRole.values) ...[
+          // Seekers no longer pick a role here: they use "Continue as guest"
+          // on the Welcome screen.
+          for (final role in UserRole.values.where((r) => r != UserRole.seeker)) ...[
             const SizedBox(height: 24),
             _RoleCard(
               role: role,

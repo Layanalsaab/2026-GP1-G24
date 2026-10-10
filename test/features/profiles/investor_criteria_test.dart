@@ -2,13 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:startsa/app_constants/account_strings.dart';
-import 'package:startsa/app_constants/app_strings.dart';
 import 'package:startsa/app_constants/investor_strings.dart';
 import 'package:startsa/data_access/repositories/auth_repository.dart';
 import 'package:startsa/data_access/repositories/user_repository.dart';
 import 'package:startsa/features/profiles/screens/account_screen.dart';
 import 'package:startsa/features/profiles/view_models/edit_criteria_view_model.dart';
-import 'package:startsa/features/profiles/view_models/investor_onboarding_view_model.dart';
 import 'package:startsa/models/app_user.dart';
 import 'package:startsa/models/auth_failure.dart';
 
@@ -36,82 +34,6 @@ void main() {
     preferredStages: ['Pre-seed', 'Seed'],
     ticketSize: 'SAR 100K–500K',
   );
-
-  group('InvestorOnboardingViewModel', () {
-    InvestorOnboardingViewModel viewModel() =>
-        InvestorOnboardingViewModel(userId: 'uid3', userRepository: users);
-
-    void answerAll(InvestorOnboardingViewModel vm) {
-      vm.toggleSector('Fintech');
-      vm.toggleSector('HealthTech');
-      vm.toggleStage('Seed');
-      vm.selectTicketSize('> SAR 2M');
-      vm.selectCity('Jeddah');
-    }
-
-    test('missing answers show a message and save nothing', () async {
-      final vm = viewModel()
-        ..toggleSector('Fintech')
-        ..selectTicketSize('> SAR 2M')
-        ..selectCity('Jeddah'); // no stage
-
-      expect(await vm.submit(), isFalse);
-      expect(vm.error, InvestorStrings.onboardingIncomplete);
-      expect(users.investorOnboardingSaves, 0);
-    });
-
-    test('tapping a chosen sector again removes it', () {
-      final vm = viewModel()
-        ..toggleSector('Fintech')
-        ..toggleSector('Fintech');
-      expect(vm.sectors, isEmpty);
-    });
-
-    test('saves the answers in list order and marks onboarding done', () async {
-      final vm = viewModel();
-      answerAll(vm);
-
-      expect(await vm.submit(), isTrue);
-      expect(users.savedInvestorOnboarding, {
-        'sectors': ['HealthTech', 'Fintech'],
-        'stages': ['Seed'],
-        'ticketSize': '> SAR 2M',
-        'city': 'Jeddah',
-      });
-
-      const before = AppUser(
-        uid: 'uid3',
-        role: AccountRole.investor,
-        fullName: 'Layan',
-        email: 'l@b.co',
-      );
-      final after = vm.savedUser(before);
-      expect(after.onboardingCompleted, isTrue);
-      expect(after.city, 'Jeddah');
-      expect(after.preferredSectors, ['HealthTech', 'Fintech']);
-      expect(after.ticketSize, '> SAR 2M');
-    });
-
-    test('a network problem is explained and nothing is marked done', () async {
-      users.onboardingFails = AuthFailure.network;
-      final vm = viewModel();
-      answerAll(vm);
-
-      expect(await vm.submit(), isFalse);
-      expect(vm.error, AppStrings.networkError);
-      expect(vm.isLoading, isFalse);
-      expect(users.savedInvestorOnboarding, isNull);
-    });
-  });
-
-  test('onboarding starts with a city the investor already saved', () {
-    final vm = InvestorOnboardingViewModel(
-      userId: 'uid3',
-      city: 'Dammam',
-      userRepository: users,
-    );
-    expect(vm.city, 'Dammam');
-  });
 
   group('EditCriteriaViewModel', () {
     test('an old value that is no longer an option does not count', () async {

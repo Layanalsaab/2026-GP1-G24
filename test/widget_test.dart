@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:startsa/app_constants/app_strings.dart';
+import 'package:startsa/shared_ui/common_widgets/form_message.dart';
+import 'package:startsa/shared_ui/theme/app_theme.dart';
 import 'package:startsa/app_constants/investor_strings.dart';
+import 'package:startsa/app_constants/seeker_strings.dart';
 import 'package:startsa/data_access/repositories/app_settings_repository.dart';
 import 'package:startsa/data_access/repositories/auth_repository.dart';
 import 'package:startsa/data_access/repositories/startup_repository.dart';
@@ -56,20 +59,38 @@ void main() {
     WidgetTester tester, {
     String name = 'Mohammed Ahmed',
     String email = 'name@example.com',
-    String password = 'Startup1',
-    String confirm = 'Startup1',
+    String phone = '512345678',
+    String password = 'Startup1!',
+    String confirm = 'Startup1!',
+    bool pickCityAndSector = true,
   }) async {
     await tester.enterText(field(0), name);
     await tester.enterText(field(1), email);
-    await tester.enterText(field(2), password);
-    await tester.enterText(field(3), confirm);
+    await tester.enterText(field(2), phone);
+    await tester.enterText(field(3), password);
+    await tester.enterText(field(4), confirm);
+    if (!pickCityAndSector) return;
+
+    await tester.ensureVisible(find.text(AppStrings.cityHint));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(AppStrings.cityHint));
+    await tester.pumpAndSettle();
+    // Riyadh is far down the list, so find it with the search field.
+    await tester.enterText(find.byType(TextField).last, 'Riyadh');
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(InkWell, 'Riyadh'));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Fintech'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Fintech'));
+    await tester.pumpAndSettle();
   }
 
   Future<void> openSignupAs(WidgetTester tester, {String role = 'Founder'}) async {
     await goToWelcome(tester);
     await tester.tap(find.text('Create account'));
     await tester.pumpAndSettle();
-    expect(find.text('I am a...'), findsOneWidget);
+    expect(find.text('Choose your role'), findsOneWidget);
     if (role != 'Founder') {
       await tester.ensureVisible(find.text(role)); // lower cards scroll into view
       await tester.pumpAndSettle();
@@ -154,36 +175,169 @@ void main() {
   });
 
   group('roles', () {
-    testWidgets('a seeker goes to the seeker Explore, not the sign-up form', (tester) async {
-      await openSignupAs(tester, role: 'Startup Seeker');
+    testWidgets('a guest goes to the seeker Explore, not the sign-up form', (tester) async {
+      await goToWelcome(tester);
+      await tester.tap(find.text('Continue as guest'));
+      await tester.pumpAndSettle();
 
       expect(find.byType(SeekerExploreScreen), findsOneWidget);
       expect(find.text(AppStrings.signupTitle), findsNothing);
     });
 
-    testWidgets('an investor sees the investor sign-up', (tester) async {
+    testWidgets('Back from Choose role returns to Log in when it came from there', (tester) async {
+      await goToWelcome(tester);
+      await tester.tap(find.text('Log in'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.textContaining(AppStrings.signupLink));
+      await tester.pumpAndSettle();
+      expect(find.text('Choose your role'), findsOneWidget);
+
+      await tester.tap(find.byType(InkResponse).first); // the top-bar back arrow
+      await tester.pumpAndSettle();
+
+      expect(find.text(AppStrings.loginTitle), findsOneWidget);
+    });
+
+    testWidgets('a seeker who switches role can go Back from Choose role', (tester) async {
+      await goToWelcome(tester);
+      await tester.tap(find.text('Continue as guest'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byTooltip(SeekerStrings.switchRole));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(SeekerStrings.exitConfirm).last);
+      await tester.pumpAndSettle();
+      expect(find.text('Choose your role'), findsOneWidget);
+
+      final navigator = tester.state<NavigatorState>(find.byType(Navigator));
+      expect(navigator.canPop(), isTrue);
+      navigator.pop();
+      await tester.pumpAndSettle();
+      expect(find.text('Create account'), findsOneWidget); // Welcome
+    });
+
+    testWidgets('choose role offers only Founder and Investor', (tester) async {
+      await goToWelcome(tester);
+      await tester.tap(find.text('Create account'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Founder'), findsOneWidget);
+      expect(find.text('Investor'), findsOneWidget);
+      expect(find.text('Startup Seeker'), findsNothing);
+    });
+
+    testWidgets('an investor sees the sign-up form', (tester) async {
       await openSignupAs(tester, role: 'Investor');
 
-      expect(find.text(AppStrings.signupSubtitle('Investor')), findsOneWidget);
+      expect(find.text(AppStrings.signupTitle), findsOneWidget);
     });
   });
 
   group('sign up', () {
     testWidgets('shows every error at once and sends nothing', (tester) async {
       await openSignupAs(tester);
-      await fillSignup(tester, name: '', email: 'bad', password: 'abc', confirm: 'xyz');
+      await fillSignup(
+        tester,
+        name: '',
+        email: 'bad',
+        phone: '123',
+        password: 'abc',
+        confirm: 'xyz',
+        pickCityAndSector: false,
+      );
 
       await tester.tap(find.text(AppStrings.signupButton));
       await tester.pumpAndSettle();
 
-      expect(find.text(AppStrings.fullNameRequired), findsOneWidget);
-      expect(find.text(AppStrings.emailInvalid), findsOneWidget);
-      expect(find.text(AppStrings.passwordTooShort), findsOneWidget);
-      expect(find.text(AppStrings.passwordsDontMatch), findsOneWidget);
+      // Each field shows its unmet rules, and the missing choices say so.
+      expect(find.text(AppStrings.ruleNameLength), findsOneWidget);
+      expect(find.text(AppStrings.ruleEmailAt), findsOneWidget);
+      expect(find.text(AppStrings.rulePhoneStart), findsOneWidget);
+      expect(find.text(AppStrings.rulePasswordLength), findsOneWidget);
+      expect(find.text(AppStrings.ruleConfirmMatches), findsOneWidget);
+      expect(find.text(AppStrings.cityRequired), findsOneWidget);
+      expect(find.text(AppStrings.sectorsRequired), findsOneWidget);
       expect(repo.signUpCalls, 0);
     });
 
-    testWidgets('valid sign up lands on Check your email', (tester) async {
+    testWidgets('the city picker lists every city and can be searched', (tester) async {
+      await openSignupAs(tester);
+      await tester.ensureVisible(find.text(AppStrings.cityHint));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(AppStrings.cityHint));
+      await tester.pumpAndSettle();
+
+      expect(find.text(AppStrings.citySheetTitle), findsWidgets);
+      expect(find.text(AppStrings.citySearchHint), findsOneWidget);
+      expect(find.text('Abha'), findsOneWidget);
+
+      await tester.enterText(find.byType(TextField).last, 'jed');
+      await tester.pumpAndSettle();
+      expect(find.text('Jeddah'), findsOneWidget);
+      expect(find.text('Abha'), findsNothing);
+
+      await tester.enterText(find.byType(TextField).last, 'zzz');
+      await tester.pumpAndSettle();
+      expect(find.text(AppStrings.cityNoResults), findsOneWidget);
+
+      await tester.enterText(find.byType(TextField).last, 'jed');
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Jeddah'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Jeddah'), findsOneWidget); // now shown in the field
+      expect(find.text(AppStrings.cityHint), findsNothing);
+    });
+
+    testWidgets('Create account has no yellow progress lines for founders or investors', (tester) async {
+      Finder goldBars() => find.byWidgetPredicate(
+            (w) =>
+                w is Container &&
+                w.decoration is BoxDecoration &&
+                (w.decoration as BoxDecoration).color == AppColors.gold,
+          );
+
+      await openSignupAs(tester, role: 'Founder');
+      expect(find.text(AppStrings.signupTitle), findsOneWidget);
+      expect(goldBars(), findsNothing);
+
+      // Same screen for an investor.
+      tester.state<NavigatorState>(find.byType(Navigator)).pop();
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('Investor'));
+      await tester.tap(find.text('Investor'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Continue'));
+      await tester.pumpAndSettle();
+      expect(find.text(AppStrings.signupTitle), findsOneWidget);
+      expect(goldBars(), findsNothing);
+    });
+
+    testWidgets('password rules turn from red to green as they are met', (tester) async {
+      await openSignupAs(tester);
+      await tester.enterText(field(3), 'abc');
+      await tester.pump();
+
+      Color colorOf(String label) =>
+          tester.widget<Text>(find.text(label)).style!.color!;
+      expect(colorOf(AppStrings.rulePasswordLength), AppColors.error);
+      expect(colorOf(AppStrings.rulePasswordLower), AppColors.moss600);
+
+      await tester.enterText(field(3), 'Abcdefg1!');
+      await tester.pump();
+
+      for (final rule in [
+        AppStrings.rulePasswordLength,
+        AppStrings.rulePasswordUpper,
+        AppStrings.rulePasswordLower,
+        AppStrings.rulePasswordNumber,
+        AppStrings.rulePasswordSpecial,
+      ]) {
+        expect(colorOf(rule), AppColors.moss600, reason: rule);
+      }
+    });
+
+    testWidgets('valid sign up lands on Log in with the Verify your email pop-up', (tester) async {
       await openSignupAs(tester);
       await fillSignup(tester);
 
@@ -191,9 +345,17 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(repo.signUpCalls, 1);
-      expect(find.text(AppStrings.checkEmailTitle), findsOneWidget);
-      expect(find.textContaining('name@example.com'), findsOneWidget);
+      expect(find.text(AppStrings.loginTitle), findsOneWidget); // behind the pop-up
+      expect(find.text(AppStrings.verifyEmailTitle), findsOneWidget);
+      expect(find.textContaining('name@example.com', findRichText: true), findsWidgets);
+      expect(find.text(AppStrings.verifyEmailSpamHint), findsOneWidget);
       expect(find.text(AppStrings.resendVerification), findsOneWidget);
+      expect(find.text(AppStrings.verifyEmailOk), findsOneWidget);
+      // The new account is already filled in on the Log in form.
+      expect(
+        tester.widget<TextField>(field(0)).controller!.text,
+        'name@example.com',
+      );
     });
 
     testWidgets('duplicate email is reported under the email field', (tester) async {
@@ -205,10 +367,31 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text(AppStrings.emailInUse), findsOneWidget);
-      expect(find.text(AppStrings.checkEmailTitle), findsNothing);
+      expect(find.text(AppStrings.verifyEmailTitle), findsNothing);
     });
 
-    testWidgets('resend and back to log in work from Check your email', (tester) async {
+    testWidgets('logging in before verifying shows the pop-up again with a reminder', (tester) async {
+      await openSignupAs(tester);
+      await fillSignup(tester);
+      await tester.tap(find.text(AppStrings.signupButton));
+      await tester.pumpAndSettle();
+      expect(find.text(AppStrings.verifyEmailTitle), findsOneWidget); // first time
+
+      await tester.tap(find.text(AppStrings.verifyEmailOk));
+      await tester.pumpAndSettle();
+      expect(find.text(AppStrings.verifyEmailTitle), findsNothing);
+
+      // Still not verified: the account is the same, so log in is refused.
+      repo.logInFails = AuthFailure.emailNotVerified;
+      await tester.tap(find.text(AppStrings.loginButton));
+      await tester.pumpAndSettle();
+
+      expect(find.text(AppStrings.verifyEmailReminderTitle), findsOneWidget);
+      expect(find.text(AppStrings.verifyEmailTitle), findsNothing);
+      expect(find.text(AppStrings.resendVerification), findsOneWidget);
+    });
+
+    testWidgets('resend and OK work from the Verify your email pop-up', (tester) async {
       await openSignupAs(tester);
       await fillSignup(tester);
       await tester.tap(find.text(AppStrings.signupButton));
@@ -219,8 +402,9 @@ void main() {
       expect(repo.resendCalls, 1);
       expect(find.text(AppStrings.verificationSent), findsOneWidget);
 
-      await tester.tap(find.text(AppStrings.backToLogin));
+      await tester.tap(find.text(AppStrings.verifyEmailOk));
       await tester.pumpAndSettle();
+      expect(find.text(AppStrings.verifyEmailTitle), findsNothing);
       expect(find.text(AppStrings.loginTitle), findsOneWidget);
     });
   });
@@ -233,6 +417,16 @@ void main() {
       expect(find.text(AppStrings.loginTitle), findsOneWidget);
     }
 
+    testWidgets('"Forgot password?" lines up with the left edge of the fields', (tester) async {
+      await openLogin(tester);
+
+      final fieldLeft = tester.getTopLeft(find.byType(TextField).first).dx;
+      final linkLeft =
+          tester.getTopLeft(find.text(AppStrings.forgotPasswordLink)).dx;
+
+      expect(linkLeft, fieldLeft);
+    });
+
     testWidgets('a founder who finished onboarding goes to their home', (tester) async {
       repo.loggedInUser = repo.onboardedFounder;
       await openLogin(tester);
@@ -243,39 +437,20 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(MainScreen), findsOneWidget);
-      expect(find.text(AppStrings.onboardingSectorTitle), findsNothing);
     });
 
-    testWidgets('a new founder sees the onboarding first, then their home', (tester) async {
+    testWidgets('a new founder goes straight to their home, with no onboarding page', (tester) async {
       await openLogin(tester);
       await tester.enterText(field(0), 'name@example.com');
       await tester.enterText(field(1), 'Startup1');
       await tester.tap(find.text(AppStrings.loginButton));
       await tester.pumpAndSettle();
 
-      expect(find.text(AppStrings.onboardingSectorTitle), findsOneWidget);
-      expect(find.byType(MainScreen), findsNothing);
-
-      // Continuing without answers is refused.
-      await tester.tap(find.text(AppStrings.onboardingContinue));
-      await tester.pumpAndSettle();
-      expect(find.text(AppStrings.onboardingIncomplete), findsOneWidget);
-      expect(users.onboardingSaves, 0);
-
-      await tester.tap(find.text('Fintech'));
-      await tester.tap(find.text('Seed'));
-      await tester.ensureVisible(find.text('Jeddah'));
-      await tester.tap(find.text('Jeddah'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text(AppStrings.onboardingContinue));
-      await tester.pumpAndSettle();
-
-      expect(users.savedOnboarding, {'sector': 'Fintech', 'stage': 'Seed', 'city': 'Jeddah'});
       expect(find.byType(MainScreen), findsOneWidget);
-      expect(find.text('Founder · Jeddah'), findsOneWidget); // city shown right away
+      expect(find.text('What sector is your startup in?'), findsNothing);
     });
 
-    testWidgets('a new investor answers the investor onboarding, then their home',
+    testWidgets('a new investor goes straight to their home, with no onboarding page',
         (tester) async {
       repo.loggedInUser = const AppUser(
         uid: 'uid2',
@@ -290,34 +465,8 @@ void main() {
       await tester.tap(find.text(AppStrings.loginButton));
       await tester.pumpAndSettle();
 
-      // The investor questions, not the founder ones.
-      expect(find.text(InvestorStrings.sectorsTitle), findsOneWidget);
-      expect(find.text(AppStrings.onboardingSectorTitle), findsNothing);
-      expect(find.byType(MainScreen), findsNothing);
-
-      // Continuing without answers is refused.
-      await tester.tap(find.text(AppStrings.onboardingContinue));
-      await tester.pumpAndSettle();
-      expect(find.text(InvestorStrings.onboardingIncomplete), findsOneWidget);
-      expect(users.investorOnboardingSaves, 0);
-
-      for (final answer in ['Fintech', 'HealthTech', 'Seed', 'SAR 100K–500K', 'Riyadh']) {
-        await tester.ensureVisible(find.text(answer));
-        await tester.pumpAndSettle();
-        await tester.tap(find.text(answer));
-        await tester.pumpAndSettle();
-      }
-      await tester.tap(find.text(AppStrings.onboardingContinue));
-      await tester.pumpAndSettle();
-
-      expect(users.savedInvestorOnboarding, {
-        'sectors': ['HealthTech', 'Fintech'], // in list order, not tap order
-        'stages': ['Seed'],
-        'ticketSize': 'SAR 100K–500K',
-        'city': 'Riyadh',
-      });
       expect(find.byType(MainScreen), findsOneWidget);
-      expect(find.text('Investor · Riyadh'), findsOneWidget);
+      expect(find.text(InvestorStrings.sectorsTitle), findsNothing);
     });
 
     testWidgets('an investor who finished onboarding goes straight to their home',
@@ -345,7 +494,13 @@ void main() {
 
       await tester.tap(find.text(AppStrings.loginButton)); // nothing typed
       await tester.pumpAndSettle();
-      expect(find.text(AppStrings.incorrectCredentials), findsOneWidget);
+      // The hint has the same words, so look for the error message widget.
+      expect(
+        find.widgetWithText(FormMessage, AppStrings.loginPasswordRequired),
+        findsOneWidget,
+      );
+      expect(find.text(AppStrings.ruleEmailAt), findsOneWidget);
+      expect(repo.logInCalls, 0);
 
       repo.logInFails = AuthFailure.invalidCredentials;
       await tester.enterText(field(0), 'name@example.com');
@@ -356,7 +511,7 @@ void main() {
       expect(find.byType(MainScreen), findsNothing);
     });
 
-    testWidgets('unverified email offers a resend and stays out of the app', (tester) async {
+    testWidgets('unverified email opens the Verify your email pop-up and stays out of the app', (tester) async {
       repo.logInFails = AuthFailure.emailNotVerified;
       await openLogin(tester);
       await tester.enterText(field(0), 'name@example.com');
@@ -365,7 +520,7 @@ void main() {
       await tester.tap(find.text(AppStrings.loginButton));
       await tester.pumpAndSettle();
 
-      expect(find.text(AppStrings.verifyEmailFirst), findsOneWidget);
+      expect(find.text(AppStrings.verifyEmailReminderTitle), findsOneWidget);
       expect(find.byType(MainScreen), findsNothing);
 
       await tester.tap(find.text(AppStrings.resendVerification));
@@ -383,6 +538,8 @@ void main() {
       await tester.tap(find.text(AppStrings.forgotPasswordLink));
       await tester.pumpAndSettle();
       expect(find.text(AppStrings.forgotTitle), findsOneWidget);
+      // The top-bar arrow is the only way back (no "Back to log in" link).
+      expect(find.text('Back to log in'), findsNothing);
     }
 
     Future<void> send(WidgetTester tester, String email) async {
@@ -396,7 +553,8 @@ void main() {
 
       await send(tester, 'not-an-email');
 
-      expect(find.text(AppStrings.emailInvalid), findsOneWidget);
+      expect(find.text(AppStrings.ruleEmailAt), findsOneWidget);
+      expect(find.text(AppStrings.ruleEmailDomain), findsOneWidget);
       expect(repo.resetCalls, 0);
     });
 

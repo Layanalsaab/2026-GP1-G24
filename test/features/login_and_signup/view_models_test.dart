@@ -3,11 +3,9 @@ import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:startsa/app_constants/app_strings.dart';
 import 'package:startsa/data_access/repositories/auth_repository.dart';
-import 'package:startsa/features/login_and_signup/view_models/check_email_view_model.dart';
 import 'package:startsa/features/login_and_signup/view_models/forgot_password_view_model.dart';
 import 'package:startsa/features/login_and_signup/view_models/login_view_model.dart';
 import 'package:startsa/features/login_and_signup/view_models/signup_view_model.dart';
-import 'package:startsa/features/profiles/view_models/founder_onboarding_view_model.dart';
 import 'package:startsa/models/app_user.dart';
 import 'package:startsa/models/auth_failure.dart';
 
@@ -23,28 +21,57 @@ void main() {
       SignupViewModel vm, {
       String name = 'Mohammed Ahmed',
       String email = 'a@b.co',
-      String password = 'Startup1',
-      String confirm = 'Startup1',
+      String phone = '512345678',
+      String password = 'Startup1!',
+      String confirm = 'Startup1!',
+      String? city = 'Riyadh',
+      List<String> sectors = const ['Fintech'],
     }) =>
         vm.submit(
           fullName: name,
           email: email,
+          phone: phone,
           password: password,
           confirmPassword: confirm,
+          city: city,
+          sectors: sectors,
           role: AccountRole.founder,
         );
 
     test('shows every field error at once and does not call Firebase', () async {
       final vm = SignupViewModel(authRepository: repo);
 
-      final result = await submit(vm, name: '  ', email: 'nope', password: 'abc', confirm: '');
+      final result = await submit(
+        vm,
+        name: '  ',
+        email: 'nope',
+        phone: '12',
+        password: 'abc',
+        confirm: '',
+        city: null,
+        sectors: const [],
+      );
 
       expect(result, isNull);
+      expect(vm.attempted, isTrue);
       expect(vm.fullNameError, AppStrings.fullNameRequired);
       expect(vm.emailError, AppStrings.emailInvalid);
+      expect(vm.phoneError, AppStrings.phoneInvalid);
       expect(vm.passwordError, AppStrings.passwordTooShort);
       expect(vm.confirmPasswordError, AppStrings.confirmPasswordRequired);
+      expect(vm.cityError, AppStrings.cityRequired);
+      expect(vm.sectorsError, AppStrings.sectorsRequired);
       expect(repo.signUpCalls, 0);
+    });
+
+    test("editing a field clears only that field's error", () async {
+      final vm = SignupViewModel(authRepository: repo);
+      await submit(vm, name: '', email: 'nope');
+
+      vm.clearError(SignupField.email);
+
+      expect(vm.emailError, isNull);
+      expect(vm.fullNameError, AppStrings.fullNameRequired);
     });
 
     test('reports mismatched passwords under the confirm field', () async {
@@ -105,13 +132,16 @@ void main() {
   });
 
   group('LoginViewModel', () {
-    test('missing email or password gets the generic message without a request', () async {
+    test('missing or malformed values are reported under their field, with no request', () async {
       final vm = LoginViewModel(authRepository: repo);
 
       expect(await vm.submit(email: '', password: 'x'), isNull);
-      expect(vm.formError, AppStrings.incorrectCredentials);
+      expect(vm.emailError, AppStrings.loginEmailInvalid);
+      expect(vm.passwordError, isNull);
       expect(await vm.submit(email: 'a@b.co', password: ''), isNull);
-      expect(vm.formError, AppStrings.incorrectCredentials);
+      expect(vm.emailError, isNull);
+      expect(vm.passwordError, AppStrings.loginPasswordRequired);
+      expect(vm.formError, isNull);
       expect(repo.logInCalls, 0);
     });
 
@@ -138,13 +168,15 @@ void main() {
       expect(vm.formError, isNull);
     });
 
-    test('unverified email shows the message and allows resending', () async {
+    test('unverified email asks for the pop-up and allows resending', () async {
       repo.logInFails = AuthFailure.emailNotVerified;
       final vm = LoginViewModel(authRepository: repo);
 
       expect(await vm.submit(email: 'a@b.co', password: 'Startup1'), isNull);
       expect(vm.needsVerification, isTrue);
-      expect(vm.formError, AppStrings.verifyEmailFirst);
+      expect(vm.verificationReminder, isTrue); // a reminder, not the first pop-up
+      expect(vm.verificationEmail, 'a@b.co');
+      expect(vm.formError, isNull);
 
       await vm.resendVerification();
 
@@ -231,114 +263,54 @@ void main() {
     });
   });
 
-  group('CheckEmailViewModel', () {
-    test('warns when the first email could not be sent', () {
-      final vm = CheckEmailViewModel(
-        email: 'a@b.co',
-        password: 'Startup1',
-        verificationEmailSent: false,
-        authRepository: repo,
+  group('Verify your email pop-up (after sign up)', () {
+    LoginViewModel make({required bool emailSent}) {
+      final vm = LoginViewModel(authRepository: repo);
+      vm.promptVerification(
+        email: ' a@b.co ',
+        password: 'Startup1!',
+        emailSent: emailSent,
       );
+      return vm;
+    }
 
-      expect(vm.message, AppStrings.checkEmailSendFailed);
-      expect(vm.messageIsError, isTrue);
+    test('warns when the first email could not be sent', () {
+      final vm = make(emailSent: false);
+
+      expect(vm.needsVerification, isTrue);
+      expect(vm.verificationReminder, isFalse); // the first pop-up
+      expect(vm.verificationEmail, 'a@b.co');
+      expect(vm.resendMessage, AppStrings.checkEmailSendFailed);
+      expect(vm.resendFailed, isTrue);
     });
 
     test('resend confirms success', () async {
-      final vm = CheckEmailViewModel(
-        email: 'a@b.co',
-        password: 'Startup1',
-        verificationEmailSent: true,
-        authRepository: repo,
-      );
+      final vm = make(emailSent: true);
 
-      await vm.resend();
+      await vm.resendVerification();
 
       expect(repo.resendCalls, 1);
-      expect(vm.message, AppStrings.verificationSent);
-      expect(vm.messageIsError, isFalse);
+      expect(vm.resendMessage, AppStrings.verificationSent);
+      expect(vm.resendFailed, isFalse);
     });
 
     test('resend reports rate limiting', () async {
       repo.resendFails = AuthFailure.tooManyRequests;
-      final vm = CheckEmailViewModel(
-        email: 'a@b.co',
-        password: 'Startup1',
-        verificationEmailSent: true,
-        authRepository: repo,
-      );
+      final vm = make(emailSent: true);
 
-      await vm.resend();
+      await vm.resendVerification();
 
-      expect(vm.message, AppStrings.tooManyRequests);
-      expect(vm.messageIsError, isTrue);
-    });
-  });
-
-  group('FounderOnboardingViewModel', () {
-    late FakeUserRepository users;
-
-    setUp(() => users = FakeUserRepository());
-
-    FounderOnboardingViewModel make() =>
-        FounderOnboardingViewModel(userId: 'uid1', userRepository: users);
-
-    test('refuses to save until all three answers are chosen', () async {
-      final vm = make()..selectSector('Fintech');
-
-      expect(await vm.submit(), isFalse);
-      expect(vm.error, AppStrings.onboardingIncomplete);
-      expect(users.onboardingSaves, 0);
+      expect(vm.resendMessage, AppStrings.tooManyRequests);
+      expect(vm.resendFailed, isTrue);
     });
 
-    test('saves the chosen answers', () async {
-      final vm = make()
-        ..selectSector('HealthTech')
-        ..selectStage('Pre-seed')
-        ..selectCity('Riyadh');
+    test('closing the pop-up clears the state', () {
+      final vm = make(emailSent: false);
 
-      expect(await vm.submit(), isTrue);
-      expect(users.savedOnboarding, {
-        'sector': 'HealthTech',
-        'stage': 'Pre-seed',
-        'city': 'Riyadh',
-      });
-      expect(vm.error, isNull);
-    });
+      vm.dismissVerification();
 
-    test('keeps the answers and shows an error when saving fails', () async {
-      users.onboardingFails = AuthFailure.unknown;
-      final vm = make()
-        ..selectSector('HealthTech')
-        ..selectStage('Seed')
-        ..selectCity('Jeddah');
-
-      expect(await vm.submit(), isFalse);
-      expect(vm.error, AppStrings.onboardingSaveFailed);
-      expect(vm.sector, 'HealthTech');
-      expect(vm.isLoading, isFalse);
-    });
-
-    test('reports being offline', () async {
-      users.onboardingFails = AuthFailure.network;
-      final vm = make()
-        ..selectSector('HealthTech')
-        ..selectStage('Seed')
-        ..selectCity('Jeddah');
-
-      await vm.submit();
-
-      expect(vm.error, AppStrings.networkError);
-    });
-
-    test('changing an answer clears the error', () async {
-      final vm = make();
-      await vm.submit();
-      expect(vm.error, isNotNull);
-
-      vm.selectCity('Dammam');
-
-      expect(vm.error, isNull);
+      expect(vm.needsVerification, isFalse);
+      expect(vm.resendMessage, isNull);
     });
   });
 }

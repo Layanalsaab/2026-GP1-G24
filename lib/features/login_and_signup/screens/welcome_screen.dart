@@ -2,6 +2,7 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 
+import '../../../navigation/seeker_main_screen.dart';
 import '../../../shared_ui/common_widgets/design_canvas.dart';
 import '../../../shared_ui/common_widgets/gold_divider.dart';
 import '../../../shared_ui/common_widgets/house_rings.dart';
@@ -58,10 +59,9 @@ class WelcomeScreen extends StatelessWidget {
           ),
         ),
         ...goldDivider(lineTop: 442),
-        Positioned(left: 24, top: 486, width: 312, height: 64, child: _stats()),
         Positioned(
           left: 24,
-          top: 636,
+          top: 606,
           width: 312,
           child: PrimaryButton(
             label: 'Create account',
@@ -72,12 +72,35 @@ class WelcomeScreen extends StatelessWidget {
         ),
         Positioned(
           left: 24,
-          top: 696,
+          top: 666,
           width: 312,
           child: SecondaryButton(
             label: 'Log in',
             onPressed: () => Navigator.of(context).push(
               MaterialPageRoute(builder: (_) => const LoginScreen()),
+            ),
+          ),
+        ),
+        Positioned(
+          left: 24,
+          top: 722,
+          width: 312,
+          height: 44,
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            // A guest browses the seeker Hub / Explore / Programs, no account.
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const SeekerMainScreen()),
+            ),
+            child: Center(
+              child: Text(
+                'Continue as guest',
+                style: AppText.sans(
+                  size: 14,
+                  color: AppColors.grey,
+                  weight: FontWeight.w500,
+                ).copyWith(decoration: TextDecoration.underline),
+              ),
             ),
           ),
         ),
@@ -110,41 +133,6 @@ class WelcomeScreen extends StatelessWidget {
             ),
           ),
           SizedBox(width: 150, height: 142, child: logo),
-        ],
-      ),
-    );
-  }
-
-  Widget _stats() {
-    Widget stat(String value, String label) => Expanded(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(value, style: AppText.serif(size: 18, color: AppColors.gold)),
-              const SizedBox(height: 2),
-              Text(label, style: AppText.sans(size: 11, color: AppColors.grey)),
-            ],
-          ),
-        );
-
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.gold.withValues(alpha: 0.5)),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x141F4026),
-            offset: Offset(0, 4),
-            blurRadius: 14,
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          stat('120+', 'Startups'),
-          stat('45+', 'Investors'),
-          stat('30+', 'Programs'),
         ],
       ),
     );

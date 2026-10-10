@@ -131,9 +131,9 @@ void main() {
 
     Future<bool> submit(
       ChangePasswordViewModel vm, {
-      String current = 'OldPass1',
-      String next = 'NewPass1',
-      String confirm = 'NewPass1',
+      String current = 'OldPass1!',
+      String next = 'NewPass1!',
+      String confirm = 'NewPass1!',
     }) =>
         vm.submit(
           currentPassword: current,
@@ -154,7 +154,7 @@ void main() {
     test('the new password must be different from the current one', () async {
       final vm = ChangePasswordViewModel(authRepository: repo);
 
-      await submit(vm, next: 'OldPass1', confirm: 'OldPass1');
+      await submit(vm, next: 'OldPass1!', confirm: 'OldPass1!');
 
       expect(vm.newPasswordError, AccountStrings.samePassword);
       expect(repo.changePasswordCalls, 0);
@@ -213,14 +213,14 @@ void main() {
       repo.deleteAccountFails = AuthFailure.network;
       final vm = DeleteAccountViewModel(authRepository: repo);
 
-      expect(await vm.submit('OldPass1'), isFalse);
+      expect(await vm.submit('OldPass1!'), isFalse);
       expect(vm.formError, AppStrings.networkError);
     });
 
     test('the right password deletes the account', () async {
       final vm = DeleteAccountViewModel(authRepository: repo);
 
-      expect(await vm.submit('OldPass1'), isTrue);
+      expect(await vm.submit('OldPass1!'), isTrue);
       expect(repo.deleteAccountCalls, 1);
     });
   });
@@ -243,19 +243,19 @@ void main() {
 
     test('changePassword checks the current password, then updates it', () async {
       await repo.changePassword(
-        currentPassword: 'OldPass1',
-        newPassword: 'NewPass1',
+        currentPassword: 'OldPass1!',
+        newPassword: 'NewPass1!',
       );
 
       expect(auth.calls, ['reauth', 'updatePassword']);
-      expect(auth.updatedPassword, 'NewPass1');
+      expect(auth.updatedPassword, 'NewPass1!');
     });
 
     test('a wrong current password changes nothing', () async {
       auth.reauthFails = AuthFailure.invalidCredentials;
 
       await expectLater(
-        repo.changePassword(currentPassword: 'Wrong123', newPassword: 'NewPass1'),
+        repo.changePassword(currentPassword: 'Wrong123', newPassword: 'NewPass1!'),
         failsWith(AuthFailure.invalidCredentials),
       );
       expect(auth.calls, ['reauth']);
@@ -263,7 +263,7 @@ void main() {
     });
 
     test('deleteAccount deletes the profile, then the login, and signs out', () async {
-      await repo.deleteAccount('OldPass1');
+      await repo.deleteAccount('OldPass1!');
 
       expect(users.deletedProfiles, ['uid1']);
       expect(users.profiles, isEmpty);
@@ -286,7 +286,7 @@ void main() {
       users.deleteProfileFails = AuthFailure.network;
 
       await expectLater(
-        repo.deleteAccount('OldPass1'),
+        repo.deleteAccount('OldPass1!'),
         failsWith(AuthFailure.network),
       );
       expect(auth.calls, ['reauth']); // no 'delete'
@@ -297,7 +297,7 @@ void main() {
       auth.signedIn = null;
 
       await expectLater(
-        repo.deleteAccount('OldPass1'),
+        repo.deleteAccount('OldPass1!'),
         failsWith(AuthFailure.unknown),
       );
       expect(users.deletedProfiles, isEmpty);

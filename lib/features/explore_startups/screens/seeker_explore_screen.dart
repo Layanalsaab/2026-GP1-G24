@@ -6,6 +6,7 @@ import '../../../app_constants/seeker_strings.dart';
 import '../../../shared_ui/common_widgets/green_top_bar.dart';
 import '../../../shared_ui/common_widgets/listing_card_parts.dart';
 import '../../../shared_ui/common_widgets/search_filter_widgets.dart';
+import '../../../shared_ui/common_widgets/seeker_exit_button.dart';
 import '../../../shared_ui/common_widgets/startup_card.dart';
 import '../../../shared_ui/common_widgets/svg_asset.dart';
 import '../../../shared_ui/theme/app_theme.dart';
@@ -64,7 +65,7 @@ class _SeekerExploreScreenState extends State<SeekerExploreScreen> {
                     ),
                   ),
                   // Design only: notifications aren't built yet.
-                  actions: [svgIcon('bell.svg', size: 44)],
+                  actions: [svgIcon('bell.svg', size: 44), const SeekerExitButton()],
                 ),
                 FilterChipsRow(
                   labels: ExploreStrings.filters,

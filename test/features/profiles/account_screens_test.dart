@@ -96,15 +96,15 @@ void main() {
 
     final fields = find.byType(TextField);
     await tester.enterText(fields.at(0), 'Wrong123');
-    await tester.enterText(fields.at(1), 'NewPass1');
-    await tester.enterText(fields.at(2), 'NewPass1');
+    await tester.enterText(fields.at(1), 'NewPass1!');
+    await tester.enterText(fields.at(2), 'NewPass1!');
 
     repo.changePasswordFails = AuthFailure.invalidCredentials;
     await tapText(tester, AccountStrings.updatePassword);
     expect(find.text(AccountStrings.currentPasswordIncorrect), findsOneWidget);
 
     repo.changePasswordFails = null;
-    await tester.enterText(fields.at(0), 'OldPass1');
+    await tester.enterText(fields.at(0), 'OldPass1!');
     await tapText(tester, AccountStrings.updatePassword);
 
     expect(repo.changePasswordCalls, 2);
@@ -120,9 +120,9 @@ void main() {
     await tapText(tester, AccountStrings.changePassword);
 
     final fields = find.byType(TextField);
-    await tester.enterText(fields.at(0), 'OldPass1');
-    await tester.enterText(fields.at(1), 'NewPass1');
-    await tester.enterText(fields.at(2), 'NewPass1');
+    await tester.enterText(fields.at(0), 'OldPass1!');
+    await tester.enterText(fields.at(1), 'NewPass1!');
+    await tester.enterText(fields.at(2), 'NewPass1!');
     await tester.tap(find.text(AccountStrings.updatePassword));
     await tester.pump(); // saving (spinner), so no pumpAndSettle here
 

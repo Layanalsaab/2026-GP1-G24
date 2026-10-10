@@ -26,4 +26,12 @@ class SeekerStrings {
   static const emailLabel = 'Contact email';
   static const emailHint = 'e.g. example@gmail.com';
   static const submit = 'Submit interest';
+
+  // Leaving the seeker area
+  static const switchRole = 'Switch role';
+  static const exitTitle = 'Switch role?';
+  static const exitMessage =
+      'You will leave the seeker area and go back to choose a different role.';
+  static const exitConfirm = 'Switch role';
+  static const exitCancel = 'Stay';
 }
