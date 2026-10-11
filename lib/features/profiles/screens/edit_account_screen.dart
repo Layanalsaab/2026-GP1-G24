@@ -44,6 +44,11 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
     text: widget.user.phone ?? '',
   );
 
+  /// The text typed into the "Other:" sector chip.
+  late final TextEditingController _otherSector = TextEditingController(
+    text: _viewModel.initialOtherSector,
+  );
+
   @override
   void dispose() {
     _viewModel.dispose();
@@ -51,6 +56,7 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
     _email.dispose();
     _bio.dispose();
     _phone.dispose();
+    _otherSector.dispose();
     super.dispose();
   }
 
@@ -60,6 +66,7 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
       fullName: _fullName.text,
       bio: _bio.text,
       phone: _phone.text,
+      otherSector: _otherSector.text,
     );
     if (updated == null || !mounted) return;
     if (_viewModel.newPhoto != null || _viewModel.removePhoto) {
@@ -89,6 +96,12 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
     setState(() => _photoError = result.error);
     final file = result.file;
     if (file != null) _viewModel.pickPhoto(file);
+  }
+
+  void _toggleOther() {
+    // Switching "Other" off forgets what was typed.
+    if (_viewModel.otherSelected) _otherSector.clear();
+    _viewModel.toggleOther();
   }
 
   Future<void> _pickCity() async {
@@ -181,7 +194,19 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
                                   onTap: _pickCity,
                                 ),
                                 const SizedBox(height: 20),
-                                _sectors(loading),
+                                SectorsField(
+                                  label: AccountStrings.sectorsOfInterest,
+                                  hint: null,
+                                  softChips: true,
+                                  selected: _viewModel.sectors,
+                                  otherSelected: _viewModel.otherSelected,
+                                  otherController: _otherSector,
+                                  count: 0,
+                                  error: _viewModel.sectorsError,
+                                  enabled: !loading,
+                                  onToggle: _viewModel.toggleSector,
+                                  onToggleOther: _toggleOther,
+                                ),
                                 const SizedBox(height: 20),
                                 AppTextField(
                                   label: AppStrings.emailLabel,
@@ -340,44 +365,4 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
       ],
     ),
   );
-
-  /// "Sectors of interest": the same chips as Create Account, on the soft
-  /// green fill of the Edit profile design. "Other" is a plain chip.
-  Widget _sectors(bool loading) {
-    final hasError = _viewModel.sectorsError != null;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          AccountStrings.sectorsOfInterest,
-          style: AppText.sans(
-            size: 14,
-            color: hasError ? AppColors.error : AppColors.ink,
-            weight: FontWeight.w500,
-            height: 20,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Wrap(
-          spacing: 8,
-          children: [
-            for (final sector in [
-              ...AppStrings.sectors,
-              AppStrings.otherSector,
-            ])
-              SectorChip(
-                label: sector,
-                selected: _viewModel.isSectorSelected(sector),
-                soft: true,
-                onTap: loading ? null : () => _viewModel.toggleSector(sector),
-              ),
-          ],
-        ),
-        if (hasError) ...[
-          const SizedBox(height: 4),
-          FormMessage.error(_viewModel.sectorsError!),
-        ],
-      ],
-    );
-  }
 }

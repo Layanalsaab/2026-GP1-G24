@@ -3,11 +3,9 @@ import 'package:flutter/services.dart';
 
 import '../../../app_constants/program_strings.dart';
 import '../../../models/program.dart';
-import '../../../shared_ui/common_widgets/green_top_bar.dart';
+import '../../../shared_ui/common_widgets/svg_asset.dart';
 import '../../../shared_ui/theme/app_theme.dart';
 
-/// Figma "V2 · 27 · Program Profile — All". Design phase: the website button
-/// is for show and does nothing yet.
 class ProgramProfileScreen extends StatelessWidget {
   const ProgramProfileScreen({super.key, required this.program});
 
@@ -23,10 +21,7 @@ class ProgramProfileScreen extends StatelessWidget {
         backgroundColor: AppColors.cream,
         body: Column(
           children: [
-            const GreenTopBar(
-              title: ProgramStrings.programTitle,
-              leading: TopBarBackButton(),
-            ),
+            const _ProgramTopBar(title: ProgramStrings.programTitle),
             Expanded(
               child: ListView(
                 padding: EdgeInsets.fromLTRB(
@@ -201,6 +196,58 @@ class _InertWebsiteButton extends StatelessWidget {
           ],
         ),
         child: Text(ProgramStrings.visitWebsite, style: AppText.button),
+      ),
+    );
+  }
+}
+
+/// Figma "V2 · 27" top bar: deep green, a white back arrow and the page title
+/// (Inter Semi Bold 18) right next to it. It extends under the status bar.
+class _ProgramTopBar extends StatelessWidget {
+  const _ProgramTopBar({required this.title});
+
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: AppColors.green,
+      padding: EdgeInsets.only(top: MediaQuery.paddingOf(context).top),
+      child: SizedBox(
+        height: 64,
+        child: Padding(
+          padding: const EdgeInsets.only(left: 4, top: 4),
+          child: Row(
+            children: [
+              Tooltip(
+                message: MaterialLocalizations.of(context).backButtonTooltip,
+                child: InkResponse(
+                  onTap: () => Navigator.of(context).maybePop(),
+                  radius: 26,
+                  child: SizedBox(
+                    width: 48,
+                    height: 48,
+                    child: Center(child: svgIcon('back.svg', size: 22)),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 4),
+              Expanded(
+                child: Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppText.sans(
+                    size: 18,
+                    color: Colors.white,
+                    weight: FontWeight.w600,
+                    height: 24,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

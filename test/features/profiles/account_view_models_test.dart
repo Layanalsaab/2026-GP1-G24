@@ -152,17 +152,56 @@ void main() {
       expect(vm.sectorsError, isNull);
     });
 
-    test('the Other chip keeps a typed sector until it is switched off', () {
+    test('a typed sector fills the Other box and is saved with the chips', () async {
       final vm = EditAccountViewModel(
         user: founder.copyWith(sectorsOfInterest: ['HealthTech', 'Pets']),
         userRepository: users,
       );
 
-      expect(vm.isSectorSelected('Other'), isTrue);
-      vm.toggleSector('Other');
+      // The fixed chip stays selected; the typed one goes to the Other box.
       expect(vm.sectors, ['HealthTech']);
-      vm.toggleSector('Other');
-      expect(vm.sectors, ['HealthTech', 'Other']);
+      expect(vm.otherSelected, isTrue);
+      expect(vm.initialOtherSector, 'Pets');
+
+      final saved = await vm.submit(
+        fullName: 'Reem',
+        bio: '',
+        phone: '551234567',
+        otherSector: '  SportsTech ',
+      );
+      expect(saved?.sectorsOfInterest, ['HealthTech', 'SportsTech']);
+    });
+
+    test('switching Other off leaves only the fixed chips', () async {
+      final vm = EditAccountViewModel(
+        user: founder.copyWith(sectorsOfInterest: ['HealthTech', 'Pets']),
+        userRepository: users,
+      );
+
+      vm.toggleOther();
+
+      expect(vm.otherSelected, isFalse);
+      final saved = await vm.submit(
+        fullName: 'Reem',
+        bio: '',
+        phone: '551234567',
+        otherSector: 'Pets', // ignored while Other is off
+      );
+      expect(saved?.sectorsOfInterest, ['HealthTech']);
+    });
+
+    test('Other with nothing typed does not count as a sector', () async {
+      final vm = EditAccountViewModel(
+        user: founder.copyWith(sectorsOfInterest: const []),
+        userRepository: users,
+      );
+      vm.toggleOther();
+
+      expect(
+        await vm.submit(fullName: 'Reem', bio: '', phone: '551234567'),
+        isNull,
+      );
+      expect(vm.sectorsError, AppStrings.sectorsRequired);
     });
 
     test('limits match sign-up', () {

@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../app_constants/app_strings.dart';
 import '../theme/app_theme.dart';
@@ -506,10 +507,24 @@ class SectorChip extends StatelessWidget {
 
 /// The selected "Other:" chip: a small text field plus a clear button.
 class OtherChip extends StatelessWidget {
-  const OtherChip({super.key, required this.controller, required this.onClear});
+  const OtherChip({
+    super.key,
+    required this.controller,
+    required this.onClear,
+    this.hint = AppStrings.otherSectorHint,
+    this.maxLength = 30,
+    this.inputFormatters,
+    this.onChanged,
+  });
 
   final TextEditingController controller;
   final VoidCallback? onClear;
+
+  /// Grey text shown until the user types.
+  final String hint;
+  final int maxLength;
+  final List<TextInputFormatter>? inputFormatters;
+  final ValueChanged<String>? onChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -541,7 +556,9 @@ class OtherChip extends StatelessWidget {
               child: TextField(
                 controller: controller,
                 autofocus: true,
-                maxLength: 30,
+                maxLength: maxLength,
+                inputFormatters: inputFormatters,
+                onChanged: onChanged,
                 cursorColor: AppColors.moss600,
                 textInputAction: TextInputAction.done,
                 style: AppText.sans(size: 13, color: AppColors.ink),
@@ -549,7 +566,7 @@ class OtherChip extends StatelessWidget {
                   isDense: true,
                   counterText: '',
                   border: InputBorder.none,
-                  hintText: AppStrings.otherSectorHint,
+                  hintText: hint,
                   hintStyle: AppText.sans(size: 13, color: AppColors.grey),
                   contentPadding: const EdgeInsets.symmetric(vertical: 8),
                 ),

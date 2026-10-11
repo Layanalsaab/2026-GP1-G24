@@ -8,6 +8,7 @@ import 'package:startsa/data_access/mock_data/mock_startups.dart';
 import 'package:startsa/features/explore_startups/screens/explore_screen.dart';
 import 'package:startsa/features/explore_startups/screens/seeker_startup_profile_screen.dart';
 import 'package:startsa/features/programs/screens/program_profile_screen.dart';
+import 'package:startsa/features/search/screens/hub_screen.dart';
 import 'package:startsa/navigation/seeker_main_screen.dart';
 import 'package:startsa/shared_ui/common_widgets/home_parts.dart';
 
@@ -17,20 +18,29 @@ import 'package:startsa/shared_ui/common_widgets/home_parts.dart';
 void main() {
   setUpAll(() => GoogleFonts.config.allowRuntimeFetching = false);
 
-  Future<void> openSeeker(WidgetTester tester) async {
+  /// The guest opens on the Hub, so by default the Explore tab is tapped.
+  Future<void> openSeeker(
+    WidgetTester tester, {
+    bool openExplore = true,
+  }) async {
     tester.view.physicalSize = const Size(1080, 2400);
     tester.view.devicePixelRatio = 3;
     addTearDown(tester.view.reset);
     await tester.pumpWidget(const MaterialApp(home: SeekerMainScreen()));
     await tester.pumpAndSettle();
+    if (openExplore) {
+      await tester.tap(find.text(NavigationStrings.explore));
+      await tester.pumpAndSettle();
+    }
   }
 
-  testWidgets('opens on Explore, with the same three tabs as everyone', (
+  testWidgets('opens on the Hub, with the same three tabs as everyone', (
     tester,
   ) async {
-    await openSeeker(tester);
+    await openSeeker(tester, openExplore: false);
 
-    expect(find.byType(ExploreScreen), findsOneWidget);
+    expect(find.byType(HubScreen), findsOneWidget);
+    expect(find.byType(ExploreScreen), findsNothing);
     expect(find.text(NavigationStrings.supportSystems), findsOneWidget);
     expect(find.text(NavigationStrings.hub), findsOneWidget);
     expect(find.text(NavigationStrings.explore), findsOneWidget);

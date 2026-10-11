@@ -3,14 +3,16 @@ import 'package:flutter/material.dart';
 import '../../../app_constants/startup_strings.dart';
 import '../../../models/startup_enums.dart';
 import '../../../models/startup.dart';
-import '../../../shared_ui/common_widgets/app_text_field.dart';
 import '../../../shared_ui/common_widgets/form_message.dart';
+import '../../../shared_ui/common_widgets/profile_form_fields.dart'
+    show OtherChip;
 import '../../../shared_ui/theme/app_theme.dart';
 import 'form_fields.dart';
 import 'select_field.dart' show otherTextFormatters;
 
 /// "What are you looking for?": every option as a tappable chip, any number
-/// can be selected (Figma "Add Startup").
+/// can be selected (Figma "Add Startup"). Choosing "Other" turns that chip into
+/// "Other: [text box]", the same as on the Create Account sectors.
 class LookingForChips extends StatelessWidget {
   const LookingForChips({
     super.key,
@@ -23,7 +25,7 @@ class LookingForChips extends StatelessWidget {
     this.onOtherChanged,
   });
 
-  /// Holds the text typed after ticking "Other" (shown in a box below).
+  /// Holds the text typed into the "Other:" chip.
   final TextEditingController? otherController;
   final String? otherErrorText;
   final VoidCallback? onOtherChanged;
@@ -51,30 +53,37 @@ class LookingForChips extends StatelessWidget {
           runSpacing: AppSpacing.sm,
           children: [
             for (final item in LookingFor.values)
-              _Chip(
-                label: item.label,
-                selected: values.contains(item),
-                onTap: enabled ? () => _toggle(item) : null,
-              ),
+              if (item == LookingFor.other &&
+                  otherController != null &&
+                  values.contains(item))
+                OtherChip(
+                  controller: otherController!,
+                  hint: StartupStrings.lookingForOtherHint,
+                  maxLength: Startup.otherMaxLength,
+                  inputFormatters: otherTextFormatters,
+                  onChanged: (_) => onOtherChanged?.call(),
+                  onClear: enabled
+                      ? () {
+                          otherController!.clear();
+                          _toggle(item);
+                        }
+                      : null,
+                )
+              else
+                _Chip(
+                  label: item.label,
+                  selected: values.contains(item),
+                  onTap: enabled ? () => _toggle(item) : null,
+                ),
           ],
         ),
         if (errorText != null) ...[
           const SizedBox(height: AppSpacing.xs + 2),
           FormMessage.error(errorText!),
         ],
-        if (otherController != null && values.contains(LookingFor.other)) ...[
-          const SizedBox(height: AppSpacing.md),
-          AppTextField(
-            label: StartupStrings.lookingForOtherLabel,
-            hint: StartupStrings.lookingForOtherHint,
-            controller: otherController,
-            enabled: enabled,
-            maxLength: Startup.otherMaxLength,
-            inputFormatters: otherTextFormatters,
-            textInputAction: TextInputAction.next,
-            errorText: otherErrorText,
-            onChanged: (_) => onOtherChanged?.call(),
-          ),
+        if (otherErrorText != null) ...[
+          const SizedBox(height: AppSpacing.xs + 2),
+          FormMessage.error(otherErrorText!),
         ],
       ],
     );

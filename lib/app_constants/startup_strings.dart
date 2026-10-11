@@ -49,8 +49,6 @@ class StartupStrings {
   static const editTitle = 'Edit startup';
   static const saveNew = 'Create startup';
   static const saveChanges = 'Save';
-  static const saveDisabledHint = 'Fill in all required fields to continue.';
-  static const noChangesHint = 'Make a change to save.';
   static const previewAsPublic = 'Preview as public';
   static String added(String name) => '$name was added';
   static const saved = 'Changes saved.';
@@ -71,7 +69,6 @@ class StartupStrings {
   static const selectStage = 'Select a stage';
   static const selectBusinessModel = 'Select a commerce model';
   static const selectLocation = 'Select a city';
-  static const selectYear = 'Select year';
   static const done = 'Done';
   static const otherRequiredShort = 'Please type your choice.';
   static const otherSymbols = 'Use letters and numbers only, without symbols.';
@@ -103,13 +100,13 @@ class StartupStrings {
   static const nameLabel = 'Startup name';
   static const nameHint = 'e.g. Rafeeq Health';
   static const descriptionLabel = 'Description';
-  static const descriptionHint =
-      'What problem do you solve, for whom, and how?';
+  static const descriptionHint = 'Describe your startup';
   static const sectorLabel = 'Sector';
   static const stageLabel = 'Stage';
   static const businessModelLabel = 'Commerce model';
   static const locationLabel = 'City';
   static const foundedYearLabel = 'Founded';
+  static const foundedYearHint = 'e.g. 2024';
   static const websiteLabel = 'Website';
   static const websiteHint = 'e.g. rafeeqhealth.sa';
   static const lookingForLabel = 'What are you looking for?';

@@ -66,6 +66,9 @@ class StartupFormViewModel extends ChangeNotifier {
   final website = TextEditingController();
   final funding = TextEditingController();
 
+  /// The "Founded" year, typed (4 digits).
+  final foundedYearText = TextEditingController();
+
   // The text typed after choosing "Other" (ignored for any other choice).
   final sectorOther = TextEditingController();
   final stageOther = TextEditingController();
@@ -77,6 +80,7 @@ class StartupFormViewModel extends ChangeNotifier {
     description,
     website,
     funding,
+    foundedYearText,
     sectorOther,
     stageOther,
     businessModelOther,
@@ -90,8 +94,8 @@ class StartupFormViewModel extends ChangeNotifier {
   StartupLocation? location;
   Set<LookingFor> lookingFor = {};
 
-  /// Optional "Founded" year, picked from a list.
-  int? foundedYear;
+  /// Optional "Founded" year; null while the box is empty.
+  int? get foundedYear => int.tryParse(foundedYearText.text.trim());
 
   /// Default false, so a new startup is never exposed before it's ready.
   bool isPublic = false;
@@ -178,9 +182,6 @@ class StartupFormViewModel extends ChangeNotifier {
   void selectLocation(StartupLocation value) =>
       _change(() => location = value, StartupField.location);
 
-  void selectFoundedYear(int value) =>
-      _change(() => foundedYear = value, StartupField.foundedYear);
-
   void setLookingFor(Set<LookingFor> values) => _change(() {
     lookingFor = {...values};
     if (!seeksFunding) errors.remove(StartupField.funding);
@@ -260,7 +261,7 @@ class StartupFormViewModel extends ChangeNotifier {
         StartupStrings.locationRequired,
       ),
       StartupField.foundedYear: StartupValidators.foundedYear(
-        foundedYear?.toString() ?? '',
+        foundedYearText.text,
       ),
       StartupField.website: StartupValidators.websiteUrl(website.text),
       StartupField.lookingFor: StartupValidators.lookingFor(lookingFor),
@@ -381,7 +382,7 @@ class StartupFormViewModel extends ChangeNotifier {
     if (s == null) return;
     name.text = s.name;
     description.text = s.description;
-    foundedYear = s.foundedYear;
+    foundedYearText.text = s.foundedYear?.toString() ?? '';
     website.text = s.websiteUrl ?? '';
     funding.text = s.fundingRequirement?.toString() ?? '';
     sector = s.sector;
@@ -400,7 +401,7 @@ class StartupFormViewModel extends ChangeNotifier {
   Map<String, Object?> _snapshot() => {
     'name': name.text.trim(),
     'description': description.text.trim(),
-    'foundedYear': foundedYear,
+    'foundedYear': foundedYearText.text.trim(),
     'website': website.text.trim(),
     // Funding text only matters while Funding is selected.
     'funding': seeksFunding ? funding.text.trim() : '',

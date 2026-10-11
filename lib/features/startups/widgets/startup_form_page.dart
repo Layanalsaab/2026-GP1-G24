@@ -6,7 +6,7 @@ import '../../../app_constants/startup_strings.dart';
 import '../../../models/startup.dart';
 import '../../../shared_ui/common_widgets/confirm_dialog.dart';
 import '../../../shared_ui/common_widgets/form_message.dart';
-import '../../../shared_ui/common_widgets/green_top_bar.dart';
+import '../../../shared_ui/common_widgets/plain_top_bar.dart';
 import '../../../shared_ui/common_widgets/primary_button.dart';
 import '../../../shared_ui/theme/app_theme.dart';
 import '../view_models/startup_form_view_model.dart';
@@ -17,24 +17,23 @@ enum StartupFormOutcome { created, saved, deleted }
 
 typedef StartupFormResult = ({StartupFormOutcome outcome, Startup startup});
 
-/// Page frame shared by Add and Edit: green top bar, the scrolling form, an
-/// optional [footer] below it, and a pinned Save button.
+/// Page frame shared by Add and Edit (Figma "V2 · 44a" / "V2 · 44d"): a cream
+/// top bar with the centred title, then the scrolling form.
+///
+/// * Add: a close (X) button, and a pinned "Create startup" button below.
+/// * Edit: a back arrow and a green "Save" button in the top bar.
 ///
 /// Leaving with unsaved changes (back arrow or system back) asks
-/// "Discard changes?". While saving or deleting, leaving is blocked.
+/// "Discard changes?". While saving, leaving is blocked.
 class StartupFormPage extends StatelessWidget {
   const StartupFormPage({
     super.key,
     required this.title,
     required this.saveLabel,
-    this.actions = const [],
-    this.footer,
   });
 
   final String title;
   final String saveLabel;
-  final List<Widget> actions;
-  final Widget? footer;
 
   Future<void> _save(BuildContext context) async {
     // Retry can be tapped on a snackbar after this page has closed.
@@ -91,17 +90,27 @@ class StartupFormPage extends StatelessWidget {
         if (!didPop) _confirmLeave(context);
       },
       child: AnnotatedRegion<SystemUiOverlayStyle>(
-        value: SystemUiOverlayStyle.light.copyWith(
+        value: SystemUiOverlayStyle.dark.copyWith(
           statusBarColor: Colors.transparent,
         ),
         child: Scaffold(
           backgroundColor: AppColors.cream,
           body: Column(
             children: [
-              GreenTopBar(
+              PlainTopBar(
                 title: title,
-                leading: TopBarBackButton(onPressed: vm.isBusy ? () {} : null),
-                actions: actions,
+                showDivider: true,
+                leading: vm.isEditing
+                    ? PlainTopBarIcon.back(context)
+                    : PlainTopBarIcon(
+                        asset: 'st_close.svg',
+                        tooltip: StartupStrings.close,
+                        onPressed: () => Navigator.of(context).maybePop(),
+                      ),
+                trailing: [
+                  if (vm.isEditing)
+                    _SavePill(label: saveLabel, onSave: () => _save(context)),
+                ],
               ),
               Expanded(
                 child: SingleChildScrollView(
@@ -115,17 +124,81 @@ class StartupFormPage extends StatelessWidget {
                   ),
                   child: Column(
                     children: [
-                      const StartupForm(),
-                      if (footer != null) ...[
+                      // Edit has no bottom bar, so a failed save says why here.
+                      if (vm.isEditing &&
+                          vm.actionError != null &&
+                          !vm.isBusy) ...[
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: FormMessage.error(vm.actionError!),
+                        ),
                         const SizedBox(height: AppSpacing.lg),
-                        footer!,
                       ],
+                      const StartupForm(),
                     ],
                   ),
                 ),
               ),
-              _SaveBar(label: saveLabel, onSave: () => _save(context)),
+              if (!vm.isEditing)
+                _SaveBar(label: saveLabel, onSave: () => _save(context)),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Figma "Save" button of the Edit top bar: a small green pill.
+class _SavePill extends StatelessWidget {
+  const _SavePill({required this.label, required this.onSave});
+
+  final String label;
+  final VoidCallback onSave;
+
+  @override
+  Widget build(BuildContext context) {
+    final vm = context.watch<StartupFormViewModel>();
+    final enabled = vm.canSave && !vm.isBusy;
+    return Padding(
+      // The top bar already pads 8; Figma keeps 16 from the screen edge.
+      padding: const EdgeInsets.only(right: 8),
+      child: Semantics(
+        button: true,
+        enabled: enabled,
+        label: label,
+        excludeSemantics: true,
+        child: Material(
+          color: enabled ? AppColors.moss600 : AppColors.mutedFill,
+          borderRadius: BorderRadius.circular(16.5),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(16.5),
+            onTap: enabled ? onSave : null,
+            child: SizedBox(
+              height: 33,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 18),
+                child: Center(
+                  child: vm.isSaving
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : Text(
+                          label,
+                          style: AppText.sans(
+                            size: 14,
+                            color: enabled ? Colors.white : AppColors.grey,
+                            weight: FontWeight.w600,
+                          ),
+                        ),
+                ),
+              ),
+            ),
           ),
         ),
       ),
@@ -142,9 +215,6 @@ class _SaveBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final vm = context.watch<StartupFormViewModel>();
-    final hint = !vm.requiredFilled
-        ? StartupStrings.saveDisabledHint
-        : (vm.isEditing && !vm.isDirty ? StartupStrings.noChangesHint : null);
     return Container(
       // Figma: the button sits on the page background, with a hairline above.
       decoration: const BoxDecoration(
@@ -167,14 +237,9 @@ class _SaveBar extends StatelessWidget {
           ],
           PrimaryButton(
             label: label,
-            icon: Icons.check_rounded,
             isLoading: vm.isSaving,
             onPressed: vm.canSave && !vm.isBusy ? onSave : null,
           ),
-          if (hint != null && !vm.isSaving) ...[
-            const SizedBox(height: AppSpacing.sm),
-            Center(child: Text(hint, style: AppText.caption)),
-          ],
         ],
       ),
     );

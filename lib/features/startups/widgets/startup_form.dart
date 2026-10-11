@@ -253,19 +253,21 @@ class _StartupFormState extends State<StartupForm> {
           errorText: errors[StartupField.location],
         ),
       ),
-      // Not marked "(optional)" in Figma, but a startup without a year
-      // (older documents) still saves.
+      // Typed, not picked. Not marked "(optional)", but a startup without a
+      // year (older documents) still saves.
       _keyed(
         StartupField.foundedYear,
-        SelectField<int>.single(
+        AppTextField(
           label: StartupStrings.foundedYearLabel,
-          hint: StartupStrings.selectYear,
-          options: StartupValidators.foundedYears(),
-          labelOf: (y) => '$y',
-          value: vm.foundedYear,
-          onChanged: vm.selectFoundedYear,
+          hint: StartupStrings.foundedYearHint,
+          controller: vm.foundedYearText,
           enabled: enabled,
+          maxLength: 4,
+          keyboardType: TextInputType.number,
+          textInputAction: TextInputAction.next,
+          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
           errorText: errors[StartupField.foundedYear],
+          onChanged: (_) => vm.clearError(StartupField.foundedYear),
         ),
       ),
       _keyed(

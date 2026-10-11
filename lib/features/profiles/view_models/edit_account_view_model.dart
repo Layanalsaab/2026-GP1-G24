@@ -18,7 +18,17 @@ class EditAccountViewModel extends ChangeNotifier with SafeNotifier {
   EditAccountViewModel({required this.user, UserRepository? userRepository})
     : _users = userRepository ?? UserRepository.instance,
       city = user.city,
-      sectors = List.of(user.sectorsOfInterest);
+      sectors = [
+        for (final s in user.sectorsOfInterest)
+          if (AppStrings.sectors.contains(s)) s,
+      ],
+      otherSelected = user.sectorsOfInterest.any(
+        (s) => s == AppStrings.otherSector || !AppStrings.sectors.contains(s),
+      ),
+      initialOtherSector = user.sectorsOfInterest.firstWhere(
+        (s) => s != AppStrings.otherSector && !AppStrings.sectors.contains(s),
+        orElse: () => '',
+      );
 
   /// The profile as it was when the screen opened.
   final AppUser user;
@@ -27,8 +37,15 @@ class EditAccountViewModel extends ChangeNotifier with SafeNotifier {
   /// The selected city chip. Starts as the saved city (may be null).
   String? city;
 
-  /// The chosen sectors (the fixed chips plus "Other" or a typed sector).
+  /// The chosen fixed sector chips.
   final List<String> sectors;
+
+  /// Whether the "Other:" chip is on. Its typed text lives in the screen's
+  /// text box and is added to the saved sectors on Save.
+  bool otherSelected;
+
+  /// A typed sector saved earlier, to fill the "Other:" box with.
+  final String initialOtherSector;
 
   bool isLoading = false;
 
@@ -77,28 +94,21 @@ class EditAccountViewModel extends ChangeNotifier with SafeNotifier {
     notifyListeners();
   }
 
-  /// Whether the chip with [label] shows as selected. "Other" is selected
-  /// when it, or any typed sector that isn't one of the fixed chips, is saved.
-  bool isSectorSelected(String label) {
-    if (label == AppStrings.otherSector) {
-      return sectors.any(
-        (s) => s == AppStrings.otherSector || !AppStrings.sectors.contains(s),
-      );
-    }
-    return sectors.contains(label);
-  }
+  /// Whether the fixed chip with [label] shows as selected.
+  bool isSectorSelected(String label) => sectors.contains(label);
 
   void toggleSector(String label) {
     if (isLoading) return;
-    if (label == AppStrings.otherSector) {
-      if (isSectorSelected(label)) {
-        sectors.removeWhere((s) => !AppStrings.sectors.contains(s));
-      } else {
-        sectors.add(AppStrings.otherSector);
-      }
-    } else {
-      sectors.contains(label) ? sectors.remove(label) : sectors.add(label);
-    }
+    sectors.contains(label) ? sectors.remove(label) : sectors.add(label);
+    sectorsError = null;
+    formError = null;
+    notifyListeners();
+  }
+
+  /// Turns the "Other:" chip on or off.
+  void toggleOther() {
+    if (isLoading) return;
+    otherSelected = !otherSelected;
     sectorsError = null;
     formError = null;
     notifyListeners();
@@ -122,17 +132,21 @@ class EditAccountViewModel extends ChangeNotifier with SafeNotifier {
     required String fullName,
     required String bio,
     required String phone,
+    String otherSector = '',
   }) async {
     if (isLoading) return null;
 
     final name = fullName.trim();
     final about = bio.trim();
     final number = phone.trim();
+    final typed = otherSector.trim();
+    // The fixed chips plus the typed "Other" sector (ignored while empty).
+    final chosen = [...sectors, if (otherSelected && typed.isNotEmpty) typed];
     attempted = true;
     fullNameError = Validators.fullName(name);
     phoneError = Validators.phone(number);
     cityError = Validators.city(city);
-    sectorsError = Validators.sectors(sectors);
+    sectorsError = Validators.sectors(chosen);
     formError = null;
     if (fullNameError != null ||
         phoneError != null ||
@@ -150,7 +164,7 @@ class EditAccountViewModel extends ChangeNotifier with SafeNotifier {
         fullName: name,
         bio: about,
         phone: number,
-        sectorsOfInterest: List.of(sectors),
+        sectorsOfInterest: chosen,
         city: city,
       );
       var photoUrl = user.photoUrl;
@@ -177,7 +191,7 @@ class EditAccountViewModel extends ChangeNotifier with SafeNotifier {
         fullName: name,
         bio: about,
         phone: number,
-        sectorsOfInterest: List.of(sectors),
+        sectorsOfInterest: chosen,
         city: city,
         photoUrl: photoUrl,
         clearPhoto: photoRemoved,

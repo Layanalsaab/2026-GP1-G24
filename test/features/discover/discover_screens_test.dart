@@ -52,10 +52,9 @@ void main() {
     addTearDown(tester.view.reset);
     await tester.pumpWidget(MaterialApp(home: MainScreen(user: user)));
     await tester.pumpAndSettle();
-    if (tab != NavigationStrings.explore) {
-      await tester.tap(find.text(tab));
-      await tester.pumpAndSettle();
-    }
+    // The app opens on the Hub, so every tab (Explore too) is tapped.
+    await tester.tap(find.text(tab));
+    await tester.pumpAndSettle();
   }
 
   /// Scrolls the list to [name] and taps "View profile" on its card.
@@ -373,6 +372,8 @@ void main() {
             home: MainScreen(key: UniqueKey(), user: user),
           ),
         );
+        await tester.pumpAndSettle();
+        await tester.tap(find.text(NavigationStrings.explore)); // opens on Hub
         await tester.pumpAndSettle();
         for (final tab in [
           ExploreStrings.tabTrending,

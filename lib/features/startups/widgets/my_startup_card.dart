@@ -144,23 +144,33 @@ class MyStartupCard extends StatelessWidget {
               const SizedBox(height: AppSpacing.md),
               Row(
                 children: [
-                  Flexible(child: VisibilityBadge(isPublic: startup.isPublic)),
+                  VisibilityBadge(isPublic: startup.isPublic),
                   const SizedBox(width: AppSpacing.sm),
-                  const Spacer(),
-                  Flexible(
-                    child: Text(
-                      StartupStrings.manage,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppText.sans(
-                        size: 14,
-                        color: AppColors.moss600,
-                        weight: FontWeight.w600,
+                  // Figma: "Manage ›" is flush with the card's right edge.
+                  Expanded(
+                    child: Align(
+                      alignment: Alignment.centerRight,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Flexible(
+                            child: Text(
+                              StartupStrings.manage,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppText.sans(
+                                size: 14,
+                                color: AppColors.moss600,
+                                weight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: AppSpacing.xs),
+                          svgIcon('st_chev16.svg', size: 16),
+                        ],
                       ),
                     ),
                   ),
-                  const SizedBox(width: AppSpacing.xs),
-                  svgIcon('st_chev16.svg', size: 16),
                 ],
               ),
             ],

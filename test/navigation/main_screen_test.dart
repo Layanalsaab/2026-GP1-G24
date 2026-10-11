@@ -42,12 +42,22 @@ void main() {
     city: 'Riyadh',
   );
 
-  Future<void> pumpMain(WidgetTester tester, {AppUser user = founder}) async {
+  /// Opens the main screen. It starts on the Hub, so by default the Explore
+  /// tab is tapped (most tests here are about Explore).
+  Future<void> pumpMain(
+    WidgetTester tester, {
+    AppUser user = founder,
+    bool openExplore = true,
+  }) async {
     tester.view.physicalSize = const Size(1080, 2400);
     tester.view.devicePixelRatio = 3;
     addTearDown(tester.view.reset);
     await tester.pumpWidget(MaterialApp(home: MainScreen(user: user)));
     await tester.pumpAndSettle();
+    if (openExplore) {
+      await tester.tap(find.text(NavigationStrings.explore));
+      await tester.pumpAndSettle();
+    }
   }
 
   Future<void> openMenu(WidgetTester tester) async {
@@ -55,12 +65,13 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('opens on Explore, with the three tabs in the bar', (
+  testWidgets('opens on the Hub, with the three tabs in the bar', (
     tester,
   ) async {
-    await pumpMain(tester);
+    await pumpMain(tester, openExplore: false);
 
-    expect(find.byType(ExploreScreen), findsOneWidget);
+    expect(find.byType(HubScreen), findsOneWidget);
+    expect(find.byType(ExploreScreen), findsNothing);
     for (final label in [
       NavigationStrings.supportSystems,
       NavigationStrings.hub,
@@ -76,7 +87,7 @@ void main() {
   });
 
   testWidgets('every tab opens its own screen', (tester) async {
-    await pumpMain(tester);
+    await pumpMain(tester, openExplore: false);
 
     await tester.tap(find.text(NavigationStrings.hub));
     await tester.pumpAndSettle();

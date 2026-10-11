@@ -35,22 +35,15 @@ void main() {
 
   group('foundedYear', () {
     final now = DateTime(2026, 10, 4);
-    test('optional, 2000 to the current year', () {
+    test('optional, 1800 to the current year', () {
       expect(StartupValidators.foundedYear('', now: now), isNull);
-      expect(StartupValidators.foundedYear('1999', now: now), isNotNull);
+      expect(StartupValidators.foundedYear('1799', now: now), isNotNull);
+      expect(StartupValidators.foundedYear('1800', now: now), isNull);
+      expect(StartupValidators.foundedYear('1999', now: now), isNull);
       expect(StartupValidators.foundedYear('2000', now: now), isNull);
       expect(StartupValidators.foundedYear('2026', now: now), isNull);
       expect(StartupValidators.foundedYear('2027', now: now), isNotNull);
       expect(StartupValidators.foundedYear('20x1', now: now), isNotNull);
-    });
-  });
-
-  group('foundedYears', () {
-    test('newest first, from 2000 to the current year', () {
-      final years = StartupValidators.foundedYears(now: DateTime(2026, 10, 4));
-      expect(years.first, 2026);
-      expect(years.last, 2000);
-      expect(years, hasLength(27));
     });
   });
 

@@ -4,7 +4,6 @@ import '../../app_constants/seeker_strings.dart';
 import '../../features/login_and_signup/screens/choose_role_screen.dart';
 import '../../features/login_and_signup/screens/welcome_screen.dart';
 import 'confirm_dialog.dart';
-import 'green_top_bar.dart';
 
 /// Lets a startup seeker (who has no account) switch to another role: on to
 /// "Choose your role", after a confirmation. Back from there returns to the
@@ -27,16 +26,4 @@ Future<void> exitSeekerMode(BuildContext context) async {
     (route) => false,
   );
   navigator.push(MaterialPageRoute(builder: (_) => const ChooseRoleScreen()));
-}
-
-/// Top-bar button that runs [exitSeekerMode].
-class SeekerExitButton extends StatelessWidget {
-  const SeekerExitButton({super.key});
-
-  @override
-  Widget build(BuildContext context) => TopBarIconButton(
-    icon: Icons.swap_horiz_rounded,
-    tooltip: SeekerStrings.switchRole,
-    onPressed: () => exitSeekerMode(context),
-  );
 }

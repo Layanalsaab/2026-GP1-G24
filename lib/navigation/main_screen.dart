@@ -10,9 +10,9 @@ import '../shared_ui/common_widgets/app_menu_drawer.dart';
 import '../shared_ui/common_widgets/main_top_bar.dart';
 import '../shared_ui/theme/app_theme.dart';
 
-/// Where a signed-in founder or investor lands (Figma "V2 · 40 · Explore"):
-/// the top bar with the avatar menu, the selected tab's screen and the 3-tab
-/// bottom bar (Support Systems, Hub, Explore). Opens on Explore.
+/// Where a signed-in founder or investor lands: the top bar with the avatar
+/// menu, the selected tab's screen and the 3-tab bottom bar (Support Systems,
+/// Hub, Explore). Opens on the Hub, after sign up and after log in.
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key, required this.user});
 
@@ -24,7 +24,7 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
-  AppTab _current = AppTab.explore;
+  AppTab _current = AppTab.hub;
 
   late AppUser _user = widget.user;
 

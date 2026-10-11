@@ -12,6 +12,7 @@ import 'package:startsa/data_access/repositories/auth_repository.dart';
 import 'package:startsa/data_access/repositories/startup_repository.dart';
 import 'package:startsa/data_access/repositories/user_repository.dart';
 import 'package:startsa/features/explore_startups/screens/explore_screen.dart';
+import 'package:startsa/features/search/screens/hub_screen.dart';
 import 'package:startsa/main.dart';
 import 'package:startsa/models/app_user.dart';
 import 'package:startsa/models/auth_failure.dart';
@@ -161,7 +162,7 @@ void main() {
       await pumpApp(tester);
 
       expect(find.byType(MainScreen), findsOneWidget);
-      expect(find.byType(ExploreScreen), findsOneWidget); // opens on Explore
+      expect(find.byType(HubScreen), findsOneWidget); // opens on the Hub
       expect(find.text('MA'), findsOneWidget); // the avatar's initials
       expect(find.textContaining('Where Saudi startups'), findsNothing);
     });
@@ -188,14 +189,14 @@ void main() {
   });
 
   group('roles', () {
-    testWidgets('a guest goes to the seeker Explore, not the sign-up form', (
+    testWidgets('a guest goes to the Hub, not the sign-up form', (
       tester,
     ) async {
       await goToWelcome(tester);
       await tester.tap(find.text('Continue as guest'));
       await tester.pumpAndSettle();
 
-      expect(find.byType(ExploreScreen), findsOneWidget);
+      expect(find.byType(HubScreen), findsOneWidget);
       expect(find.text(AppStrings.signupTitle), findsNothing);
     });
 
@@ -494,6 +495,9 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(MainScreen), findsOneWidget);
+      // After log in the user lands on the Hub, not Explore.
+      expect(find.byType(HubScreen), findsOneWidget);
+      expect(find.byType(ExploreScreen), findsNothing);
     });
 
     testWidgets(

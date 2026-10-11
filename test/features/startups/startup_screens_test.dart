@@ -211,20 +211,21 @@ void main() {
     await tapText(tester, StartupStrings.emptyButton);
     expect(find.text('One-liner description'), findsNothing);
     expect(find.textContaining('One line that sums up'), findsNothing);
-    // Name, description and website are the only text inputs (funding comes
-    // later, only when Funding is selected).
+    // Name, description, website and the founded year are the only text
+    // inputs (funding comes later, only when Funding is selected).
     expect(
       find.descendant(
         of: find.byType(StartupForm),
         matching: find.byType(AppTextField),
       ),
-      findsNWidgets(3),
+      findsNWidgets(4),
     );
     expect(find.text(StartupStrings.selectSector), findsOneWidget);
     expect(find.text(StartupStrings.selectStage), findsOneWidget);
     expect(find.text(StartupStrings.selectBusinessModel), findsOneWidget);
     expect(find.text(StartupStrings.selectLocation), findsOneWidget);
-    expect(find.text(StartupStrings.selectYear), findsOneWidget);
+    // Founded is a text box now, not a list.
+    expect(find.text(StartupStrings.foundedYearHint), findsOneWidget);
     for (final option in LookingFor.values) {
       expect(find.text(option.label), findsOneWidget);
     }
@@ -233,18 +234,19 @@ void main() {
   testWidgets('leaving with unsaved changes asks to discard', (tester) async {
     await pumpList(tester);
     await tapText(tester, StartupStrings.emptyButton);
+    // Add has a close (X) button in the top bar, as in Figma.
     await tester.enterText(field(0), 'Draft');
     // Let the form rebuild so the unsaved-changes guard is active.
     await tester.pump();
 
-    await tester.tap(find.byTooltip('Back'));
+    await tester.tap(find.byTooltip(StartupStrings.close));
     await tester.pumpAndSettle();
     expect(find.text(StartupStrings.discardTitle), findsOneWidget);
 
     await tapText(tester, StartupStrings.keepEditing);
     expect(find.text(StartupStrings.addTitle), findsOneWidget);
 
-    await tester.tap(find.byTooltip('Back'));
+    await tester.tap(find.byTooltip(StartupStrings.close));
     await tester.pumpAndSettle();
     await tapText(tester, StartupStrings.discard);
     expect(find.text(StartupStrings.emptyTitle), findsOneWidget);
@@ -290,7 +292,7 @@ void main() {
     await pumpList(tester);
     await tapText(tester, 'Nakhla Pay');
 
-    // Manage > Preview, then close, then Edit > eye icon: the same page.
+    // Manage > Preview, then close.
     await tapText(tester, StartupStrings.preview);
     expect(find.byType(StartupProfileScreen), findsOneWidget);
     expect(find.text(StartupStrings.previewBanner), findsOneWidget);
@@ -302,10 +304,7 @@ void main() {
 
     await tester.tap(find.byTooltip(StartupStrings.close));
     await tester.pumpAndSettle();
-    await tapText(tester, StartupStrings.editStartup);
-    await tester.tap(find.byTooltip(StartupStrings.previewAsPublic));
-    await tester.pumpAndSettle();
-    expect(find.text(StartupStrings.previewBanner), findsOneWidget);
+    expect(find.byType(StartupProfileScreen), findsNothing);
   });
 
   testWidgets('delete asks first, then removes the startup', (tester) async {
@@ -1004,7 +1003,7 @@ void main() {
       await pumpList(tester);
       await tapText(tester, StartupStrings.emptyButton);
       await fillRequired(tester);
-      expect(find.text(StartupStrings.lookingForOtherLabel), findsNothing);
+      expect(find.text(StartupStrings.lookingForOtherHint), findsNothing);
       expect(saveEnabled(tester, StartupStrings.saveNew), isTrue);
 
       final otherChip = find.descendant(
@@ -1016,16 +1015,14 @@ void main() {
       await tester.tap(otherChip);
       await tester.pumpAndSettle();
 
-      // The box appears, and saving waits until it is filled in.
-      expect(find.text(StartupStrings.lookingForOtherLabel), findsOneWidget);
+      // The chip becomes "Other: [box]" (as on Create Account), and saving
+      // waits until it is filled in.
+      expect(find.text('Other:'), findsOneWidget);
+      expect(find.text(StartupStrings.lookingForOtherHint), findsOneWidget);
       expect(saveEnabled(tester, StartupStrings.saveNew), isFalse);
 
       final box = find.descendant(
-        of: find.byWidgetPredicate(
-          (w) =>
-              w is AppTextField &&
-              w.label == StartupStrings.lookingForOtherLabel,
-        ),
+        of: find.byType(LookingForChips),
         matching: find.byType(TextField),
       );
       await tester.enterText(box, "Legal -- advice's");

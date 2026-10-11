@@ -9,9 +9,9 @@ import '../shared_ui/common_widgets/app_menu_drawer.dart';
 import '../shared_ui/common_widgets/main_top_bar.dart';
 import '../shared_ui/theme/app_theme.dart';
 
-/// Where a startup seeker (a guest, with no account) lands (Figma "V2 · 40c ·
-/// Explore — Guest"): the same three tabs as everyone else, opening on
-/// Explore, with the guest menu (Expressions of Interest and Exit).
+/// Where a startup seeker (a guest, with no account) lands (Figma "V2 · 39c ·
+/// Hub — Guest"): the same three tabs as everyone else, opening on the Hub,
+/// with the guest menu (Expressions of Interest and Exit).
 ///
 /// Design phase: everything shows sample data.
 class SeekerMainScreen extends StatefulWidget {
@@ -23,7 +23,7 @@ class SeekerMainScreen extends StatefulWidget {
 
 class _SeekerMainScreenState extends State<SeekerMainScreen> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
-  AppTab _current = AppTab.explore;
+  AppTab _current = AppTab.hub;
 
   @override
   Widget build(BuildContext context) {

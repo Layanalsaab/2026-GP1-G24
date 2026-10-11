@@ -10,7 +10,7 @@ class StartupValidators {
   static const nameMax = 40;
   static const descriptionMin = 20;
   static const descriptionMax = 1000;
-  static const firstFoundedYear = 2000;
+  static const firstFoundedYear = 1800;
 
   static final _otherPattern = RegExp(r'^[\p{L}\p{M}\p{N} ]+$', unicode: true);
   static final _hasLetter = RegExp(r'\p{L}', unicode: true);
@@ -45,12 +45,6 @@ class StartupValidators {
       return StartupStrings.foundedYearRange(firstFoundedYear, lastYear);
     }
     return null;
-  }
-
-  /// Years offered by the Founded dropdown, newest first.
-  static List<int> foundedYears({DateTime? now}) {
-    final lastYear = (now ?? DateTime.now()).year;
-    return [for (var y = lastYear; y >= firstFoundedYear; y--) y];
   }
 
   /// Optional. Accepts addresses without a scheme ("example.com").
