@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -10,6 +11,7 @@ import '../../../shared_ui/common_widgets/app_text_field.dart';
 import '../../../shared_ui/common_widgets/form_message.dart';
 import '../../../shared_ui/common_widgets/form_page_scaffold.dart';
 import '../../../shared_ui/common_widgets/primary_button.dart';
+import '../../../shared_ui/common_widgets/profile_photo_field.dart';
 import '../../../shared_ui/theme/app_theme.dart';
 import '../view_models/signup_view_model.dart';
 import 'login_screen.dart';
@@ -37,6 +39,7 @@ class _SignupScreenState extends State<SignupScreen> {
   String? _city;
   final _sectors = <String>[];
   bool _otherSelected = false;
+  File? _photo;
 
   @override
   void dispose() {
@@ -71,6 +74,8 @@ class _SignupScreenState extends State<SignupScreen> {
       city: _city,
       sectors: _allSectors,
       role: widget.role,
+      bio: _bio.text,
+      photo: _photo,
     );
     if (result == null || !mounted) return;
 
@@ -210,6 +215,14 @@ class _SignupScreenState extends State<SignupScreen> {
                   color: AppColors.ink,
                   weight: FontWeight.w600,
                   height: 28,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Center(
+                child: ProfilePhotoField(
+                  photo: _photo,
+                  enabled: !loading,
+                  onChanged: (file) => setState(() => _photo = file),
                 ),
               ),
               const SizedBox(height: 20),

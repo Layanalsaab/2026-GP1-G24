@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import '../../../data_access/repositories/startup_repository.dart';
 import '../../../data_access/repositories/user_repository.dart';
 import '../../../helpers/safe_notifier.dart';
 import '../../../models/app_user.dart';
@@ -7,10 +8,19 @@ import '../../../models/app_user.dart';
 /// Logic for the Account screen (PBIs 9 and 11): holds the profile shown on
 /// screen and keeps it up to date.
 class AccountViewModel extends ChangeNotifier with SafeNotifier {
-  AccountViewModel({required this._user, UserRepository? userRepository})
-      : _users = userRepository ?? UserRepository.instance;
+  AccountViewModel({
+    required this._user,
+    UserRepository? userRepository,
+    StartupRepository? startupRepository,
+  }) : _users = userRepository ?? UserRepository.instance,
+       _startups = startupRepository;
 
   final UserRepository _users;
+  final StartupRepository? _startups;
+
+  /// The founder's number of startups ("2 Startups"). Null until loaded, or
+  /// when it can't be loaded, so the profile just hides the figure.
+  int? startupCount;
   AppUser _user;
 
   /// Counts edits shown with [updateUser], so a reload that started earlier
@@ -24,6 +34,7 @@ class AccountViewModel extends ChangeNotifier with SafeNotifier {
   /// fails (e.g. offline), keep showing what we already have.
   Future<void> reload() async {
     final editsAtStart = _edits;
+    if (_user.role == AccountRole.founder) _loadStartupCount();
     try {
       final latest = await _users.getProfile(_user.uid);
       if (latest == null || _edits != editsAtStart) return;
@@ -31,6 +42,17 @@ class AccountViewModel extends ChangeNotifier with SafeNotifier {
       notifyListeners();
     } catch (_) {
       // Keep the details we already have.
+    }
+  }
+
+  Future<void> _loadStartupCount() async {
+    try {
+      final list = await (_startups ?? StartupRepository.instance)
+          .fetchMyStartups();
+      startupCount = list.length;
+      notifyListeners();
+    } catch (_) {
+      // Keep the figure hidden.
     }
   }
 

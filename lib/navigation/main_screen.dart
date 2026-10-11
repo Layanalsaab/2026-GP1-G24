@@ -1,20 +1,18 @@
 import 'package:flutter/material.dart';
 
 import '../features/explore_startups/screens/explore_screen.dart';
-import '../features/profiles/screens/account_screen.dart';
 import '../features/programs/screens/programs_screen.dart';
 import '../features/search/screens/hub_screen.dart';
-import '../features/services/screens/services_screen.dart';
+import '../helpers/current_user.dart';
 import '../models/app_user.dart';
 import '../shared_ui/common_widgets/app_bottom_bar.dart';
+import '../shared_ui/common_widgets/app_menu_drawer.dart';
+import '../shared_ui/common_widgets/main_top_bar.dart';
 import '../shared_ui/theme/app_theme.dart';
 
-/// Where a signed-in founder or investor lands: the bottom bar plus the
-/// selected tab's screen.
-///
-/// All five tabs are built. Hub, Programs and Explore show sample data for
-/// now, and Services is mostly design only (for founders it leads to My
-/// Startups). The app opens on Account.
+/// Where a signed-in founder or investor lands (Figma "V2 · 40 · Explore"):
+/// the top bar with the avatar menu, the selected tab's screen and the 3-tab
+/// bottom bar (Support Systems, Hub, Explore). Opens on Explore.
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key, required this.user});
 
@@ -25,29 +23,55 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> {
-  AppTab _current = AppTab.account;
+  final _scaffoldKey = GlobalKey<ScaffoldState>();
+  AppTab _current = AppTab.explore;
 
-  /// Every tab is built, so every tab can be opened.
-  Set<AppTab> get _enabledTabs => AppTab.values.toSet();
+  late AppUser _user = widget.user;
+
+  @override
+  void initState() {
+    super.initState();
+    CurrentUser.changes.addListener(_onUserChanged);
+  }
+
+  @override
+  void dispose() {
+    CurrentUser.changes.removeListener(_onUserChanged);
+    super.dispose();
+  }
+
+  /// Profile edited (name, photo, ...): show it in the top bar and menu.
+  void _onUserChanged() {
+    final updated = CurrentUser.changes.value;
+    if (updated == null || updated.uid != _user.uid || !mounted) return;
+    setState(() => _user = updated);
+  }
 
   @override
   Widget build(BuildContext context) {
+    final topBar = MainTopBar(
+      name: _user.fullName,
+      photoUrl: _user.photoUrl,
+      onMenu: () => _scaffoldKey.currentState?.openDrawer(),
+    );
     return Scaffold(
+      key: _scaffoldKey,
       backgroundColor: AppColors.cream,
-      body: _screenFor(_current),
+      drawer: AppMenuDrawer(user: _user),
+      drawerScrimColor: const Color(0x660F1412),
+      body: switch (_current) {
+        AppTab.supportSystems => ProgramsScreen(topBar: topBar),
+        AppTab.hub => HubScreen(role: _user.role, topBar: topBar),
+        AppTab.explore => ExploreScreen(
+          role: _user.role,
+          user: _user,
+          topBar: topBar,
+        ),
+      },
       bottomNavigationBar: AppBottomBar(
         current: _current,
-        enabledTabs: _enabledTabs,
         onSelect: (tab) => setState(() => _current = tab),
       ),
     );
   }
-
-  Widget _screenFor(AppTab tab) => switch (tab) {
-    AppTab.account => AccountScreen(user: widget.user),
-    AppTab.hub => HubScreen(role: widget.user.role),
-    AppTab.programs => const ProgramsScreen(),
-    AppTab.explore => ExploreScreen(role: widget.user.role),
-    AppTab.services => ServicesScreen(role: widget.user.role),
-  };
 }

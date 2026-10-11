@@ -4,6 +4,20 @@ rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
 
+    // users/{uid}/{fileName}: the profile photo (users/{uid}/profile.jpg).
+    // Any signed-in user can see it (founders and investors view each
+    // other's profiles); only the owner can write it.
+    match /users/{uid}/{fileName} {
+      allow read: if request.auth != null;
+
+      // Images only, at most 2 MB (same limit as ProfilePhotoPickerService).
+      allow create, update: if request.auth != null && request.auth.uid == uid
+                            && request.resource.size < 2 * 1024 * 1024
+                            && request.resource.contentType.matches('image/.*');
+
+      allow delete: if request.auth != null && request.auth.uid == uid;
+    }
+
     // startup_logos/{founderId}/{startupId}/{fileName}
     match /startup_logos/{founderId}/{startupId}/{fileName} {
       function isFounder() {

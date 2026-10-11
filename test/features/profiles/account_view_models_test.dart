@@ -9,6 +9,7 @@ import 'package:startsa/features/profiles/view_models/account_view_model.dart';
 import 'package:startsa/features/profiles/view_models/change_password_view_model.dart';
 import 'package:startsa/features/profiles/view_models/delete_account_view_model.dart';
 import 'package:startsa/features/profiles/view_models/edit_account_view_model.dart';
+import 'package:startsa/helpers/validators.dart';
 import 'package:startsa/models/app_user.dart';
 import 'package:startsa/models/auth_failure.dart';
 
@@ -23,11 +24,13 @@ void main() {
     onboardingCompleted: true,
     city: 'Riyadh',
     bio: 'Nurse turned founder.',
+    phone: '551234567',
+    sectorsOfInterest: ['HealthTech'],
   );
 
   Matcher failsWith(AuthFailure failure) => throwsA(
-        isA<AuthException>().having((e) => e.failure, 'failure', failure),
-      );
+    isA<AuthException>().having((e) => e.failure, 'failure', failure),
+  );
 
   group('AccountViewModel', () {
     test('reload shows the latest saved profile', () async {
@@ -79,7 +82,11 @@ void main() {
     test('an empty name shows an error and saves nothing', () async {
       final vm = EditAccountViewModel(user: founder, userRepository: users);
 
-      final result = await vm.submit(fullName: '   ', bio: '');
+      final result = await vm.submit(
+        fullName: '   ',
+        bio: '',
+        phone: '551234567',
+      );
 
       expect(result, isNull);
       expect(vm.fullNameError, AppStrings.fullNameRequired);
@@ -93,12 +100,15 @@ void main() {
       final result = await vm.submit(
         fullName: '  Reem Alharbi ',
         bio: ' Building home care. ',
+        phone: ' 551234567 ',
       );
 
       expect(users.savedProfile, {
         'fullName': 'Reem Alharbi',
         'bio': 'Building home care.',
         'city': 'Jeddah',
+        'phone': '551234567',
+        'sectors': 'HealthTech',
       });
       expect(result?.fullName, 'Reem Alharbi');
       expect(result?.city, 'Jeddah');
@@ -107,11 +117,69 @@ void main() {
       expect(vm.isLoading, isFalse);
     });
 
+    test('the phone must be 9 digits starting with 5', () async {
+      final vm = EditAccountViewModel(user: founder, userRepository: users);
+
+      expect(await vm.submit(fullName: 'Reem', bio: '', phone: ''), isNull);
+      expect(vm.phoneError, AppStrings.phoneRequired);
+      expect(
+        await vm.submit(fullName: 'Reem', bio: '', phone: '412345678'),
+        isNull,
+      );
+      expect(vm.phoneError, AppStrings.phoneInvalid);
+      expect(
+        await vm.submit(fullName: 'Reem', bio: '', phone: '55123'),
+        isNull,
+      );
+      expect(vm.phoneError, AppStrings.phoneInvalid);
+      expect(users.profileUpdates, 0);
+    });
+
+    test('a city and at least one sector are required', () async {
+      final vm = EditAccountViewModel(
+        user: founder.copyWith(sectorsOfInterest: const []),
+        userRepository: users,
+      );
+      vm.sectors.clear();
+
+      expect(
+        await vm.submit(fullName: 'Reem', bio: '', phone: '551234567'),
+        isNull,
+      );
+      expect(vm.sectorsError, AppStrings.sectorsRequired);
+
+      vm.toggleSector('Fintech');
+      expect(vm.sectorsError, isNull);
+    });
+
+    test('the Other chip keeps a typed sector until it is switched off', () {
+      final vm = EditAccountViewModel(
+        user: founder.copyWith(sectorsOfInterest: ['HealthTech', 'Pets']),
+        userRepository: users,
+      );
+
+      expect(vm.isSectorSelected('Other'), isTrue);
+      vm.toggleSector('Other');
+      expect(vm.sectors, ['HealthTech']);
+      vm.toggleSector('Other');
+      expect(vm.sectors, ['HealthTech', 'Other']);
+    });
+
+    test('limits match sign-up', () {
+      expect(AccountStrings.bioMaxLength, 160);
+      expect(Validators.maxFullNameLength, 50);
+      expect(Validators.maxEmailLength, 100);
+      expect(Validators.phoneLength, 9);
+    });
+
     test('a network problem shows the network message', () async {
       users.updateFails = AuthFailure.network;
       final vm = EditAccountViewModel(user: founder, userRepository: users);
 
-      expect(await vm.submit(fullName: 'Reem', bio: ''), isNull);
+      expect(
+        await vm.submit(fullName: 'Reem', bio: '', phone: '551234567'),
+        isNull,
+      );
       expect(vm.formError, AppStrings.networkError);
     });
 
@@ -119,7 +187,10 @@ void main() {
       users.updateFails = AuthFailure.unknown;
       final vm = EditAccountViewModel(user: founder, userRepository: users);
 
-      expect(await vm.submit(fullName: 'Reem', bio: ''), isNull);
+      expect(
+        await vm.submit(fullName: 'Reem', bio: '', phone: '551234567'),
+        isNull,
+      );
       expect(vm.formError, AccountStrings.saveFailed);
     });
   });
@@ -134,12 +205,11 @@ void main() {
       String current = 'OldPass1!',
       String next = 'NewPass1!',
       String confirm = 'NewPass1!',
-    }) =>
-        vm.submit(
-          currentPassword: current,
-          newPassword: next,
-          confirmPassword: confirm,
-        );
+    }) => vm.submit(
+      currentPassword: current,
+      newPassword: next,
+      confirmPassword: confirm,
+    );
 
     test('shows every field error at once and changes nothing', () async {
       final vm = ChangePasswordViewModel(authRepository: repo);
@@ -241,35 +311,44 @@ void main() {
       repo = AuthRepository(authService: auth, userRepository: users);
     });
 
-    test('changePassword checks the current password, then updates it', () async {
-      await repo.changePassword(
-        currentPassword: 'OldPass1!',
-        newPassword: 'NewPass1!',
-      );
+    test(
+      'changePassword checks the current password, then updates it',
+      () async {
+        await repo.changePassword(
+          currentPassword: 'OldPass1!',
+          newPassword: 'NewPass1!',
+        );
 
-      expect(auth.calls, ['reauth', 'updatePassword']);
-      expect(auth.updatedPassword, 'NewPass1!');
-    });
+        expect(auth.calls, ['reauth', 'updatePassword']);
+        expect(auth.updatedPassword, 'NewPass1!');
+      },
+    );
 
     test('a wrong current password changes nothing', () async {
       auth.reauthFails = AuthFailure.invalidCredentials;
 
       await expectLater(
-        repo.changePassword(currentPassword: 'Wrong123', newPassword: 'NewPass1!'),
+        repo.changePassword(
+          currentPassword: 'Wrong123',
+          newPassword: 'NewPass1!',
+        ),
         failsWith(AuthFailure.invalidCredentials),
       );
       expect(auth.calls, ['reauth']);
       expect(auth.updatedPassword, isNull);
     });
 
-    test('deleteAccount deletes the profile, then the login, and signs out', () async {
-      await repo.deleteAccount('OldPass1!');
+    test(
+      'deleteAccount deletes the profile, then the login, and signs out',
+      () async {
+        await repo.deleteAccount('OldPass1!');
 
-      expect(users.deletedProfiles, ['uid1']);
-      expect(users.profiles, isEmpty);
-      expect(auth.calls, ['reauth', 'delete', 'signOut']);
-      expect(auth.signedIn, isNull);
-    });
+        expect(users.deletedProfiles, ['uid1']);
+        expect(users.profiles, isEmpty);
+        expect(auth.calls, ['reauth', 'delete', 'signOut']);
+        expect(auth.signedIn, isNull);
+      },
+    );
 
     test('a wrong password deletes nothing', () async {
       auth.reauthFails = AuthFailure.invalidCredentials;

@@ -51,20 +51,32 @@ void main() {
     });
 
     test('requires an uppercase letter', () {
-      expect(Validators.password('startup1!'), AppStrings.passwordNeedsUppercase);
+      expect(
+        Validators.password('startup1!'),
+        AppStrings.passwordNeedsUppercase,
+      );
     });
 
     test('requires a lowercase letter', () {
-      expect(Validators.password('STARTUP1!'), AppStrings.passwordNeedsLowercase);
+      expect(
+        Validators.password('STARTUP1!'),
+        AppStrings.passwordNeedsLowercase,
+      );
     });
 
     test('requires a number', () {
-      expect(Validators.password('StartupPlan!'), AppStrings.passwordNeedsNumber);
+      expect(
+        Validators.password('StartupPlan!'),
+        AppStrings.passwordNeedsNumber,
+      );
     });
 
     test('requires a special character', () {
       expect(Validators.password('Startup12'), AppStrings.passwordNeedsSpecial);
-      expect(Validators.password('Startup 12'), AppStrings.passwordNeedsSpecial);
+      expect(
+        Validators.password('Startup 12'),
+        AppStrings.passwordNeedsSpecial,
+      );
     });
 
     test('does not trim: spaces count as characters', () {
@@ -79,13 +91,25 @@ void main() {
     });
 
     test('requires a confirmation', () {
-      expect(Validators.confirmPassword('Startup1', ''), AppStrings.confirmPasswordRequired);
-      expect(Validators.confirmPassword('Startup1', null), AppStrings.confirmPasswordRequired);
+      expect(
+        Validators.confirmPassword('Startup1', ''),
+        AppStrings.confirmPasswordRequired,
+      );
+      expect(
+        Validators.confirmPassword('Startup1', null),
+        AppStrings.confirmPasswordRequired,
+      );
     });
 
     test('rejects a different confirmation, case-sensitively', () {
-      expect(Validators.confirmPassword('Startup1', 'startup1'), AppStrings.passwordsDontMatch);
-      expect(Validators.confirmPassword('Startup1', 'Startup2'), AppStrings.passwordsDontMatch);
+      expect(
+        Validators.confirmPassword('Startup1', 'startup1'),
+        AppStrings.passwordsDontMatch,
+      );
+      expect(
+        Validators.confirmPassword('Startup1', 'Startup2'),
+        AppStrings.passwordsDontMatch,
+      );
     });
   });
 
@@ -130,9 +154,27 @@ void main() {
     List<bool> met(List<FieldRule> rules) => [for (final r in rules) r.met];
 
     test('password rules go green one by one', () {
-      expect(met(Validators.passwordRules('')), [false, false, false, false, false]);
-      expect(met(Validators.passwordRules('abc')), [false, false, true, false, false]);
-      expect(met(Validators.passwordRules('Abcdefg1!')), [true, true, true, true, true]);
+      expect(met(Validators.passwordRules('')), [
+        false,
+        false,
+        false,
+        false,
+        false,
+      ]);
+      expect(met(Validators.passwordRules('abc')), [
+        false,
+        false,
+        true,
+        false,
+        false,
+      ]);
+      expect(met(Validators.passwordRules('Abcdefg1!')), [
+        true,
+        true,
+        true,
+        true,
+        true,
+      ]);
     });
 
     test('email rules agree with the email validator', () {
@@ -141,7 +183,11 @@ void main() {
         expect(Validators.email(good), isNull);
       }
       for (final bad in ['plain', 'a@b', 'a@@b.com', 'a b@c.com', '@c.com']) {
-        expect(met(Validators.emailRules(bad)).every((m) => m), isFalse, reason: bad);
+        expect(
+          met(Validators.emailRules(bad)).every((m) => m),
+          isFalse,
+          reason: bad,
+        );
         expect(Validators.email(bad), isNotNull);
       }
     });

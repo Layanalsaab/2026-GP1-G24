@@ -25,6 +25,11 @@ class AppColors {
   static const moss50 = Color(0xFFF2F7F3);
   static const gold100 = Color(0xFFF7EDD5);
   static const gold700 = Color(0xFF8A6A1F);
+  static const tagGoldFill = Color(0xFFF6EEDB);
+  static const tagGoldText = Color(0xFF7A5A12);
+  static const dividerSoft = Color(0xFFEDEAE3);
+  static const neutralPillFill = Color(0xFFEDEDEB);
+  static const barMuted = Color(0xFFB8CFBA);
   static const errorFill = Color(0xFFFBEAE9);
   static const onDark = Colors.white;
   static const onDarkMuted = Color(0xCCFFFFFF);
@@ -40,13 +45,12 @@ class AppText {
     required double size,
     required Color color,
     double? height,
-  }) =>
-      GoogleFonts.sourceSerif4(
-        fontSize: size,
-        fontWeight: FontWeight.w700,
-        color: color,
-        height: height == null ? null : height / size,
-      );
+  }) => GoogleFonts.sourceSerif4(
+    fontSize: size,
+    fontWeight: FontWeight.w700,
+    color: color,
+    height: height == null ? null : height / size,
+  );
 
   /// Body / UI text — Inter.
   static TextStyle sans({
@@ -55,14 +59,13 @@ class AppText {
     FontWeight weight = FontWeight.w400,
     double? height,
     double? letterSpacing,
-  }) =>
-      GoogleFonts.inter(
-        fontSize: size,
-        fontWeight: weight,
-        color: color,
-        height: height == null ? null : height / size,
-        letterSpacing: letterSpacing,
-      );
+  }) => GoogleFonts.inter(
+    fontSize: size,
+    fontWeight: weight,
+    color: color,
+    height: height == null ? null : height / size,
+    letterSpacing: letterSpacing,
+  );
 
   // Named styles, so widgets never pick font sizes themselves. Colours can be
   // changed per use with `.copyWith(color: ...)`.
@@ -85,27 +88,35 @@ class AppText {
 
   /// Initials inside a logo placeholder; scaled to the square size.
   static TextStyle initials(double boxSize) => sans(
-        size: boxSize * 0.32,
-        color: AppColors.green,
-        weight: FontWeight.w700,
-      );
+    size: boxSize * 0.32,
+    color: AppColors.green,
+    weight: FontWeight.w700,
+  );
 
   /// Small grey heading above a group of fields.
   static TextStyle get groupLabel => sans(
-        size: 12,
-        color: AppColors.grey,
-        weight: FontWeight.w600,
-        height: 16,
-        letterSpacing: 0.6,
-      );
+    size: 12,
+    color: AppColors.grey,
+    weight: FontWeight.w600,
+    height: 16,
+    letterSpacing: 0.6,
+  );
 
-  /// Section heading inside a page (serif).
-  static TextStyle get sectionTitle =>
-      serif(size: 18, color: AppColors.ink, height: 24);
+  /// Section heading inside a page, dialog or sheet (Inter bold).
+  static TextStyle get sectionTitle => sans(
+    size: 18,
+    color: AppColors.ink,
+    weight: FontWeight.w700,
+    height: 24,
+  );
 
   /// Startup name on a card.
-  static TextStyle get cardTitle =>
-      serif(size: 17, color: AppColors.ink, height: 22);
+  static TextStyle get cardTitle => sans(
+    size: 17,
+    color: AppColors.ink,
+    weight: FontWeight.w700,
+    height: 22,
+  );
 
   static TextStyle get body => sans(size: 15, color: AppColors.ink, height: 22);
 
@@ -113,7 +124,8 @@ class AppText {
       sans(size: 14, color: AppColors.grey, height: 20);
 
   /// Text typed into an input.
-  static TextStyle get input => sans(size: 16, color: AppColors.ink, height: 24);
+  static TextStyle get input =>
+      sans(size: 16, color: AppColors.ink, height: 24);
 
   /// Field label above an input.
   static TextStyle get label =>
@@ -124,31 +136,30 @@ class AppText {
 
   /// Small uppercase-ish tag text (badges, meta).
   static TextStyle get badge => sans(
-        size: 12,
-        color: AppColors.ink,
-        weight: FontWeight.w600,
-        height: 16,
-        letterSpacing: 0.2,
-      );
+    size: 12,
+    color: AppColors.ink,
+    weight: FontWeight.w600,
+    height: 16,
+    letterSpacing: 0.2,
+  );
 
   static TextStyle get button => sans(
-        size: 16,
-        color: AppColors.onDark,
-        weight: FontWeight.w600,
-        height: 20,
-      );
+    size: 16,
+    color: AppColors.onDark,
+    weight: FontWeight.w600,
+    height: 20,
+  );
 
   static TextStyle get link => sans(
-        size: 14,
-        color: AppColors.moss600,
-        weight: FontWeight.w600,
-        height: 20,
-      );
+    size: 14,
+    color: AppColors.moss600,
+    weight: FontWeight.w600,
+    height: 20,
+  );
 
   /// Big number (funding amount).
   static TextStyle get figure =>
       serif(size: 24, color: AppColors.ink, height: 30);
-
 }
 
 /// Spacing scale (logical pixels).

@@ -14,7 +14,7 @@ import 'investment_criteria_form.dart';
 class EditCriteriaViewModel extends ChangeNotifier
     with SafeNotifier, InvestmentCriteriaForm {
   EditCriteriaViewModel({required this.user, UserRepository? userRepository})
-      : _users = userRepository ?? UserRepository.instance {
+    : _users = userRepository ?? UserRepository.instance {
     sectors.addAll(user.preferredSectors);
     stages.addAll(user.preferredStages);
     ticketSize = user.ticketSize;

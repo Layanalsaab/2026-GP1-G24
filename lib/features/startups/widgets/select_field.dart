@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../../app_constants/startup_strings.dart';
+import '../../../shared_ui/common_widgets/app_text_field.dart';
 import '../../../shared_ui/common_widgets/form_message.dart';
 import '../../../shared_ui/common_widgets/primary_button.dart';
 import '../../../shared_ui/theme/app_theme.dart';
@@ -18,9 +20,12 @@ class SelectField<T> extends StatelessWidget {
     required this.labelOf,
     required T? value,
     required ValueChanged<T> onChanged,
+    required this.hint,
     this.isRequired = true,
     this.errorText,
     this.enabled = true,
+    this.other,
+    this.customPicker,
   }) : selected = {?value},
        multi = false,
        _onPicked = ((picked) => onChanged(picked.first));
@@ -33,14 +38,20 @@ class SelectField<T> extends StatelessWidget {
     required this.labelOf,
     required Set<T> values,
     required ValueChanged<Set<T>> onChanged,
+    required this.hint,
     this.isRequired = true,
     this.errorText,
     this.enabled = true,
   }) : selected = values,
        multi = true,
+       other = null,
+       customPicker = null,
        _onPicked = onChanged;
 
   final String label;
+
+  /// Shown while nothing is chosen, e.g. "Select a sector".
+  final String hint;
   final List<T> options;
   final String Function(T) labelOf;
   final Set<T> selected;
@@ -48,14 +59,29 @@ class SelectField<T> extends StatelessWidget {
   final bool isRequired;
   final String? errorText;
   final bool enabled;
+
+  /// Optional "Other" choice (single choice only). Picking it shows a text
+  /// box in the list, bound to [OtherChoice.controller], and Done closes it.
+  final OtherChoice<T>? other;
+
+  /// Opens a different chooser (e.g. the searchable city list) instead of the
+  /// plain options sheet. Returns the chosen option, or null when dismissed.
+  final Future<T?> Function(BuildContext context)? customPicker;
   final ValueChanged<Set<T>> _onPicked;
 
   Future<void> _open(BuildContext context) async {
     FocusScope.of(context).unfocus();
+    final custom = customPicker;
+    if (custom != null) {
+      final choice = await custom(context);
+      if (choice != null) _onPicked({choice});
+      return;
+    }
     final picked = await showModalBottomSheet<Set<T>>(
       context: context,
       backgroundColor: AppColors.cream,
       isScrollControlled: true,
+      showDragHandle: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
       ),
@@ -65,6 +91,7 @@ class SelectField<T> extends StatelessWidget {
         labelOf: labelOf,
         initial: selected,
         multi: multi,
+        other: other,
       ),
     );
     // Null means the sheet was dismissed without choosing.
@@ -86,7 +113,7 @@ class SelectField<T> extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        FieldLabel(label, isRequired: isRequired),
+        FieldLabel(label, optional: !isRequired),
         const SizedBox(height: AppSpacing.sm),
         Semantics(
           button: true,
@@ -114,7 +141,7 @@ class SelectField<T> extends StatelessWidget {
                   children: [
                     Expanded(
                       child: Text(
-                        text.isEmpty ? StartupStrings.choose(label) : text,
+                        text.isEmpty ? hint : text,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: AppText.input.copyWith(
@@ -142,8 +169,32 @@ class SelectField<T> extends StatelessWidget {
   }
 }
 
-/// Bottom sheet listing the options. Single choice closes on tap; multiple
-/// choice has a Done button.
+/// Describes an "Other" option that reveals a text box (Figma "Select
+/// commerce model": the choice "Other", then a text input and Done).
+class OtherChoice<T> {
+  const OtherChoice({
+    required this.option,
+    required this.controller,
+    required this.label,
+    required this.hint,
+    this.maxLength = 40,
+    this.onChanged,
+  });
+
+  /// The option that means "Other".
+  final T option;
+
+  /// Holds the typed text (owned by the caller).
+  final TextEditingController controller;
+  final String label;
+  final String hint;
+  final int maxLength;
+  final VoidCallback? onChanged;
+}
+
+/// Bottom sheet listing the options (Figma "Select ..." sheet). Single choice
+/// closes on tap, except for an "Other" option, which shows a text box and a
+/// Done button; multiple choice always has a Done button.
 class _OptionsSheet<T> extends StatefulWidget {
   const _OptionsSheet({
     required this.title,
@@ -151,6 +202,7 @@ class _OptionsSheet<T> extends StatefulWidget {
     required this.labelOf,
     required this.initial,
     required this.multi,
+    this.other,
   });
 
   final String title;
@@ -158,6 +210,7 @@ class _OptionsSheet<T> extends StatefulWidget {
   final String Function(T) labelOf;
   final Set<T> initial;
   final bool multi;
+  final OtherChoice<T>? other;
 
   @override
   State<_OptionsSheet<T>> createState() => _OptionsSheetState<T>();
@@ -165,9 +218,23 @@ class _OptionsSheet<T> extends StatefulWidget {
 
 class _OptionsSheetState<T> extends State<_OptionsSheet<T>> {
   late final Set<T> _picked = {...widget.initial};
+  String? _otherError;
+
+  bool get _otherChosen =>
+      widget.other != null && _picked.contains(widget.other!.option);
 
   void _tap(T option) {
+    final other = widget.other;
     if (!widget.multi) {
+      if (other != null && option == other.option) {
+        // Keep the list open: the text box appears under it.
+        setState(() {
+          _picked
+            ..clear()
+            ..add(option);
+        });
+        return;
+      }
       Navigator.of(context).pop(<T>{option});
       return;
     }
@@ -176,22 +243,48 @@ class _OptionsSheetState<T> extends State<_OptionsSheet<T>> {
     });
   }
 
+  void _done() {
+    final other = widget.other;
+    if (other != null && _otherChosen && other.controller.text.trim().isEmpty) {
+      setState(() => _otherError = StartupStrings.otherRequiredShort);
+      return;
+    }
+    Navigator.of(context).pop(_picked);
+  }
+
   @override
   Widget build(BuildContext context) {
+    final other = widget.other;
+    final showDone = widget.multi || _otherChosen;
     return SafeArea(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(
-          AppSpacing.page,
-          AppSpacing.xl,
+        padding: EdgeInsets.fromLTRB(
           AppSpacing.page,
           AppSpacing.lg,
+          AppSpacing.page,
+          AppSpacing.lg + MediaQuery.viewInsetsOf(context).bottom,
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(widget.title, style: AppText.sectionTitle),
-            const SizedBox(height: AppSpacing.md),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(widget.title, style: AppText.sectionTitle),
+                ),
+                IconButton(
+                  tooltip: StartupStrings.close,
+                  onPressed: () => Navigator.of(context).pop(),
+                  icon: const Icon(
+                    Icons.close_rounded,
+                    size: AppSizes.icon,
+                    color: AppColors.ink,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.sm),
             Flexible(
               child: ListView(
                 shrinkWrap: true,
@@ -206,12 +299,26 @@ class _OptionsSheetState<T> extends State<_OptionsSheet<T>> {
                 ],
               ),
             ),
-            if (widget.multi) ...[
-              const SizedBox(height: AppSpacing.lg),
-              PrimaryButton(
-                label: StartupStrings.done,
-                onPressed: () => Navigator.of(context).pop(_picked),
+            if (other != null && _otherChosen) ...[
+              const SizedBox(height: AppSpacing.sm),
+              AppTextField(
+                label: other.label,
+                hint: other.hint,
+                controller: other.controller,
+                maxLength: other.maxLength,
+                inputFormatters: otherTextFormatters,
+                textInputAction: TextInputAction.done,
+                errorText: _otherError,
+                onChanged: (_) {
+                  if (_otherError != null) setState(() => _otherError = null);
+                  other.onChanged?.call();
+                },
+                onSubmitted: (_) => _done(),
               ),
+            ],
+            if (showDone) ...[
+              const SizedBox(height: AppSpacing.lg),
+              PrimaryButton(label: StartupStrings.done, onPressed: _done),
             ],
           ],
         ),
@@ -235,12 +342,51 @@ class _OptionRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final IconData icon = switch ((multi, selected)) {
-      (true, true) => Icons.check_box_rounded,
-      (true, false) => Icons.check_box_outline_blank_rounded,
-      (false, true) => Icons.radio_button_checked_rounded,
-      (false, false) => Icons.radio_button_unchecked_rounded,
-    };
+    final shape = BorderRadius.circular(AppRadius.md);
+    if (!multi) {
+      // Figma: plain text rows; the chosen one is moss-tinted with a check.
+      return Padding(
+        padding: EdgeInsets.zero,
+        child: Material(
+          color: selected ? AppColors.moss100 : Colors.transparent,
+          borderRadius: shape,
+          child: InkWell(
+            borderRadius: shape,
+            onTap: onTap,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                vertical: 14,
+                horizontal: AppSpacing.md,
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      label,
+                      style: AppText.body.copyWith(
+                        color: selected ? AppColors.moss600 : AppColors.ink,
+                        fontWeight: selected
+                            ? FontWeight.w600
+                            : FontWeight.w400,
+                      ),
+                    ),
+                  ),
+                  if (selected)
+                    const Icon(
+                      Icons.check_rounded,
+                      size: AppSizes.icon,
+                      color: AppColors.moss600,
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+    final icon = selected
+        ? Icons.check_box_rounded
+        : Icons.check_box_outline_blank_rounded;
     return InkWell(
       borderRadius: BorderRadius.circular(AppRadius.sm),
       onTap: onTap,
@@ -261,7 +407,7 @@ class _OptionRow extends StatelessWidget {
               child: Text(
                 label,
                 style: AppText.body.copyWith(
-                  color: selected ? AppColors.green : AppColors.ink,
+                  color: selected ? AppColors.moss600 : AppColors.ink,
                 ),
               ),
             ),
@@ -271,3 +417,11 @@ class _OptionRow extends StatelessWidget {
     );
   }
 }
+
+/// Lets only letters (any language), numbers and spaces be typed in an
+/// "Other" box, so symbols such as "--" or an apostrophe can't be added.
+final List<TextInputFormatter> otherTextFormatters = [
+  FilteringTextInputFormatter.allow(
+    RegExp(r'[\p{L}\p{M}\p{N} ]', unicode: true),
+  ),
+];

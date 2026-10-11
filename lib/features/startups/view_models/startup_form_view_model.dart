@@ -15,11 +15,14 @@ import 'startup_error_message.dart';
 /// screen (used to scroll to the first error).
 enum StartupField {
   name,
-  tagline,
   description,
   sector,
+  sectorOther,
   stage,
+  stageOther,
   businessModel,
+  businessModelOther,
+  lookingForOther,
   location,
   foundedYear,
   website,
@@ -59,19 +62,25 @@ class StartupFormViewModel extends ChangeNotifier {
 
   // Text fields
   final name = TextEditingController();
-  final tagline = TextEditingController();
   final description = TextEditingController();
-  final foundedYear = TextEditingController();
   final website = TextEditingController();
   final funding = TextEditingController();
 
+  // The text typed after choosing "Other" (ignored for any other choice).
+  final sectorOther = TextEditingController();
+  final stageOther = TextEditingController();
+  final businessModelOther = TextEditingController();
+  final lookingForOther = TextEditingController();
+
   List<TextEditingController> get _textControllers => [
     name,
-    tagline,
     description,
-    foundedYear,
     website,
     funding,
+    sectorOther,
+    stageOther,
+    businessModelOther,
+    lookingForOther,
   ];
 
   // Selections
@@ -80,6 +89,9 @@ class StartupFormViewModel extends ChangeNotifier {
   BusinessModel? businessModel;
   StartupLocation? location;
   Set<LookingFor> lookingFor = {};
+
+  /// Optional "Founded" year, picked from a list.
+  int? foundedYear;
 
   /// Default false, so a new startup is never exposed before it's ready.
   bool isPublic = false;
@@ -109,6 +121,12 @@ class StartupFormViewModel extends ChangeNotifier {
 
   bool get seeksFunding => lookingFor.contains(LookingFor.funding);
 
+  /// "Other" is chosen, so its text box is shown (and required).
+  bool get isSectorOther => sector == Sector.other;
+  bool get isStageOther => stage == StartupStage.other;
+  bool get isBusinessModelOther => businessModel == BusinessModel.other;
+  bool get isLookingForOther => lookingFor.contains(LookingFor.other);
+
   late Map<String, Object?> _savedSnapshot;
   bool _disposed = false;
 
@@ -121,10 +139,14 @@ class StartupFormViewModel extends ChangeNotifier {
       name.text.trim().isNotEmpty &&
       description.text.trim().isNotEmpty &&
       sector != null &&
+      (!isSectorOther || sectorOther.text.trim().isNotEmpty) &&
       stage != null &&
+      (!isStageOther || stageOther.text.trim().isNotEmpty) &&
       businessModel != null &&
+      (!isBusinessModelOther || businessModelOther.text.trim().isNotEmpty) &&
       location != null &&
       lookingFor.isNotEmpty &&
+      (!isLookingForOther || lookingForOther.text.trim().isNotEmpty) &&
       (!seeksFunding || funding.text.trim().isNotEmpty);
 
   bool get isDirty =>
@@ -138,21 +160,31 @@ class StartupFormViewModel extends ChangeNotifier {
 
   // ---------------------------------------------------------------- changes
 
-  void selectSector(Sector value) =>
-      _change(() => sector = value, StartupField.sector);
+  void selectSector(Sector value) => _change(() {
+    sector = value;
+    errors.remove(StartupField.sectorOther);
+  }, StartupField.sector);
 
-  void selectStage(StartupStage value) =>
-      _change(() => stage = value, StartupField.stage);
+  void selectStage(StartupStage value) => _change(() {
+    stage = value;
+    errors.remove(StartupField.stageOther);
+  }, StartupField.stage);
 
-  void selectBusinessModel(BusinessModel value) =>
-      _change(() => businessModel = value, StartupField.businessModel);
+  void selectBusinessModel(BusinessModel value) => _change(() {
+    businessModel = value;
+    errors.remove(StartupField.businessModelOther);
+  }, StartupField.businessModel);
 
   void selectLocation(StartupLocation value) =>
       _change(() => location = value, StartupField.location);
 
+  void selectFoundedYear(int value) =>
+      _change(() => foundedYear = value, StartupField.foundedYear);
+
   void setLookingFor(Set<LookingFor> values) => _change(() {
     lookingFor = {...values};
     if (!seeksFunding) errors.remove(StartupField.funding);
+    if (!isLookingForOther) errors.remove(StartupField.lookingForOther);
   }, StartupField.lookingFor);
 
   void setPublic(bool value) => _change(() => isPublic = value, null);
@@ -195,27 +227,48 @@ class StartupFormViewModel extends ChangeNotifier {
   bool validate() {
     final found = <StartupField, String?>{
       StartupField.name: StartupValidators.name(name.text),
-      StartupField.tagline: StartupValidators.tagline(tagline.text),
       StartupField.description: StartupValidators.description(description.text),
       StartupField.sector: StartupValidators.required(
         sector,
         StartupStrings.sectorRequired,
       ),
+      if (isSectorOther)
+        StartupField.sectorOther: StartupValidators.otherText(
+          sectorOther.text,
+          requiredMessage: StartupStrings.sectorOtherRequired,
+        ),
       StartupField.stage: StartupValidators.required(
         stage,
         StartupStrings.stageRequired,
       ),
+      if (isStageOther)
+        StartupField.stageOther: StartupValidators.otherText(
+          stageOther.text,
+          requiredMessage: StartupStrings.stageOtherRequired,
+        ),
       StartupField.businessModel: StartupValidators.required(
         businessModel,
         StartupStrings.businessModelRequired,
       ),
+      if (isBusinessModelOther)
+        StartupField.businessModelOther: StartupValidators.otherText(
+          businessModelOther.text,
+          requiredMessage: StartupStrings.businessModelOtherRequired,
+        ),
       StartupField.location: StartupValidators.required(
         location,
         StartupStrings.locationRequired,
       ),
-      StartupField.foundedYear: StartupValidators.foundedYear(foundedYear.text),
+      StartupField.foundedYear: StartupValidators.foundedYear(
+        foundedYear?.toString() ?? '',
+      ),
       StartupField.website: StartupValidators.websiteUrl(website.text),
       StartupField.lookingFor: StartupValidators.lookingFor(lookingFor),
+      if (isLookingForOther)
+        StartupField.lookingForOther: StartupValidators.otherText(
+          lookingForOther.text,
+          requiredMessage: StartupStrings.lookingForOtherRequired,
+        ),
       if (seeksFunding)
         StartupField.funding: StartupValidators.fundingRequirement(
           funding.text,
@@ -291,23 +344,29 @@ class StartupFormViewModel extends ChangeNotifier {
   // ---------------------------------------------------------------- helpers
 
   Startup _buildStartup() {
-    final taglineText = tagline.text.trim();
     final websiteText = website.text.trim();
     return Startup(
       id: initial?.id ?? '',
       founderId: initial?.founderId ?? '',
       name: name.text.trim(),
-      tagline: taglineText.isEmpty ? null : taglineText,
+      // The form no longer asks for a one-liner; keep an old one untouched.
+      tagline: initial?.tagline,
       description: description.text.trim(),
       sector: sector!,
+      sectorOther: isSectorOther ? sectorOther.text.trim() : null,
       stage: stage!,
+      stageOther: isStageOther ? stageOther.text.trim() : null,
       businessModel: businessModel!,
+      businessModelOther: isBusinessModelOther
+          ? businessModelOther.text.trim()
+          : null,
       location: location!,
-      foundedYear: int.tryParse(foundedYear.text.trim()),
+      foundedYear: foundedYear,
       websiteUrl: websiteText.isEmpty
           ? null
           : StartupValidators.normalizeUrl(websiteText),
       lookingFor: lookingFor,
+      lookingForOther: isLookingForOther ? lookingForOther.text.trim() : null,
       fundingRequirement: seeksFunding
           ? int.tryParse(funding.text.trim())
           : null,
@@ -321,12 +380,15 @@ class StartupFormViewModel extends ChangeNotifier {
   void _fillFrom(Startup? s) {
     if (s == null) return;
     name.text = s.name;
-    tagline.text = s.tagline ?? '';
     description.text = s.description;
-    foundedYear.text = s.foundedYear?.toString() ?? '';
+    foundedYear = s.foundedYear;
     website.text = s.websiteUrl ?? '';
     funding.text = s.fundingRequirement?.toString() ?? '';
     sector = s.sector;
+    sectorOther.text = s.sectorOther ?? '';
+    stageOther.text = s.stageOther ?? '';
+    businessModelOther.text = s.businessModelOther ?? '';
+    lookingForOther.text = s.lookingForOther ?? '';
     stage = s.stage;
     businessModel = s.businessModel;
     location = s.location;
@@ -337,16 +399,22 @@ class StartupFormViewModel extends ChangeNotifier {
   /// Comparable copy of every field, to detect unsaved changes.
   Map<String, Object?> _snapshot() => {
     'name': name.text.trim(),
-    'tagline': tagline.text.trim(),
     'description': description.text.trim(),
-    'foundedYear': foundedYear.text.trim(),
+    'foundedYear': foundedYear,
     'website': website.text.trim(),
     // Funding text only matters while Funding is selected.
     'funding': seeksFunding ? funding.text.trim() : '',
     'sector': sector,
+    // The typed text only matters while "Other" is chosen.
+    'sectorOther': isSectorOther ? sectorOther.text.trim() : '',
     'stage': stage,
+    'stageOther': isStageOther ? stageOther.text.trim() : '',
     'businessModel': businessModel,
+    'businessModelOther': isBusinessModelOther
+        ? businessModelOther.text.trim()
+        : '',
     'location': location,
+    'lookingForOther': isLookingForOther ? lookingForOther.text.trim() : '',
     'lookingFor': (lookingFor.map((e) => e.index).toList()..sort()).join(','),
     'isPublic': isPublic,
   };

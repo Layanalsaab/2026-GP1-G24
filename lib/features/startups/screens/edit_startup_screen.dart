@@ -68,7 +68,7 @@ class _DeleteSection extends StatelessWidget {
       final ok = await showConfirmDialog(
         context,
         title: StartupStrings.deleteTitle(startup.name),
-        message: StartupStrings.deleteBody(startup.name),
+        message: StartupStrings.deleteBody,
         confirmLabel: StartupStrings.deleteConfirm,
         cancelLabel: StartupStrings.cancel,
         icon: Icons.delete_outline_rounded,

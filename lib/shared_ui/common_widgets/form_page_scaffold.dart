@@ -94,7 +94,8 @@ class FormPageScaffold extends StatelessWidget {
                     final steps = progressSteps!;
                     final barWidth = math.min(
                       100.0,
-                      (constraints.maxWidth - 24 - 20 - 8 * (steps - 1)) / steps,
+                      (constraints.maxWidth - 24 - 20 - 8 * (steps - 1)) /
+                          steps,
                     );
                     return Padding(
                       padding: const EdgeInsets.only(left: 24),

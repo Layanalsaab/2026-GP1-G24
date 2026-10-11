@@ -20,7 +20,7 @@ class LogoField extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const FieldLabel(StartupStrings.logoLabel, isRequired: false),
+        const FieldLabel(StartupStrings.logoLabel),
         const SizedBox(height: AppSpacing.md),
         Row(
           children: [

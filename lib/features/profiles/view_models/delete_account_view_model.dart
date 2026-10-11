@@ -10,7 +10,7 @@ import '../../../models/auth_failure.dart';
 /// password, then the account and profile are deleted.
 class DeleteAccountViewModel extends ChangeNotifier with SafeNotifier {
   DeleteAccountViewModel({AuthRepository? authRepository})
-      : _auth = authRepository ?? AuthRepository.instance;
+    : _auth = authRepository ?? AuthRepository.instance;
 
   final AuthRepository _auth;
 

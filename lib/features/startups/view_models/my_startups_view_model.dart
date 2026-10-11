@@ -14,10 +14,7 @@ import '../../../data_access/repositories/startup_repository.dart';
 import '../../../models/startup.dart';
 import 'startup_error_message.dart';
 
-/// The All / Public / Private chips above the list (Figma "V2 · 24").
-enum StartupFilter { all, public, private }
-
-/// State of the My Startups list.
+/// State of the My Startups list (Figma "V2 · 44 / 44b").
 class MyStartupsViewModel extends ChangeNotifier {
   MyStartupsViewModel({StartupRepository? repository})
     : _repository = repository ?? StartupRepository.instance;
@@ -37,26 +34,6 @@ class MyStartupsViewModel extends ChangeNotifier {
 
   bool get isEmpty => !isLoading && error == null && startups.isEmpty;
 
-  StartupFilter filter = StartupFilter.all;
-
-  /// The startups that match [filter], still most recently edited first.
-  List<Startup> get visibleStartups => switch (filter) {
-    StartupFilter.all => startups,
-    StartupFilter.public => [
-      for (final s in startups)
-        if (s.isPublic) s,
-    ],
-    StartupFilter.private => [
-      for (final s in startups)
-        if (!s.isPublic) s,
-    ],
-  };
-
-  void setFilter(StartupFilter value) {
-    filter = value;
-    _notify();
-  }
-
   /// Loads the list. Used for the first load, Retry, pull-to-refresh, and
   /// after returning from Add/Edit. Never throws.
   Future<void> load() async {
@@ -74,7 +51,7 @@ class MyStartupsViewModel extends ChangeNotifier {
   }
 
   /// Removes a startup from the list right away after it was deleted on the
-  /// Edit screen, so it doesn't flash back while the list reloads.
+  /// Manage screen, so it doesn't flash back while the list reloads.
   void removeLocally(String startupId) {
     startups = [
       for (final s in startups)

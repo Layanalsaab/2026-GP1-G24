@@ -11,36 +11,35 @@ import '../view_models/delete_account_view_model.dart';
 
 /// "Log out of Start.sa?" (PBI 8). Returns true when the user confirms.
 Future<bool?> showLogOutDialog(BuildContext context) => showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => _AccountDialog(
-        icon: Icons.logout,
-        destructive: false,
-        title: AccountStrings.logOutTitle,
-        children: [
-          PrimaryButton(
-            label: AppStrings.logOut,
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-          ),
-          const SizedBox(height: 10),
-          SecondaryButton(
-            label: AccountStrings.cancel,
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-          ),
-        ],
+  context: context,
+  builder: (dialogContext) => _AccountDialog(
+    icon: Icons.logout,
+    destructive: false,
+    title: AccountStrings.logOutTitle,
+    children: [
+      PrimaryButton(
+        label: AppStrings.logOut,
+        onPressed: () => Navigator.of(dialogContext).pop(true),
       ),
-    );
+      const SizedBox(height: 10),
+      SecondaryButton(
+        label: AccountStrings.cancel,
+        onPressed: () => Navigator.of(dialogContext).pop(false),
+      ),
+    ],
+  ),
+);
 
 /// "Delete your account?" (PBI 13). Returns true once the account has been
 /// deleted; the caller then opens the Start screen.
 Future<bool?> showDeleteAccountDialog(
   BuildContext context, {
   required AccountRole role,
-}) =>
-    showDialog<bool>(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => DeleteAccountDialog(role: role),
-    );
+}) => showDialog<bool>(
+  context: context,
+  barrierDismissible: false,
+  builder: (_) => DeleteAccountDialog(role: role),
+);
 
 class DeleteAccountDialog extends StatefulWidget {
   const DeleteAccountDialog({super.key, required this.role});
@@ -87,7 +86,11 @@ class _DeleteAccountDialogState extends State<DeleteAccountDialog> {
                 widget.role == AccountRole.founder
                     ? AccountStrings.deleteWarningFounder
                     : AccountStrings.deleteWarningInvestor,
-                style: AppText.sans(size: 14, color: AppColors.grey, height: 21),
+                style: AppText.sans(
+                  size: 14,
+                  color: AppColors.grey,
+                  height: 21,
+                ),
               ),
               const SizedBox(height: 10),
               Text(
@@ -124,7 +127,9 @@ class _DeleteAccountDialogState extends State<DeleteAccountDialog> {
               const SizedBox(height: 10),
               SecondaryButton(
                 label: AccountStrings.cancel,
-                onPressed: loading ? null : () => Navigator.of(context).pop(false),
+                onPressed: loading
+                    ? null
+                    : () => Navigator.of(context).pop(false),
               ),
             ],
           ),
@@ -134,7 +139,7 @@ class _DeleteAccountDialogState extends State<DeleteAccountDialog> {
   }
 }
 
-/// White rounded dialog: round icon, serif title, then [children].
+/// White rounded dialog: round icon, Inter title, then [children].
 class _AccountDialog extends StatelessWidget {
   const _AccountDialog({
     required this.icon,
@@ -175,14 +180,19 @@ class _AccountDialog extends StatelessWidget {
                 child: Icon(
                   icon,
                   size: 22,
-                  color: destructive ? AppColors.error : AppColors.green,
+                  color: destructive ? AppColors.error : AppColors.moss600,
                 ),
               ),
             ),
             const SizedBox(height: 14),
             Text(
               title,
-              style: AppText.serif(size: 22, color: AppColors.ink, height: 28),
+              style: AppText.sans(
+                size: 20,
+                color: AppColors.ink,
+                weight: FontWeight.w700,
+                height: 28,
+              ),
             ),
             const SizedBox(height: 14),
             ...children,

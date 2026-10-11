@@ -81,7 +81,11 @@ class MenuRow extends StatelessWidget {
                 ),
               ),
               if (showChevron)
-                const Icon(Icons.chevron_right, size: 22, color: AppColors.grey),
+                const Icon(
+                  Icons.chevron_right,
+                  size: 22,
+                  color: AppColors.grey,
+                ),
             ],
           ),
         ),
@@ -108,7 +112,8 @@ class MenuCard extends StatelessWidget {
       child: Column(
         children: [
           for (var i = 0; i < children.length; i++) ...[
-            if (i > 0) const Divider(height: 1, thickness: 1, color: AppColors.border),
+            if (i > 0)
+              const Divider(height: 1, thickness: 1, color: AppColors.border),
             children[i],
           ],
         ],

@@ -1,13 +1,8 @@
 /// User-facing text for the Services hub, startup management (My Startups,
-/// Create/Edit, Profile) and the "coming soon" placeholders, in one place.
+/// Create/Edit, Profile), in one place.
 /// Wording follows Figma "V2 · 24 / 25 / 25b / 35" where it exists.
 class StartupStrings {
   StartupStrings._();
-
-  // Placeholders
-  static const comingSoon = 'Coming in a later sprint';
-  static const comingSoonBody =
-      "We're still building this. Check back after the next update.";
 
   // Services (Figma "V2 · 35 · Services")
   static const servicesTitle = 'Services';
@@ -17,30 +12,47 @@ class StartupStrings {
   static const tileAskGemini = 'Ask Gemini';
   static const tileDashboard = 'Dashboard';
 
-  // My Startups (Figma "V2 · 24 · My Startups")
+  // My Startups (Figma "V2 · 44 / 44b · My Startups")
   static const myStartupsTitle = 'My Startups';
-  static const filterAll = 'All';
-  static const createNewStartup = 'Create new startup';
+  static const addAction = 'Add';
+  static String startupCount(int count) =>
+      count == 1 ? '1 startup' : '$count startups';
+  static const manage = 'Manage';
+  static const moreOptions = 'More options';
+  static String lookingForTag(String what) => 'Looking for: $what';
   static const emptyTitle = 'No startups yet';
-  static const emptyBody =
-      'Create a profile for your startup to start connecting with investors.';
-  static const emptyButton = 'Add your first startup';
-  static const noPublic = 'None of your startups are public yet.';
-  static const noPrivate = 'None of your startups are private.';
+  static const emptyButton = 'Add startup';
   static const loadFailed = "We couldn't load your startups.";
   static const retry = 'Retry';
   static const publicBadge = 'Public';
   static const privateBadge = 'Private';
 
+  // Manage startup (Figma "V2 · 44c · Startup — Manage")
+  static const editStartup = 'Edit startup';
+  static const preview = 'Preview';
+  static const activityTitle = 'Activity';
+  static const activityPeriod = 'Last 7 days';
+  static const activityViews = 'Views';
+  static const activityBookmarks = 'Bookmarks';
+  static const activityRequests = 'Requests';
+  static const associationsTitle = 'Investment associations';
+  static const associationApproved = 'Approved · Public';
+  static const associationApprovedPrivate = 'Approved · Private';
+  static const noAssociations = 'No investment associations yet';
+  static const associationWaiting = 'Waiting for approval';
+  static const addInvestor = 'Add investor';
+  static const calculatorTitle = 'Fundraising calculator';
+  static const calculatorSubtitle = 'Estimate valuation and equity';
+
   // Create / Edit (Figma "V2 · 25 · Create Startup", "V2 · 25b · Edit Startup")
-  static const addTitle = 'Create Startup';
-  static const editTitle = 'Edit Startup';
+  static const addTitle = 'Add startup';
+  static const editTitle = 'Edit startup';
   static const saveNew = 'Create startup';
-  static const saveChanges = 'Save changes';
+  static const saveChanges = 'Save';
   static const saveDisabledHint = 'Fill in all required fields to continue.';
   static const noChangesHint = 'Make a change to save.';
   static const previewAsPublic = 'Preview as public';
-  static const created = 'Startup created.';
+  static String added(String name) => '$name was added';
   static const saved = 'Changes saved.';
   static const saveFailed = "We couldn't save your startup.";
   static const fixErrors = 'Please fix the highlighted fields.';
@@ -52,17 +64,32 @@ class StartupStrings {
       'This startup is Public — investors and startup seekers can find it.';
 
   // Field groups (small headings between fields)
-  static const sectionBasics = 'BASICS';
-  static const sectionDetails = 'DETAILS';
-  static const sectionLookingFor = "WHAT YOU'RE LOOKING FOR";
-  static const sectionVisibility = 'VISIBILITY';
+  static const sectionVisibility = 'Visibility';
 
   // Choosing from a list
-  static String choose(String label) => 'Choose ${label.toLowerCase()}';
+  static const selectSector = 'Select a sector';
+  static const selectStage = 'Select a stage';
+  static const selectBusinessModel = 'Select a commerce model';
+  static const selectLocation = 'Select a city';
+  static const selectYear = 'Select year';
   static const done = 'Done';
+  static const otherRequiredShort = 'Please type your choice.';
+  static const otherSymbols = 'Use letters and numbers only, without symbols.';
+
+  // "Other" in Sector, Stage and Commerce model: a text box appears
+  static const sectorOtherLabel = 'Please specify your sector';
+  static const sectorOtherHint = 'e.g. Biotech';
+  static const stageOtherLabel = 'Please specify your stage';
+  static const stageOtherHint = 'e.g. Bridge round';
+  static const businessModelOtherLabel = 'Please specify your commerce model';
+  static const lookingForOtherLabel = 'Please specify what you are looking for';
+  static const lookingForOtherHint = 'e.g. Legal advice';
+  static const lookingForOtherRequired =
+      'Please specify what you are looking for.';
+  static const businessModelOtherHint = 'e.g. Subscription box';
 
   // Logo
-  static const logoLabel = 'Logo';
+  static const logoLabel = 'Startup logo';
   static const logoHint = 'Square image, up to 2 MB.';
   static const logoUpload = 'Upload logo';
   static const logoChange = 'Change logo';
@@ -75,57 +102,58 @@ class StartupStrings {
   // Fields
   static const nameLabel = 'Startup name';
   static const nameHint = 'e.g. Rafeeq Health';
-  static const taglineLabel = 'One-liner description';
-  static const taglineHint = 'One line that sums up what you do';
   static const descriptionLabel = 'Description';
   static const descriptionHint =
       'What problem do you solve, for whom, and how?';
   static const sectorLabel = 'Sector';
   static const stageLabel = 'Stage';
-  static const businessModelLabel = 'Business model';
+  static const businessModelLabel = 'Commerce model';
   static const locationLabel = 'City';
-  static const foundedYearLabel = 'Founded year';
-  static const foundedYearHint = 'e.g. 2023';
+  static const foundedYearLabel = 'Founded';
   static const websiteLabel = 'Website';
   static const websiteHint = 'e.g. rafeeqhealth.sa';
-  static const lookingForLabel = 'Looking for';
-  static const fundingLabel = 'Funding requirement (SAR)';
-  static const fundingHint = 'e.g. 500000';
-  static const fundingHelper = 'How much you are raising in this round.';
+  static const lookingForLabel = 'What are you looking for?';
+  static const fundingLabel = 'Funding amount';
+  static const fundingHint = '0';
   static const sar = 'SAR';
-  static String charCount(int count, int max) => '$count / $max';
-  static String minChars(int min) => 'At least $min characters';
 
   // Validation
   static const nameRequired = 'Please enter your startup name.';
-  static String nameLength(int min, int max) =>
-      'Name must be $min to $max characters.';
-  static String taglineTooLong(int max) =>
-      'One-liner must be $max characters or fewer.';
-  static const taglineOneLine = 'One-liner must fit on one line.';
+  static String nameTooShort(int min) =>
+      'Startup name must be at least $min characters.';
+  static String nameTooLong(int max) =>
+      'Startup name must be $max characters or fewer.';
   static const descriptionRequired = 'Please describe your startup.';
-  static String descriptionTooShort(int min, int count) =>
-      'Description needs at least $min characters ($count so far).';
+  static String descriptionTooShort(int min) =>
+      'Description must be at least $min characters.';
   static String descriptionTooLong(int max) =>
       'Description must be $max characters or fewer.';
-  static const sectorRequired = 'Choose a sector.';
-  static const stageRequired = 'Choose a stage.';
-  static const businessModelRequired = 'Choose a business model.';
-  static const locationRequired = 'Choose a location.';
+  static const sectorRequired = 'Please select a sector.';
+  static const stageRequired = 'Please select a stage.';
+  static const businessModelRequired = 'Please select a commerce model.';
+  static const sectorOtherRequired = 'Please specify your sector.';
+  static const stageOtherRequired = 'Please specify your stage.';
+  static const businessModelOtherRequired =
+      'Please specify your commerce model.';
+  static String otherTooLong(int max) =>
+      'This must be $max characters or fewer.';
+  static const locationRequired = 'Please select a city.';
   static String foundedYearRange(int min, int max) =>
       'Enter a year between $min and $max.';
   static const websiteInvalid = 'Enter a valid web address, like example.com.';
-  static const lookingForRequired = 'Choose at least one option.';
-  static const fundingRequired = 'Enter the amount you are raising.';
+  static const lookingForRequired = 'Select at least one option.';
+  static const fundingRequired = 'Please enter the funding amount.';
   static const fundingInvalid = 'Enter an amount greater than zero.';
 
   // Visibility
-  static const visibilitySwitch = 'Make this startup public';
+  static const visibilitySwitch = 'Public';
+  static const visibilityPrivateLabel = 'Private';
   static const visibilityOn =
-      'Your startup appears in the Startup Hub and can be found by investors '
-      'and startup seekers.';
+      'Anyone can find this startup in the Hub, Explore, Trending, and '
+      'Matches, and can send you requests.';
   static const visibilityOff =
-      'Only you can see this startup. It will not appear anywhere in the app.';
+      "Only you can see this startup. It won't appear in the Hub, Explore, "
+      'Trending, or Matches, and no one can send you requests.';
   static const makePrivateTitle = 'Make this startup private?';
   static const makePrivateBody =
       'This will remove your startup from the Startup Hub. Investors will no '
@@ -146,25 +174,31 @@ class StartupStrings {
   static const deleteHint =
       'Permanently removes this startup and its logo. This cannot be undone.';
   static String deleteTitle(String name) => 'Delete $name?';
-  static String deleteBody(String name) =>
-      '$name and its logo will be permanently deleted. This cannot be undone.';
-  static const deleteConfirm = 'Delete';
+  static const deleteBody =
+      "This permanently removes the startup and its requests, associations, "
+      "and expressions of interest. This can't be undone.";
+  static const deleteConfirm = 'Delete startup';
   static String deleted(String name) => '$name was deleted.';
   static const deleteFailed = "We couldn't delete this startup.";
   static const dangerZone = 'DANGER ZONE';
 
-  // Profile (preview)
-  static const previewBanner = 'Preview: this is how others see your startup.';
+  // Profile (Figma "V2 · 45 / 45b / 45c · Startup Profile")
+  static const previewBanner = 'Preview — this is how others see your startup';
   static const previewPrivateBanner =
       'This startup is private. Others will see this page once you make it '
       'public.';
   static const previewUnsavedBanner =
       'You have unsaved changes. This preview shows the last saved version.';
+  static const foundedBy = 'Founded by';
   static const aboutTitle = 'About';
-  static const detailsTitle = 'At a glance';
+  static const detailsTitle = 'Details';
   static const lookingForTitle = 'Looking for';
-  static const fundingTitle = 'Raising';
-  static const visitWebsite = 'Visit website';
+  static const raisingThisRound = 'raising this round';
+  static const sendRequest = 'Send request';
+  static const expressInterest = 'Express interest';
+  static const share = 'Share';
+  static const bookmark = 'Bookmark';
+  static const close = 'Close';
   static const websiteOpenFailed = "We couldn't open the website.";
   static const notProvided = 'Not provided';
 

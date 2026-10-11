@@ -5,12 +5,13 @@ import 'package:startsa/app_constants/app_strings.dart';
 import 'package:startsa/shared_ui/common_widgets/form_message.dart';
 import 'package:startsa/shared_ui/theme/app_theme.dart';
 import 'package:startsa/app_constants/investor_strings.dart';
+import 'package:startsa/app_constants/navigation_strings.dart';
 import 'package:startsa/app_constants/seeker_strings.dart';
 import 'package:startsa/data_access/repositories/app_settings_repository.dart';
 import 'package:startsa/data_access/repositories/auth_repository.dart';
 import 'package:startsa/data_access/repositories/startup_repository.dart';
 import 'package:startsa/data_access/repositories/user_repository.dart';
-import 'package:startsa/features/explore_startups/screens/seeker_explore_screen.dart';
+import 'package:startsa/features/explore_startups/screens/explore_screen.dart';
 import 'package:startsa/main.dart';
 import 'package:startsa/models/app_user.dart';
 import 'package:startsa/models/auth_failure.dart';
@@ -86,13 +87,18 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  Future<void> openSignupAs(WidgetTester tester, {String role = 'Founder'}) async {
+  Future<void> openSignupAs(
+    WidgetTester tester, {
+    String role = 'Founder',
+  }) async {
     await goToWelcome(tester);
     await tester.tap(find.text('Create account'));
     await tester.pumpAndSettle();
     expect(find.text('Choose your role'), findsOneWidget);
     if (role != 'Founder') {
-      await tester.ensureVisible(find.text(role)); // lower cards scroll into view
+      await tester.ensureVisible(
+        find.text(role),
+      ); // lower cards scroll into view
       await tester.pumpAndSettle();
       await tester.tap(find.text(role));
       await tester.pumpAndSettle();
@@ -128,7 +134,9 @@ void main() {
       expect(find.text('Create account'), findsOneWidget);
     });
 
-    testWidgets('a returning visitor who is logged out skips the intros', (tester) async {
+    testWidgets('a returning visitor who is logged out skips the intros', (
+      tester,
+    ) async {
       settings.introSeen = true;
       await pumpApp(tester);
 
@@ -137,19 +145,24 @@ void main() {
       expect(find.text('Log in'), findsOneWidget);
     });
 
-    testWidgets('a logged-in user skips the intros even on a first install', (tester) async {
+    testWidgets('a logged-in user skips the intros even on a first install', (
+      tester,
+    ) async {
       repo.sessionUser = repo.onboardedFounder;
       await pumpApp(tester);
 
       expect(find.byType(MainScreen), findsOneWidget);
     });
 
-    testWidgets('a restored session goes straight to the role home', (tester) async {
+    testWidgets('a restored session goes straight to the role home', (
+      tester,
+    ) async {
       repo.sessionUser = repo.onboardedFounder;
       await pumpApp(tester);
 
       expect(find.byType(MainScreen), findsOneWidget);
-      expect(find.text('Mohammed Ahmed'), findsOneWidget); // on the Account tab
+      expect(find.byType(ExploreScreen), findsOneWidget); // opens on Explore
+      expect(find.text('MA'), findsOneWidget); // the avatar's initials
       expect(find.textContaining('Where Saudi startups'), findsNothing);
     });
 
@@ -157,10 +170,10 @@ void main() {
       repo.sessionUser = repo.onboardedFounder;
       await pumpApp(tester);
 
-      // Account tab -> Log out -> confirm in the dialog.
-      await tester.ensureVisible(find.text(AppStrings.logOut));
+      // Avatar -> side menu -> Log out -> confirm in the dialog.
+      await tester.tap(find.bySemanticsLabel(NavigationStrings.openMenu));
       await tester.pumpAndSettle();
-      await tester.tap(find.text(AppStrings.logOut));
+      await tester.tap(find.text(NavigationStrings.menuLogOut));
       await tester.pumpAndSettle();
       await tester.tap(find.text(AppStrings.logOut).last);
       await tester.pumpAndSettle();
@@ -175,35 +188,47 @@ void main() {
   });
 
   group('roles', () {
-    testWidgets('a guest goes to the seeker Explore, not the sign-up form', (tester) async {
+    testWidgets('a guest goes to the seeker Explore, not the sign-up form', (
+      tester,
+    ) async {
       await goToWelcome(tester);
       await tester.tap(find.text('Continue as guest'));
       await tester.pumpAndSettle();
 
-      expect(find.byType(SeekerExploreScreen), findsOneWidget);
+      expect(find.byType(ExploreScreen), findsOneWidget);
       expect(find.text(AppStrings.signupTitle), findsNothing);
     });
 
-    testWidgets('Back from Choose role returns to Log in when it came from there', (tester) async {
-      await goToWelcome(tester);
-      await tester.tap(find.text('Log in'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.textContaining(AppStrings.signupLink));
-      await tester.pumpAndSettle();
-      expect(find.text('Choose your role'), findsOneWidget);
+    testWidgets(
+      'Back from Choose role returns to Log in when it came from there',
+      (tester) async {
+        await goToWelcome(tester);
+        await tester.tap(find.text('Log in'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.textContaining(AppStrings.signupLink));
+        await tester.pumpAndSettle();
+        expect(find.text('Choose your role'), findsOneWidget);
 
-      await tester.tap(find.byType(InkResponse).first); // the top-bar back arrow
-      await tester.pumpAndSettle();
+        await tester.tap(
+          find.byType(InkResponse).first,
+        ); // the top-bar back arrow
+        await tester.pumpAndSettle();
 
-      expect(find.text(AppStrings.loginTitle), findsOneWidget);
-    });
+        expect(find.text(AppStrings.loginTitle), findsOneWidget);
+      },
+    );
 
-    testWidgets('a seeker who switches role can go Back from Choose role', (tester) async {
+    testWidgets('a seeker who switches role can go Back from Choose role', (
+      tester,
+    ) async {
       await goToWelcome(tester);
       await tester.tap(find.text('Continue as guest'));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.byTooltip(SeekerStrings.switchRole));
+      // Avatar -> guest menu -> Exit -> confirm in the dialog.
+      await tester.tap(find.bySemanticsLabel(NavigationStrings.openMenu));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(NavigationStrings.menuExit));
       await tester.pumpAndSettle();
       await tester.tap(find.text(SeekerStrings.exitConfirm).last);
       await tester.pumpAndSettle();
@@ -260,7 +285,9 @@ void main() {
       expect(repo.signUpCalls, 0);
     });
 
-    testWidgets('the city picker lists every city and can be searched', (tester) async {
+    testWidgets('the city picker lists every city and can be searched', (
+      tester,
+    ) async {
       await openSignupAs(tester);
       await tester.ensureVisible(find.text(AppStrings.cityHint));
       await tester.pumpAndSettle();
@@ -289,31 +316,36 @@ void main() {
       expect(find.text(AppStrings.cityHint), findsNothing);
     });
 
-    testWidgets('Create account has no yellow progress lines for founders or investors', (tester) async {
-      Finder goldBars() => find.byWidgetPredicate(
-            (w) =>
-                w is Container &&
-                w.decoration is BoxDecoration &&
-                (w.decoration as BoxDecoration).color == AppColors.gold,
-          );
+    testWidgets(
+      'Create account has no yellow progress lines for founders or investors',
+      (tester) async {
+        Finder goldBars() => find.byWidgetPredicate(
+          (w) =>
+              w is Container &&
+              w.decoration is BoxDecoration &&
+              (w.decoration as BoxDecoration).color == AppColors.gold,
+        );
 
-      await openSignupAs(tester, role: 'Founder');
-      expect(find.text(AppStrings.signupTitle), findsOneWidget);
-      expect(goldBars(), findsNothing);
+        await openSignupAs(tester, role: 'Founder');
+        expect(find.text(AppStrings.signupTitle), findsOneWidget);
+        expect(goldBars(), findsNothing);
 
-      // Same screen for an investor.
-      tester.state<NavigatorState>(find.byType(Navigator)).pop();
-      await tester.pumpAndSettle();
-      await tester.ensureVisible(find.text('Investor'));
-      await tester.tap(find.text('Investor'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Continue'));
-      await tester.pumpAndSettle();
-      expect(find.text(AppStrings.signupTitle), findsOneWidget);
-      expect(goldBars(), findsNothing);
-    });
+        // Same screen for an investor.
+        tester.state<NavigatorState>(find.byType(Navigator)).pop();
+        await tester.pumpAndSettle();
+        await tester.ensureVisible(find.text('Investor'));
+        await tester.tap(find.text('Investor'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Continue'));
+        await tester.pumpAndSettle();
+        expect(find.text(AppStrings.signupTitle), findsOneWidget);
+        expect(goldBars(), findsNothing);
+      },
+    );
 
-    testWidgets('password rules turn from red to green as they are met', (tester) async {
+    testWidgets('password rules turn from red to green as they are met', (
+      tester,
+    ) async {
       await openSignupAs(tester);
       await tester.enterText(field(3), 'abc');
       await tester.pump();
@@ -337,28 +369,39 @@ void main() {
       }
     });
 
-    testWidgets('valid sign up lands on Log in with the Verify your email pop-up', (tester) async {
-      await openSignupAs(tester);
-      await fillSignup(tester);
+    testWidgets(
+      'valid sign up lands on Log in with the Verify your email pop-up',
+      (tester) async {
+        await openSignupAs(tester);
+        await fillSignup(tester);
 
-      await tester.tap(find.text(AppStrings.signupButton));
-      await tester.pumpAndSettle();
+        await tester.tap(find.text(AppStrings.signupButton));
+        await tester.pumpAndSettle();
 
-      expect(repo.signUpCalls, 1);
-      expect(find.text(AppStrings.loginTitle), findsOneWidget); // behind the pop-up
-      expect(find.text(AppStrings.verifyEmailTitle), findsOneWidget);
-      expect(find.textContaining('name@example.com', findRichText: true), findsWidgets);
-      expect(find.text(AppStrings.verifyEmailSpamHint), findsOneWidget);
-      expect(find.text(AppStrings.resendVerification), findsOneWidget);
-      expect(find.text(AppStrings.verifyEmailOk), findsOneWidget);
-      // The new account is already filled in on the Log in form.
-      expect(
-        tester.widget<TextField>(field(0)).controller!.text,
-        'name@example.com',
-      );
-    });
+        expect(repo.signUpCalls, 1);
+        expect(
+          find.text(AppStrings.loginTitle),
+          findsOneWidget,
+        ); // behind the pop-up
+        expect(find.text(AppStrings.verifyEmailTitle), findsOneWidget);
+        expect(
+          find.textContaining('name@example.com', findRichText: true),
+          findsWidgets,
+        );
+        expect(find.text(AppStrings.verifyEmailSpamHint), findsOneWidget);
+        expect(find.text(AppStrings.resendVerification), findsOneWidget);
+        expect(find.text(AppStrings.verifyEmailOk), findsOneWidget);
+        // The new account is already filled in on the Log in form.
+        expect(
+          tester.widget<TextField>(field(0)).controller!.text,
+          'name@example.com',
+        );
+      },
+    );
 
-    testWidgets('duplicate email is reported under the email field', (tester) async {
+    testWidgets('duplicate email is reported under the email field', (
+      tester,
+    ) async {
       repo.signUpFails = AuthFailure.emailInUse;
       await openSignupAs(tester);
       await fillSignup(tester);
@@ -370,28 +413,36 @@ void main() {
       expect(find.text(AppStrings.verifyEmailTitle), findsNothing);
     });
 
-    testWidgets('logging in before verifying shows the pop-up again with a reminder', (tester) async {
-      await openSignupAs(tester);
-      await fillSignup(tester);
-      await tester.tap(find.text(AppStrings.signupButton));
-      await tester.pumpAndSettle();
-      expect(find.text(AppStrings.verifyEmailTitle), findsOneWidget); // first time
+    testWidgets(
+      'logging in before verifying shows the pop-up again with a reminder',
+      (tester) async {
+        await openSignupAs(tester);
+        await fillSignup(tester);
+        await tester.tap(find.text(AppStrings.signupButton));
+        await tester.pumpAndSettle();
+        expect(
+          find.text(AppStrings.verifyEmailTitle),
+          findsOneWidget,
+        ); // first time
 
-      await tester.tap(find.text(AppStrings.verifyEmailOk));
-      await tester.pumpAndSettle();
-      expect(find.text(AppStrings.verifyEmailTitle), findsNothing);
+        await tester.tap(find.text(AppStrings.verifyEmailOk));
+        await tester.pumpAndSettle();
+        expect(find.text(AppStrings.verifyEmailTitle), findsNothing);
 
-      // Still not verified: the account is the same, so log in is refused.
-      repo.logInFails = AuthFailure.emailNotVerified;
-      await tester.tap(find.text(AppStrings.loginButton));
-      await tester.pumpAndSettle();
+        // Still not verified: the account is the same, so log in is refused.
+        repo.logInFails = AuthFailure.emailNotVerified;
+        await tester.tap(find.text(AppStrings.loginButton));
+        await tester.pumpAndSettle();
 
-      expect(find.text(AppStrings.verifyEmailReminderTitle), findsOneWidget);
-      expect(find.text(AppStrings.verifyEmailTitle), findsNothing);
-      expect(find.text(AppStrings.resendVerification), findsOneWidget);
-    });
+        expect(find.text(AppStrings.verifyEmailReminderTitle), findsOneWidget);
+        expect(find.text(AppStrings.verifyEmailTitle), findsNothing);
+        expect(find.text(AppStrings.resendVerification), findsOneWidget);
+      },
+    );
 
-    testWidgets('resend and OK work from the Verify your email pop-up', (tester) async {
+    testWidgets('resend and OK work from the Verify your email pop-up', (
+      tester,
+    ) async {
       await openSignupAs(tester);
       await fillSignup(tester);
       await tester.tap(find.text(AppStrings.signupButton));
@@ -417,17 +468,23 @@ void main() {
       expect(find.text(AppStrings.loginTitle), findsOneWidget);
     }
 
-    testWidgets('"Forgot password?" lines up with the left edge of the fields', (tester) async {
-      await openLogin(tester);
+    testWidgets(
+      '"Forgot password?" lines up with the left edge of the fields',
+      (tester) async {
+        await openLogin(tester);
 
-      final fieldLeft = tester.getTopLeft(find.byType(TextField).first).dx;
-      final linkLeft =
-          tester.getTopLeft(find.text(AppStrings.forgotPasswordLink)).dx;
+        final fieldLeft = tester.getTopLeft(find.byType(TextField).first).dx;
+        final linkLeft = tester
+            .getTopLeft(find.text(AppStrings.forgotPasswordLink))
+            .dx;
 
-      expect(linkLeft, fieldLeft);
-    });
+        expect(linkLeft, fieldLeft);
+      },
+    );
 
-    testWidgets('a founder who finished onboarding goes to their home', (tester) async {
+    testWidgets('a founder who finished onboarding goes to their home', (
+      tester,
+    ) async {
       repo.loggedInUser = repo.onboardedFounder;
       await openLogin(tester);
       await tester.enterText(field(0), 'name@example.com');
@@ -439,57 +496,66 @@ void main() {
       expect(find.byType(MainScreen), findsOneWidget);
     });
 
-    testWidgets('a new founder goes straight to their home, with no onboarding page', (tester) async {
-      await openLogin(tester);
-      await tester.enterText(field(0), 'name@example.com');
-      await tester.enterText(field(1), 'Startup1');
-      await tester.tap(find.text(AppStrings.loginButton));
-      await tester.pumpAndSettle();
+    testWidgets(
+      'a new founder goes straight to their home, with no onboarding page',
+      (tester) async {
+        await openLogin(tester);
+        await tester.enterText(field(0), 'name@example.com');
+        await tester.enterText(field(1), 'Startup1');
+        await tester.tap(find.text(AppStrings.loginButton));
+        await tester.pumpAndSettle();
 
-      expect(find.byType(MainScreen), findsOneWidget);
-      expect(find.text('What sector is your startup in?'), findsNothing);
-    });
+        expect(find.byType(MainScreen), findsOneWidget);
+        expect(find.text('What sector is your startup in?'), findsNothing);
+      },
+    );
 
-    testWidgets('a new investor goes straight to their home, with no onboarding page',
-        (tester) async {
-      repo.loggedInUser = const AppUser(
-        uid: 'uid2',
-        role: AccountRole.investor,
-        fullName: 'Sara',
-        email: 's@b.co',
-      );
-      await openLogin(tester);
-      await tester.enterText(field(0), 's@b.co');
-      await tester.enterText(field(1), 'Startup1');
+    testWidgets(
+      'a new investor goes straight to their home, with no onboarding page',
+      (tester) async {
+        repo.loggedInUser = const AppUser(
+          uid: 'uid2',
+          role: AccountRole.investor,
+          fullName: 'Sara',
+          email: 's@b.co',
+        );
+        await openLogin(tester);
+        await tester.enterText(field(0), 's@b.co');
+        await tester.enterText(field(1), 'Startup1');
 
-      await tester.tap(find.text(AppStrings.loginButton));
-      await tester.pumpAndSettle();
+        await tester.tap(find.text(AppStrings.loginButton));
+        await tester.pumpAndSettle();
 
-      expect(find.byType(MainScreen), findsOneWidget);
-      expect(find.text(InvestorStrings.sectorsTitle), findsNothing);
-    });
+        expect(find.byType(MainScreen), findsOneWidget);
+        expect(find.text(InvestorStrings.sectorsTitle), findsNothing);
+      },
+    );
 
-    testWidgets('an investor who finished onboarding goes straight to their home',
-        (tester) async {
-      repo.loggedInUser = const AppUser(
-        uid: 'uid2',
-        role: AccountRole.investor,
-        fullName: 'Sara',
-        email: 's@b.co',
-        onboardingCompleted: true,
-      );
-      await openLogin(tester);
-      await tester.enterText(field(0), 's@b.co');
-      await tester.enterText(field(1), 'Startup1');
+    testWidgets(
+      'an investor who finished onboarding goes straight to their home',
+      (tester) async {
+        repo.loggedInUser = const AppUser(
+          uid: 'uid2',
+          role: AccountRole.investor,
+          fullName: 'Sara',
+          email: 's@b.co',
+          onboardingCompleted: true,
+        );
+        await openLogin(tester);
+        await tester.enterText(field(0), 's@b.co');
+        await tester.enterText(field(1), 'Startup1');
 
-      await tester.tap(find.text(AppStrings.loginButton));
-      await tester.pumpAndSettle();
+        await tester.tap(find.text(AppStrings.loginButton));
+        await tester.pumpAndSettle();
 
-      expect(find.byType(MainScreen), findsOneWidget);
-      expect(find.text(InvestorStrings.sectorsTitle), findsNothing);
-    });
+        expect(find.byType(MainScreen), findsOneWidget);
+        expect(find.text(InvestorStrings.sectorsTitle), findsNothing);
+      },
+    );
 
-    testWidgets('wrong or missing details show one generic message', (tester) async {
+    testWidgets('wrong or missing details show one generic message', (
+      tester,
+    ) async {
       await openLogin(tester);
 
       await tester.tap(find.text(AppStrings.loginButton)); // nothing typed
@@ -511,23 +577,26 @@ void main() {
       expect(find.byType(MainScreen), findsNothing);
     });
 
-    testWidgets('unverified email opens the Verify your email pop-up and stays out of the app', (tester) async {
-      repo.logInFails = AuthFailure.emailNotVerified;
-      await openLogin(tester);
-      await tester.enterText(field(0), 'name@example.com');
-      await tester.enterText(field(1), 'Startup1');
+    testWidgets(
+      'unverified email opens the Verify your email pop-up and stays out of the app',
+      (tester) async {
+        repo.logInFails = AuthFailure.emailNotVerified;
+        await openLogin(tester);
+        await tester.enterText(field(0), 'name@example.com');
+        await tester.enterText(field(1), 'Startup1');
 
-      await tester.tap(find.text(AppStrings.loginButton));
-      await tester.pumpAndSettle();
+        await tester.tap(find.text(AppStrings.loginButton));
+        await tester.pumpAndSettle();
 
-      expect(find.text(AppStrings.verifyEmailReminderTitle), findsOneWidget);
-      expect(find.byType(MainScreen), findsNothing);
+        expect(find.text(AppStrings.verifyEmailReminderTitle), findsOneWidget);
+        expect(find.byType(MainScreen), findsNothing);
 
-      await tester.tap(find.text(AppStrings.resendVerification));
-      await tester.pumpAndSettle();
-      expect(repo.resendCalls, 1);
-      expect(find.text(AppStrings.verificationSent), findsOneWidget);
-    });
+        await tester.tap(find.text(AppStrings.resendVerification));
+        await tester.pumpAndSettle();
+        expect(repo.resendCalls, 1);
+        expect(find.text(AppStrings.verificationSent), findsOneWidget);
+      },
+    );
   });
 
   group('forgot password', () {

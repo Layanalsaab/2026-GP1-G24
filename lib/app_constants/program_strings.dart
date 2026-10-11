@@ -4,11 +4,18 @@ class ProgramStrings {
   ProgramStrings._();
 
   static const programsTitle = 'Programs';
-  static const searchHint = 'Search programs...';
+  static const searchHint = 'Search support systems';
+  static const supportSystemsTitle = 'Support Systems';
   static const intro = 'Support programs across the Kingdom';
 
   static const filterAll = 'All';
-  static const filters = [filterAll, 'Accelerators', 'Incubators', 'Studios'];
+  static const filters = [
+    filterAll,
+    'Accelerators',
+    'Incubators',
+    'Venture studios',
+    'Angel networks',
+  ];
 
   // Program page
   static const programTitle = 'Program';

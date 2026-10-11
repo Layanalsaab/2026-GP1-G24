@@ -10,6 +10,8 @@ class InvestorProfile {
     required this.stages,
     required this.ticketRange,
     required this.locations,
+    this.about,
+    this.bio,
     this.matchPercent,
     this.matchReason,
   });
@@ -27,14 +29,24 @@ class InvestorProfile {
   final String ticketRange;
   final List<String> locations;
 
+  /// Short description shown on the list cards.
+  final String? about;
+
+  /// Longer text for the profile page; falls back to [about].
+  final String? bio;
+
+  String get profileBio => bio ?? about ?? '';
+
   /// Only set for the Matches tab.
   final int? matchPercent;
   final String? matchReason;
 
   /// First letter of the first and last name; "Sara Al-Mohsen" gives "SM".
   String get initials {
-    final words =
-        name.split(RegExp(r'[\s-]+')).where((w) => w.isNotEmpty).toList();
+    final words = name
+        .split(RegExp(r'[\s-]+'))
+        .where((w) => w.isNotEmpty)
+        .toList();
     if (words.isEmpty) return '?';
     if (words.length == 1) return words.first[0].toUpperCase();
     return (words.first[0] + words.last[0]).toUpperCase();
@@ -48,15 +60,17 @@ class InvestorProfile {
       stages.length > 1 ? '${stages.first} – ${stages.last}' : stages.first;
 
   InvestorProfile withMatch(int percent, String reason) => InvestorProfile(
-        id: id,
-        name: name,
-        title: title,
-        city: city,
-        sectors: sectors,
-        stages: stages,
-        ticketRange: ticketRange,
-        locations: locations,
-        matchPercent: percent,
-        matchReason: reason,
-      );
+    id: id,
+    name: name,
+    title: title,
+    city: city,
+    sectors: sectors,
+    stages: stages,
+    ticketRange: ticketRange,
+    locations: locations,
+    about: about,
+    bio: bio,
+    matchPercent: percent,
+    matchReason: reason,
+  );
 }

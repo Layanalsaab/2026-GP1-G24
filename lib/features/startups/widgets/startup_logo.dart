@@ -16,6 +16,10 @@ class StartupLogo extends StatelessWidget {
     this.url,
     this.file,
     this.ring = false,
+    this.background = AppColors.moss100,
+    this.foreground,
+    this.fontSize,
+    this.cornerFactor = 0.22,
   });
 
   final String initials;
@@ -26,9 +30,28 @@ class StartupLogo extends StatelessWidget {
   /// Adds a white ring and shadow, for logos placed on the green header.
   final bool ring;
 
+  /// Square fill behind the initials (Figma: moss on lists, gold-tinted on
+  /// the manage and profile pages).
+  final Color background;
+
+  /// Initials colour; defaults to the standard green.
+  final Color? foreground;
+
+  /// Initials size; defaults to a third of [size].
+  final double? fontSize;
+
+  /// Corner radius as a share of [size] (Figma: 0.27 on the larger logos).
+  final double cornerFactor;
+
   @override
   Widget build(BuildContext context) {
-    final placeholder = _Initials(initials: initials, size: size);
+    final placeholder = _Initials(
+      initials: initials,
+      size: size,
+      background: background,
+      foreground: foreground,
+      fontSize: fontSize,
+    );
     Widget content;
     if (file != null) {
       content = Image.file(file!, fit: BoxFit.cover);
@@ -47,13 +70,13 @@ class StartupLogo extends StatelessWidget {
     }
 
     // Corner radius grows with the logo, so small and large look alike.
-    final radius = BorderRadius.circular(size * 0.22);
+    final radius = BorderRadius.circular(size * cornerFactor);
     return Container(
       width: size,
       height: size,
       decoration: BoxDecoration(
         borderRadius: radius,
-        color: AppColors.moss100,
+        color: background,
         border: ring
             ? Border.all(color: AppColors.surface, width: AppSpacing.xs)
             : null,
@@ -65,16 +88,31 @@ class StartupLogo extends StatelessWidget {
 }
 
 class _Initials extends StatelessWidget {
-  const _Initials({required this.initials, required this.size});
+  const _Initials({
+    required this.initials,
+    required this.size,
+    required this.background,
+    this.foreground,
+    this.fontSize,
+  });
 
   final String initials;
   final double size;
+  final Color background;
+  final Color? foreground;
+  final double? fontSize;
 
   @override
   Widget build(BuildContext context) {
     return ColoredBox(
-      color: AppColors.moss100,
-      child: Center(child: Text(initials, style: AppText.initials(size))),
+      color: background,
+      child: Center(
+        child: Text(
+          initials,
+          style: AppText.initials(size)
+              .copyWith(fontSize: fontSize, color: foreground),
+        ),
+      ),
     );
   }
 }

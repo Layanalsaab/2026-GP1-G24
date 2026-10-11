@@ -14,6 +14,8 @@ class MockPrograms {
     about:
         "TAQADAM is KAUST's flagship startup accelerator, supporting "
         'early-stage tech startups with mentorship, funding, and workspace.',
+    summary: 'University startup accelerator run by KAUST.',
+    focus: 'University and deep-tech startups',
     focusSectors: ['HealthTech', 'DeepTech', 'CleanTech', 'AI'],
     websiteUrl: 'https://taqadam.example.com',
   );
@@ -28,6 +30,8 @@ class MockPrograms {
     about:
         'Badir supports technology startups with incubation, workspace and '
         'access to a network of partners.',
+    summary: 'Technology incubator supporting early-stage startups.',
+    focus: 'Early-stage tech',
     focusSectors: ['Fintech', 'EdTech', 'Logistics'],
   );
 
@@ -41,8 +45,25 @@ class MockPrograms {
     about:
         'BIM Ventures is a startup studio that builds companies together '
         'with founders.',
+    summary: 'Venture studio that co-builds new startups.',
+    focus: 'Co-building startups',
+    logoText: 'BV',
     focusSectors: ['E-commerce', 'SaaS'],
   );
 
-  static List<Program> get all => [taqadam, badir, bim];
+  static const aqal = Program(
+    id: 'mock-aqal',
+    name: 'Aqal',
+    type: ProgramType.angelNetwork,
+    city: 'Riyadh',
+    duration: 'Ongoing',
+    sinceYear: 2020,
+    about: 'Aqal is a network connecting angel investors with startups.',
+    summary: 'Network connecting angel investors with startups.',
+    focus: 'Angel investment',
+    logoText: 'AQ',
+    focusSectors: ['Fintech', 'HealthTech'],
+  );
+
+  static List<Program> get all => [taqadam, badir, bim, aqal];
 }

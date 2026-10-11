@@ -1,33 +1,35 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import '../../../app_constants/explore_strings.dart';
-import '../../../app_constants/seeker_strings.dart';
 import '../../../models/app_user.dart';
-import '../../../shared_ui/common_widgets/green_top_bar.dart';
-import '../../../shared_ui/common_widgets/investor_card.dart';
-import '../../../shared_ui/common_widgets/listing_card_parts.dart';
-import '../../../shared_ui/common_widgets/search_filter_widgets.dart';
-import '../../../shared_ui/common_widgets/startup_card.dart';
-import '../../../shared_ui/common_widgets/svg_asset.dart';
+import '../../../shared_ui/common_widgets/home_parts.dart';
 import '../../../shared_ui/theme/app_theme.dart';
-import '../../profiles/screens/investor_profile_screen.dart';
+import '../../../data_access/mock_data/mock_startups.dart';
 import '../../explore_startups/screens/seeker_startup_profile_screen.dart';
+import '../../profiles/screens/investor_profile_screen.dart';
 import '../../startups/screens/startup_profile_screen.dart';
 import '../view_models/hub_view_model.dart';
 
-/// Figma "V2 · 12 / 12b · Hub": search, filters and a list to browse.
+/// Figma "V2 · 39 / 39b / 39c · Hub" (Founder, Investor, Guest): search,
+/// sector chips and a list to browse. A founder browses investors; an
+/// investor or guest browses startups.
 ///
-/// Design phase: the search box and filters are for show, the list is sample
-/// data, and only the first card opens a profile.
+/// Design phase: the list is sample data. Search and the chips filter it.
 class HubScreen extends StatefulWidget {
-  const HubScreen({super.key, required this.role, this.isSeeker = false});
+  const HubScreen({
+    super.key,
+    required this.role,
+    required this.topBar,
+    this.isSeeker = false,
+  });
 
   final AccountRole role;
 
-  /// A startup seeker's Hub (Figma "V2 · 12c"): the same list of startups,
-  /// with "Express Interest" instead of "Send Request", opening the seeker's
-  /// startup profile.
+  /// The shell's top bar (avatar, logo, bell).
+  final Widget topBar;
+
+  /// A guest's Hub: the same startups, with "Express interest" instead of
+  /// "Send request", opening the guest's startup profile.
   final bool isSeeker;
 
   @override
@@ -48,89 +50,82 @@ class _HubScreenState extends State<HubScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle.light.copyWith(
-        statusBarColor: Colors.transparent,
-      ),
-      child: Scaffold(
-        backgroundColor: AppColors.cream,
-        body: ListenableBuilder(
-          listenable: _viewModel,
-          builder: (context, _) => Column(
+    return ColoredBox(
+      color: AppColors.cream,
+      child: ListenableBuilder(
+        listenable: _viewModel,
+        builder: (context, _) {
+          final investors = _viewModel.investors;
+          final startups = _viewModel.startups;
+          final empty = investors.isEmpty && startups.isEmpty;
+          return Column(
             children: [
-              GreenTopBar(
-                title: ExploreStrings.hubTitle,
-                titleStyle: AppText.serif(
-                  size: 22,
-                  color: AppColors.onDark,
-                  height: 28,
-                ),
-                // Design only: notifications aren't built yet.
-                actions: [svgIcon('bell.svg', size: 44)],
+              widget.topBar,
+              HomeSearchField(
+                hint: _viewModel.isFounder
+                    ? ExploreStrings.searchInvestors
+                    : ExploreStrings.searchStartups,
+                onChanged: _viewModel.setQuery,
               ),
-              // The search row overlaps the bottom of the green bar, as in Figma.
-              Stack(
-                children: [
-                  Container(height: 8, color: AppColors.green),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16),
-                    child: Row(
-                      children: [
-                        Expanded(child: SearchBox(hint: ExploreStrings.searchHint)),
-                        SizedBox(width: 8),
-                        FilterButton(size: 48, radius: 12, iconSize: 20),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              FilterChipsRow(
+              HomeFilters(
                 labels: ExploreStrings.filters,
                 selected: _viewModel.filterIndex,
                 onSelect: _viewModel.selectFilter,
               ),
-              Expanded(child: _list()),
+              Expanded(
+                child: empty
+                    ? Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(32),
+                          child: Text(
+                            'No results match your search.',
+                            textAlign: TextAlign.center,
+                            style: AppText.bodyMuted,
+                          ),
+                        ),
+                      )
+                    : ListView(
+                        padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+                        children: [
+                          for (final investor in investors) ...[
+                            InvestorBrowseCard(
+                              investor: investor,
+                              onViewProfile: () => _open(
+                                InvestorProfileScreen(investor: investor),
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                          ],
+                          for (final listing in startups) ...[
+                            StartupBrowseCard(
+                              listing: listing,
+                              isGuest: widget.isSeeker,
+                              onViewProfile: () => _open(
+                                widget.isSeeker
+                                    ? SeekerStartupProfileScreen(
+                                        listing: listing,
+                                        founderName: MockStartups.founderNameOf(
+                                          listing.startup,
+                                        ),
+                                      )
+                                    : StartupProfileScreen(
+                                        startup: listing.startup,
+                                        founderName: MockStartups.founderNameOf(
+                                          listing.startup,
+                                        ),
+                                        associations: listing.associations,
+                                      ),
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                          ],
+                        ],
+                      ),
+              ),
             ],
-          ),
-        ),
+          );
+        },
       ),
-    );
-  }
-
-  Widget _list() {
-    final investors = _viewModel.investors;
-    final startups = _viewModel.startups;
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-      children: [
-        for (var i = 0; i < investors.length; i++) ...[
-          if (i > 0) const SizedBox(height: 10),
-          InvestorCard(
-            investor: investors[i],
-            style: ListingStyle.hub,
-            onViewProfile: i == 0
-                ? () => _open(InvestorProfileScreen(investor: investors[i]))
-                : null,
-          ),
-        ],
-        for (var i = 0; i < startups.length; i++) ...[
-          if (i > 0) const SizedBox(height: 10),
-          StartupCard(
-            listing: startups[i],
-            style: ListingStyle.hub,
-            actionLabel: widget.isSeeker
-                ? SeekerStrings.expressInterest
-                : ExploreStrings.sendRequest,
-            onViewProfile: i == 0
-                ? () => _open(
-                      widget.isSeeker
-                          ? SeekerStartupProfileScreen(listing: startups[i])
-                          : StartupProfileScreen(startup: startups[i].startup),
-                    )
-                : null,
-          ),
-        ],
-      ],
     );
   }
 }

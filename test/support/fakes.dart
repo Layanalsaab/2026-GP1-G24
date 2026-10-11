@@ -119,6 +119,10 @@ class FakeUserRepository implements UserRepository {
     required AccountRole role,
     required String fullName,
     required String email,
+    String? phone,
+    String? city,
+    String? bio,
+    List<String> sectorsOfInterest = const [],
   }) async {
     if (createFails) throw const AuthException(AuthFailure.unknown);
     profiles[uid] = AppUser(
@@ -126,6 +130,10 @@ class FakeUserRepository implements UserRepository {
       role: role,
       fullName: fullName,
       email: email,
+      phone: phone,
+      city: city,
+      bio: bio ?? '',
+      sectorsOfInterest: sectorsOfInterest,
     );
   }
 
@@ -164,11 +172,42 @@ class FakeUserRepository implements UserRepository {
     required String uid,
     required String fullName,
     required String bio,
+    required String phone,
+    required List<String> sectorsOfInterest,
     String? city,
   }) async {
     profileUpdates++;
     if (updateFails != null) throw AuthException(updateFails!);
-    savedProfile = {'fullName': fullName, 'bio': bio, 'city': city};
+    savedProfile = {
+      'fullName': fullName,
+      'bio': bio,
+      'city': city,
+      'phone': phone,
+      'sectors': sectorsOfInterest.join(','),
+    };
+  }
+
+  /// Scripted: the photo upload / removal fails with this failure.
+  AuthFailure? photoFails;
+  final List<String> photoUploads = [];
+  final List<String> photoRemovals = [];
+
+  @override
+  Future<String> uploadProfilePhoto(String uid, File photo) async {
+    if (photoFails != null) throw AuthException(photoFails!);
+    photoUploads.add(uid);
+    final url = 'https://photos.test/$uid.jpg';
+    final p = profiles[uid];
+    if (p != null) profiles[uid] = p.copyWith(photoUrl: url);
+    return url;
+  }
+
+  @override
+  Future<void> removeProfilePhoto(String uid, String photoUrl) async {
+    if (photoFails != null) throw AuthException(photoFails!);
+    photoRemovals.add(uid);
+    final p = profiles[uid];
+    if (p != null) profiles[uid] = p.copyWith(clearPhoto: true);
   }
 
   final List<String> deletedProfiles = [];
@@ -192,6 +231,11 @@ class FakeAuthRepository implements AuthRepository {
 
   /// If set, the next call waits for this future (to test loading states).
   Future<void>? gate;
+
+  File? lastSignUpPhoto;
+
+  /// The extra profile fields of the last [signUp] call.
+  Map<String, String?>? lastSignUp;
 
   AuthFailure? signUpFails;
   AuthFailure? logInFails;
@@ -217,8 +261,20 @@ class FakeAuthRepository implements AuthRepository {
     required String email,
     required String password,
     required AccountRole role,
+    String? phone,
+    String? city,
+    String? bio,
+    List<String> sectorsOfInterest = const [],
+    File? photo,
   }) async {
     signUpCalls++;
+    lastSignUpPhoto = photo;
+    lastSignUp = {
+      'phone': phone,
+      'city': city,
+      'bio': bio,
+      'sectors': sectorsOfInterest.join(','),
+    };
     await gate;
     if (signUpFails != null) throw AuthException(signUpFails!);
     return SignupResult(verificationEmailSent: verificationEmailSent);
@@ -282,6 +338,13 @@ class FakeAuthRepository implements AuthRepository {
 /// In-memory stand-in for [AppSettingsRepository].
 class FakeAppSettingsRepository implements AppSettingsRepository {
   bool introSeen = false;
+  bool darkMode = false;
+
+  @override
+  Future<bool> isDarkMode() async => darkMode;
+
+  @override
+  Future<void> setDarkMode(bool value) async => darkMode = value;
 
   @override
   Future<bool> hasSeenIntro() async => introSeen;
@@ -294,6 +357,7 @@ class FakeAppSettingsRepository implements AppSettingsRepository {
 class FakeStartupRepository implements StartupRepository {
   final List<Startup> startups = [];
   AuthFailure? fetchFails;
+  AuthFailure? deleteFails;
 
   @override
   Future<List<Startup>> fetchMyStartups() async {
@@ -322,6 +386,8 @@ class FakeStartupRepository implements StartupRepository {
   }
 
   @override
-  Future<void> delete(Startup startup) async =>
-      startups.removeWhere((s) => s.id == startup.id);
+  Future<void> delete(Startup startup) async {
+    if (deleteFails != null) throw AuthException(deleteFails!);
+    startups.removeWhere((s) => s.id == startup.id);
+  }
 }

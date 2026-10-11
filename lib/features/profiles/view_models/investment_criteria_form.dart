@@ -42,9 +42,13 @@ mixin InvestmentCriteriaForm on ChangeNotifier {
 
   /// The chosen sectors in the same order as the option list, so what is saved
   /// doesn't depend on the order they were tapped.
-  List<String> get orderedSectors =>
-      [for (final s in AppStrings.sectors) if (sectors.contains(s)) s];
+  List<String> get orderedSectors => [
+    for (final s in AppStrings.sectors)
+      if (sectors.contains(s)) s,
+  ];
 
-  List<String> get orderedStages =>
-      [for (final s in AppStrings.stages) if (stages.contains(s)) s];
+  List<String> get orderedStages => [
+    for (final s in AppStrings.stages)
+      if (stages.contains(s)) s,
+  ];
 }

@@ -8,14 +8,13 @@ Widget positionedSvg(
   required double top,
   required double width,
   required double height,
-}) =>
-    Positioned(
-      left: left,
-      top: top,
-      width: width,
-      height: height,
-      child: SvgPicture.asset('assets/images/$name', fit: BoxFit.fill),
-    );
+}) => Positioned(
+  left: left,
+  top: top,
+  width: width,
+  height: height,
+  child: SvgPicture.asset('assets/images/$name', fit: BoxFit.fill),
+);
 
 /// An inline SVG icon from `assets/images/`. Pass [color] to recolor it.
 Widget svgIcon(String name, {required double size, Color? color}) =>
@@ -24,6 +23,7 @@ Widget svgIcon(String name, {required double size, Color? color}) =>
       width: size,
       height: size,
       fit: BoxFit.fill,
-      colorFilter:
-          color == null ? null : ColorFilter.mode(color, BlendMode.srcIn),
+      colorFilter: color == null
+          ? null
+          : ColorFilter.mode(color, BlendMode.srcIn),
     );

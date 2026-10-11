@@ -10,20 +10,42 @@ service cloud.firestore {
     match /users/{uid} {
       allow read: if request.auth != null && request.auth.uid == uid;
 
+      // Sign-up stores the profile fields collected on Create Account.
       allow create: if request.auth != null && request.auth.uid == uid
         && request.resource.data.role in ['founder', 'investor']
-        && request.resource.data.keys().hasOnly(['role', 'fullName',
-                                                 'email', 'createdAt']);
+        && request.resource.data.keys().hasOnly(['role', 'fullName', 'email',
+                                                 'createdAt', 'phone', 'city',
+                                                 'bio', 'sectorsOfInterest',
+                                                 'photoUrl'])
+        && validProfile(request.resource.data);
 
       allow update: if request.auth != null && request.auth.uid == uid
         && request.resource.data.role == resource.data.role
         && request.resource.data.diff(resource.data).affectedKeys()
              .hasOnly(['onboardingCompleted', 'sector', 'stage',
-                       'city', 'fullName', 'bio',
+                       'city', 'fullName', 'bio', 'phone',
+                       'sectorsOfInterest',
+                       'photoUrl',
                        'preferredSectors', 'preferredStages',
-                       'ticketSize']);
+                       'ticketSize'])
+        && validProfile(request.resource.data);
 
       allow delete: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // Limits shared with the app (lib/helpers/validators.dart): name 2..50,
+    // bio <= 160, email <= 100, phone = 9 digits starting with 5.
+    function validProfile(d) {
+      return d.fullName is string
+          && d.fullName.size() >= 2 && d.fullName.size() <= 50
+          && d.email is string && d.email.size() <= 100
+          && (!('bio' in d) || (d.bio is string && d.bio.size() <= 160))
+          && (!('phone' in d)
+              || (d.phone is string && d.phone.matches('^5[0-9]{8}$')))
+          && (!('city' in d) || d.city is string)
+          && (!('sectorsOfInterest' in d)
+              || (d.sectorsOfInterest is list && d.sectorsOfInterest.size() <= 12))
+          && optionalString(d, 'photoUrl', 2048);
     }
 
     // ------------------------------------------------------------- startups
@@ -54,35 +76,74 @@ service cloud.firestore {
     }
 
     // Mirrors the app's validation (lib/helpers/startup_validators.dart and
-    // the enums in lib/models/startup_enums.dart).
+    // the enums in lib/models/startup_enums.dart; limits come from
+    // lib/helpers/validators.dart). The "legacy" values are what documents
+    // saved before the Figma lists were adopted still contain, so those
+    // startups can be updated without being rewritten first.
     function validStartup(d) {
       return d.keys().hasAll(['founderId', 'name', 'description', 'sector',
                               'stage', 'businessModel', 'location',
                               'lookingFor', 'isPublic'])
         && d.keys().hasOnly(['founderId', 'name', 'tagline', 'description',
-                             'sector', 'stage', 'businessModel', 'location',
-                             'foundedYear', 'websiteUrl', 'lookingFor',
-                             'fundingRequirement', 'isPublic', 'logoUrl',
-                             'createdAt', 'updatedAt'])
-        && d.name is string && d.name.size() >= 3 && d.name.size() <= 60
+                             'sector', 'sectorOther', 'stage', 'stageOther',
+                             'businessModel', 'businessModelOther',
+                             'location', 'foundedYear', 'websiteUrl',
+                             'lookingFor', 'lookingForOther',
+                             'fundingRequirement', 'isPublic',
+                             'logoUrl', 'createdAt', 'updatedAt'])
+        && d.name is string && d.name.size() >= 3 && d.name.size() <= 40
+        // Legacy, optional: the form no longer asks for it.
         && optionalString(d, 'tagline', 80)
         && d.description is string
-        && d.description.size() >= 50 && d.description.size() <= 1000
-        && d.sector in ['fintech', 'ecommerce_retail', 'healthtech', 'edtech',
-                        'logistics_transport', 'food_beverage',
-                        'software_cloud', 'other']
-        && d.stage in ['idea', 'mvp', 'early_revenue', 'growth']
-        && d.businessModel in ['b2b', 'b2c', 'b2b2c', 'marketplace']
-        && d.location in ['riyadh', 'jeddah', 'dammam', 'khobar', 'mecca',
-                          'medina', 'tabuk', 'abha', 'other']
+        && d.description.size() >= 20 && d.description.size() <= 1000
+        && d.sector in ['healthtech', 'fintech', 'edtech', 'ecommerce',
+                        'logistics', 'agritech', 'proptech', 'cleantech',
+                        'tourism', 'other',
+                        // legacy
+                        'ecommerce_retail', 'logistics_transport',
+                        'food_beverage', 'software_cloud']
+        && d.stage in ['pre_seed', 'seed', 'series_a', 'series_b', 'series_c',
+                       'other',
+                       // legacy
+                       'idea', 'mvp', 'early_revenue', 'growth']
+        && d.businessModel in ['b2g', 'b2b', 'b2b2c', 'd2c', 'b2c', 'c2c',
+                               'b2e', 'c2b', 'g2c', 'g2g', 'other',
+                               // legacy
+                               'marketplace']
+        && d.location in ['abha', 'al_ahsa', 'al_baha', 'al_jubail',
+                          'al_kharj', 'al_khobar', 'al_qatif', 'arar',
+                          'buraydah', 'dammam', 'dhahran', 'hafar_al_batin',
+                          'hail', 'jazan', 'jeddah', 'khamis_mushait',
+                          'makkah', 'madinah', 'najran', 'riyadh', 'sakaka',
+                          'tabuk', 'taif', 'unaizah', 'yanbu',
+                          // legacy
+                          'khobar', 'mecca', 'medina', 'other']
         && d.lookingFor is list && d.lookingFor.size() >= 1
-        && d.lookingFor.hasOnly(['funding', 'partnerships', 'team_members',
-                                 'mentorship', 'services'])
+        && d.lookingFor.hasOnly(['funding', 'cofounder', 'talent',
+                                 'partnership', 'mentorship', 'advisors',
+                                 'marketing', 'tech_development', 'other',
+                                 // legacy
+                                 'partnerships', 'team_members', 'services'])
+        // What the founder typed after choosing Other: optional, at most 40
+        // characters, and required when the matching value is other.
+        && validOther(d, 'sectorOther', d.sector)
+        && validOther(d, 'stageOther', d.stage)
+        && validOther(d, 'businessModelOther', d.businessModel)
+        && optionalString(d, 'lookingForOther', 40)
+        && (!('other' in d.lookingFor)
+            || ('lookingForOther' in d && d.lookingForOther is string
+                && d.lookingForOther.size() >= 1))
         && validFoundedYear(d)
         && optionalString(d, 'websiteUrl', 2048)
         && optionalString(d, 'logoUrl', 2048)
         && validFunding(d)
         && d.isPublic is bool;
+    }
+
+    function validOther(d, field, value) {
+      return optionalString(d, field, 40)
+        && (value != 'other'
+            || (field in d && d[field] is string && d[field].size() >= 1));
     }
 
     function optionalString(d, field, maxLength) {

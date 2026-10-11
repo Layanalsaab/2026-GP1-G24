@@ -11,8 +11,8 @@ import '../../startups/screens/my_startups_screen.dart';
 /// the Services tab, a grid of tools.
 ///
 /// A founder has five tiles; of these only My Startups is built. An investor
-/// has two (Associations and Calculator), both design only. Tiles that aren't
-/// built are shown but do nothing when tapped.
+/// has two (Associations and Calculator), both placeholders. Tiles that aren't
+/// built are visual placeholders (not tappable).
 class ServicesScreen extends StatelessWidget {
   const ServicesScreen({super.key, this.role = AccountRole.founder});
 
@@ -25,24 +25,25 @@ class ServicesScreen extends StatelessWidget {
         _Tile(
           icon: Icons.business_center_outlined,
           label: StartupStrings.tileMyStartups,
-          onTap: () => Navigator.of(context)
-              .push(MaterialPageRoute(builder: (_) => const MyStartupsScreen())),
+          onTap: () => Navigator.of(
+            context,
+          ).push(MaterialPageRoute(builder: (_) => const MyStartupsScreen())),
         ),
-      // Not built yet: shown, but tapping them does nothing.
-      const _Tile(
+      // Not built yet: shown but inert.
+      _Tile(
         icon: Icons.groups_outlined,
         label: StartupStrings.tileAssociations,
       ),
-      const _Tile(
+      _Tile(
         icon: Icons.trending_up_rounded,
         label: StartupStrings.tileCalculator,
       ),
       if (role == AccountRole.founder) ...[
-        const _Tile(
+        _Tile(
           icon: Icons.auto_awesome_outlined,
           label: StartupStrings.tileAskGemini,
         ),
-        const _Tile(
+        _Tile(
           icon: Icons.space_dashboard_outlined,
           label: StartupStrings.tileDashboard,
         ),

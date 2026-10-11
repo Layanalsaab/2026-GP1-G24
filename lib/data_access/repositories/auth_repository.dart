@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 
 import '../../models/app_user.dart';
@@ -36,6 +38,11 @@ class AuthRepository {
     required String email,
     required String password,
     required AccountRole role,
+    String? phone,
+    String? city,
+    String? bio,
+    List<String> sectorsOfInterest = const [],
+    File? photo,
   }) async {
     final account = await _auth.createAccount(email, password);
 
@@ -45,11 +52,26 @@ class AuthRepository {
         role: role,
         fullName: fullName,
         email: email,
+        phone: phone,
+        city: city,
+        bio: bio,
+        sectorsOfInterest: sectorsOfInterest,
       );
     } catch (e) {
       debugPrint('Saving the profile failed, removing the new account: $e');
       await _rollbackAccount();
       throw const AuthException(AuthFailure.profileSaveFailed);
+    }
+
+    // The photo is optional: a failed upload never fails the sign-up.
+    if (photo != null) {
+      try {
+        await _users
+            .uploadProfilePhoto(account.uid, photo)
+            .timeout(const Duration(seconds: 30));
+      } catch (e) {
+        debugPrint('Uploading the profile photo failed: $e');
+      }
     }
 
     var verificationEmailSent = true;

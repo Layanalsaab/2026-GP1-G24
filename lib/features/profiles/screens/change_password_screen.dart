@@ -138,7 +138,8 @@ class _PasswordRules extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hasLength = password.length >= Validators.minPasswordLength;
-    final hasUpperAndLower = password.contains(RegExp(r'[A-Z]')) &&
+    final hasUpperAndLower =
+        password.contains(RegExp(r'[A-Z]')) &&
         password.contains(RegExp(r'[a-z]'));
     final hasNumber = password.contains(RegExp(r'[0-9]'));
 

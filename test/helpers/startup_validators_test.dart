@@ -5,29 +5,29 @@ import 'package:startsa/models/startup_enums.dart';
 
 void main() {
   group('name', () {
-    test('required, 3 to 60 characters after trimming', () {
+    test('required, 3 to 40 characters after trimming (Figma 0/40)', () {
+      expect(StartupValidators.nameMax, 40);
       expect(StartupValidators.name(''), isNotNull);
       expect(StartupValidators.name('  ab  '), isNotNull);
       expect(StartupValidators.name('abc'), isNull);
-      expect(StartupValidators.name('a' * 60), isNull);
-      expect(StartupValidators.name('a' * 61), isNotNull);
+      expect(StartupValidators.name('a' * 40), isNull);
+      expect(StartupValidators.name('a' * 41), isNotNull);
     });
-  });
 
-  group('tagline', () {
-    test('optional, max 80, one line', () {
-      expect(StartupValidators.tagline(''), isNull);
-      expect(StartupValidators.tagline('a' * 80), isNull);
-      expect(StartupValidators.tagline('a' * 81), isNotNull);
-      expect(StartupValidators.tagline('one\ntwo'), isNotNull);
+    test('messages are short and friendly', () {
+      expect(StartupValidators.name(''), 'Please enter your startup name.');
+      expect(
+        StartupValidators.name('a' * 41),
+        'Startup name must be 40 characters or fewer.',
+      );
     });
   });
 
   group('description', () {
-    test('required, 50 to 1000 characters', () {
+    test('required, 20 to 1000 characters (Figma 0/1000)', () {
       expect(StartupValidators.description(''), isNotNull);
-      expect(StartupValidators.description('a' * 49), isNotNull);
-      expect(StartupValidators.description('a' * 50), isNull);
+      expect(StartupValidators.description('a' * 19), isNotNull);
+      expect(StartupValidators.description('a' * 20), isNull);
       expect(StartupValidators.description('a' * 1000), isNull);
       expect(StartupValidators.description('a' * 1001), isNotNull);
     });
@@ -42,6 +42,15 @@ void main() {
       expect(StartupValidators.foundedYear('2026', now: now), isNull);
       expect(StartupValidators.foundedYear('2027', now: now), isNotNull);
       expect(StartupValidators.foundedYear('20x1', now: now), isNotNull);
+    });
+  });
+
+  group('foundedYears', () {
+    test('newest first, from 2000 to the current year', () {
+      final years = StartupValidators.foundedYears(now: DateTime(2026, 10, 4));
+      expect(years.first, 2026);
+      expect(years.last, 2000);
+      expect(years, hasLength(27));
     });
   });
 

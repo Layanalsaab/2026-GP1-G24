@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 
 import '../../../app_constants/startup_strings.dart';
+import '../../../shared_ui/common_widgets/svg_asset.dart';
 import '../../../shared_ui/theme/app_theme.dart';
 
-/// Pill reading "Public" (gold outline, globe) or "Private" (grey, lock), as
-/// in Figma "V2 · 24". The icon means the state is never shown by colour alone.
+/// Pill reading "Public" (moss, globe) or "Private" (grey, lock), as in
+/// Figma "V2 · 44b / 44c". The icon means the state is never shown by colour
+/// alone.
 class VisibilityBadge extends StatelessWidget {
   const VisibilityBadge({super.key, required this.isPublic});
 
@@ -12,29 +14,31 @@ class VisibilityBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = isPublic ? AppColors.gold700 : AppColors.grey;
+    final color = isPublic ? AppColors.moss600 : AppColors.grey;
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.sm,
-        vertical: AppSpacing.xxs,
-      ),
+      padding: const EdgeInsets.only(left: 8, right: 10, top: 4, bottom: 4),
       decoration: BoxDecoration(
-        color: isPublic ? AppColors.gold100 : AppColors.mutedFill,
+        color: isPublic ? AppColors.moss100 : AppColors.neutralPillFill,
         borderRadius: BorderRadius.circular(AppRadius.pill),
-        border: Border.all(color: isPublic ? AppColors.gold : AppColors.border),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            isPublic ? Icons.public_rounded : Icons.lock_outline_rounded,
-            size: AppSizes.iconSm - 2,
-            color: color,
-          ),
+          svgIcon(isPublic ? 'st_globe.svg' : 'st_lock.svg', size: 13),
           const SizedBox(width: AppSpacing.xs),
-          Text(
-            isPublic ? StartupStrings.publicBadge : StartupStrings.privateBadge,
-            style: AppText.badge.copyWith(color: color),
+          Flexible(
+            child: Text(
+              isPublic
+                  ? StartupStrings.publicBadge
+                  : StartupStrings.privateBadge,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppText.sans(
+                size: 12,
+                color: color,
+                weight: FontWeight.w500,
+              ),
+            ),
           ),
         ],
       ),

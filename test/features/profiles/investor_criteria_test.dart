@@ -140,7 +140,9 @@ void main() {
       expect(find.text(InvestorStrings.criteriaTitle), findsNothing);
     });
 
-    testWidgets('Edit criteria saves and the card shows the change', (tester) async {
+    testWidgets('Edit criteria saves and the card shows the change', (
+      tester,
+    ) async {
       await pumpAccount(tester, investor);
 
       await tapText(tester, InvestorStrings.edit);

@@ -21,8 +21,9 @@ class EditCriteriaScreen extends StatefulWidget {
 }
 
 class _EditCriteriaScreenState extends State<EditCriteriaScreen> {
-  late final EditCriteriaViewModel _viewModel =
-      EditCriteriaViewModel(user: widget.user);
+  late final EditCriteriaViewModel _viewModel = EditCriteriaViewModel(
+    user: widget.user,
+  );
 
   @override
   void dispose() {

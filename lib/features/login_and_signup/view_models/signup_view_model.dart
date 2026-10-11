@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 
 import '../../../app_constants/app_strings.dart';
@@ -74,9 +76,9 @@ class SignupViewModel extends ChangeNotifier {
   /// success, or null when validation failed, a request is already running,
   /// or the sign-up failed (the errors above explain why).
   ///
-  /// [phone] is the 9 digits without +966. [phone], [city] and [sectors] are
-  /// validated here but not saved yet: the `users` create rule only accepts
-  /// role, fullName and email.
+  /// [phone] is the 9 digits without +966. [phone], [city], [sectors] (with a
+  /// typed "Other" sector), the optional [bio] and the optional [photo] are
+  /// saved with the account.
   Future<SignupResult?> submit({
     required String fullName,
     required String email,
@@ -86,6 +88,8 @@ class SignupViewModel extends ChangeNotifier {
     required String? city,
     required List<String> sectors,
     required AccountRole role,
+    String bio = '',
+    File? photo,
   }) async {
     if (isLoading) return null;
 
@@ -119,6 +123,11 @@ class SignupViewModel extends ChangeNotifier {
         email: email.trim(),
         password: password,
         role: role,
+        phone: phone.trim(),
+        city: city,
+        bio: bio.trim(),
+        sectorsOfInterest: sectors.map((s) => s.trim()).toList(),
+        photo: photo,
       );
     } on AuthException catch (e) {
       _showFailure(e.failure);

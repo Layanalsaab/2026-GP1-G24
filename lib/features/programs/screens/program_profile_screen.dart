@@ -4,7 +4,6 @@ import 'package:flutter/services.dart';
 import '../../../app_constants/program_strings.dart';
 import '../../../models/program.dart';
 import '../../../shared_ui/common_widgets/green_top_bar.dart';
-import '../../../shared_ui/common_widgets/primary_button.dart';
 import '../../../shared_ui/theme/app_theme.dart';
 
 /// Figma "V2 · 27 · Program Profile — All". Design phase: the website button
@@ -81,12 +80,9 @@ class ProgramProfileScreen extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: AppSpacing.lg),
-                  // Design only: opening the website isn't connected yet. The empty
-                  // handler keeps the button looking active (null would grey it).
-                  PrimaryButton(
-                    label: ProgramStrings.visitWebsite,
-                    onPressed: () {},
-                  ),
+                  // Design only: looks like the primary button but is inert (no
+                  // navigation, no ripple, no feedback).
+                  const _InertWebsiteButton(),
                 ],
               ),
             ),
@@ -97,11 +93,11 @@ class ProgramProfileScreen extends StatelessWidget {
   }
 
   TextStyle get _heading => AppText.sans(
-        size: 16,
-        color: AppColors.ink,
-        weight: FontWeight.w600,
-        height: 24,
-      );
+    size: 16,
+    color: AppColors.ink,
+    weight: FontWeight.w600,
+    height: 24,
+  );
 
   Widget _header() {
     return Row(
@@ -116,7 +112,7 @@ class ProgramProfileScreen extends StatelessWidget {
           ),
           child: Text(
             program.initial,
-            style: AppText.serif(size: 22, color: AppColors.moss600, height: 28),
+            style: AppText.sans(size: 22, color: AppColors.moss600, weight: FontWeight.w700, height: 28),
           ),
         ),
         const SizedBox(width: 14),
@@ -126,7 +122,7 @@ class ProgramProfileScreen extends StatelessWidget {
             children: [
               Text(
                 program.name,
-                style: AppText.serif(size: 22, color: AppColors.ink, height: 28),
+                style: AppText.sans(size: 22, color: AppColors.ink, weight: FontWeight.w700, height: 28),
               ),
               const SizedBox(height: AppSpacing.xs),
               Text(
@@ -142,25 +138,25 @@ class ProgramProfileScreen extends StatelessWidget {
 
   Widget _stats() {
     Widget stat(String value, String label) => Expanded(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 14),
-            child: Column(
-              children: [
-                Text(
-                  value,
-                  style: AppText.sans(
-                    size: 16,
-                    color: AppColors.ink,
-                    weight: FontWeight.w600,
-                    height: 24,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.xs),
-                Text(label, style: AppText.caption),
-              ],
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        child: Column(
+          children: [
+            Text(
+              value,
+              style: AppText.sans(
+                size: 16,
+                color: AppColors.ink,
+                weight: FontWeight.w600,
+                height: 24,
+              ),
             ),
-          ),
-        );
+            const SizedBox(height: AppSpacing.xs),
+            Text(label, style: AppText.caption),
+          ],
+        ),
+      ),
+    );
 
     return Container(
       decoration: BoxDecoration(
@@ -174,6 +170,37 @@ class ProgramProfileScreen extends StatelessWidget {
           stat(program.duration, ProgramStrings.duration),
           stat('${program.sinceYear}', ProgramStrings.since),
         ],
+      ),
+    );
+  }
+}
+
+/// The "Visit program website" button: the primary button's look, without any
+/// behaviour (no tap, ripple or feedback).
+class _InertWebsiteButton extends StatelessWidget {
+  const _InertWebsiteButton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      label: ProgramStrings.visitWebsite,
+      excludeSemantics: true,
+      child: Container(
+        height: 48,
+        width: double.infinity,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: AppColors.moss600,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x401F4026),
+              offset: Offset(0, 3),
+              blurRadius: 5,
+            ),
+          ],
+        ),
+        child: Text(ProgramStrings.visitWebsite, style: AppText.button),
       ),
     );
   }

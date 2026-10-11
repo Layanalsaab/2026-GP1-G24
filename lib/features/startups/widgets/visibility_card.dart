@@ -57,7 +57,12 @@ class VisibilityCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(StartupStrings.visibilitySwitch, style: AppText.label),
+                Text(
+                  isPublic
+                      ? StartupStrings.visibilitySwitch
+                      : StartupStrings.visibilityPrivateLabel,
+                  style: AppText.label,
+                ),
                 const SizedBox(height: AppSpacing.xs),
                 AnimatedSwitcher(
                   duration: const Duration(milliseconds: 200),

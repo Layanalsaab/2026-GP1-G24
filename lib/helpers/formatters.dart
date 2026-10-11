@@ -18,6 +18,21 @@ class Formatters {
   /// 1500000 -> "SAR 1,500,000".
   static String sar(int value) => '${StartupStrings.sar} ${thousands(value)}';
 
+  /// 500000 -> "SAR 500K", 1200000 -> "SAR 1.2M" (card tags).
+  static String compactSar(int value) {
+    if (value >= 1000000) {
+      final millions = value / 1000000;
+      final text = millions == millions.roundToDouble()
+          ? millions.toStringAsFixed(0)
+          : millions.toStringAsFixed(1);
+      return '${StartupStrings.sar} ${text}M';
+    }
+    if (value >= 1000) {
+      return '${StartupStrings.sar} ${(value / 1000).round()}K';
+    }
+    return sar(value);
+  }
+
   /// "https://www.example.com/" -> "example.com", for display.
   static String shortUrl(String url) {
     final uri = Uri.tryParse(url);
@@ -26,5 +41,4 @@ class Formatters {
     final path = uri.path == '/' ? '' : uri.path;
     return '$host$path';
   }
-
 }

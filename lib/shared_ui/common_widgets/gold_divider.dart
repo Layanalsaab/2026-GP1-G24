@@ -6,17 +6,17 @@ import '../theme/app_theme.dart';
 /// Figma coordinates; returns [Positioned] widgets for a [DesignCanvas].
 List<Widget> goldDivider({required double lineTop}) {
   Widget line(double left) => Positioned(
-        left: left,
-        top: lineTop,
-        width: 48,
-        height: 1.5,
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: AppColors.gold,
-            borderRadius: BorderRadius.circular(1),
-          ),
-        ),
-      );
+    left: left,
+    top: lineTop,
+    width: 48,
+    height: 1.5,
+    child: DecoratedBox(
+      decoration: BoxDecoration(
+        color: AppColors.gold,
+        borderRadius: BorderRadius.circular(1),
+      ),
+    ),
+  );
 
   return [
     line(114.5),

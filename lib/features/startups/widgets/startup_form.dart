@@ -4,10 +4,14 @@ import 'package:provider/provider.dart';
 
 import '../../../app_constants/startup_strings.dart';
 import '../../../helpers/startup_validators.dart';
+import '../../../models/startup.dart';
 import '../../../models/startup_enums.dart';
+import '../../../shared_ui/common_widgets/app_text_field.dart';
+import '../../../shared_ui/common_widgets/profile_form_fields.dart';
 import '../../../shared_ui/theme/app_theme.dart';
 import '../view_models/startup_form_view_model.dart';
 import 'form_fields.dart';
+import 'looking_for_chips.dart';
 import 'logo_field.dart';
 import 'select_field.dart';
 import 'visibility_card.dart';
@@ -47,6 +51,26 @@ class _StartupFormState extends State<StartupForm> {
   Widget _keyed(StartupField field, Widget child) =>
       KeyedSubtree(key: _keys[field], child: child);
 
+  /// The text box shown under a select field once "Other" is chosen.
+  Widget _otherField(
+    StartupFormViewModel vm, {
+    required bool enabled,
+    required StartupField field,
+    required TextEditingController controller,
+    required String label,
+    required String hint,
+  }) => AppTextField(
+    label: label,
+    hint: hint,
+    controller: controller,
+    enabled: enabled,
+    maxLength: Startup.otherMaxLength,
+    inputFormatters: otherTextFormatters,
+    textInputAction: TextInputAction.next,
+    errorText: vm.errors[field],
+    onChanged: (_) => vm.clearError(field),
+  );
+
   @override
   Widget build(BuildContext context) {
     final vm = context.watch<StartupFormViewModel>();
@@ -56,171 +80,221 @@ class _StartupFormState extends State<StartupForm> {
     final saved = vm.initial;
 
     final fields = <Widget>[
-      // Figma "V2 · 25b": Edit opens with the saved visibility as a banner.
+      // Figma "Edit startup": the saved visibility is shown as a banner.
       if (saved != null) _VisibilityBanner(isPublic: saved.isPublic),
-      const FieldGroupHeading(StartupStrings.sectionBasics),
       const LogoField(),
       _keyed(
         StartupField.name,
-        StartupTextField(
+        AppTextField(
           label: StartupStrings.nameLabel,
           hint: StartupStrings.nameHint,
           controller: vm.name,
-          isRequired: true,
           enabled: enabled,
           maxLength: StartupValidators.nameMax,
-          textCapitalization: TextCapitalization.words,
+          textInputAction: TextInputAction.next,
           errorText: errors[StartupField.name],
           onChanged: (_) => vm.clearError(StartupField.name),
         ),
       ),
       _keyed(
-        StartupField.tagline,
-        StartupTextField(
-          label: StartupStrings.taglineLabel,
-          hint: StartupStrings.taglineHint,
-          controller: vm.tagline,
-          isRequired: false,
-          enabled: enabled,
-          maxLength: StartupValidators.taglineMax,
-          showCounter: true,
-          textCapitalization: TextCapitalization.sentences,
-          // One line only: block pasted line breaks.
-          inputFormatters: [
-            FilteringTextInputFormatter.deny(RegExp(r'[\n\r]')),
-          ],
-          errorText: errors[StartupField.tagline],
-          onChanged: (_) => vm.clearError(StartupField.tagline),
-        ),
-      ),
-      _keyed(
         StartupField.description,
-        StartupTextField(
+        AppTextField(
           label: StartupStrings.descriptionLabel,
           hint: StartupStrings.descriptionHint,
           controller: vm.description,
-          isRequired: true,
           enabled: enabled,
-          minLines: 4,
-          maxLines: 10,
+          maxLines: 6,
           maxLength: StartupValidators.descriptionMax,
-          showCounter: true,
           keyboardType: TextInputType.multiline,
           textInputAction: TextInputAction.newline,
-          textCapitalization: TextCapitalization.sentences,
-          helperText: StartupStrings.minChars(StartupValidators.descriptionMin),
           errorText: errors[StartupField.description],
           onChanged: (_) => vm.clearError(StartupField.description),
         ),
       ),
-      const FieldGroupHeading(StartupStrings.sectionDetails),
+      _keyed(
+        StartupField.website,
+        AppTextField(
+          label: StartupStrings.websiteLabel,
+          hint: StartupStrings.websiteHint,
+          controller: vm.website,
+          optional: true,
+          enabled: enabled,
+          keyboardType: TextInputType.url,
+          textInputAction: TextInputAction.next,
+          errorText: errors[StartupField.website],
+          onChanged: (_) => vm.clearError(StartupField.website),
+        ),
+      ),
       _keyed(
         StartupField.sector,
         SelectField<Sector>.single(
           label: StartupStrings.sectorLabel,
+          hint: StartupStrings.selectSector,
           options: Sector.values,
           labelOf: (s) => s.label,
           value: vm.sector,
           onChanged: vm.selectSector,
           enabled: enabled,
           errorText: errors[StartupField.sector],
+          other: OtherChoice(
+            option: Sector.other,
+            controller: vm.sectorOther,
+            label: StartupStrings.sectorOtherLabel,
+            hint: StartupStrings.sectorOtherHint,
+            maxLength: Startup.otherMaxLength,
+            onChanged: () => vm.clearError(StartupField.sectorOther),
+          ),
         ),
       ),
+      if (vm.isSectorOther)
+        _keyed(
+          StartupField.sectorOther,
+          _otherField(
+            vm,
+            enabled: enabled,
+            field: StartupField.sectorOther,
+            controller: vm.sectorOther,
+            label: StartupStrings.sectorOtherLabel,
+            hint: StartupStrings.sectorOtherHint,
+          ),
+        ),
       _keyed(
         StartupField.stage,
         SelectField<StartupStage>.single(
           label: StartupStrings.stageLabel,
+          hint: StartupStrings.selectStage,
           options: StartupStage.values,
           labelOf: (s) => s.label,
           value: vm.stage,
           onChanged: vm.selectStage,
           enabled: enabled,
           errorText: errors[StartupField.stage],
+          other: OtherChoice(
+            option: StartupStage.other,
+            controller: vm.stageOther,
+            label: StartupStrings.stageOtherLabel,
+            hint: StartupStrings.stageOtherHint,
+            maxLength: Startup.otherMaxLength,
+            onChanged: () => vm.clearError(StartupField.stageOther),
+          ),
         ),
       ),
-      _keyed(
-        StartupField.location,
-        SelectField<StartupLocation>.single(
-          label: StartupStrings.locationLabel,
-          options: StartupLocation.values,
-          labelOf: (l) => l.label,
-          value: vm.location,
-          onChanged: vm.selectLocation,
-          enabled: enabled,
-          errorText: errors[StartupField.location],
+      if (vm.isStageOther)
+        _keyed(
+          StartupField.stageOther,
+          _otherField(
+            vm,
+            enabled: enabled,
+            field: StartupField.stageOther,
+            controller: vm.stageOther,
+            label: StartupStrings.stageOtherLabel,
+            hint: StartupStrings.stageOtherHint,
+          ),
         ),
-      ),
       _keyed(
         StartupField.businessModel,
         SelectField<BusinessModel>.single(
           label: StartupStrings.businessModelLabel,
+          hint: StartupStrings.selectBusinessModel,
           options: BusinessModel.values,
           labelOf: (m) => m.label,
           value: vm.businessModel,
           onChanged: vm.selectBusinessModel,
           enabled: enabled,
           errorText: errors[StartupField.businessModel],
+          other: OtherChoice(
+            option: BusinessModel.other,
+            controller: vm.businessModelOther,
+            label: StartupStrings.businessModelOtherLabel,
+            hint: StartupStrings.businessModelOtherHint,
+            maxLength: Startup.otherMaxLength,
+            onChanged: () => vm.clearError(StartupField.businessModelOther),
+          ),
         ),
       ),
+      if (vm.isBusinessModelOther)
+        _keyed(
+          StartupField.businessModelOther,
+          _otherField(
+            vm,
+            enabled: enabled,
+            field: StartupField.businessModelOther,
+            controller: vm.businessModelOther,
+            label: StartupStrings.businessModelOtherLabel,
+            hint: StartupStrings.businessModelOtherHint,
+          ),
+        ),
+      _keyed(
+        StartupField.location,
+        SelectField<StartupLocation>.single(
+          label: StartupStrings.locationLabel,
+          hint: StartupStrings.selectLocation,
+          options: [
+            ...StartupLocation.values,
+            // An old startup saved with city "Other" keeps showing it.
+            if (vm.location == StartupLocation.other) StartupLocation.other,
+          ],
+          labelOf: (l) => l.label,
+          value: vm.location,
+          onChanged: vm.selectLocation,
+          // The same searchable city list as the sign-up screen.
+          customPicker: (context) async {
+            final city = await showCityPicker(
+              context,
+              selected: vm.location?.label,
+            );
+            if (city == null) return null;
+            for (final l in StartupLocation.values) {
+              if (l.label == city) return l;
+            }
+            return null;
+          },
+          enabled: enabled,
+          errorText: errors[StartupField.location],
+        ),
+      ),
+      // Not marked "(optional)" in Figma, but a startup without a year
+      // (older documents) still saves.
       _keyed(
         StartupField.foundedYear,
-        StartupTextField(
+        SelectField<int>.single(
           label: StartupStrings.foundedYearLabel,
-          hint: StartupStrings.foundedYearHint,
-          controller: vm.foundedYear,
-          isRequired: false,
+          hint: StartupStrings.selectYear,
+          options: StartupValidators.foundedYears(),
+          labelOf: (y) => '$y',
+          value: vm.foundedYear,
+          onChanged: vm.selectFoundedYear,
           enabled: enabled,
-          maxLength: 4,
-          keyboardType: TextInputType.number,
-          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
           errorText: errors[StartupField.foundedYear],
-          onChanged: (_) => vm.clearError(StartupField.foundedYear),
         ),
       ),
-      _keyed(
-        StartupField.website,
-        StartupTextField(
-          label: StartupStrings.websiteLabel,
-          hint: StartupStrings.websiteHint,
-          controller: vm.website,
-          isRequired: false,
-          enabled: enabled,
-          keyboardType: TextInputType.url,
-          textInputAction: TextInputAction.done,
-          errorText: errors[StartupField.website],
-          onChanged: (_) => vm.clearError(StartupField.website),
-        ),
-      ),
-      const FieldGroupHeading(StartupStrings.sectionLookingFor),
       _keyed(
         StartupField.lookingFor,
-        SelectField<LookingFor>.multi(
-          label: StartupStrings.lookingForLabel,
-          options: LookingFor.values,
-          labelOf: (l) => l.label,
+        LookingForChips(
           values: vm.lookingFor,
           onChanged: vm.setLookingFor,
           enabled: enabled,
           errorText: errors[StartupField.lookingFor],
+          otherController: vm.lookingForOther,
+          otherErrorText: errors[StartupField.lookingForOther],
+          onOtherChanged: () => vm.clearError(StartupField.lookingForOther),
         ),
       ),
       // Only asked when the founder is looking for funding.
       if (vm.seeksFunding)
         _keyed(
           StartupField.funding,
-          StartupTextField(
+          AppTextField(
             label: StartupStrings.fundingLabel,
             hint: StartupStrings.fundingHint,
             controller: vm.funding,
-            isRequired: true,
             enabled: enabled,
             // 13 digits covers anything up to trillions of SAR.
             maxLength: 13,
-            prefixText: '${StartupStrings.sar} ',
+            prefix: const _SarPrefix(),
             keyboardType: TextInputType.number,
             textInputAction: TextInputAction.done,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-            helperText: StartupStrings.fundingHelper,
             errorText: errors[StartupField.funding],
             onChanged: (_) => vm.clearError(StartupField.funding),
           ),
@@ -239,6 +313,32 @@ class _StartupFormState extends State<StartupForm> {
       ],
     );
   }
+}
+
+/// The "SAR" before the funding amount (Figma "Funding amount").
+class _SarPrefix extends StatelessWidget {
+  const _SarPrefix();
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(left: 14, right: 8),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          StartupStrings.sar,
+          style: AppText.sans(
+            size: 16,
+            color: AppColors.ink,
+            weight: FontWeight.w500,
+            height: 24,
+          ),
+        ),
+        const SizedBox(width: 6),
+        Container(width: 1, height: 24, color: AppColors.border),
+      ],
+    ),
+  );
 }
 
 /// Gold (private) or moss (public) note at the top of Edit.

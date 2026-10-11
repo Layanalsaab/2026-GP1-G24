@@ -13,6 +13,9 @@ class ExploreStrings {
   // Hub
   static const hubTitle = 'Hub';
   static const searchHint = 'Search startups, investors...';
+  static const searchStartups = 'Search startups';
+  static const searchInvestors = 'Search investors';
+  static const matchesFor = 'Matches for';
 
   // Sector filters (Explore and Hub)
   static const filterAll = 'All';
@@ -25,18 +28,27 @@ class ExploreStrings {
   ];
 
   // Cards
-  static const viewProfile = 'View Profile';
-  static const sendRequest = 'Send Request';
+  static const viewProfile = 'View profile';
+  static const sendRequest = 'Send request';
+  static const expressInterest = 'Express interest';
+  static const viewDetails = 'View details';
+  static const website = 'Website';
+  static const stageLabel = 'Stage';
+  static const sectorsLabel = 'Sectors';
+  static const needsLabel = 'Needs';
+  static const typeLabel = 'Type';
+  static const focusLabel = 'Focus';
+  static const basedOnCriteria = 'Based on your investment criteria';
+  static const edit = 'Edit';
   static String invests(String stageRange) => 'Invests: $stageRange';
   static String matchPercent(int percent) => '$percent% match';
 
   // Investor profile (Figma "V2 · 15")
-  static const investorProfileTitle = 'Investor Profile';
-  static const investmentPreferences = 'Investment Preferences';
+  static const investmentPreferences = 'Investment preferences';
   static const sectors = 'Sectors';
   static const stages = 'Stages';
   static const ticketSize = 'Ticket size';
   static const location = 'Location';
-  static const sendInvestmentRequest = 'Send Investment Request';
-  static const sendAssociationRequest = 'Send Association Request';
+  static const locations = 'Locations';
+  static const stage = 'Stage';
 }

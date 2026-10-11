@@ -6,6 +6,26 @@ class AppSettingsRepository {
   static AppSettingsRepository instance = AppSettingsRepository();
 
   static const _introSeenKey = 'intro_seen';
+  static const _darkModeKey = 'dark_mode';
+
+  /// Whether the user switched Dark mode on (Settings). Off when unreadable.
+  Future<bool> isDarkMode() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getBool(_darkModeKey) ?? false;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<void> setDarkMode(bool value) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(_darkModeKey, value);
+    } catch (_) {
+      // The choice still applies for this session.
+    }
+  }
 
   /// Whether the three intro screens have already been shown on this device.
   /// If storage can't be read we show them again rather than fail.

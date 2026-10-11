@@ -1,4 +1,7 @@
+import '../helpers/formatters.dart';
+import 'startup_association.dart';
 import 'startup.dart';
+import 'startup_enums.dart';
 
 /// A startup as shown on a list card (Figma "V2 · 10 / 12b / 11"): a short
 /// summary for the card, plus the full [Startup] its profile page opens.
@@ -32,10 +35,15 @@ class StartupListing {
   /// Shown on the seeker's startup profile (Figma "V2 · 14c").
   final int? teamSize;
   final String? lookingForNote;
-  final List<({String name, String subtitle})> associations;
+
+  /// Investment associations (all of them; profiles show only the public
+  /// ones, see [StartupAssociation.publicOnly]).
+  final List<StartupAssociation> associations;
 
   String get name => startup.name;
-  String get tagline => startup.tagline ?? '';
+
+  /// The short line for cards (see [Startup.summary]).
+  String get tagline => startup.summary;
   String get initials => initialsOverride ?? startup.initials;
 
   /// "HealthTech" from "HealthTech · Pre-seed".
@@ -47,15 +55,34 @@ class StartupListing {
     return parts.length > 1 ? parts[1] : '';
   }
 
+  /// What the startup is looking for, as shown on cards: "Funding · SAR 500K",
+  /// "Partnership" or a comma-separated list.
+  String get needsLabel {
+    final items = [
+      for (final item in LookingFor.values)
+        if (startup.lookingFor.contains(item))
+          item == LookingFor.funding && startup.fundingRequirement != null
+              ? '${item.label} · ${Formatters.compactSar(startup.fundingRequirement!)}'
+              : startup.lookingForLabelOf(item),
+    ];
+    return items.join(', ');
+  }
+
+  /// What the startup is looking for, without amounts: "Funding, Talent".
+  String get needsNames => [
+    for (final item in LookingFor.values)
+      if (startup.lookingFor.contains(item)) startup.lookingForLabelOf(item),
+  ].join(', ');
+
   StartupListing withMatch(int percent, String reason) => StartupListing(
-        startup: startup,
-        sectorStage: sectorStage,
-        city: city,
-        matchPercent: percent,
-        matchReason: reason,
-        initialsOverride: initialsOverride,
-        teamSize: teamSize,
-        lookingForNote: lookingForNote,
-        associations: associations,
-      );
+    startup: startup,
+    sectorStage: sectorStage,
+    city: city,
+    matchPercent: percent,
+    matchReason: reason,
+    initialsOverride: initialsOverride,
+    teamSize: teamSize,
+    lookingForNote: lookingForNote,
+    associations: associations,
+  );
 }

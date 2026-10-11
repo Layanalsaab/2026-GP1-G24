@@ -7,27 +7,19 @@ class StartupValidators {
   StartupValidators._();
 
   static const nameMin = 3;
-  static const nameMax = 60;
-  static const taglineMax = 80;
-  static const descriptionMin = 50;
+  static const nameMax = 40;
+  static const descriptionMin = 20;
   static const descriptionMax = 1000;
   static const firstFoundedYear = 2000;
+
+  static final _otherPattern = RegExp(r'^[\p{L}\p{M}\p{N} ]+$', unicode: true);
+  static final _hasLetter = RegExp(r'\p{L}', unicode: true);
 
   static String? name(String value) {
     final name = value.trim();
     if (name.isEmpty) return StartupStrings.nameRequired;
-    if (name.length < nameMin || name.length > nameMax) {
-      return StartupStrings.nameLength(nameMin, nameMax);
-    }
-    return null;
-  }
-
-  static String? tagline(String value) {
-    final tagline = value.trim();
-    if (tagline.contains('\n')) return StartupStrings.taglineOneLine;
-    if (tagline.length > taglineMax) {
-      return StartupStrings.taglineTooLong(taglineMax);
-    }
+    if (name.length < nameMin) return StartupStrings.nameTooShort(nameMin);
+    if (name.length > nameMax) return StartupStrings.nameTooLong(nameMax);
     return null;
   }
 
@@ -35,10 +27,7 @@ class StartupValidators {
     final description = value.trim();
     if (description.isEmpty) return StartupStrings.descriptionRequired;
     if (description.length < descriptionMin) {
-      return StartupStrings.descriptionTooShort(
-        descriptionMin,
-        description.length,
-      );
+      return StartupStrings.descriptionTooShort(descriptionMin);
     }
     if (description.length > descriptionMax) {
       return StartupStrings.descriptionTooLong(descriptionMax);
@@ -56,6 +45,12 @@ class StartupValidators {
       return StartupStrings.foundedYearRange(firstFoundedYear, lastYear);
     }
     return null;
+  }
+
+  /// Years offered by the Founded dropdown, newest first.
+  static List<int> foundedYears({DateTime? now}) {
+    final lastYear = (now ?? DateTime.now()).year;
+    return [for (var y = lastYear; y >= firstFoundedYear; y--) y];
   }
 
   /// Optional. Accepts addresses without a scheme ("example.com").
@@ -91,6 +86,23 @@ class StartupValidators {
     if (text.isEmpty) return StartupStrings.fundingRequired;
     final amount = int.tryParse(text);
     if (amount == null || amount <= 0) return StartupStrings.fundingInvalid;
+    return null;
+  }
+
+  /// The text typed after choosing "Other" (required, at most [max]).
+  static String? otherText(
+    String value, {
+    required String requiredMessage,
+    int max = 40,
+  }) {
+    final text = value.trim();
+    if (text.isEmpty) return requiredMessage;
+    if (text.length > max) return StartupStrings.otherTooLong(max);
+    // Letters (any language), numbers and spaces only: no symbols such as
+    // "--" or an apostrophe, and at least one letter.
+    if (!_otherPattern.hasMatch(text) || !_hasLetter.hasMatch(text)) {
+      return StartupStrings.otherSymbols;
+    }
     return null;
   }
 

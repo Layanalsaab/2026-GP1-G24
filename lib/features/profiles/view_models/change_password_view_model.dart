@@ -11,7 +11,7 @@ import '../../../models/auth_failure.dart';
 /// as sign up ([Validators.password]).
 class ChangePasswordViewModel extends ChangeNotifier with SafeNotifier {
   ChangePasswordViewModel({AuthRepository? authRepository})
-      : _auth = authRepository ?? AuthRepository.instance;
+    : _auth = authRepository ?? AuthRepository.instance;
 
   final AuthRepository _auth;
 
@@ -32,16 +32,19 @@ class ChangePasswordViewModel extends ChangeNotifier with SafeNotifier {
   }) async {
     if (isLoading) return false;
 
-    currentPasswordError =
-        currentPassword.isEmpty ? AccountStrings.currentPasswordRequired : null;
+    currentPasswordError = currentPassword.isEmpty
+        ? AccountStrings.currentPasswordRequired
+        : null;
     newPasswordError = Validators.password(newPassword);
     if (newPasswordError == null &&
         currentPassword.isNotEmpty &&
         newPassword == currentPassword) {
       newPasswordError = AccountStrings.samePassword;
     }
-    confirmPasswordError =
-        Validators.confirmPassword(newPassword, confirmPassword);
+    confirmPasswordError = Validators.confirmPassword(
+      newPassword,
+      confirmPassword,
+    );
     formError = null;
 
     if (currentPasswordError != null ||

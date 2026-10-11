@@ -1,3 +1,5 @@
+import '../app_constants/firestore_collections.dart';
+
 /// Roles that have an account. Startup seekers never have one.
 enum AccountRole {
   founder('founder'),
@@ -26,9 +28,13 @@ class AppUser {
     this.onboardingCompleted = false,
     this.city,
     this.bio = '',
+    this.phone,
+    this.sectorsOfInterest = const [],
+    this.createdAt,
     this.preferredSectors = const [],
     this.preferredStages = const [],
     this.ticketSize,
+    this.photoUrl,
   });
 
   final String uid;
@@ -46,6 +52,16 @@ class AppUser {
   /// A short "about me" text. Empty when the user hasn't written one.
   final String bio;
 
+  /// The 9-digit Saudi mobile number without +966 (starts with 5). Null when
+  /// not saved (older profiles).
+  final String? phone;
+
+  /// "Sectors of interest" chosen at sign-up and shown on the profile.
+  final List<String> sectorsOfInterest;
+
+  /// When the account was created (shown as "Joined October 2026").
+  final DateTime? createdAt;
+
   /// Investors only: the sectors and stages they invest in (one or more of
   /// each) and their typical ticket size. Empty / null until they answer the
   /// investor onboarding.
@@ -53,27 +69,37 @@ class AppUser {
   final List<String> preferredStages;
   final String? ticketSize;
 
+  /// Download URL of the profile photo; null when the user has none.
+  final String? photoUrl;
+
   AppUser copyWith({
     String? fullName,
     String? city,
     String? bio,
+    String? phone,
+    List<String>? sectorsOfInterest,
     bool? onboardingCompleted,
     List<String>? preferredSectors,
     List<String>? preferredStages,
     String? ticketSize,
-  }) =>
-      AppUser(
-        uid: uid,
-        role: role,
-        fullName: fullName ?? this.fullName,
-        email: email,
-        onboardingCompleted: onboardingCompleted ?? this.onboardingCompleted,
-        city: city ?? this.city,
-        bio: bio ?? this.bio,
-        preferredSectors: preferredSectors ?? this.preferredSectors,
-        preferredStages: preferredStages ?? this.preferredStages,
-        ticketSize: ticketSize ?? this.ticketSize,
-      );
+    String? photoUrl,
+    bool clearPhoto = false,
+  }) => AppUser(
+    uid: uid,
+    role: role,
+    fullName: fullName ?? this.fullName,
+    email: email,
+    onboardingCompleted: onboardingCompleted ?? this.onboardingCompleted,
+    city: city ?? this.city,
+    bio: bio ?? this.bio,
+    phone: phone ?? this.phone,
+    sectorsOfInterest: sectorsOfInterest ?? this.sectorsOfInterest,
+    createdAt: createdAt,
+    preferredSectors: preferredSectors ?? this.preferredSectors,
+    preferredStages: preferredStages ?? this.preferredStages,
+    ticketSize: ticketSize ?? this.ticketSize,
+    photoUrl: clearPhoto ? null : (photoUrl ?? this.photoUrl),
+  );
 
   /// Returns null when the document is missing a valid role, so callers never
   /// treat a half-created profile as a usable account.
@@ -89,9 +115,15 @@ class AppUser {
       onboardingCompleted: data['onboardingCompleted'] == true,
       city: data['city'] as String?,
       bio: (data['bio'] as String?) ?? '',
+      phone: data['phone'] as String?,
+      sectorsOfInterest: _strings(data['sectorsOfInterest']),
+      createdAt: data['createdAt'] is DateTime
+          ? data['createdAt'] as DateTime
+          : null,
       preferredSectors: _strings(data['preferredSectors']),
       preferredStages: _strings(data['preferredStages']),
       ticketSize: data['ticketSize'] as String?,
+      photoUrl: data[UserFields.photoUrl] as String?,
     );
   }
 

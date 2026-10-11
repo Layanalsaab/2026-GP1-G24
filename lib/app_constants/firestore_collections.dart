@@ -22,6 +22,11 @@ class UserFields {
 
   // Added when a user edits their account.
   static const bio = 'bio';
+  static const phone = 'phone';
+  static const sectorsOfInterest = 'sectorsOfInterest';
+
+  // Profile photo: download URL of `users/{uid}/profile.jpg` in Storage.
+  static const photoUrl = 'photoUrl';
 
   // Added when an investor finishes onboarding (their investment criteria).
   static const preferredSectors = 'preferredSectors';
@@ -39,8 +44,12 @@ class StartupFields {
   static const tagline = 'tagline';
   static const description = 'description';
   static const sector = 'sector';
+  static const sectorOther = 'sectorOther';
   static const stage = 'stage';
+  static const stageOther = 'stageOther';
   static const businessModel = 'businessModel';
+  static const businessModelOther = 'businessModelOther';
+  static const lookingForOther = 'lookingForOther';
   static const location = 'location';
   static const foundedYear = 'foundedYear';
   static const websiteUrl = 'websiteUrl';
@@ -62,4 +71,7 @@ class StoragePaths {
     String startupId,
     String fileName,
   ) => 'startup_logos/$founderId/$startupId/$fileName';
+
+  /// `users/{uid}/profile.jpg`
+  static String userProfilePhoto(String uid) => 'users/$uid/profile.jpg';
 }
