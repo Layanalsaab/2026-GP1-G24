@@ -4,6 +4,7 @@ import '../../models/investor_criteria.dart';
 import '../../models/investor_profile.dart';
 import '../../models/startup.dart';
 import '../mock_data/prototype_seed.dart';
+import 'discovery_repository.dart';
 
 /// A match between an investor and a startup: "92% match",
 /// "Same sector and stage".
@@ -87,25 +88,29 @@ class Recommender {
   }
 }
 
-/// The Explore -> Matches lists.
-///
-/// The sample startups and investors carry the prototype's fixed match
-/// percentages (so the demo reads like the design); anything else is scored
-/// by [Recommender].
+/// The Explore -> Matches lists, scored by [Recommender] over the startups
+/// and investors loaded from Firestore. (The built-in sample people carry the
+/// prototype's fixed match percentages, for tests.)
 class RecommendationRepository {
-  RecommendationRepository();
+  RecommendationRepository({DiscoveryRepository? discovery})
+    // ignore: prefer_initializing_formals
+    : _discovery = discovery;
 
   /// The app-wide instance. Tests replace it with a fake.
   static RecommendationRepository instance = RecommendationRepository();
 
+  final DiscoveryRepository? _discovery;
+  DiscoveryRepository get _d => _discovery ?? DiscoveryRepository.instance;
+
   /// Startups matched to the signed-in [investor], best first. An investor
-  /// who has not answered the sign-up questions sees the sample matches.
+  /// who has not answered the sign-up questions has no matches yet.
   List<HomeItem> startupsForInvestor(AppUser investor) {
     final criteria = investor.investorCriteria;
     final scored = <HomeItem>[];
-    for (final s in PrototypeSeed.startups) {
-      final fixed = PrototypeSeed.startupMatches[s.id];
+    for (final s in _d.allStartups) {
+      if (!s.isPublic) continue;
       if (criteria == null) {
+        final fixed = _d.sample ? PrototypeSeed.startupMatches[s.id] : null;
         if (fixed != null) {
           scored.add(HomeItem.fromStartup(s).withMatch(fixed.$1, fixed.$2));
         }
@@ -124,12 +129,11 @@ class RecommendationRepository {
     return scored;
   }
 
-  /// Investors matched to the founder's [startup], best first. The sample
-  /// startup "Rafeeq Health" shows the sample matches.
+  /// Investors matched to the founder's [startup], best first.
   List<HomeItem> investorsForStartup(Startup startup) {
     final scored = <HomeItem>[];
-    for (final i in PrototypeSeed.investors) {
-      if (startup.id == 'mock-rafeeq') {
+    for (final i in _d.allInvestors) {
+      if (_d.sample && startup.id == 'mock-rafeeq') {
         if (i.matchPercent != null) {
           scored.add(HomeItem.fromInvestor(i));
         }

@@ -18,6 +18,7 @@ class InvestorProfile {
     this.valueOffered,
     this.hopeToGain,
     this.joinedLabel,
+    this.createdAt,
   });
 
   final String id;
@@ -57,6 +58,43 @@ class InvestorProfile {
   /// "Joined yesterday" / "Joined 3 days ago" on the "New on Start.sa" rail.
   final String? joinedLabel;
 
+  /// When the document was created (orders the "New on Start.sa" rail).
+  final DateTime? createdAt;
+
+  static List<String> _strings(Object? v) =>
+      v is List ? v.whereType<String>().toList() : const [];
+
+  static String? _text(Object? v) {
+    final t = v is String ? v.trim() : '';
+    return t.isEmpty ? null : t;
+  }
+
+  /// Reads an `investors/{id}` document (the same field names as an
+  /// investor's `users/{uid}` document). Null without a name.
+  static InvestorProfile? fromMap(String id, Map<String, dynamic>? d) {
+    if (d == null) return null;
+    final name = _text(d['fullName']);
+    if (name == null) return null;
+    final city = _text(d['city']) ?? '';
+    final bio = _text(d['bio']);
+    return InvestorProfile(
+      id: id,
+      name: name,
+      title: _text(d['title']) ?? 'Investor',
+      city: city,
+      sectors: _strings(d['preferredSectors']),
+      stages: _strings(d['preferredStages']),
+      ticketRange: _text(d['ticketSize']) ?? '',
+      locations: city.isEmpty ? const [] : [city],
+      about: bio,
+      bio: bio,
+      linkedin: _text(d['linkedinUrl']),
+      valueOffered: _text(d['offer']),
+      hopeToGain: _text(d['lookingFor']),
+      createdAt: d['createdAt'] is DateTime ? d['createdAt'] as DateTime : null,
+    );
+  }
+
   /// First letter of the first and last name; "Sara Al-Mohsen" gives "SM".
   String get initials {
     final words = name
@@ -69,11 +107,13 @@ class InvestorProfile {
   }
 
   /// "Angel Investor · HealthTech, Fintech".
-  String get headline => '$title · ${sectors.join(', ')}';
+  String get headline =>
+      sectors.isEmpty ? title : '$title · ${sectors.join(', ')}';
 
   /// "Pre-seed – Seed", or just the one stage.
-  String get stageRange =>
-      stages.length > 1 ? '${stages.first} – ${stages.last}' : stages.first;
+  String get stageRange => stages.isEmpty
+      ? ''
+      : (stages.length > 1 ? '${stages.first} – ${stages.last}' : stages.first);
 
   InvestorProfile withMatch(int percent, String reason) => InvestorProfile(
     id: id,
@@ -92,5 +132,6 @@ class InvestorProfile {
     valueOffered: valueOffered,
     hopeToGain: hopeToGain,
     joinedLabel: joinedLabel,
+    createdAt: createdAt,
   );
 }

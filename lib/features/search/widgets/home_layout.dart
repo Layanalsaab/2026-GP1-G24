@@ -11,7 +11,9 @@ import '../../../shared_ui/theme/app_colors.dart';
 import '../../../shared_ui/theme/app_text.dart';
 import '../../../shared_ui/widgets/cards/avatars.dart';
 import '../../../shared_ui/widgets/cards/home_card.dart';
+import '../../../shared_ui/widgets/lists/empty_state.dart';
 import '../../../shared_ui/widgets/overlays/app_toast.dart';
+import '../view_models/home_view_model.dart';
 
 /// One entry of a [HomeColumn]: the [child] plus the CSS-style margins the
 /// prototype uses between list items (they may be negative).
@@ -189,4 +191,38 @@ class BackLink extends StatelessWidget {
       ),
     );
   }
+}
+
+/// What a list shows when it has no cards: a spinner while Firestore loads,
+/// a retry when loading failed, "No matches" while filtering, otherwise a
+/// plain "nothing here yet".
+Widget homeEmptyState(HomeViewModel vm) {
+  if (vm.isLoadingDirectory) {
+    return const Padding(
+      padding: EdgeInsets.symmetric(vertical: 48),
+      child: Center(
+        child: SizedBox(
+          width: 28,
+          height: 28,
+          child: CircularProgressIndicator(
+            strokeWidth: 3,
+            color: AppColors.moss600,
+          ),
+        ),
+      ),
+    );
+  }
+  if (vm.directoryFailed) {
+    return EmptyState(
+      title: HomeStrings.loadFailedTitle,
+      message: HomeStrings.loadFailedMessage,
+      actionLabel: HomeStrings.retry,
+      onAction: vm.refreshDirectory,
+    );
+  }
+  if (vm.filtering) return EmptyState.noMatches(onAction: vm.clearAll);
+  return const EmptyState(
+    title: HomeStrings.nothingYetTitle,
+    message: HomeStrings.nothingYetMessage,
+  );
 }

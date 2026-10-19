@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import '../../models/app_user.dart';
 import '../../models/auth_failure.dart';
 import '../firebase_services/auth_service.dart';
+import 'startup_repository.dart';
 import 'user_repository.dart';
 
 class SignupResult {
@@ -209,6 +210,12 @@ class AuthRepository {
     final account = _auth.currentAccount;
     if (account == null) throw const AuthException(AuthFailure.unknown);
     await _auth.reauthenticate(account.email, password);
+    // A founder's startups go with the account, so none stay public.
+    try {
+      await StartupRepository.instance.deleteAllMine();
+    } catch (_) {
+      // Carry on: the account itself must still be removed.
+    }
     await _users.deleteProfile(account.uid);
     await _auth.deleteCurrentAccount();
     await _safeSignOut();

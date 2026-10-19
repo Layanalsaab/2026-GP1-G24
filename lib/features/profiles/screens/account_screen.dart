@@ -1,3 +1,5 @@
+import '../../../helpers/open_link.dart';
+
 import 'package:flutter/material.dart';
 
 import '../../../app_constants/profile_strings.dart';
@@ -9,7 +11,6 @@ import '../../../shared_ui/theme/app_colors.dart';
 import '../../../shared_ui/widgets/cards/avatars.dart';
 import '../../../shared_ui/widgets/cards/profile_blocks.dart';
 import '../../../shared_ui/widgets/headers/profile_banner.dart';
-import '../../../shared_ui/widgets/overlays/app_toast.dart';
 import '../../startup_profile/screens/startup_profile_screen.dart';
 import '../../startups/screens/manage_startup_screen.dart';
 import '../../startups/screens/startup_steps_screen.dart';
@@ -91,10 +92,7 @@ class _OwnProfileScreenState extends State<OwnProfileScreen> {
                   tags: _vm.sectors,
                   photoUrl: u.photoUrl,
                   linkedin: _vm.linkedin,
-                  onLinkedin: () => AppToast.show(
-                    context,
-                    ProfileStrings.opensInFullApp(_vm.linkedin),
-                  ),
+                  onLinkedin: () => openExternalLink(_vm.linkedin),
                 ),
                 ProfileSections(
                   children: [

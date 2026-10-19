@@ -104,16 +104,59 @@ class UserRepository {
   }
 
   /// Saves the investor's answers to sign-up steps 3 and 4 and marks their
-  /// onboarding as finished.
+  /// onboarding as finished, then publishes them to the `investors` list so
+  /// founders can find them.
   Future<void> saveInvestorOnboarding({
     required String uid,
     required InvestorCriteria criteria,
     String? valueOffered,
-  }) => _firestore.updateDocument(FirestoreCollections.users, uid, {
-    ...criteria.toFields(),
-    if (valueOffered != null) UserFields.valueOffered: valueOffered.trim(),
-    UserFields.onboardingCompleted: true,
-  });
+  }) async {
+    await _firestore.updateDocument(FirestoreCollections.users, uid, {
+      ...criteria.toFields(),
+      if (valueOffered != null) UserFields.valueOffered: valueOffered.trim(),
+      UserFields.onboardingCompleted: true,
+    });
+    await _publishInvestor(uid);
+  }
+
+  /// Copies the public part of an investor's profile (never the email or
+  /// phone) to `investors/{uid}`, with the same field names. Founders are not
+  /// listed. A failure here never blocks the account.
+  Future<void> _publishInvestor(String uid) async {
+    try {
+      final d = await _firestore.getDocument(FirestoreCollections.users, uid);
+      if (d == null || d[UserFields.role] != 'investor') return;
+      Object? keep(String k) => d[k];
+      final doc = <String, Object?>{
+        UserFields.role: 'investor',
+        UserFields.fullName: keep(UserFields.fullName),
+        UserFields.city: keep(UserFields.city),
+        UserFields.bio: keep(UserFields.bio),
+        UserFields.preferredSectors: keep(UserFields.preferredSectors),
+        UserFields.preferredStages: keep(UserFields.preferredStages),
+        UserFields.ticketSize: keep(UserFields.ticketSize),
+        UserFields.investmentsCount: keep(UserFields.investmentsCount),
+        UserFields.hasLedRound: keep(UserFields.hasLedRound),
+        UserFields.roundsLed: keep(UserFields.roundsLed),
+        UserFields.coInvest: keep(UserFields.coInvest),
+        UserFields.roundSizeMin: keep(UserFields.roundSizeMin),
+        UserFields.roundSizeMax: keep(UserFields.roundSizeMax),
+        UserFields.preferredCommerceModels: keep(
+          UserFields.preferredCommerceModels,
+        ),
+        UserFields.linkedin: keep(UserFields.linkedin),
+        UserFields.valueOffered: keep(UserFields.valueOffered),
+        UserFields.lookingFor: keep(UserFields.lookingFor),
+        UserFields.title: 'Investor',
+        UserFields.photoUrl: keep(UserFields.photoUrl),
+        UserFields.createdAt:
+            keep(UserFields.createdAt) ?? _firestore.serverTimestamp(),
+      };
+      await _firestore.setDocument(FirestoreCollections.investors, uid, doc);
+    } catch (_) {
+      // The profile itself is saved; the public listing can be retried.
+    }
+  }
 
   /// Marks a founder's onboarding as finished (after their first startup).
   Future<void> completeOnboarding(String uid) => _firestore.updateDocument(
@@ -153,6 +196,7 @@ class UserRepository {
         UserFields.gain: gain,
         UserFields.valueOffered: valueOffered,
       });
+      await _refreshPublishedInvestor(uid);
     } on AuthException catch (e) {
       if (e.failure != AuthFailure.permissionDenied) rethrow;
       await _firestore.updateDocument(FirestoreCollections.users, uid, {
@@ -163,7 +207,26 @@ class UserRepository {
     }
   }
 
-  /// Deletes the user's profile document (used when deleting the account).
-  Future<void> deleteProfile(String uid) =>
-      _firestore.deleteDocument(FirestoreCollections.users, uid);
+  /// Re-publishes an investor's public copy after they edited their profile
+  /// (founders have none).
+  Future<void> _refreshPublishedInvestor(String uid) async {
+    try {
+      final existing = await _firestore.getDocument(
+        FirestoreCollections.investors,
+        uid,
+      );
+      if (existing != null) await _publishInvestor(uid);
+    } catch (_) {}
+  }
+
+  /// Deletes the user's profile document and their public investor listing
+  /// (used when deleting the account).
+  Future<void> deleteProfile(String uid) async {
+    try {
+      await _firestore.deleteDocument(FirestoreCollections.investors, uid);
+    } catch (_) {
+      // Not an investor, or already gone.
+    }
+    await _firestore.deleteDocument(FirestoreCollections.users, uid);
+  }
 }

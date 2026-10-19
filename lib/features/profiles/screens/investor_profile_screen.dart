@@ -1,3 +1,5 @@
+import '../../../helpers/open_link.dart';
+
 import 'package:flutter/material.dart';
 
 import '../../../app_constants/profile_strings.dart';
@@ -10,7 +12,6 @@ import '../../../shared_ui/theme/app_colors.dart';
 import '../../../shared_ui/widgets/cards/avatars.dart';
 import '../../../shared_ui/widgets/cards/profile_blocks.dart';
 import '../../../shared_ui/widgets/headers/profile_banner.dart';
-import '../../../shared_ui/widgets/overlays/app_toast.dart';
 import '../../startup_profile/screens/startup_profile_screen.dart';
 import '../view_models/investor_profile_view_model.dart';
 import '../widgets/profile_widgets.dart';
@@ -85,10 +86,7 @@ class _InvestorProfileScreenState extends State<InvestorProfileScreen> {
                         tagsLabel: ProfileStrings.investsIn,
                         tags: inv.sectors,
                         linkedin: _vm.linkedin,
-                        onLinkedin: () => AppToast.show(
-                          context,
-                          ProfileStrings.opensInFullApp(_vm.linkedin),
-                        ),
+                        onLinkedin: () => openExternalLink(_vm.linkedin),
                       ),
                       ProfileSections(
                         children: [

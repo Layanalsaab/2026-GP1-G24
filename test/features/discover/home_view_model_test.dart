@@ -1,11 +1,16 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:startsa/data_access/mock_data/prototype_seed.dart';
+import 'package:startsa/data_access/repositories/discovery_repository.dart';
 import 'package:startsa/features/search/view_models/home_filters.dart';
 import 'package:startsa/features/search/view_models/home_view_model.dart';
 import 'package:startsa/helpers/app_session.dart';
 import 'package:startsa/models/home_item.dart';
 
 void main() {
+  setUp(() {
+    DiscoveryRepository.instance = DiscoveryRepository.sample();
+  });
+
   HomeViewModel vm(SessionRole role, {Set<String> own = const {}}) =>
       HomeViewModel(role: role, ownStartupIds: own);
 

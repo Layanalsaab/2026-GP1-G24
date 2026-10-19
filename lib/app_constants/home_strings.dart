@@ -27,7 +27,20 @@ class HomeStrings {
   static const linkCopied = 'Link copied';
   static const bookmarkAdded = 'Added to bookmarks';
   static const bookmarkRemoved = 'Removed from bookmarks';
-  static String opensInFullApp(String item) => '$item opens in the full app';
+
+  // Empty lists
+  static const loadFailedTitle = 'Couldn’t load the list';
+  static const loadFailedMessage = 'Check your connection and try again.';
+  static const retry = 'Try again';
+  static const nothingYetTitle = 'Nothing here yet';
+  static const nothingYetMessage =
+      'New startups and investors will appear here.';
+
+  // Log out confirmation
+  static const logOutTitle = 'Log out?';
+  static const logOutMessage = 'Are you sure you want to log out?';
+  static const logOut = 'Log out';
+  static const cancel = 'Cancel';
 
   // Menu
   static const myStartups = 'My Startups';

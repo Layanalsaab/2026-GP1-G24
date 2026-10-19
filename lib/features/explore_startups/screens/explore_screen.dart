@@ -53,7 +53,7 @@ class ExploreScreen extends StatelessWidget {
         bottom: 0,
       ),
       if (res.isNotEmpty) cardsSlot(res),
-      if (res.isEmpty) HomeSlot(EmptyState.noMatches(onAction: vm.clearAll)),
+      if (res.isEmpty) HomeSlot(homeEmptyState(vm)),
     ];
   }
 

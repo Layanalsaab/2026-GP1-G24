@@ -179,7 +179,6 @@ class FounderToolsStrings {
   static const interestAll = 'All';
   static const interestEmpty = 'No new expressions of interest.';
   static const interestAllEmpty = 'No expressions of interest yet.';
-  static const messagingToast = 'Messaging opens in the full app';
   static const replyLabel = 'Reply';
   static const publicProfile = 'Public profile';
   static const publicProfileOn = 'Visible in Hub, Explore and Matches';

@@ -20,7 +20,7 @@ import '../shared_ui/widgets/nav/app_bottom_nav.dart';
 import '../shared_ui/widgets/nav/app_side_drawer.dart';
 import '../shared_ui/widgets/nav/home_search_bar.dart';
 import '../shared_ui/widgets/overlays/advanced_search_sheet.dart';
-import '../shared_ui/widgets/overlays/app_toast.dart';
+import '../shared_ui/widgets/overlays/app_bottom_sheet.dart';
 import 'app_router.dart';
 
 /// The home shell (Figma 20-27): green header with the avatar menu (or the
@@ -51,6 +51,7 @@ class _MainScreenState extends State<MainScreen> {
     );
     _session.addListener(_onSession);
     if (_session.isFounder) _loadOwnStartups();
+    _vm.refreshDirectory();
   }
 
   @override
@@ -93,8 +94,18 @@ class _MainScreenState extends State<MainScreen> {
     if (result != null) _vm.applySelection(result);
   }
 
-  void _soon(String item) =>
-      AppToast.show(context, HomeStrings.opensInFullApp(item));
+  /// "Log out" asks first.
+  Future<void> _confirmLogOut() async {
+    final ok = await showConfirmSheet(
+      context,
+      title: HomeStrings.logOutTitle,
+      message: HomeStrings.logOutMessage,
+      confirmLabel: HomeStrings.logOut,
+      cancelLabel: HomeStrings.cancel,
+      icon: AppIcons.logout,
+    );
+    if (ok && mounted) AppRouter.logOut(context);
+  }
 
   void _openMenu() {
     final user = _session.user;
@@ -116,27 +127,17 @@ class _MainScreenState extends State<MainScreen> {
             onTap: () => MyStartupsScreen.open(context),
           )
         else
-          AppDrawerItem(
-            label: HomeStrings.wallet,
-            icon: AppIcons.menuWallet,
-            onTap: () => _soon(HomeStrings.wallet),
-          ),
+          AppDrawerItem(label: HomeStrings.wallet, icon: AppIcons.menuWallet),
         AppDrawerItem(
           label: HomeStrings.bookmarks,
           icon: AppIcons.menuBookmark,
           badge: BookmarkRepository.instance.count,
-          onTap: () => _soon(HomeStrings.bookmarks),
         ),
         if (founder)
-          AppDrawerItem(
-            label: HomeStrings.askGemini,
-            icon: AppIcons.menuSpark,
-            onTap: () => _soon(HomeStrings.askGemini),
-          ),
+          AppDrawerItem(label: HomeStrings.askGemini, icon: AppIcons.menuSpark),
         AppDrawerItem(
           label: HomeStrings.notifications,
           icon: AppIcons.menuBell,
-          onTap: () => _soon(HomeStrings.notifications),
         ),
         AppDrawerItem(
           label: HomeStrings.settings,
@@ -145,7 +146,7 @@ class _MainScreenState extends State<MainScreen> {
         ),
       ],
       onViewProfile: () => OwnProfileScreen.open(context),
-      onLogOut: () => AppRouter.logOut(context),
+      onLogOut: _confirmLogOut,
     );
   }
 

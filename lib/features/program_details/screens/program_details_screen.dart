@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../app_constants/profile_strings.dart';
+import '../../../helpers/open_link.dart';
 import '../../../data_access/repositories/bookmark_repository.dart';
 import '../../../models/program.dart';
 import '../../../shared_ui/icons/app_icons.dart';
@@ -13,7 +14,6 @@ import '../../../shared_ui/widgets/buttons/app_button.dart';
 import '../../../shared_ui/widgets/cards/avatars.dart';
 import '../../../shared_ui/widgets/cards/pills.dart';
 import '../../../shared_ui/widgets/headers/header_buttons.dart';
-import '../../../shared_ui/widgets/overlays/app_toast.dart';
 import '../../profiles/widgets/profile_widgets.dart';
 import '../view_models/program_details_view_model.dart';
 
@@ -46,8 +46,7 @@ class _ProgramDetailsScreenState extends State<ProgramDetailsScreen> {
     super.dispose();
   }
 
-  void _openWebsite() =>
-      AppToast.show(context, ProfileStrings.opening(_vm.website));
+  void _openWebsite() => openExternalLink(_vm.website);
 
   /// A circle as an SVG path (the prototype's `<circle>`).
   static String _circle(double cx, double cy, double r) =>

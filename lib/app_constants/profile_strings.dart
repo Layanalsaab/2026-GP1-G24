@@ -120,13 +120,9 @@ class ProfileStrings {
   static const fixFields = 'Please fix the highlighted fields';
   static const darkOn = 'Dark mode on';
   static const darkOff = 'Dark mode off';
-  static const notificationSettingsSoon =
-      'Notification settings open in the full app';
   static String requestSentTo(String name) => 'Request sent to $name';
   static String interestSentTo(String name) => 'Interest sent to $name';
   static String withdrawnFrom(String name) => 'Withdrawn from $name';
-  static String opening(String website) => 'Opening $website';
-  static String opensInFullApp(String url) => 'Opens $url in the full app';
 
   // ---- Change password (not designed; the existing flow, restyled) ----
   static const changePasswordTitle = 'Change password';

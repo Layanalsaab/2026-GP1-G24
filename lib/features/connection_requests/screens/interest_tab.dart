@@ -150,12 +150,6 @@ class InterestTab extends StatelessWidget {
                                       '${FounderToolsStrings.replyLabel} ${items[i].name}',
                                   excludeSemantics: true,
                                   child: Pressable(
-                                    onTap: () {
-                                      vm.markReplied(items[i]);
-                                      onToast(
-                                        FounderToolsStrings.messagingToast,
-                                      );
-                                    },
                                     child: Container(
                                       width: 38,
                                       height: 38,

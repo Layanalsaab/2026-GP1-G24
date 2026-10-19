@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 import '../../theme/app_colors.dart';
@@ -81,10 +82,11 @@ class FormFooter extends StatelessWidget {
   }
 }
 
-/// Centered 14 px grey sentence with a tappable link at its end:
+/// Centered grey sentence with a tappable link at its end:
 /// "Already have an account? **Log in**". Footer links are 700 green
-/// (default); the choose-role one is 600 moss ([FooterLink.moss]).
-class FooterLink extends StatelessWidget {
+/// (default); the choose-role one is 600 moss ([FooterLink.moss]). The link
+/// is part of the same text run, so it always has the sentence's size.
+class FooterLink extends StatefulWidget {
   const FooterLink({
     super.key,
     required this.prefix,
@@ -95,7 +97,7 @@ class FooterLink extends StatelessWidget {
     this.padding = EdgeInsets.zero,
   });
 
-  /// 14/600 moss600 link (choose-role "Log in").
+  /// 600 moss600 link (choose-role "Log in").
   const FooterLink.moss({
     super.key,
     required this.prefix,
@@ -116,40 +118,48 @@ class FooterLink extends StatelessWidget {
   final EdgeInsetsGeometry padding;
 
   @override
+  State<FooterLink> createState() => _FooterLinkState();
+}
+
+class _FooterLinkState extends State<FooterLink> {
+  late final TapGestureRecognizer _tap = TapGestureRecognizer()
+    ..onTap = () => widget.onTap?.call();
+
+  @override
+  void dispose() {
+    _tap.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final base = AppText.sans(size: 13, color: AppColors.grey);
     return Padding(
-      padding: padding,
-      child: FittedBox(
-        // One line that never grows wider than the button above it.
-        fit: BoxFit.scaleDown,
-        child: Text.rich(
-          textAlign: TextAlign.center,
-          TextSpan(
-            style: base,
-            children: [
-              TextSpan(text: '$prefix '),
-              WidgetSpan(
-                alignment: PlaceholderAlignment.baseline,
-                baseline: TextBaseline.alphabetic,
-                child: Semantics(
-                  button: true,
-                  label: linkLabel,
-                  excludeSemantics: true,
-                  child: GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: onTap,
-                    child: Text(
-                      linkLabel,
-                      style: base.copyWith(
-                        color: linkColor,
-                        fontWeight: linkWeight,
-                      ),
-                    ),
+      padding: widget.padding,
+      child: Semantics(
+        button: true,
+        label: '${widget.prefix} ${widget.linkLabel}',
+        excludeSemantics: true,
+        onTap: widget.onTap,
+        child: FittedBox(
+          // One line that never grows wider than the button above it.
+          fit: BoxFit.scaleDown,
+          child: Text.rich(
+            textAlign: TextAlign.center,
+            TextSpan(
+              style: base,
+              children: [
+                TextSpan(text: '${widget.prefix} '),
+                TextSpan(
+                  text: widget.linkLabel,
+                  recognizer: _tap,
+                  style: TextStyle(
+                    color: widget.linkColor,
+                    fontWeight: widget.linkWeight,
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

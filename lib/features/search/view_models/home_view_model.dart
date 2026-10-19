@@ -45,7 +45,16 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
        _interactions = interactions ?? InteractionRepository.instance,
        _recommendations = recommendations ?? RecommendationRepository.instance,
        _ownIds = ownStartupIds,
-       _own = ownStartups;
+       _own = ownStartups {
+    // The lists fill in when Firestore answers.
+    _discovery.changes.addListener(notifyListeners);
+  }
+
+  /// Loads the public startups and investors (again).
+  Future<void> refreshDirectory() => _discovery.refresh();
+
+  bool get isLoadingDirectory => _discovery.isLoading;
+  bool get directoryFailed => _discovery.loadFailed;
 
   final SessionRole role;
   final AppUser? user;
@@ -292,6 +301,7 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
 
   @override
   void dispose() {
+    _discovery.changes.removeListener(notifyListeners);
     searchController.dispose();
     super.dispose();
   }

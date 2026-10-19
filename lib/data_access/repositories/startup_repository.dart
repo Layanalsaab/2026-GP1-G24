@@ -112,6 +112,15 @@ class StartupRepository {
     return updated;
   }
 
+  /// Deletes every startup of the signed-in founder (used when the account
+  /// is deleted, so nothing of theirs stays public).
+  Future<void> deleteAllMine() async {
+    final mine = await fetchMyStartups();
+    for (final s in mine) {
+      await delete(s);
+    }
+  }
+
   /// Deletes the startup and its logo.
   Future<void> delete(Startup startup) async {
     final logoUrl = startup.logoUrl;

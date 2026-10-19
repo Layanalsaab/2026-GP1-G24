@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:startsa/data_access/repositories/discovery_repository.dart';
 import 'package:startsa/data_access/repositories/startup_repository.dart';
 import 'package:startsa/helpers/app_session.dart';
 import 'package:startsa/models/app_user.dart';
@@ -26,6 +27,7 @@ void main() {
 
   setUp(() {
     StartupRepository.instance = FakeStartupRepository();
+    DiscoveryRepository.instance = DiscoveryRepository.sample();
     AppSession.instance.reset();
   });
 
@@ -114,4 +116,28 @@ void main() {
     expect(tester.takeException(), isNull);
     handle.dispose();
   });
+
+  testWidgets(
+    'A feature that is not built yet is not tappable and shows no message',
+    (tester) async {
+      AppSession.instance.signIn(founder);
+      await pumpMain(tester);
+      final ctx = tester.element(find.byType(MainScreen));
+      openAppDrawer(
+        ctx,
+        name: 'Shahad Alabdulkarim',
+        initials: 'SA',
+        roleLine: 'Founder',
+        items: [AppDrawerItem(label: 'Notifications', icon: AppIcons.menuBell)],
+        onViewProfile: () {},
+        onLogOut: () {},
+      );
+      await tester.pump(const Duration(milliseconds: 600));
+      // A feature that is not built yet shows no message and does nothing.
+      await tester.tap(find.text('Notifications'));
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(find.text('Notifications'), findsOneWidget);
+      expect(find.textContaining('full app'), findsNothing);
+    },
+  );
 }

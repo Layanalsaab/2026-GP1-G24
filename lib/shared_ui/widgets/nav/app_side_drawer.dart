@@ -18,7 +18,7 @@ class AppDrawerItem {
   const AppDrawerItem({
     required this.label,
     required this.icon,
-    required this.onTap,
+    this.onTap,
     this.badge,
   });
 
@@ -26,8 +26,9 @@ class AppDrawerItem {
   final String icon;
   final int? badge;
 
-  /// Runs after the drawer has been closed.
-  final VoidCallback onTap;
+  /// Runs after the drawer has been closed. Null: a feature that is not
+  /// built yet; the row is shown but cannot be tapped.
+  final VoidCallback? onTap;
 }
 
 /// Opens the side drawer over the current screen (dim fades 300 ms, panel
@@ -132,7 +133,9 @@ class AppSideDrawer extends StatelessWidget {
                       index: i,
                       child: _DrawerRow(
                         item: items[i],
-                        onTap: () => _then(context, items[i].onTap),
+                        onTap: items[i].onTap == null
+                            ? null
+                            : () => _then(context, items[i].onTap!),
                       ),
                     ),
                 ],
@@ -316,7 +319,7 @@ class _DrawerRow extends StatelessWidget {
   const _DrawerRow({required this.item, required this.onTap});
 
   final AppDrawerItem item;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {

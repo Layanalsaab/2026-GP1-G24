@@ -113,10 +113,29 @@ service cloud.firestore {
     // ------------------------------------------------------------ investors
     // Imported dataset investors (and later public investor profiles), with
     // the same field names as an investor's users/{uid} document. Readable by
-    // everyone; written only by the import (Admin SDK bypasses these rules).
+    // everyone; the import (Admin SDK) bypasses these rules.
     match /investors/{investorId} {
       allow read: if true;
-      allow write: if false;
+
+      // An investor publishes (and keeps fresh) their own listing: the public
+      // part of their profile, never the email or phone.
+      allow create, update: if request.auth != null
+        && request.auth.uid == investorId
+        && request.resource.data.role == 'investor'
+        && request.resource.data.keys().hasOnly(['role', 'fullName', 'city',
+             'bio', 'preferredSectors', 'preferredStages', 'ticketSize',
+             'investmentsCount', 'hasLedRound', 'roundsLed', 'coInvest',
+             'roundSizeMin', 'roundSizeMax', 'preferredCommerceModels',
+             'linkedinUrl', 'offer', 'lookingFor', 'title', 'photoUrl',
+             'createdAt'])
+        && request.resource.data.fullName is string
+        && request.resource.data.fullName.size() >= 2
+        && request.resource.data.fullName.size() <= 50
+        && optionalString(request.resource.data, 'bio', 1000)
+        && optionalString(request.resource.data, 'offer', 1000)
+        && optionalString(request.resource.data, 'lookingFor', 1000);
+
+      allow delete: if request.auth != null && request.auth.uid == investorId;
     }
 
     // ------------------------------------------------------------- startups

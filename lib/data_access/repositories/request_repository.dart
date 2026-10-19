@@ -13,10 +13,13 @@ import '../mock_data/prototype_seed.dart';
 ///   toggled on and off ("Request sent", tap again to withdraw).
 ///
 /// TODO(backend): back both with the `requests` collection (docs/08 §3);
-/// today they live in memory for the session, seeded with the sample requests
-/// of the sample startup "Rafeeq Health".
+/// today they live in memory for the session and start empty.
 class RequestRepository {
-  RequestRepository() : _inbox = List.of(PrototypeSeed.requests);
+  RequestRepository({this.sample = false})
+    : _inbox = sample ? List.of(PrototypeSeed.requests) : [];
+
+  /// Tests: start with the sample requests of the sample startup.
+  final bool sample;
 
   /// The app-wide instance. Tests replace it with a fake.
   static RequestRepository instance = RequestRepository();
@@ -71,7 +74,7 @@ class RequestRepository {
 
   /// Forgets everything of the session (log out).
   void clear() {
-    _inbox = List.of(PrototypeSeed.requests);
+    _inbox = sample ? List.of(PrototypeSeed.requests) : [];
     _outgoing.value = {};
     _inboxVersion.value++;
   }

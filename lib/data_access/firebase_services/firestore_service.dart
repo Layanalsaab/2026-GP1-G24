@@ -55,11 +55,25 @@ class FirestoreService {
   Future<List<FirestoreDocument>> queryWhereEqual(
     String collection,
     String field,
-    Object value,
-  ) => _guard(() async {
+    Object value, {
+    int? limit,
+  }) => _guard(() async {
+    var query = _db.collection(collection).where(field, isEqualTo: value);
+    if (limit != null) query = query.limit(limit);
+    final snapshot = await query.get(const GetOptions(source: Source.server));
+    return [
+      for (final doc in snapshot.docs) (id: doc.id, data: _toPlain(doc.data())),
+    ];
+  });
+
+  /// Up to [limit] documents of [collection] (no filter).
+  Future<List<FirestoreDocument>> listCollection(
+    String collection, {
+    int limit = 100,
+  }) => _guard(() async {
     final snapshot = await _db
         .collection(collection)
-        .where(field, isEqualTo: value)
+        .limit(limit)
         .get(const GetOptions(source: Source.server));
     return [
       for (final doc in snapshot.docs) (id: doc.id, data: _toPlain(doc.data())),

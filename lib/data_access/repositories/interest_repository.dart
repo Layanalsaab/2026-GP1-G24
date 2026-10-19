@@ -12,9 +12,13 @@ import '../mock_data/prototype_seed.dart';
 ///
 /// TODO(backend): guests have no account. Use anonymous Auth or a callable
 /// Cloud Function to write `interests` (docs/08 §3); today it lives in memory
-/// for the session, seeded with sample interests of "Rafeeq Health".
+/// for the session and starts empty.
 class InterestRepository {
-  InterestRepository() : _inbox = List.of(PrototypeSeed.interests);
+  InterestRepository({this.sample = false})
+    : _inbox = sample ? List.of(PrototypeSeed.interests) : [];
+
+  /// Tests: start with the sample interests of the sample startup.
+  final bool sample;
 
   /// The app-wide instance. Tests replace it with a fake.
   static InterestRepository instance = InterestRepository();
@@ -58,7 +62,7 @@ class InterestRepository {
   }
 
   void clear() {
-    _inbox = List.of(PrototypeSeed.interests);
+    _inbox = sample ? List.of(PrototypeSeed.interests) : [];
     _sent.value = {};
     _inboxVersion.value++;
   }

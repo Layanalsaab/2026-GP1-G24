@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../../../app_constants/home_strings.dart';
-import '../../../shared_ui/widgets/lists/empty_state.dart';
 import '../../../shared_ui/widgets/lists/results_row.dart';
 import '../../../shared_ui/widgets/lists/segmented_switch.dart';
 import '../view_models/home_view_model.dart';
@@ -52,8 +51,7 @@ class HubScreen extends StatelessWidget {
             top: 2,
           ),
           if (cards.isNotEmpty) cardsSlot(cards),
-          if (cards.isEmpty)
-            HomeSlot(EmptyState.noMatches(onAction: vm.clearAll)),
+          if (cards.isEmpty) HomeSlot(homeEmptyState(vm)),
         ],
       ),
     );

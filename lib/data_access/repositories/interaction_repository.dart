@@ -1,5 +1,5 @@
 import '../../models/home_item.dart';
-import '../mock_data/prototype_seed.dart';
+import 'discovery_repository.dart';
 
 /// The ranges of the Trending range dropdown.
 enum TrendingRange {
@@ -25,9 +25,14 @@ enum TrendingRange {
 ///
 /// TODO(backend): record a view event per profile open and rank by the views
 /// in the selected range (docs/08 section 5); until then the order is the
-/// sample order, nudged by the views recorded in this session.
+/// loaded order, nudged by the views recorded in this session.
 class InteractionRepository {
-  InteractionRepository();
+  InteractionRepository({DiscoveryRepository? discovery})
+    // ignore: prefer_initializing_formals
+    : _discovery = discovery;
+
+  final DiscoveryRepository? _discovery;
+  DiscoveryRepository get _d => _discovery ?? DiscoveryRepository.instance;
 
   /// The app-wide instance. Tests replace it with a fake.
   static InteractionRepository instance = InteractionRepository();
@@ -52,10 +57,9 @@ class InteractionRepository {
 
   /// The top startups for [range] (the sample order for every range).
   List<HomeItem> trendingStartups(TrendingRange range) =>
-      _rank([for (final s in PrototypeSeed.startups) HomeItem.fromStartup(s)]);
+      _rank([for (final s in _d.allStartups) HomeItem.fromStartup(s)]);
 
   /// The top investors for [range].
-  List<HomeItem> trendingInvestors(TrendingRange range) => _rank([
-    for (final i in PrototypeSeed.investors) HomeItem.fromInvestor(i),
-  ]);
+  List<HomeItem> trendingInvestors(TrendingRange range) =>
+      _rank([for (final i in _d.allInvestors) HomeItem.fromInvestor(i)]);
 }

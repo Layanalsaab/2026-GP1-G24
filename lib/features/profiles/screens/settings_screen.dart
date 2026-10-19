@@ -113,10 +113,6 @@ class SettingsScreen extends StatelessWidget {
                         title: ProfileStrings.notificationSettings,
                         subtitle: ProfileStrings.notificationSettingsHint,
                         chevron: true,
-                        onTap: () => AppToast.show(
-                          context,
-                          ProfileStrings.notificationSettingsSoon,
-                        ),
                       ),
                     ],
                   ),
@@ -207,7 +203,7 @@ class _SettingsRow extends StatelessWidget {
   const _SettingsRow({
     required this.icon,
     required this.title,
-    required this.onTap,
+    this.onTap,
     this.subtitle,
     this.trailing,
     this.chevron = false,
@@ -217,7 +213,9 @@ class _SettingsRow extends StatelessWidget {
   final String icon;
   final String title;
   final String? subtitle;
-  final VoidCallback onTap;
+
+  /// Null: not built yet, so the row cannot be tapped.
+  final VoidCallback? onTap;
   final Widget? trailing;
   final bool chevron;
   final bool destructive;

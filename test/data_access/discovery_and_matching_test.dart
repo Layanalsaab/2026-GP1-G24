@@ -9,8 +9,13 @@ import 'package:startsa/data_access/repositories/request_repository.dart';
 import 'package:startsa/models/app_user.dart';
 import 'package:startsa/models/connection_request.dart';
 import 'package:startsa/models/investor_criteria.dart';
+import 'package:startsa/models/investor_profile.dart';
 
 void main() {
+  setUp(() {
+    DiscoveryRepository.instance = DiscoveryRepository.sample();
+  });
+
   group('sample data', () {
     test('has 30 startups and 30 investors for Trending', () {
       expect(PrototypeSeed.startups.length, 30);
@@ -30,7 +35,7 @@ void main() {
   });
 
   group('discovery', () {
-    final repo = DiscoveryRepository();
+    final repo = DiscoveryRepository.sample();
 
     test('a founder never sees their own startups', () {
       final ids = repo.startups(excludeIds: {'mock-rafeeq'}).map((e) => e.id);
@@ -53,9 +58,9 @@ void main() {
 
   group('requests', () {
     test('accepting a request makes the investor an associated investor', () {
-      final requests = RequestRepository();
+      final requests = RequestRepository(sample: true);
       RequestRepository.instance = requests;
-      final discovery = DiscoveryRepository();
+      final discovery = DiscoveryRepository.sample();
       expect(requests.pendingCount('mock-rafeeq'), 1);
       requests.setStatus('r1', RequestStatus.accepted);
       expect(requests.pendingCount('mock-rafeeq'), 0);
@@ -70,7 +75,7 @@ void main() {
     });
 
     test('sending twice withdraws', () {
-      final requests = RequestRepository();
+      final requests = RequestRepository(sample: true);
       expect(requests.toggleOutgoing('s-mock-naql'), isTrue);
       expect(requests.hasSent('s-mock-naql'), isTrue);
       expect(requests.toggleOutgoing('s-mock-naql'), isFalse);
@@ -78,7 +83,7 @@ void main() {
   });
 
   test('interests: replying marks them seen', () {
-    final repo = InterestRepository();
+    final repo = InterestRepository(sample: true);
     expect(repo.newCount('mock-rafeeq'), 2);
     repo.markSeen('i1');
     expect(repo.newCount('mock-rafeeq'), 1);
@@ -144,7 +149,8 @@ void main() {
         email: 'n@x.co',
       );
       final list = RecommendationRepository().startupsForInvestor(blank);
-      expect(list.map((e) => e.matchPercent), [94, 86, 71]);
+      // The private sample startup (Daftar) is never matched to others.
+      expect(list.map((e) => e.matchPercent), [94, 71]);
     });
 
     test('investors for the sample startup show the sample percentages', () {
@@ -152,6 +158,57 @@ void main() {
         PrototypeSeed.rafeeq,
       );
       expect(list.map((e) => e.matchPercent), [92, 81, 74]);
+    });
+  });
+
+  group('from the database', () {
+    test('an investors document becomes a profile; no name, no profile', () {
+      final p = InvestorProfile.fromMap('d1', {
+        'fullName': 'Ahmad Hassan',
+        'city': 'Riyadh',
+        'bio': 'Backs early-stage founders.',
+        'preferredSectors': ['HealthTech'],
+        'preferredStages': ['Seed'],
+        'ticketSize': 'SAR 100K – 500K',
+        'linkedinUrl': 'linkedin.com/in/ahmad',
+        'offer': 'Introductions',
+        'lookingFor': 'Strong teams',
+      })!;
+      expect(p.name, 'Ahmad Hassan');
+      expect(p.sectors, ['HealthTech']);
+      expect(p.ticketRange, 'SAR 100K – 500K');
+      expect(p.valueOffered, 'Introductions');
+      expect(p.hopeToGain, 'Strong teams');
+      expect(p.profileBio, 'Backs early-stage founders.');
+      expect(InvestorProfile.fromMap('d2', {'city': 'Riyadh'}), isNull);
+      expect(p.stageRange, 'Seed');
+    });
+
+    test('a repository that was never loaded lists nobody', () {
+      final repo = DiscoveryRepository();
+      expect(repo.startups(), isEmpty);
+      expect(repo.investors(), isEmpty);
+      expect(repo.newStartups(), isEmpty);
+    });
+
+    test('joined labels', () {
+      final now = DateTime(2026, 10, 19, 12);
+      expect(
+        DiscoveryRepository.joinedLabel(DateTime(2026, 10, 19), now: now),
+        'Joined today',
+      );
+      expect(
+        DiscoveryRepository.joinedLabel(DateTime(2026, 10, 18), now: now),
+        'Joined yesterday',
+      );
+      expect(
+        DiscoveryRepository.joinedLabel(DateTime(2026, 10, 16), now: now),
+        'Joined 3 days ago',
+      );
+      expect(
+        DiscoveryRepository.joinedLabel(DateTime(2026, 8, 1), now: now),
+        'Joined August 2026',
+      );
     });
   });
 }
