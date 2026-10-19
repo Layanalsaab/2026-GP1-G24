@@ -186,9 +186,9 @@ class AppUser {
       gain: (data[UserFields.gain] as String?) ?? '',
       valueOffered: (data[UserFields.valueOffered] as String?) ?? '',
       sectorsOther: data[UserFields.sectorsOther] as String?,
-      investorCriteria: InvestorCriteria.fromMap(
-        data[UserFields.investorCriteria],
-      ),
+      investorCriteria:
+          InvestorCriteria.fromFields(data) ??
+          InvestorCriteria.fromMap(data[UserFields.investorCriteria]),
     );
   }
 

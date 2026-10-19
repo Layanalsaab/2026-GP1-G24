@@ -21,8 +21,8 @@ service cloud.firestore {
         && request.resource.data.keys().hasOnly(['role', 'fullName', 'email',
                                                  'createdAt', 'phone', 'city',
                                                  'bio', 'sectorsOfInterest',
-                                                 'sectorsOther', 'linkedin',
-                                                 'gain', 'valueOffered',
+                                                 'sectorsOther', 'linkedinUrl',
+                                                 'gain', 'offer',
                                                  'photoUrl'])
         && validProfile(request.resource.data);
 
@@ -32,11 +32,15 @@ service cloud.firestore {
              .hasOnly(['onboardingCompleted', 'sector', 'stage',
                        'city', 'fullName', 'bio', 'phone',
                        'sectorsOfInterest', 'sectorsOther',
-                       'linkedin', 'gain', 'valueOffered',
+                       'linkedinUrl', 'gain', 'offer',
                        'investorCriteria',
                        'photoUrl',
                        'preferredSectors', 'preferredStages',
-                       'ticketSize'])
+                       'ticketSize', 'ticketSizeOther',
+                       'investmentsCount', 'hasLedRound', 'roundsLed',
+                       'coInvest', 'roundSizeMin', 'roundSizeMax',
+                       'preferredStagesOther', 'preferredCommerceModels',
+                       'preferredCommerceModelsOther', 'lookingFor'])
         && validProfile(request.resource.data);
 
       allow delete: if request.auth != null && request.auth.uid == uid;
@@ -62,10 +66,25 @@ service cloud.firestore {
           && (!('sectorsOfInterest' in d)
               || (d.sectorsOfInterest is list && d.sectorsOfInterest.size() <= 25))
           && optionalString(d, 'sectorsOther', 40)
-          && optionalString(d, 'linkedin', 120)
+          && optionalString(d, 'linkedinUrl', 120)
           && optionalString(d, 'gain', 1000)
-          && optionalString(d, 'valueOffered', 1000)
-          && optionalString(d, 'photoUrl', 2048);
+          && optionalString(d, 'offer', 1000)
+          && optionalString(d, 'lookingFor', 1000)
+          && optionalString(d, 'photoUrl', 2048)
+          && optionalString(d, 'investmentsCount', 10)
+          && optionalString(d, 'roundsLed', 10)
+          && optionalString(d, 'coInvest', 20)
+          && optionalString(d, 'ticketSize', 40)
+          && optionalString(d, 'ticketSizeOther', 40)
+          && optionalString(d, 'preferredStagesOther', 40)
+          && optionalString(d, 'preferredCommerceModelsOther', 40)
+          && (!('hasLedRound' in d) || d.hasLedRound == null
+              || d.hasLedRound is bool)
+          && optionalMoney(d, 'roundSizeMin')
+          && optionalMoney(d, 'roundSizeMax')
+          && optionalList(d, 'preferredSectors', 25)
+          && optionalList(d, 'preferredStages', 6)
+          && optionalList(d, 'preferredCommerceModels', 11);
     }
 
     // ------------------------------------------------------- publicProfiles
@@ -89,6 +108,15 @@ service cloud.firestore {
         && optionalString(request.resource.data, 'valueOffered', 1000)
         && optionalString(request.resource.data, 'hopeToGain', 1000);
       allow delete: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // ------------------------------------------------------------ investors
+    // Imported dataset investors (and later public investor profiles), with
+    // the same field names as an investor's users/{uid} document. Readable by
+    // everyone; written only by the import (Admin SDK bypasses these rules).
+    match /investors/{investorId} {
+      allow read: if true;
+      allow write: if false;
     }
 
     // ------------------------------------------------------------- startups
@@ -126,30 +154,32 @@ service cloud.firestore {
       return d.keys().hasAll(['founderId', 'name', 'description', 'sector',
                               'stage', 'businessModel', 'location',
                               'lookingFor', 'isPublic'])
-        && d.keys().hasOnly(['founderId', 'name', 'tagline', 'description',
+        && d.keys().hasOnly(['founderId', 'name', 'oneLinePitch', 'description',
                              'sector', 'sectorOther', 'stage', 'stageOther',
                              'businessModel', 'businessModelOther',
                              'location', 'foundedYear', 'websiteUrl',
                              'lookingFor', 'lookingForOther',
                              'fundingRequirement', 'isPublic',
                              'logoUrl', 'createdAt', 'updatedAt',
-                             'problem', 'solution', 'customers', 'advantage',
-                             'tam', 'sam', 'som', 'team', 'growth',
-                             'capital', 'revenueYear1', 'revenueYear2',
-                             'revenueYear3', 'valuation',
+                             'problem', 'solution', 'targetCustomers',
+                             'differentiation', 'marketSizeTam',
+                             'marketSizeSam', 'marketSizeSom', 'teamMembers',
+                             'expectedGrowth', 'currentAvailableCapital',
+                             'expectedRevenueYear1', 'expectedRevenueYear2',
+                             'expectedRevenueYear3', 'valuation',
                              'wantsLeadInvestor'])
         && d.name is string && d.name.size() >= 1 && d.name.size() <= 40
-        // The one-line pitch (stored as tagline): at most 120.
-        && optionalString(d, 'tagline', 120)
+        // The one-line pitch: at most 120.
+        && optionalString(d, 'oneLinePitch', 120)
         && d.description is string && d.description.size() <= 1500
         && d.sector in ['healthtech', 'fintech', 'edtech', 'ecommerce',
                         'logistics', 'agritech', 'proptech', 'cleantech',
                         'tourism', 'saas', 'ai', 'cybersecurity', 'gaming',
                         'media', 'foodtech', 'mobility', 'retail', 'energy',
-                        'insurtech', 'legaltech', 'hrtech', 'biotech',
+                        'insurtech', 'legaltech', 'hr_tech', 'biotech',
                         'manufacturing', 'sports', 'other',
                         // legacy
-                        'ecommerce_retail', 'logistics_transport',
+                        'hrtech', 'ecommerce_retail', 'logistics_transport',
                         'food_beverage', 'software_cloud']
         && d.stage in ['pre_seed', 'seed', 'series_a', 'series_b', 'series_c',
                        'other',
@@ -188,19 +218,19 @@ service cloud.firestore {
         && optionalString(d, 'logoUrl', 2048)
         && optionalString(d, 'problem', 1000)
         && optionalString(d, 'solution', 1000)
-        && optionalString(d, 'customers', 1000)
-        && optionalString(d, 'advantage', 1000)
-        && optionalString(d, 'growth', 1000)
-        && optionalMoney(d, 'tam')
-        && optionalMoney(d, 'sam')
-        && optionalMoney(d, 'som')
-        && optionalMoney(d, 'capital')
-        && optionalMoney(d, 'revenueYear1')
-        && optionalMoney(d, 'revenueYear2')
-        && optionalMoney(d, 'revenueYear3')
+        && optionalString(d, 'targetCustomers', 1000)
+        && optionalString(d, 'differentiation', 1000)
+        && optionalString(d, 'expectedGrowth', 1000)
+        && optionalMoney(d, 'marketSizeTam')
+        && optionalMoney(d, 'marketSizeSam')
+        && optionalMoney(d, 'marketSizeSom')
+        && optionalMoney(d, 'currentAvailableCapital')
+        && optionalMoney(d, 'expectedRevenueYear1')
+        && optionalMoney(d, 'expectedRevenueYear2')
+        && optionalMoney(d, 'expectedRevenueYear3')
         // The valuation may be 0.
         && optionalMoney(d, 'valuation')
-        && (!('team' in d) || (d.team is list && d.team.size() <= 20))
+        && (!('teamMembers' in d) || (d.teamMembers is list && d.teamMembers.size() <= 20))
         && (!('wantsLeadInvestor' in d) || d.wantsLeadInvestor == null
             || d.wantsLeadInvestor is bool)
         && validFunding(d)
@@ -211,6 +241,11 @@ service cloud.firestore {
       return optionalString(d, field, 40)
         && (value != 'other'
             || (field in d && d[field] is string && d[field].size() >= 1));
+    }
+
+    function optionalList(d, field, maxSize) {
+      return !(field in d) || d[field] == null
+        || (d[field] is list && d[field].size() <= maxSize);
     }
 
     function optionalString(d, field, maxLength) {
@@ -231,9 +266,11 @@ service cloud.firestore {
             && d.foundedYear <= request.time.year());
     }
 
-    // The funding amount is required (> 0) in the Funding & goals step.
+    // The funding amount: a positive whole number, or null (imported rows
+    // that are not looking for funding).
     function validFunding(d) {
-      return d.fundingRequirement is int && d.fundingRequirement > 0;
+      return !('fundingRequirement' in d) || d.fundingRequirement == null
+        || (d.fundingRequirement is int && d.fundingRequirement > 0);
     }
 
     // ------------------------------------------------------------- requests

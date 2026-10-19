@@ -44,7 +44,7 @@ enum Sector {
   energy('energy', 'Energy'),
   insurtech('insurtech', 'InsurTech'),
   legaltech('legaltech', 'LegalTech'),
-  hrtech('hrtech', 'HR Tech'),
+  hrtech('hr_tech', 'HR Tech'),
   biotech('biotech', 'Biotech'),
   manufacturing('manufacturing', 'Manufacturing'),
   sports('sports', 'Sports'),
@@ -61,6 +61,7 @@ enum Sector {
     'logistics_transport': Sector.logistics,
     'food_beverage': Sector.foodtech,
     'software_cloud': Sector.saas,
+    'hrtech': Sector.hrtech,
   };
 
   static Sector? fromValue(Object? raw) =>
@@ -188,6 +189,16 @@ class StartupLocation {
       return StartupLocation._(
         current,
         '${current[0].toUpperCase()}${current.substring(1)}',
+      );
+    }
+    // Imported dataset rows can hold a city that is not in the picker list
+    // ("qassim", "al_ula"): keep them readable instead of dropping the startup.
+    if (RegExp(r'^[a-z0-9_]+$').hasMatch(current) && current.isNotEmpty) {
+      final words = current.split('_').where((w) => w.isNotEmpty);
+      return StartupLocation._(
+        current,
+        [for (final w in words) '${w[0].toUpperCase()}${w.substring(1)}']
+            .join(' '),
       );
     }
     return null;

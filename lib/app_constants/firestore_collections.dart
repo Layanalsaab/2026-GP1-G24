@@ -8,6 +8,10 @@ class FirestoreCollections {
   static const interests = 'interests';
   static const publicProfiles = 'publicProfiles';
 
+  /// Investors (imported dataset and, later, public investor profiles).
+  /// Same field names as an investor's `users/{uid}` document.
+  static const investors = 'investors';
+
   /// `users/{uid}/bookmarks/{itemKey}`
   static const bookmarks = 'bookmarks';
 }
@@ -40,18 +44,38 @@ class UserFields {
   static const ticketSize = 'ticketSize';
 
   // Added by the redesigned sign-up (docs/07).
-  static const linkedin = 'linkedin';
+  static const linkedin = 'linkedinUrl';
 
   /// Investor: "What I hope to gain from startups".
   static const gain = 'gain';
 
   /// Investor: "What I can bring to startups" (also the sign-up step 4
   /// "Besides funding, what can you offer startups?").
-  static const valueOffered = 'valueOffered';
+  static const valueOffered = 'offer';
   static const sectorsOther = 'sectorsOther';
 
-  /// Investor questions from sign-up steps 3 and 4 (a map, see InvestorCriteria).
+  /// Older documents kept the investor questions in one map; new documents
+  /// store them as the flat fields below (see InvestorCriteria).
   static const investorCriteria = 'investorCriteria';
+
+  // Investor questions from sign-up steps 3 and 4, stored flat on the user
+  // (same names as the `investors` collection).
+  static const investmentsCount = 'investmentsCount';
+  static const hasLedRound = 'hasLedRound';
+  static const roundsLed = 'roundsLed';
+  static const coInvest = 'coInvest';
+  static const ticketSizeOther = 'ticketSizeOther';
+  static const roundSizeMin = 'roundSizeMin';
+  static const roundSizeMax = 'roundSizeMax';
+  static const preferredStagesOther = 'preferredStagesOther';
+  static const preferredCommerceModels = 'preferredCommerceModels';
+  static const preferredCommerceModelsOther = 'preferredCommerceModelsOther';
+
+  /// "What do you look for in a startup?" (a string).
+  static const lookingFor = 'lookingFor';
+
+  /// Investor headline, e.g. "Angel Investor" (set by the dataset).
+  static const title = 'title';
 }
 
 /// Fields of a `startups/{startupId}` document. firestore.rules uses the same
@@ -61,7 +85,7 @@ class StartupFields {
 
   static const founderId = 'founderId';
   static const name = 'name';
-  static const tagline = 'tagline';
+  static const tagline = 'oneLinePitch';
   static const description = 'description';
   static const sector = 'sector';
   static const sectorOther = 'sectorOther';
@@ -83,17 +107,17 @@ class StartupFields {
   // Added by the redesigned Add / Edit startup (docs/07).
   static const problem = 'problem';
   static const solution = 'solution';
-  static const customers = 'customers';
-  static const advantage = 'advantage';
-  static const tam = 'tam';
-  static const sam = 'sam';
-  static const som = 'som';
-  static const team = 'team';
-  static const growth = 'growth';
-  static const capital = 'capital';
-  static const revenueYear1 = 'revenueYear1';
-  static const revenueYear2 = 'revenueYear2';
-  static const revenueYear3 = 'revenueYear3';
+  static const customers = 'targetCustomers';
+  static const advantage = 'differentiation';
+  static const tam = 'marketSizeTam';
+  static const sam = 'marketSizeSam';
+  static const som = 'marketSizeSom';
+  static const team = 'teamMembers';
+  static const growth = 'expectedGrowth';
+  static const capital = 'currentAvailableCapital';
+  static const revenueYear1 = 'expectedRevenueYear1';
+  static const revenueYear2 = 'expectedRevenueYear2';
+  static const revenueYear3 = 'expectedRevenueYear3';
   static const valuation = 'valuation';
   static const wantsLeadInvestor = 'wantsLeadInvestor';
 }
