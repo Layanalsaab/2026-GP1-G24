@@ -252,7 +252,7 @@ class SignupViewModel extends ChangeNotifier with SafeNotifier {
       final other = sectors.contains(otherLabel)
           ? sectorsOther.text.trim()
           : null;
-      final result = await _auth.signUp(
+      Future<SignupResult> create() => _auth.signUp(
         fullName: name.text.trim(),
         email: mail,
         password: pw,
@@ -266,6 +266,23 @@ class SignupViewModel extends ChangeNotifier with SafeNotifier {
         gain: isFounder ? null : gain.text.trim(),
         photo: photo,
       );
+      // An earlier attempt that was never verified (the app was closed or
+      // refreshed) left an unverified account behind. With the same password
+      // it is removed and the sign-up starts fresh, so the user is not locked
+      // out of their own email. A verified account is never touched.
+      SignupResult result;
+      try {
+        result = await create();
+      } on AuthException catch (e) {
+        if (e.failure != AuthFailure.emailInUse) rethrow;
+        try {
+          await _auth.discardUnverifiedAccount(mail, pw);
+        } on AuthException catch (d) {
+          if (d.failure == AuthFailure.network) rethrow;
+          throw e; // verified, or another password: really "in use".
+        }
+        result = await create();
+      }
       flow
         ..email = mail
         ..password = pw
