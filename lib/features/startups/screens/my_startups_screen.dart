@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 
 import '../../../app_constants/founder_tools_strings.dart';
+import '../../../data_access/repositories/startup_draft_repository.dart';
+import '../../../helpers/app_session.dart';
 import '../../../models/startup.dart';
 import '../view_models/my_startups_view_model.dart';
+import '../widgets/draft_card.dart';
 import '../widgets/founder_ui.dart';
 import '../widgets/my_startup_card.dart';
 import 'manage_startup_screen.dart';
@@ -24,10 +27,14 @@ class MyStartupsScreen extends StatefulWidget {
 class _MyStartupsScreenState extends State<MyStartupsScreen> {
   late final MyStartupsViewModel _vm = MyStartupsViewModel();
 
+  final _drafts = StartupDraftRepository.instance;
+
   @override
   void initState() {
     super.initState();
     _vm.load();
+    final uid = AppSession.instance.user?.uid;
+    if (uid != null) _drafts.load(uid);
   }
 
   @override
@@ -38,6 +45,23 @@ class _MyStartupsScreenState extends State<MyStartupsScreen> {
 
   void _add() => StartupStepsScreen.openAdd(context);
 
+  void _continueDraft(Map<String, Object?> d) =>
+      StartupStepsScreen.openAdd(context, draft: d);
+
+  Future<void> _discardDraft() async {
+    final ok = await showConfirmSheet(
+      context,
+      title: FounderToolsStrings.discardDraftTitle,
+      message: FounderToolsStrings.discardDraftMessage,
+      confirmLabel: FounderToolsStrings.discard,
+      cancelLabel: FounderToolsStrings.keepEditing,
+    );
+    final uid = AppSession.instance.user?.uid;
+    if (!ok || uid == null) return;
+    await _drafts.clear(uid);
+    if (mounted) AppToast.show(context, FounderToolsStrings.draftDiscarded);
+  }
+
   Future<void> _manage(Startup s) async {
     await ManageStartupScreen.push(context, s);
     if (mounted) _vm.load();
@@ -46,9 +70,17 @@ class _MyStartupsScreenState extends State<MyStartupsScreen> {
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
-      listenable: _vm,
+      listenable: Listenable.merge([_vm, _drafts.current]),
       builder: (context, _) {
         final hasList = _vm.startups.isNotEmpty;
+        final draft = _drafts.current.value;
+        final draftCard = draft == null
+            ? null
+            : DraftCard(
+                draft: draft,
+                onTap: () => _continueDraft(draft),
+                onDiscard: _discardDraft,
+              );
         return Scaffold(
           backgroundColor: AppColors.cream,
           body: SingleChildScrollView(
@@ -59,7 +91,9 @@ class _MyStartupsScreenState extends State<MyStartupsScreen> {
                   title: FounderToolsStrings.myStartupsTitle,
                   overlap: OverlapList.overlap,
                   onBack: () => AppNav.back(context),
-                  trailing: hasList ? GoldPillButton.add(onTap: _add) : null,
+                  trailing: hasList || draft != null
+                      ? GoldPillButton.add(onTap: _add)
+                      : null,
                   subtitle: hasList
                       ? FounderToolsStrings.startupCount(_vm.startups.length)
                       : null,
@@ -67,6 +101,7 @@ class _MyStartupsScreenState extends State<MyStartupsScreen> {
                 if (_vm.isEmpty)
                   OverlapList(
                     children: [
+                      ?draftCard,
                       IllustratedEmptyCard(
                         illustration: const _EmptyIllustration(),
                         title: FounderToolsStrings.emptyTitle,
@@ -105,6 +140,7 @@ class _MyStartupsScreenState extends State<MyStartupsScreen> {
                   OverlapList(
                     animate: false,
                     children: [
+                      ?draftCard,
                       for (var i = 0; i < _vm.startups.length; i++)
                         Rise.card(
                           delay: Motion.stagger(context, i, stepMs: 50),

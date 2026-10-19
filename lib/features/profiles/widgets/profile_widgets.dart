@@ -272,17 +272,21 @@ class _SectorChip extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     height: 30,
     padding: const EdgeInsets.symmetric(horizontal: 12),
-    alignment: Alignment.center,
     decoration: BoxDecoration(
       color: AppColors.mossChip,
       borderRadius: BorderRadius.circular(999),
     ),
-    child: Text(
-      label,
-      style: AppText.sans(
-        size: 12.5,
-        weight: FontWeight.w600,
-        color: AppColors.moss600,
+    // widthFactor: 1 keeps the chip as wide as its text (an aligned
+    // Container would stretch across the whole row).
+    child: Center(
+      widthFactor: 1,
+      child: Text(
+        label,
+        style: AppText.sans(
+          size: 12.5,
+          weight: FontWeight.w600,
+          color: AppColors.moss600,
+        ),
       ),
     ),
   );

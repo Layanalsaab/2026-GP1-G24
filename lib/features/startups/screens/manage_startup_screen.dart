@@ -152,8 +152,8 @@ class _ManageStartupScreenState extends State<ManageStartupScreen> {
                     const SizedBox(width: 6),
                     Flexible(
                       child: Text(
-                        '${s.isPublic ? FounderToolsStrings.publicPill : FounderToolsStrings.privatePill} · ${s.sectorLabel} · ${s.stageLabel}',
-                        maxLines: 1,
+                        '${s.isPublic ? FounderToolsStrings.publicPill : FounderToolsStrings.privatePill} · ${s.sectorLabel} · ${s.stageLabel} · ${s.location.label}${s.foundedYear == null ? '' : ' · Founded ${s.foundedYear}'}',
+                        maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: AppText.onGreenMeta,
                       ),

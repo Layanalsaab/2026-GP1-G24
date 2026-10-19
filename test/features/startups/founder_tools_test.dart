@@ -6,6 +6,8 @@ import 'package:startsa/data_access/mock_data/prototype_seed.dart';
 import 'package:startsa/data_access/repositories/activity_repository.dart';
 import 'package:startsa/data_access/repositories/interest_repository.dart';
 import 'package:startsa/data_access/repositories/request_repository.dart';
+import 'package:startsa/data_access/repositories/startup_draft_repository.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:startsa/data_access/repositories/startup_repository.dart';
 import 'package:startsa/data_access/repositories/user_repository.dart';
 import 'package:startsa/features/connection_requests/view_models/interest_view_model.dart';
@@ -393,6 +395,53 @@ void main() {
       expect(vm.memberError(vm.memberName), 'Enter your first and last name.');
       vm.memberName.text = 'Faisal Alkhaldi';
       expect(vm.memberError(vm.memberName), isNull);
+    });
+
+    testWidgets('Leaving a half-filled new startup offers a draft', (
+      tester,
+    ) async {
+      SharedPreferences.setMockInitialValues({});
+      StartupDraftRepository.instance = StartupDraftRepository();
+      AppSession.instance.signIn(
+        const AppUser(
+          uid: 'uid1',
+          role: AccountRole.founder,
+          fullName: 'Shahad Alabdulkarim',
+          email: 'a@b.co',
+        ),
+      );
+      _bigScreen(tester);
+      await tester.pumpWidget(
+        _app(const StartupStepsScreen(mode: StartupStepsMode.add)),
+      );
+      await tester.pumpAndSettle();
+      final hint = find.widgetWithText(TextField, FounderToolsStrings.nameHint);
+      await tester.enterText(hint, 'Nakhla Pay');
+      await tester.pump();
+      await tester.tap(find.bySemanticsLabel('Back').first);
+      await tester.pumpAndSettle();
+      expect(find.text('Leave without finishing?'), findsOneWidget);
+      expect(find.text('Save as draft'), findsOneWidget);
+      expect(find.text('Discard'), findsOneWidget);
+      expect(find.text('Keep editing'), findsOneWidget);
+      await tester.tap(find.text('Save as draft'));
+      await tester.pumpAndSettle();
+      final draft = StartupDraftRepository.instance.current.value;
+      expect(draft?['name'], 'Nakhla Pay');
+      await tester.pump(const Duration(seconds: 5));
+    });
+
+    test('a draft restores the form and an untouched form is not dirty', () {
+      final vm = StartupStepsViewModel();
+      expect(vm.isDirty, isFalse);
+      vm.name.text = 'Nakhla Pay';
+      vm.selectSector('Fintech', null);
+      expect(vm.isDirty, isTrue);
+      final draft = vm.toDraft();
+      final other = StartupStepsViewModel()..loadDraft(draft);
+      expect(other.name.text, 'Nakhla Pay');
+      expect(other.sector, Sector.fintech);
+      expect(other.isDirty, isFalse, reason: 'opening a draft is the baseline');
     });
 
     testWidgets(

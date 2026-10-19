@@ -244,4 +244,24 @@ class FounderToolsStrings {
       'The new investors get the share you give up. Everyone who already owns part of the company keeps the same slice of the rest, so each of their shares gets a little smaller.',
     ),
   };
+
+  // ---- Leaving the form / drafts ----
+  static const leaveDraftTitle = 'Leave without finishing?';
+  static const leaveDraftMessage =
+      'You haven’t finished this startup. Save it as a draft to come back to it later, or discard what you’ve entered.';
+  static const saveDraft = 'Save as draft';
+  static const discard = 'Discard';
+  static const keepEditing = 'Keep editing';
+  static const leaveEditTitle = 'Discard your changes?';
+  static const leaveEditMessage =
+      'You have unsaved changes to this startup. If you leave now they will be lost.';
+  static const discardChanges = 'Discard changes';
+  static const draftSaved = 'Saved as draft';
+  static const draftBadge = 'Draft';
+  static const draftContinue = 'Continue editing';
+  static const untitledStartup = 'Untitled startup';
+  static const discardDraftTitle = 'Discard this draft?';
+  static const discardDraftMessage =
+      'The details you entered for this draft will be deleted.';
+  static const draftDiscarded = 'Draft discarded';
 }
