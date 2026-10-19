@@ -539,7 +539,7 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
       return saved;
     } catch (e) {
       saveError = FounderToolsStrings.saveFailed;
-      debugPrint('Saving the startup failed: ${startupErrorMessage(e)}');
+      debugPrint('Saving the startup failed: $e (${startupErrorMessage(e)})');
       return null;
     } finally {
       isSaving = false;
