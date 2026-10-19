@@ -58,6 +58,7 @@ class _LoginScreenState extends State<LoginScreen> {
       builder: (ctx) => VerifyEmailDialog(
         email: _vm.verificationEmail,
         needLogin: true,
+        notVerifiedYet: true,
         onResend: () {
           Navigator.of(ctx).pop();
           _resend();

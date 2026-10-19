@@ -76,6 +76,7 @@ class VerifyEmailDialog extends StatelessWidget {
     required this.onClose,
     this.needLogin = false,
     this.inSignup = false,
+    this.notVerifiedYet = false,
   });
 
   final String email;
@@ -83,6 +84,10 @@ class VerifyEmailDialog extends StatelessWidget {
   final VoidCallback onClose;
   final bool needLogin;
   final bool inSignup;
+
+  /// The user tried to continue / log in before opening the link: the title
+  /// and text say the email has not been verified yet.
+  final bool notVerifiedYet;
 
   @override
   Widget build(BuildContext context) {
@@ -114,7 +119,7 @@ class VerifyEmailDialog extends StatelessWidget {
           Semantics(
             header: true,
             child: Text(
-              'Verify your email',
+              notVerifiedYet ? 'Email not verified yet' : 'Verify your email',
               textAlign: TextAlign.center,
               style: AppText.sans(size: 21, weight: FontWeight.w700),
             ),
@@ -124,7 +129,11 @@ class VerifyEmailDialog extends StatelessWidget {
             TextSpan(
               style: base,
               children: [
-                const TextSpan(text: 'We sent a verification link to '),
+                TextSpan(
+                  text: notVerifiedYet
+                      ? 'Your email hasn’t been verified yet. We sent a verification link to '
+                      : 'We sent a verification link to ',
+                ),
                 TextSpan(
                   text: email,
                   style: base.copyWith(
@@ -133,10 +142,11 @@ class VerifyEmailDialog extends StatelessWidget {
                   ),
                 ),
                 TextSpan(
-                  text:
-                      '. Open the link to activate your account'
-                      '${needLogin ? ', then log in' : ''}'
-                      '${inSignup ? ', then come back here to continue' : ''}.',
+                  text: notVerifiedYet
+                      ? '. Open the link in that email first, then ${needLogin ? 'log in' : 'tap Continue'} again.'
+                      : '. Open the link to activate your account'
+                            '${needLogin ? ', then log in' : ''}'
+                            '${inSignup ? ', then come back here to continue' : ''}.',
                 ),
               ],
             ),
