@@ -110,7 +110,7 @@ class UserRepository {
     required InvestorCriteria criteria,
     String? valueOffered,
   }) => _firestore.updateDocument(FirestoreCollections.users, uid, {
-    UserFields.investorCriteria: criteria.toMap(),
+    ...criteria.toFields(),
     if (valueOffered != null) UserFields.valueOffered: valueOffered.trim(),
     UserFields.onboardingCompleted: true,
   });

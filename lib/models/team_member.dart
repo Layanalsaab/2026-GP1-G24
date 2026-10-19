@@ -43,24 +43,27 @@ class TeamMember {
   }
 
   Map<String, Object?> toMap() => {
-    'name': name,
+    'fullName': name,
     'role': role,
     'specialization': specialization,
-    'yearsExperience': yearsExperience,
-    'bio': bio,
+    'yearsOfExperience': yearsExperience,
+    'shortBio': bio,
   };
 
   static TeamMember? fromMap(Object? raw) {
     if (raw is! Map) return null;
-    final name = raw['name'];
+    final name = raw['fullName'] ?? raw['name'];
     final role = raw['role'];
     if (name is! String || role is! String) return null;
     return TeamMember(
       name: name,
       role: role,
       specialization: (raw['specialization'] as String?) ?? '',
-      yearsExperience: (raw['yearsExperience'] as num?)?.toInt() ?? 0,
-      bio: (raw['bio'] as String?) ?? '',
+      yearsExperience:
+          ((raw['yearsOfExperience'] ?? raw['yearsExperience']) as num?)
+              ?.toInt() ??
+          0,
+      bio: ((raw['shortBio'] ?? raw['bio']) as String?) ?? '',
     );
   }
 

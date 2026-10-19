@@ -1,6 +1,9 @@
+import '../app_constants/firestore_collections.dart';
+
 /// An investor's answers to the sign-up questions (steps 3 and 4,
-/// docs/06 §3-4). Stored as a map in `users/{uid}.investorCriteria` and used
-/// for matching (docs/08 §4).
+/// docs/06 §3-4). Stored as flat fields on `users/{uid}` (see [toFields]),
+/// with the same names as the `investors` collection, and used for matching
+/// (docs/08 §4).
 class InvestorCriteria {
   const InvestorCriteria({
     this.dealsCount,
@@ -95,6 +98,69 @@ class InvestorCriteria {
     return shown.length > 1 ? '${shown.first} – ${shown.last}' : shown.first;
   }
 
+  /// The answers as flat Firestore fields of the investor's document
+  /// (`investmentsCount`, `hasLedRound`, `roundsLed`, `coInvest`,
+  /// `ticketSize`, `roundSizeMin`, `roundSizeMax`, `preferredSectors`,
+  /// `preferredStages`, `preferredCommerceModels`, `lookingFor`, and the
+  /// typed "Other" texts).
+  Map<String, Object?> toFields() => {
+    UserFields.investmentsCount: dealsCount,
+    UserFields.hasLedRound: hasLedRound,
+    UserFields.roundsLed: hasLedRound == true ? roundsLed : null,
+    UserFields.coInvest: coInvest,
+    UserFields.ticketSize: ticketBand,
+    UserFields.ticketSizeOther: ticketBand == 'Other' ? ticketOther : null,
+    UserFields.roundSizeMin: roundMin,
+    UserFields.roundSizeMax: roundMax,
+    UserFields.preferredSectors: sectors,
+    UserFields.sectorsOther: sectors.contains('Other') ? sectorsOther : null,
+    UserFields.preferredStages: stages,
+    UserFields.preferredStagesOther: stages.contains('Other')
+        ? stagesOther
+        : null,
+    UserFields.preferredCommerceModels: commerceModels,
+    UserFields.preferredCommerceModelsOther: commerceModels.contains('Other')
+        ? commerceModelsOther
+        : null,
+    UserFields.lookingFor: lookFor,
+  };
+
+  /// Reads [toFields] back from a user / investor document. Null when the
+  /// document holds none of the investor answers.
+  static InvestorCriteria? fromFields(Map<String, dynamic> d) {
+    final hasAny = [
+      UserFields.investmentsCount,
+      UserFields.hasLedRound,
+      UserFields.coInvest,
+      UserFields.ticketSize,
+      UserFields.preferredSectors,
+      UserFields.preferredStages,
+      UserFields.preferredCommerceModels,
+      UserFields.lookingFor,
+    ].any((k) => d[k] != null);
+    if (!hasAny) return null;
+    return InvestorCriteria(
+      dealsCount: d[UserFields.investmentsCount] as String?,
+      hasLedRound: d[UserFields.hasLedRound] as bool?,
+      roundsLed: d[UserFields.roundsLed] as String?,
+      coInvest: d[UserFields.coInvest] as String?,
+      ticketBand: d[UserFields.ticketSize] as String?,
+      ticketOther: d[UserFields.ticketSizeOther] as String?,
+      roundMin: (d[UserFields.roundSizeMin] as num?)?.toInt(),
+      roundMax: (d[UserFields.roundSizeMax] as num?)?.toInt(),
+      sectors: _strings(d[UserFields.preferredSectors]),
+      sectorsOther: d[UserFields.sectorsOther] as String?,
+      stages: _strings(d[UserFields.preferredStages]),
+      stagesOther: d[UserFields.preferredStagesOther] as String?,
+      commerceModels: _strings(d[UserFields.preferredCommerceModels]),
+      commerceModelsOther:
+          d[UserFields.preferredCommerceModelsOther] as String?,
+      lookFor: (d[UserFields.lookingFor] as String?) ?? '',
+    );
+  }
+
+  /// The old single-map form (kept so documents saved before the flat fields
+  /// still load).
   Map<String, Object?> toMap() => {
     'dealsCount': dealsCount,
     'hasLedRound': hasLedRound,

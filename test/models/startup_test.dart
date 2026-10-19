@@ -21,6 +21,113 @@ void main() {
     fundingRequirement: 500000,
   );
 
+  test('stores the field names the database uses', () {
+    final full = startup.copyWith(
+      tagline: 'Card payments on a phone',
+      problem: 'p',
+      solution: 's',
+      customers: 'c',
+      advantage: 'a',
+      tam: 1,
+      sam: 2,
+      som: 3,
+      growth: 'g',
+      capital: 4,
+      revenueYear1: 5,
+      revenueYear2: 6,
+      revenueYear3: 7,
+      valuation: 8,
+      team: const [
+        TeamMember(
+          name: 'Faisal Alkhaldi',
+          role: 'CTO',
+          specialization: 'Cloud',
+          yearsExperience: 10,
+          bio: 'Short bio',
+        ),
+      ],
+    );
+    final map = full.toMap();
+    expect(
+      map.keys,
+      containsAll([
+        'oneLinePitch',
+        'problem',
+        'solution',
+        'targetCustomers',
+        'differentiation',
+        'marketSizeTam',
+        'marketSizeSam',
+        'marketSizeSom',
+        'teamMembers',
+        'expectedGrowth',
+        'currentAvailableCapital',
+        'expectedRevenueYear1',
+        'expectedRevenueYear2',
+        'expectedRevenueYear3',
+        'valuation',
+        'founderId',
+        'name',
+        'description',
+        'sector',
+        'stage',
+        'businessModel',
+        'location',
+        'foundedYear',
+        'websiteUrl',
+        'lookingFor',
+        'fundingRequirement',
+        'isPublic',
+        'logoUrl',
+      ]),
+    );
+    expect(map.keys, isNot(contains('tagline')));
+    expect(map['teamMembers'], [
+      {
+        'fullName': 'Faisal Alkhaldi',
+        'role': 'CTO',
+        'specialization': 'Cloud',
+        'yearsOfExperience': 10,
+        'shortBio': 'Short bio',
+      },
+    ]);
+    final back = Startup.fromMap('s1', map)!;
+    expect(back.team.single.name, 'Faisal Alkhaldi');
+    expect(back.tam, 1);
+    expect(back.revenueYear3, 7);
+  });
+
+  test('sector stored values match the database list', () {
+    expect(Sector.values.map((e) => e.value), [
+      'healthtech',
+      'fintech',
+      'edtech',
+      'ecommerce',
+      'logistics',
+      'agritech',
+      'proptech',
+      'cleantech',
+      'tourism',
+      'saas',
+      'ai',
+      'cybersecurity',
+      'gaming',
+      'media',
+      'foodtech',
+      'mobility',
+      'retail',
+      'energy',
+      'insurtech',
+      'legaltech',
+      'hr_tech',
+      'biotech',
+      'manufacturing',
+      'sports',
+      'other',
+    ]);
+    expect(Sector.fromValue('hrtech'), Sector.hrtech);
+  });
+
   test('round-trips through a Firestore map', () {
     final map = startup.toMap();
     final restored = Startup.fromMap('s1', map)!;
@@ -178,7 +285,9 @@ void main() {
       expect(StartupLocation.fromValue('medina'), StartupLocation.madinah);
       expect(StartupLocation.fromValue('other'), StartupLocation.other);
       expect(StartupLocation.fromValue('al_khobar'), StartupLocation.alKhobar);
-      expect(StartupLocation.fromValue('atlantis'), isNull);
+      // An imported city outside the picker list stays readable.
+      expect(StartupLocation.fromValue('al_ula')!.label, 'Al Ula');
+      expect(StartupLocation.fromValue('not a city'), isNull);
     });
 
     test('looking for', () {
