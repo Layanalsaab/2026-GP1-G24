@@ -27,11 +27,6 @@ class SignupFlow {
   /// True once step 1 created the Auth account in this flow.
   bool accountCreated = false;
 
-  /// True when this flow was started by a log in of a founder who never
-  /// created a startup: the account is not complete yet, so they verify
-  /// again and Back leaves to Welcome (there is no step 1 to go back to).
-  bool fromLogin = false;
-
   /// The step-1 form, kept so Back from the Verify step keeps its answers.
   SignupViewModel? form;
 

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../../../app_constants/auth_strings.dart';
-import '../../../data_access/repositories/auth_repository.dart';
 import '../../../helpers/app_session.dart';
 import '../../../models/app_user.dart';
+import '../../../navigation/app_router.dart';
 import '../../../shared_ui/navigation/app_route.dart';
 import '../../../shared_ui/widgets/buttons/app_button.dart';
 import '../../../shared_ui/widgets/forms/app_field.dart';
@@ -19,7 +19,6 @@ import '../view_models/verify_email_view_model.dart';
 import 'forgot_password_screen.dart';
 import 'investor_investments_screen.dart';
 import 'signup_screen.dart';
-import 'welcome_screen.dart';
 
 /// Sign-up step 2, "Verify your email" (docs/05 A8). Arrives with the verify
 /// dialog open; the user opens the emailed link, comes back, enters email and
@@ -46,39 +45,15 @@ class VerifyEmailScreen extends StatefulWidget {
   static void openFromOnboarding(BuildContext context) {
     final flow = SignupFlow.current;
     if (flow == null) {
-      WelcomeScreen.open(context);
+      // They logged in (no sign-up in progress), so there is no Verify step to
+      // go back to: leaving the form logs them out and returns to Welcome.
+      AppRouter.logOut(context);
       return;
     }
     AppNav.reset(
       context,
       VerifyEmailScreen(flow: flow, showDialogOnOpen: false),
       kind: RouteKind.back,
-      greenHeader: true,
-    );
-  }
-
-  /// A founder logged in but never created a startup: the account is not
-  /// complete, so they authenticate again on this step (the Firebase session
-  /// is closed first) before they can continue to "Add your startup".
-  static Future<void> openForIncompleteFounder(
-    BuildContext context,
-    AppUser user,
-  ) async {
-    try {
-      await AuthRepository.instance.signOut();
-    } catch (_) {}
-    AppSession.instance.signOut();
-    final flow = SignupFlow(role: AccountRole.founder)
-      ..email = user.email
-      ..createdRole = AccountRole.founder
-      ..accountCreated = true
-      ..fromLogin = true;
-    SignupFlow.current = flow;
-    if (!context.mounted) return;
-    AppNav.reset(
-      context,
-      VerifyEmailScreen(flow: flow, showDialogOnOpen: false),
-      kind: RouteKind.fade,
       greenHeader: true,
     );
   }
@@ -114,9 +89,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
   }
 
   void _back() {
-    if (widget.flow.fromLogin) {
-      WelcomeScreen.open(context);
-    } else if (Navigator.of(context).canPop()) {
+    if (Navigator.of(context).canPop()) {
       AppNav.back(context);
     } else {
       // Arrived by reset from step 3: step 1 is not on the stack any more.

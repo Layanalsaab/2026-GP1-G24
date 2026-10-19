@@ -22,7 +22,8 @@ class AppStrings {
   static const emailLabel = 'Email address';
   static const emailHint = 'e.g. example@gmail.com';
   static const passwordLabel = 'Password';
-  static const passwordHint = 'e.g. 12345678'; // matches the Figma placeholder
+  static const passwordHint =
+      'e.g. Startup@123'; // an example that meets every password rule
   static const loginPasswordHint = 'Enter your password';
   static const confirmPasswordLabel = 'Confirm password';
   static const confirmPasswordHint = 'Re-enter your password';

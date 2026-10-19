@@ -177,7 +177,7 @@ void main() {
     ) async {
       await openSignup(t, AccountRole.investor);
       expect(find.text('One lowercase letter'), findsNothing);
-      final pw = find.widgetWithText(TextField, 'e.g. 12345678');
+      final pw = find.widgetWithText(TextField, 'e.g. Startup@123');
       await t.ensureVisible(pw);
       await t.tap(pw);
       await t.pump(const Duration(milliseconds: 300));

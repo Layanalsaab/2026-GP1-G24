@@ -7,8 +7,8 @@ import '../data_access/repositories/bookmark_repository.dart';
 import '../data_access/repositories/interest_repository.dart';
 import '../data_access/repositories/request_repository.dart';
 import '../data_access/repositories/startup_repository.dart';
-import '../features/login_and_signup/screens/verify_email_screen.dart';
 import '../features/login_and_signup/screens/welcome_screen.dart';
+import '../features/startups/screens/startup_steps_screen.dart';
 import '../helpers/app_session.dart';
 import '../models/app_user.dart';
 import '../shared_ui/navigation/app_route.dart';
@@ -60,13 +60,12 @@ class AppRouter {
     }
     if (!context.mounted) return;
     if (needsStartup) {
-      // The founder never created a startup, so the account is not complete:
-      // they authenticate again before "Add your startup".
-      await VerifyEmailScreen.openForIncompleteFounder(context, user);
+      // A verified founder who never created a startup continues where they
+      // stopped: the first "Add your startup" step (no second verification).
+      StartupStepsScreen.openOnboarding(context);
       return;
-    } else {
-      openHome(context);
     }
+    openHome(context);
     if (welcomeBack) {
       AppToast.showGlobal('Welcome back, ${user.firstName}');
     }

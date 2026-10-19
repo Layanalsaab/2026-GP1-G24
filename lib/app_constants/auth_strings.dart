@@ -59,7 +59,7 @@ class AuthStrings {
   static const linkedin = 'LinkedIn profile';
   static const linkedinPlaceholder = 'linkedin.com/in/your-name';
   static const password = 'Password';
-  static const passwordPlaceholder = 'e.g. 12345678';
+  static const passwordPlaceholder = 'e.g. Startup@123';
   static const confirmPassword = 'Confirm password';
   static const confirmPlaceholder = 'Re-enter your password';
   static const city = 'Which city are you in?';

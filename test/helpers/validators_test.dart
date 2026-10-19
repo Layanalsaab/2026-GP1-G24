@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:startsa/app_constants/auth_strings.dart';
 import 'package:startsa/app_constants/validation_strings.dart';
 import 'package:startsa/helpers/validators.dart';
 
@@ -87,6 +88,11 @@ void main() {
         'One number',
         'One special character (! @ # \$)',
       ]);
+    });
+
+    test('the example shown in the password field follows every rule', () {
+      final example = AuthStrings.passwordPlaceholder.replaceFirst('e.g. ', '');
+      expect(Validators.isPassword(example), isTrue, reason: example);
     });
 
     test('confirm mismatch only shows once typed', () {
