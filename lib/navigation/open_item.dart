@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart';
 
 import '../data_access/repositories/discovery_repository.dart';
 import '../data_access/repositories/interaction_repository.dart';
+import '../data_access/repositories/matching_repository.dart';
 import '../features/program_details/screens/program_details_screen.dart';
 import '../features/profiles/screens/investor_profile_screen.dart';
 import '../features/startup_profile/screens/startup_profile_screen.dart';
@@ -16,7 +17,10 @@ void openHomeItem(BuildContext context, HomeItem item) {
   final discovery = DiscoveryRepository.instance;
   switch (item.kind) {
     case HomeItemKind.startup:
-      final startup = discovery.startupById(item.id);
+      // Matches cards come from Firestore, the other lists from the samples.
+      final startup =
+          discovery.startupById(item.id) ??
+          MatchingRepository.instance.startupById(item.id);
       if (startup == null) return;
       InteractionRepository.instance.recordProfileView(item.bookmarkKey);
       final session = AppSession.instance;
@@ -26,7 +30,9 @@ void openHomeItem(BuildContext context, HomeItem item) {
         preview: session.isFounder && session.ownStartupIds.contains(item.id),
       );
     case HomeItemKind.investor:
-      final investor = discovery.investorById(item.id);
+      final investor =
+          discovery.investorById(item.id) ??
+          MatchingRepository.instance.investorById(item.id);
       if (investor == null) return;
       InteractionRepository.instance.recordProfileView(item.bookmarkKey);
       InvestorProfileScreen.open(context, investor);

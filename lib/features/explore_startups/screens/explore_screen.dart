@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 
 import '../../../app_constants/home_strings.dart';
+import '../../../app_constants/matching_strings.dart';
 import '../../../data_access/repositories/interaction_repository.dart';
 import '../../../models/home_item.dart';
 import '../../../navigation/open_item.dart';
+import '../../../shared_ui/icons/app_icons.dart';
+import '../../../shared_ui/theme/app_colors.dart';
 import '../../../shared_ui/widgets/cards/home_card.dart';
 import '../../../shared_ui/widgets/cards/trending.dart';
 import '../../../shared_ui/widgets/lists/empty_state.dart';
@@ -146,7 +149,64 @@ class ExploreScreen extends StatelessWidget {
             onSelected: vm.setMatchFor,
           ),
         ),
-      cardsSlot(vm.matches, showMatch: true),
+      ..._matchCards(vm),
+    ];
+  }
+
+  /// The cards, or the loading / failed / empty state (data from Firestore).
+  List<HomeSlot> _matchCards(HomeViewModel vm) {
+    final items = vm.matches; // starts the load when needed
+    if (items.isNotEmpty) return [cardsSlot(items, showMatch: true)];
+    if (vm.matchesLoading) {
+      return const [
+        HomeSlot(
+          Padding(
+            padding: EdgeInsets.only(top: 56),
+            child: Center(
+              child: SizedBox(
+                width: 28,
+                height: 28,
+                child: CircularProgressIndicator(
+                  strokeWidth: 3,
+                  color: AppColors.moss600,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ];
+    }
+    if (vm.matchesFailed) {
+      return [
+        HomeSlot(
+          EmptyState(
+            title: MatchingStrings.loadFailed,
+            message: MatchingStrings.loadFailedMessage,
+            icon: AppIcons.warn,
+            actionLabel: MatchingStrings.retry,
+            onAction: vm.refreshMatches,
+          ),
+        ),
+      ];
+    }
+    final String message;
+    if (vm.isFounder) {
+      message = vm.ownStartups.isEmpty
+          ? MatchingStrings.noneFounderNoStartup
+          : MatchingStrings.noneFounder;
+    } else {
+      message = vm.user?.investorCriteria == null
+          ? MatchingStrings.noneInvestor
+          : MatchingStrings.noneInvestorNoFit;
+    }
+    return [
+      HomeSlot(
+        EmptyState(
+          title: MatchingStrings.noneTitle,
+          message: message,
+          icon: AppIcons.target,
+        ),
+      ),
     ];
   }
 

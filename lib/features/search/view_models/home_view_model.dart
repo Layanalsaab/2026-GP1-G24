@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../app_constants/home_strings.dart';
 import '../../../data_access/repositories/discovery_repository.dart';
 import '../../../data_access/repositories/interaction_repository.dart';
-import '../../../data_access/repositories/recommendation_repository.dart';
+import '../../../data_access/repositories/matching_repository.dart';
 import '../../../helpers/app_session.dart';
 import '../../../helpers/safe_notifier.dart';
 import '../../../models/app_user.dart';
@@ -38,12 +38,12 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
     this.user,
     DiscoveryRepository? discovery,
     InteractionRepository? interactions,
-    RecommendationRepository? recommendations,
+    MatchingRepository? matching,
     Set<String> ownStartupIds = const {},
     List<Startup> ownStartups = const [],
   }) : _discovery = discovery ?? DiscoveryRepository.instance,
        _interactions = interactions ?? InteractionRepository.instance,
-       _recommendations = recommendations ?? RecommendationRepository.instance,
+       _matching = matching ?? MatchingRepository.instance,
        _ownIds = ownStartupIds,
        _own = ownStartups;
 
@@ -51,7 +51,7 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
   final AppUser? user;
   final DiscoveryRepository _discovery;
   final InteractionRepository _interactions;
-  final RecommendationRepository _recommendations;
+  final MatchingRepository _matching;
 
   Set<String> _ownIds;
   List<Startup> _own;
@@ -265,15 +265,65 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
   Startup? get matchStartup =>
       _own.isEmpty ? null : _own[matchFor.clamp(0, _own.length - 1)];
 
-  /// Founder: investors matched to the chosen startup. Investor: startups
-  /// matched to their criteria.
-  List<HomeItem> get matches {
+  /// Matches come from Firestore (MatchingRepository), so they load in the
+  /// background: [matches] starts the load the first time it is read for a
+  /// startup / investor and the page rebuilds when the cards arrive.
+  List<HomeItem> _matchItems = const [];
+  String? _matchKey;
+  bool matchesLoading = false;
+  bool matchesFailed = false;
+
+  /// What [matches] is for: the chosen startup (founder) or the investor.
+  String? get _currentMatchKey {
     if (isFounder) {
       final s = matchStartup;
-      return s == null ? const [] : _recommendations.investorsForStartup(s);
+      return s == null ? null : 's-${s.id}-${s.updatedAt}';
     }
     final u = user;
-    return u == null ? const [] : _recommendations.startupsForInvestor(u);
+    return isInvestor && u != null ? 'i-${u.uid}' : null;
+  }
+
+  /// Founder: investors matched to the chosen startup. Investor: startups
+  /// matched to their criteria. Empty while [matchesLoading].
+  List<HomeItem> get matches {
+    final key = _currentMatchKey;
+    if (key == null) return const [];
+    if (key != _matchKey) _loadMatches(key);
+    return _matchItems;
+  }
+
+  /// Pull-to-refresh / "Try again": reads the data again.
+  Future<void> refreshMatches() async {
+    final key = _currentMatchKey;
+    if (key == null) return;
+    final load = _loadMatches(key, refresh: true);
+    notifyListeners(); // shows the loading state
+    await load;
+  }
+
+  Future<void> _loadMatches(String key, {bool refresh = false}) async {
+    // Called while building: change state now, notify only after the await.
+    _matchKey = key;
+    _matchItems = const [];
+    matchesLoading = true;
+    matchesFailed = false;
+    final startup = isFounder ? matchStartup : null;
+    final investor = user;
+    List<HomeItem> items = const [];
+    var failed = false;
+    try {
+      items = startup != null
+          ? await _matching.investorsForStartup(startup, refresh: refresh)
+          : await _matching.startupsForInvestor(investor!, refresh: refresh);
+    } catch (e) {
+      debugPrint('Matches failed to load: $e');
+      failed = true;
+    }
+    if (_matchKey != key) return; // the choice changed meanwhile
+    _matchItems = items;
+    matchesFailed = failed;
+    matchesLoading = false;
+    notifyListeners();
   }
 
   // ---- Page identity (replays the card entrance when it changes) ----
