@@ -136,7 +136,6 @@ class _MainScreenState extends State<MainScreen> {
         AppDrawerItem(
           label: HomeStrings.notifications,
           icon: AppIcons.menuBell,
-          badge: HomeStrings.notificationCount,
           onTap: () => _soon(HomeStrings.notifications),
         ),
         AppDrawerItem(

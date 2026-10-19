@@ -114,10 +114,15 @@ class HeaderTabBar extends StatelessWidget {
                 curve: Motion.easeOut,
                 child: FractionallySizedBox(
                   widthFactor: 1 / (n == 0 ? 1 : n),
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: AppColors.gold,
-                      borderRadius: BorderRadius.circular(2),
+                  // An explicit height: a childless DecoratedBox under loose
+                  // constraints collapses to 0 and the line disappears.
+                  child: SizedBox(
+                    height: 2.5,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: AppColors.gold,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
                     ),
                   ),
                 ),

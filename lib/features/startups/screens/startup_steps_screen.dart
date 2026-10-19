@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 
 import '../../../app_constants/founder_tools_strings.dart';
+import '../../../data_access/repositories/startup_draft_repository.dart';
+import '../../../helpers/app_session.dart';
 import '../../../models/startup.dart';
 import '../../../navigation/app_router.dart';
 import '../../../navigation/main_screen.dart';
 import '../../login_and_signup/screens/verify_email_screen.dart';
 import '../view_models/startup_steps_view_model.dart';
 import '../widgets/founder_ui.dart';
+import '../widgets/leave_form_sheet.dart';
 import '../widgets/startup_step_body.dart';
 import 'my_startups_screen.dart';
 
@@ -27,10 +30,17 @@ enum StartupStepsMode {
 /// the step is complete and, when tapped early, shows the errors plus the
 /// toast "Please fill in the required fields".
 class StartupStepsScreen extends StatefulWidget {
-  const StartupStepsScreen({super.key, required this.mode, this.startup})
-    : assert(mode != StartupStepsMode.edit || startup != null);
+  const StartupStepsScreen({
+    super.key,
+    required this.mode,
+    this.startup,
+    this.draft,
+  }) : assert(mode != StartupStepsMode.edit || startup != null);
 
   final StartupStepsMode mode;
+
+  /// A saved draft to continue ([StartupStepsMode.add] only).
+  final Map<String, Object?>? draft;
 
   /// The startup being edited ([StartupStepsMode.edit] only).
   final Startup? startup;
@@ -46,10 +56,10 @@ class StartupStepsScreen extends StatefulWidget {
   }
 
   /// My Startups -> Add.
-  static void openAdd(BuildContext context) {
+  static void openAdd(BuildContext context, {Map<String, Object?>? draft}) {
     AppNav.push(
       context,
-      const StartupStepsScreen(mode: StartupStepsMode.add),
+      StartupStepsScreen(mode: StartupStepsMode.add, draft: draft),
       greenHeader: true,
     );
   }
@@ -76,10 +86,20 @@ class _StartupStepsScreenState extends State<StartupStepsScreen> {
   late final StartupStepsViewModel _vm = StartupStepsViewModel(
     initial: widget.startup,
   );
+  late final bool _fromDraft = widget.draft != null;
   final ScrollController _scroll = ScrollController();
 
   bool get _onboarding => widget.mode == StartupStepsMode.onboarding;
   bool get _edit => widget.mode == StartupStepsMode.edit;
+
+  @override
+  void initState() {
+    super.initState();
+    final d = widget.draft;
+    if (d != null) _vm.loadDraft(d);
+  }
+
+  String? get _uid => AppSession.instance.user?.uid;
 
   @override
   void dispose() {
@@ -99,7 +119,39 @@ class _StartupStepsScreenState extends State<StartupStepsScreen> {
       // Step 3 of 6: Back returns to the Verify step (the stack was reset).
       VerifyEmailScreen.openFromOnboarding(context);
     } else {
+      _leave();
+    }
+  }
+
+  /// Leaving the first step: nothing changed -> just go back; otherwise ask
+  /// whether to keep editing, discard, or (new startups) save a draft.
+  Future<void> _leave() async {
+    if (!_vm.isDirty) {
       AppNav.back(context);
+      return;
+    }
+    FocusScope.of(context).unfocus();
+    final choice = await showLeaveFormSheet(context, canSaveDraft: !_edit);
+    if (!mounted) return;
+    switch (choice) {
+      case LeaveChoice.keepEditing:
+        return;
+      case LeaveChoice.discard:
+        // Discarding a form opened from a draft deletes that draft.
+        final uid = _uid;
+        if (_fromDraft && uid != null) {
+          await StartupDraftRepository.instance.clear(uid);
+        }
+        if (!mounted) return;
+        AppNav.back(context);
+      case LeaveChoice.saveDraft:
+        final uid = _uid;
+        if (uid != null) {
+          await StartupDraftRepository.instance.save(uid, _vm.toDraft());
+        }
+        if (!mounted) return;
+        AppNav.back(context);
+        AppToast.showGlobal(FounderToolsStrings.draftSaved);
     }
   }
 
@@ -141,6 +193,11 @@ class _StartupStepsScreenState extends State<StartupStepsScreen> {
         if (!mounted) return;
         AppRouter.openHome(context);
       case StartupStepsMode.add:
+        final uid = _uid;
+        if (_fromDraft && uid != null) {
+          await StartupDraftRepository.instance.clear(uid);
+        }
+        if (!mounted) return;
         AppToast.show(context, FounderToolsStrings.added(saved.name));
         AppNav.resetStack(context, [MainScreen(), const MyStartupsScreen()]);
       case StartupStepsMode.edit:
@@ -158,7 +215,8 @@ class _StartupStepsScreenState extends State<StartupStepsScreen> {
         final offset = _onboarding ? 2 : 0;
         final total = _onboarding ? 6 : 4;
         return PopScope(
-          canPop: step == 0,
+          // The first step can only be left through the unsaved-changes check.
+          canPop: step == 0 && (_onboarding || !_vm.isDirty),
           onPopInvokedWithResult: (didPop, _) {
             if (!didPop) _back();
           },

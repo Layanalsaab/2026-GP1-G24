@@ -69,10 +69,14 @@ class StartupProfileViewModel extends ChangeNotifier with SafeNotifier {
   bool ctaDone = false;
 
   // ---- Header ----
+  /// "HealthTech · Pre-seed · Riyadh · Founded 2024": the founded year is a key
+  /// fact, so it sits in the header and not in the financials.
   String get infoLine => [
     startup.sectorLabel,
     startup.stageLabel,
     startup.location.label,
+    if (startup.foundedYear != null)
+      '${ProfileStrings.kvFounded} ${startup.foundedYear}',
   ].join(' · ');
 
   String get pitch => startup.summary;
@@ -125,7 +129,6 @@ class StartupProfileViewModel extends ChangeNotifier with SafeNotifier {
       ),
       (ProfileStrings.kvValuation, _money(startup.valuation) ?? ''),
       (ProfileStrings.kvCapital, _money(startup.capital) ?? ''),
-      (ProfileStrings.kvFounded, '${startup.foundedYear ?? ''}'),
       (ProfileStrings.kvModel, startup.businessModelLabel),
       (ProfileStrings.kvCity, startup.location.label),
     ].where((r) => r.$2.isNotEmpty).toList();

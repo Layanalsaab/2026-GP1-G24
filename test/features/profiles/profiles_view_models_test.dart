@@ -87,12 +87,20 @@ void main() {
       ]);
       vm.selectTab(3);
       expect(vm.tab, 3);
-      expect(vm.infoLine, 'HealthTech · Pre-seed · Riyadh');
+      expect(
+        vm.infoLine,
+        startsWith('HealthTech · Pre-seed · Riyadh · Founded '),
+      );
       expect(vm.raising, 'SAR 500K');
       expect(vm.lookingFor, ['Funding', 'Talent']);
       final cells = vm.financials.map((c) => c.$1).toList();
       expect(cells, contains('Raising'));
       expect(cells, contains('City'));
+      expect(
+        cells,
+        isNot(contains('Founded')),
+        reason: 'founded is in the header',
+      );
       expect(vm.revenueLabels, ['Year 1', 'Year 2', 'Year 3']);
     });
   });

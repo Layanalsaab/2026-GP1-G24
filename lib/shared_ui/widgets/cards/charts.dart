@@ -32,8 +32,14 @@ class RevenueBars extends StatelessWidget {
     const inner = 144.0;
     const labelsHeight = 46.0;
     final n = values.length;
+    // The two label lines grow with the system font size, so the chart grows
+    // with them (a fixed height overflowed by a few pixels at large text).
+    final scale = MediaQuery.textScalerOf(context).scale(1);
+    final extra = scale > 1
+        ? (labelsHeight * (scale - 1)).ceilToDouble() + 2
+        : 0.0;
     return SizedBox(
-      height: 150,
+      height: 150 + extra,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(4, 6, 4, 0),
         child: Row(

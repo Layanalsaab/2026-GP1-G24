@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/widgets.dart';
@@ -76,9 +77,107 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
        _logoPickerOverride = logoPicker,
        _now = now ?? DateTime.now() {
     _fillFrom(initial);
+    _baseline = _signature();
     for (final c in _controllers) {
       c.addListener(notifyListeners);
     }
+  }
+
+  // ---------------------------------------------------------------- drafts
+
+  late String _baseline;
+
+  /// A comparable fingerprint of everything the founder can type or pick.
+  String _signature() => jsonEncode(_state());
+
+  Map<String, Object?> _state() => {
+    'name': name.text,
+    'pitch': pitch.text,
+    'description': description.text,
+    'founded': founded.text,
+    'website': website.text,
+    'sector': sector?.value,
+    'sectorOther': sectorOther.text,
+    'stage': stage?.value,
+    'stageOther': stageOther.text,
+    'model': model?.value,
+    'modelOther': modelOther.text,
+    'city': city?.value,
+    'problem': problem.text,
+    'solution': solution.text,
+    'customers': customers.text,
+    'advantage': advantage.text,
+    'tam': tam.text,
+    'sam': sam.text,
+    'som': som.text,
+    'team': [for (final m in team) m.toMap()],
+    'growth': growth.text,
+    'capital': capital.text,
+    'rev1': rev1.text,
+    'rev2': rev2.text,
+    'rev3': rev3.text,
+    'valuation': valuation.text,
+    'funding': funding.text,
+    'lookingFor': [
+      for (final l in LookingFor.values)
+        if (lookingFor.contains(l)) l.value,
+    ],
+    'lookingForOther': lookingForOther.text,
+    'wantsLead': wantsLead,
+    'isPublic': isPublic,
+  };
+
+  /// True when anything differs from how the form opened (a new logo counts).
+  bool get isDirty =>
+      newLogo != null || removeLogo || _signature() != _baseline;
+
+  /// The form as a draft (the logo is not kept).
+  Map<String, Object?> toDraft() => {..._state(), 'step': step};
+
+  /// Fills the form from [toDraft] output and makes that the new starting
+  /// point, so opening a draft and leaving at once asks nothing.
+  void loadDraft(Map<String, Object?> d) {
+    String t(String k) => (d[k] as String?) ?? '';
+    name.text = t('name');
+    pitch.text = t('pitch');
+    description.text = t('description');
+    founded.text = t('founded');
+    website.text = t('website');
+    sector = Sector.fromValue(d['sector']);
+    sectorOther.text = t('sectorOther');
+    stage = StartupStage.fromValue(d['stage']);
+    stageOther.text = t('stageOther');
+    model = BusinessModel.fromValue(d['model']);
+    modelOther.text = t('modelOther');
+    city = StartupLocation.fromValue(d['city']);
+    problem.text = t('problem');
+    solution.text = t('solution');
+    customers.text = t('customers');
+    advantage.text = t('advantage');
+    tam.text = t('tam');
+    sam.text = t('sam');
+    som.text = t('som');
+    team = [
+      if (d['team'] is List)
+        for (final raw in d['team'] as List) ?TeamMember.fromMap(raw),
+    ];
+    growth.text = t('growth');
+    capital.text = t('capital');
+    rev1.text = t('rev1');
+    rev2.text = t('rev2');
+    rev3.text = t('rev3');
+    valuation.text = t('valuation');
+    funding.text = t('funding');
+    lookingFor = {
+      if (d['lookingFor'] is List)
+        for (final raw in d['lookingFor'] as List) ?LookingFor.fromValue(raw),
+    };
+    lookingForOther.text = t('lookingForOther');
+    wantsLead = d['wantsLead'] as bool?;
+    isPublic = d['isPublic'] != false;
+    step = ((d['step'] as num?)?.toInt() ?? 0).clamp(0, stepCount - 1);
+    _baseline = _signature();
+    notifyListeners();
   }
 
   final Startup? initial;

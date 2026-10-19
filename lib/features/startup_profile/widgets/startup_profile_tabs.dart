@@ -278,15 +278,17 @@ class _LookingPill extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     height: 32,
     padding: const EdgeInsets.symmetric(horizontal: 14),
-    alignment: Alignment.center,
     decoration: BoxDecoration(
       color: AppColors.cream,
       borderRadius: BorderRadius.circular(999),
       border: Border.all(color: AppColors.border),
     ),
-    child: Text(
-      label,
-      style: AppText.sans(size: 13.5, weight: FontWeight.w600),
+    child: Center(
+      widthFactor: 1,
+      child: Text(
+        label,
+        style: AppText.sans(size: 13.5, weight: FontWeight.w600),
+      ),
     ),
   );
 }
