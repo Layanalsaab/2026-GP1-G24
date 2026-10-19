@@ -21,8 +21,8 @@ enum ResendResult { sent, alreadyVerified }
 /// never talk to Firebase directly.
 class AuthRepository {
   AuthRepository({AuthService? authService, UserRepository? userRepository})
-      : _auth = authService ?? AuthService(),
-        _users = userRepository ?? UserRepository();
+    : _auth = authService ?? AuthService(),
+      _users = userRepository ?? UserRepository();
 
   /// The app-wide instance. Tests replace it with a fake.
   static AuthRepository instance = AuthRepository();
@@ -42,6 +42,9 @@ class AuthRepository {
     String? city,
     String? bio,
     List<String> sectorsOfInterest = const [],
+    String? sectorsOther,
+    String? linkedin,
+    String? gain,
     File? photo,
   }) async {
     final account = await _auth.createAccount(email, password);
@@ -56,6 +59,9 @@ class AuthRepository {
         city: city,
         bio: bio,
         sectorsOfInterest: sectorsOfInterest,
+        sectorsOther: sectorsOther,
+        linkedin: linkedin,
+        gain: gain,
       );
     } catch (e) {
       debugPrint('Saving the profile failed, removing the new account: $e');
@@ -108,6 +114,25 @@ class AuthRepository {
       throw const AuthException(AuthFailure.profileMissing);
     }
     return user;
+  }
+
+  /// Sign-up step 2 when the user went back and changed the email: signs in
+  /// with the old, still unverified credentials and deletes that account and
+  /// its profile, so a new one can be created. A verified account is never
+  /// deleted (it throws [AuthFailure.unknown] instead).
+  Future<void> discardUnverifiedAccount(String email, String password) async {
+    final account = await _signInOrGeneric(email, password);
+    if (account.emailVerified) {
+      await _safeSignOut();
+      throw const AuthException(AuthFailure.unknown);
+    }
+    try {
+      await _users.deleteProfile(account.uid);
+    } catch (e) {
+      debugPrint('Deleting the unverified profile failed: $e');
+    }
+    await _auth.deleteCurrentAccount();
+    await _safeSignOut();
   }
 
   /// Sends a new verification email. Signing in is needed to send it, so the

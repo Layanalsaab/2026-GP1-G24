@@ -1,207 +1,107 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:startsa/app_constants/app_strings.dart';
+import 'package:startsa/app_constants/validation_strings.dart';
 import 'package:startsa/helpers/validators.dart';
 
 void main() {
-  group('Validators.email', () {
-    test('accepts normal addresses, ignoring surrounding spaces', () {
-      expect(Validators.email('name@example.com'), isNull);
-      expect(Validators.email('  name@example.com  '), isNull);
-      expect(Validators.email('first.last+tag@sub.example.sa'), isNull);
-    });
-
-    test('rejects empty and whitespace-only input', () {
-      expect(Validators.email(null), AppStrings.emailRequired);
-      expect(Validators.email(''), AppStrings.emailRequired);
-      expect(Validators.email('   '), AppStrings.emailRequired);
-    });
-
-    test('rejects malformed addresses', () {
-      for (final bad in [
-        'plainaddress',
-        'missing-at.example.com',
-        '@no-local.com',
-        'no-domain@',
-        'no-tld@example',
-        'two@@example.com',
-        'spa ce@example.com',
-        'name@exa mple.com',
-        'name@example.c',
-      ]) {
-        expect(Validators.email(bad), AppStrings.emailInvalid, reason: bad);
-      }
-    });
-  });
-
-  group('Validators.password', () {
-    test('accepts a password meeting every rule', () {
-      expect(Validators.password('Startup1!'), isNull);
-      expect(Validators.password('Abcdef1!'), isNull); // exactly 8
-      expect(Validators.password('Correct Horse 9 Battery!'), isNull);
-    });
-
-    test('requires a value', () {
-      expect(Validators.password(null), AppStrings.passwordRequired);
-      expect(Validators.password(''), AppStrings.passwordRequired);
-    });
-
-    test('rejects fewer than 8 characters', () {
-      expect(Validators.password('Abcd1!'), AppStrings.passwordTooShort);
-      expect(Validators.password('Abcde1!'), AppStrings.passwordTooShort); // 7
-    });
-
-    test('requires an uppercase letter', () {
-      expect(
-        Validators.password('startup1!'),
-        AppStrings.passwordNeedsUppercase,
-      );
-    });
-
-    test('requires a lowercase letter', () {
-      expect(
-        Validators.password('STARTUP1!'),
-        AppStrings.passwordNeedsLowercase,
-      );
-    });
-
-    test('requires a number', () {
-      expect(
-        Validators.password('StartupPlan!'),
-        AppStrings.passwordNeedsNumber,
-      );
-    });
-
-    test('requires a special character', () {
-      expect(Validators.password('Startup12'), AppStrings.passwordNeedsSpecial);
-      expect(
-        Validators.password('Startup 12'),
-        AppStrings.passwordNeedsSpecial,
-      );
-    });
-
-    test('does not trim: spaces count as characters', () {
-      expect(Validators.password('Ab1!   '), AppStrings.passwordTooShort); // 7
-      expect(Validators.password('Ab1!    '), isNull); // 8, spaces included
-    });
-  });
-
-  group('Validators.confirmPassword', () {
-    test('accepts a matching confirmation', () {
-      expect(Validators.confirmPassword('Startup1!', 'Startup1!'), isNull);
-    });
-
-    test('requires a confirmation', () {
-      expect(
-        Validators.confirmPassword('Startup1', ''),
-        AppStrings.confirmPasswordRequired,
-      );
-      expect(
-        Validators.confirmPassword('Startup1', null),
-        AppStrings.confirmPasswordRequired,
-      );
-    });
-
-    test('rejects a different confirmation, case-sensitively', () {
-      expect(
-        Validators.confirmPassword('Startup1', 'startup1'),
-        AppStrings.passwordsDontMatch,
-      );
-      expect(
-        Validators.confirmPassword('Startup1', 'Startup2'),
-        AppStrings.passwordsDontMatch,
-      );
-    });
-  });
-
-  group('Validators.fullName', () {
-    test('accepts a name', () {
+  group('full name', () {
+    test('needs two words of at least two letters', () {
       expect(Validators.fullName('Mohammed Ahmed'), isNull);
-    });
-
-    test('rejects empty or spaces-only names', () {
-      expect(Validators.fullName(null), AppStrings.fullNameRequired);
-      expect(Validators.fullName(''), AppStrings.fullNameRequired);
-      expect(Validators.fullName('    '), AppStrings.fullNameRequired);
-    });
-
-    test('rejects one-letter names and names with digits or symbols', () {
-      expect(Validators.fullName('A'), AppStrings.fullNameTooShort);
-      expect(Validators.fullName('Sara 2'), AppStrings.fullNameLettersOnly);
-      expect(Validators.fullName('Sara@home'), AppStrings.fullNameLettersOnly);
-    });
-
-    test('accepts hyphens, apostrophes and Arabic names', () {
-      expect(Validators.fullName("Mary-Jane O'Neil"), isNull);
-      expect(Validators.fullName('سارة السويلم'), isNull);
+      expect(Validators.fullName('Sara Al-Mohsen'), isNull);
+      expect(Validators.fullName("Layla O'Brien"), isNull);
+      expect(Validators.fullName('محمد أحمد'), isNull);
+      expect(Validators.fullName('Mohammed'), ValidationStrings.fullName);
+      expect(Validators.fullName('A B'), ValidationStrings.fullName);
+      expect(Validators.fullName('Sara 2'), ValidationStrings.fullName);
+      expect(Validators.fullName(''), ValidationStrings.fullName);
     });
   });
 
-  group('Validators.phone', () {
-    test('accepts a 9-digit Saudi mobile number starting with 5', () {
-      expect(Validators.phone('512345678'), isNull);
-    });
-
-    test('rejects empty, short, long and wrong-prefix numbers', () {
-      expect(Validators.phone(''), AppStrings.phoneRequired);
-      expect(Validators.phone('51234567'), AppStrings.phoneInvalid);
-      expect(Validators.phone('5123456789'), AppStrings.phoneInvalid);
-      expect(Validators.phone('412345678'), AppStrings.phoneInvalid);
-      expect(Validators.phone('5123a5678'), AppStrings.phoneInvalid);
+  group('live messages', () {
+    test('show as soon as something is typed and it is not valid yet', () {
+      expect(Validators.fullNameLive(''), isNull);
+      expect(Validators.fullNameLive('Sara'), ValidationStrings.fullName);
+      expect(Validators.fullNameLive('Sara Ali'), isNull);
+      expect(Validators.phoneLive(''), isNull);
+      expect(Validators.phoneLive('55 12'), ValidationStrings.phoneInvalid);
+      expect(Validators.phoneLive('55 123 4567'), isNull);
+      expect(
+        Validators.linkedinLive('linkedin.com/x'),
+        ValidationStrings.linkedin,
+      );
     });
   });
 
-  group('live rule checklists', () {
-    List<bool> met(List<FieldRule> rules) => [for (final r in rules) r.met];
+  group('email', () {
+    test('required and valid messages', () {
+      expect(Validators.email(''), ValidationStrings.emailRequired);
+      expect(Validators.email('nope'), ValidationStrings.emailInvalid);
+      expect(Validators.email('a@b.co'), isNull);
+    });
 
-    test('password rules go green one by one', () {
-      expect(met(Validators.passwordRules('')), [
-        false,
-        false,
-        false,
-        false,
-        false,
+    test('live message only once something is typed', () {
+      expect(Validators.emailLive(''), isNull);
+      expect(Validators.emailLive('a@b'), ValidationStrings.emailLive);
+      expect(Validators.emailLive('a@b.co'), isNull);
+    });
+  });
+
+  group('phone', () {
+    test(
+      'counts digits only, spaces are ignored, 9 digits starting with 5',
+      () {
+        expect(Validators.phoneDigits('55 123 4567'), '551234567');
+        expect(Validators.phone('55 123 4567'), isNull);
+        expect(Validators.phone(''), ValidationStrings.phoneRequired);
+        expect(Validators.phone('12345'), ValidationStrings.phoneInvalid);
+        expect(Validators.phone('451234567'), ValidationStrings.phoneInvalid);
+        expect(Validators.phoneEdit('12'), ValidationStrings.phoneEdit);
+      },
+    );
+  });
+
+  group('linkedin', () {
+    test('optional, but must look like a profile link', () {
+      expect(Validators.linkedin(''), isNull);
+      expect(Validators.linkedin('linkedin.com/in/your-name'), isNull);
+      expect(Validators.linkedin('https://www.linkedin.com/in/a-b/'), isNull);
+      expect(Validators.linkedin('example.com'), ValidationStrings.linkedin);
+    });
+  });
+
+  group('password', () {
+    test('five rules: length, upper, lower, number, special', () {
+      final ok = Validators.passwordRules('Sara@1234');
+      expect(ok.every((r) => r.met), isTrue);
+      expect(
+        Validators.passwordRules('SARA@1234').every((r) => r.met),
+        isFalse,
+      );
+      expect(Validators.passwordRules('SHORT').where((r) => r.met).length, 1);
+      expect(Validators.isPassword('Sara@1234'), isTrue);
+      expect(Validators.isPassword('sara@1234'), isFalse);
+      expect(Validators.isPassword('SARA@1234'), isFalse);
+      expect(Validators.passwordRules('x').map((r) => r.label), [
+        'At least 8 characters',
+        'One uppercase letter',
+        'One lowercase letter',
+        'One number',
+        'One special character (! @ # \$)',
       ]);
-      expect(met(Validators.passwordRules('abc')), [
-        false,
-        false,
-        true,
-        false,
-        false,
-      ]);
-      expect(met(Validators.passwordRules('Abcdefg1!')), [
-        true,
-        true,
-        true,
-        true,
-        true,
-      ]);
     });
 
-    test('email rules agree with the email validator', () {
-      for (final good in ['name@example.com', 'a.b+c@sub.example.sa']) {
-        expect(met(Validators.emailRules(good)), [true, true], reason: good);
-        expect(Validators.email(good), isNull);
-      }
-      for (final bad in ['plain', 'a@b', 'a@@b.com', 'a b@c.com', '@c.com']) {
-        expect(
-          met(Validators.emailRules(bad)).every((m) => m),
-          isFalse,
-          reason: bad,
-        );
-        expect(Validators.email(bad), isNotNull);
-      }
+    test('confirm mismatch only shows once typed', () {
+      expect(Validators.confirmPassword('a', ''), isNull);
+      expect(
+        Validators.confirmPassword('a', 'b'),
+        ValidationStrings.confirmMismatch,
+      );
+      expect(Validators.confirmPassword('a', 'a'), isNull);
     });
+  });
 
-    test('phone rules', () {
-      expect(met(Validators.phoneRules('')), [false, false]);
-      expect(met(Validators.phoneRules('5')), [false, true]);
-      expect(met(Validators.phoneRules('512345678')), [true, true]);
-    });
-
-    test('confirm rule needs a non-empty match', () {
-      expect(met(Validators.confirmPasswordRules('Abc1!', '')), [false]);
-      expect(met(Validators.confirmPasswordRules('Abc1!', 'Abc1')), [false]);
-      expect(met(Validators.confirmPasswordRules('Abc1!', 'Abc1!')), [true]);
-    });
+  test('other write-in is required and at most 40 characters', () {
+    expect(Validators.isOtherText(''), isFalse);
+    expect(Validators.isOtherText('SportsTech'), isTrue);
+    expect(Validators.isOtherText('x' * 41), isFalse);
   });
 }

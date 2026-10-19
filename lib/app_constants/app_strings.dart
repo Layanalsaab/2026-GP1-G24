@@ -5,9 +5,9 @@ class AppStrings {
   AppStrings._();
 
   static String roleName(AccountRole role) => switch (role) {
-        AccountRole.founder => 'Founder',
-        AccountRole.investor => 'Investor',
-      };
+    AccountRole.founder => 'Founder',
+    AccountRole.investor => 'Investor',
+  };
 
   // Common
   static const genericError = 'Something went wrong. Please try again.';
@@ -46,7 +46,8 @@ class AppStrings {
   // Validation
   static const fullNameRequired = 'Please enter your full name.';
   static const emailRequired = 'Please enter your email address.';
-  static const emailInvalid = 'Enter a valid email address, like name@example.com.';
+  static const emailInvalid =
+      'Enter a valid email address, like name@example.com.';
   static const passwordRequired = 'Please enter a password.';
   static const passwordTooShort = 'Password must be at least 8 characters.';
   static const passwordNeedsUppercase =
@@ -101,8 +102,7 @@ class AppStrings {
   static const verifyEmailReminderTitle = 'Email not verified';
   static const verifyEmailReminderBodyBefore =
       "Your email isn't verified yet. Please open the verification link we sent to ";
-  static const verifyEmailReminderBodyAfter =
-      ', then try logging in again.';
+  static const verifyEmailReminderBodyAfter = ', then try logging in again.';
   static const verifyEmailSpamHint =
       "Can't find it? Check your spam or junk folder.";
   static const verifyEmailOk = 'OK';
@@ -110,7 +110,8 @@ class AppStrings {
       "We couldn't send the verification email. Tap “Resend verification email” to try again.";
   static const resendVerification = 'Resend verification email';
   static const verificationSent = 'Verification email sent. Check your inbox.';
-  static const alreadyVerified = 'Your email is already verified. You can log in.';
+  static const alreadyVerified =
+      'Your email is already verified. You can log in.';
 
   // Log in
   static const loginTitle = 'Welcome back';
@@ -169,9 +170,6 @@ class AppStrings {
     'Riyadh',
     'Sakaka',
     'Tabuk',
-    'Taif',
-    'Unaizah',
-    'Yanbu',
   ];
 
   // Home placeholders

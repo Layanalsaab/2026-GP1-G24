@@ -1,107 +1,93 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:startsa/app_constants/validation_strings.dart';
 import 'package:startsa/helpers/formatters.dart';
 import 'package:startsa/helpers/startup_validators.dart';
-import 'package:startsa/models/startup_enums.dart';
 
 void main() {
-  group('name', () {
-    test('required, 3 to 40 characters after trimming (Figma 0/40)', () {
-      expect(StartupValidators.nameMax, 40);
-      expect(StartupValidators.name(''), isNotNull);
-      expect(StartupValidators.name('  ab  '), isNotNull);
-      expect(StartupValidators.name('abc'), isNull);
-      expect(StartupValidators.name('a' * 40), isNull);
-      expect(StartupValidators.name('a' * 41), isNotNull);
-    });
+  final now = DateTime(2026, 10, 19);
 
-    test('messages are short and friendly', () {
-      expect(StartupValidators.name(''), 'Please enter your startup name.');
+  test('required text fields show the prototype copy', () {
+    expect(StartupValidators.name(' '), ValidationStrings.startupName);
+    expect(StartupValidators.pitch(''), ValidationStrings.startupPitch);
+    expect(
+      StartupValidators.description(''),
+      ValidationStrings.startupDescription,
+    );
+    expect(StartupValidators.problem(''), ValidationStrings.problem);
+    expect(StartupValidators.growth(''), ValidationStrings.growth);
+    expect(StartupValidators.name('Rafeeq Health'), isNull);
+  });
+
+  group('founded year', () {
+    test('required, 1900 up to this year', () {
       expect(
-        StartupValidators.name('a' * 41),
-        'Startup name must be 40 characters or fewer.',
+        StartupValidators.foundedYear('', now: now),
+        ValidationStrings.foundedRequired,
       );
-    });
-  });
-
-  group('description', () {
-    test('required, 20 to 1000 characters (Figma 0/1000)', () {
-      expect(StartupValidators.description(''), isNotNull);
-      expect(StartupValidators.description('a' * 19), isNotNull);
-      expect(StartupValidators.description('a' * 20), isNull);
-      expect(StartupValidators.description('a' * 1000), isNull);
-      expect(StartupValidators.description('a' * 1001), isNotNull);
-    });
-  });
-
-  group('foundedYear', () {
-    final now = DateTime(2026, 10, 4);
-    test('optional, 1800 to the current year', () {
-      expect(StartupValidators.foundedYear('', now: now), isNull);
-      expect(StartupValidators.foundedYear('1799', now: now), isNotNull);
-      expect(StartupValidators.foundedYear('1800', now: now), isNull);
-      expect(StartupValidators.foundedYear('1999', now: now), isNull);
-      expect(StartupValidators.foundedYear('2000', now: now), isNull);
-      expect(StartupValidators.foundedYear('2026', now: now), isNull);
-      expect(StartupValidators.foundedYear('2027', now: now), isNotNull);
-      expect(StartupValidators.foundedYear('20x1', now: now), isNotNull);
+      expect(StartupValidators.foundedYear('2024', now: now), isNull);
+      expect(
+        StartupValidators.foundedYear('1899', now: now),
+        'Enter a year between 1900 and 2026.',
+      );
+      expect(
+        StartupValidators.foundedYear('2027', now: now),
+        'Enter a year between 1900 and 2026.',
+      );
     });
   });
 
   group('website', () {
-    test('optional and must look like a real web address', () {
+    test('optional and accepts addresses without a scheme', () {
       expect(StartupValidators.websiteUrl(''), isNull);
-      expect(StartupValidators.websiteUrl('example.com'), isNull);
+      expect(StartupValidators.websiteUrl('rafeeqhealth.sa'), isNull);
       expect(
-        StartupValidators.websiteUrl('https://sub.example.sa/path'),
-        isNull,
-      );
-      expect(StartupValidators.websiteUrl('not a url'), isNotNull);
-      expect(StartupValidators.websiteUrl('localhost'), isNotNull);
-      expect(StartupValidators.websiteUrl('ftp://example.com'), isNotNull);
-      expect(StartupValidators.websiteUrl('example.c0m'), isNotNull);
-    });
-
-    test('normalizeUrl adds https when the scheme is missing', () {
-      expect(
-        StartupValidators.normalizeUrl('example.com'),
-        'https://example.com',
+        StartupValidators.websiteUrl('example'),
+        ValidationStrings.websiteInvalid,
       );
       expect(
-        StartupValidators.normalizeUrl('http://example.com'),
-        'http://example.com',
+        StartupValidators.websiteUrl('example.c'),
+        ValidationStrings.websiteInvalid,
+      );
+      expect(
+        StartupValidators.websiteUrl('exa..mple.com'),
+        ValidationStrings.websiteInvalid,
+      );
+      expect(StartupValidators.websiteUrl('www.example.com/path'), isNull);
+      expect(
+        StartupValidators.websiteUrl('not a url'),
+        ValidationStrings.websiteInvalid,
       );
     });
   });
 
-  group('lookingFor and funding', () {
-    test('at least one choice is required', () {
-      expect(StartupValidators.lookingFor({}), isNotNull);
-      expect(StartupValidators.lookingFor({LookingFor.mentorship}), isNull);
+  group('money', () {
+    test('digits are read through the thousands separators', () {
+      expect(StartupValidators.money('1,200,000'), 1200000);
+      expect(StartupValidators.money(''), isNull);
+      expect(StartupValidators.funding('0'), ValidationStrings.funding);
+      expect(StartupValidators.funding('500,000'), isNull);
     });
 
-    test('funding must be a positive whole number', () {
-      expect(StartupValidators.fundingRequirement(''), isNotNull);
-      expect(StartupValidators.fundingRequirement('0'), isNotNull);
-      expect(StartupValidators.fundingRequirement('abc'), isNotNull);
-      expect(StartupValidators.fundingRequirement('500000'), isNull);
+    test('valuation is required but 0 is allowed', () {
+      expect(StartupValidators.valuationOk('0'), isTrue);
+      expect(StartupValidators.valuationOk(''), isFalse);
+    });
+
+    test('revenue needs all three years', () {
+      expect(
+        StartupValidators.revenue('1', '2', ''),
+        ValidationStrings.revenue,
+      );
+      expect(StartupValidators.revenue('1', '2', '3'), isNull);
     });
   });
 
-  group('Formatters', () {
-    test('thousands and SAR', () {
-      expect(Formatters.thousands(0), '0');
-      expect(Formatters.thousands(999), '999');
-      expect(Formatters.thousands(1000), '1,000');
-      expect(Formatters.thousands(1500000), '1,500,000');
-      expect(Formatters.sar(250000), 'SAR 250,000');
-    });
-
-    test('shortUrl strips scheme and www', () {
-      expect(Formatters.shortUrl('https://www.example.com/'), 'example.com');
-      expect(
-        Formatters.shortUrl('https://example.com/about'),
-        'example.com/about',
-      );
-    });
+  test('short money matches the prototype', () {
+    expect(Formatters.shortMoney(2400000000), '2.4B');
+    expect(Formatters.shortMoney(600000000), '600M');
+    expect(Formatters.shortMoney(24000000), '24M');
+    expect(Formatters.shortMoney(1200000), '1.2M');
+    expect(Formatters.shortMoney(500000), '500K');
+    expect(Formatters.shortMoney(900), '900');
   });
 }

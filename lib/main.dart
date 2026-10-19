@@ -1,10 +1,11 @@
-import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/material.dart';
 
-import 'firebase_options.dart';
 import 'features/login_and_signup/screens/splash_screen.dart';
+import 'firebase_options.dart';
+import 'shared_ui/theme/app_theme.dart';
 import 'shared_ui/theme/theme_controller.dart';
+import 'shared_ui/widgets/overlays/app_toast.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -37,22 +38,10 @@ class StartSaApp extends StatelessWidget {
       builder: (context, mode, _) => MaterialApp(
         title: 'Start.sa',
         debugShowCheckedModeBanner: false,
+        navigatorKey: AppToast.navigatorKey,
         themeMode: mode,
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF1E7A3C)),
-          textTheme: GoogleFonts.interTextTheme(),
-          useMaterial3: true,
-        ),
-        darkTheme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: const Color(0xFF1E7A3C),
-            brightness: Brightness.dark,
-          ),
-          textTheme: GoogleFonts.interTextTheme(
-            ThemeData(brightness: Brightness.dark).textTheme,
-          ),
-          useMaterial3: true,
-        ),
+        theme: AppTheme.light,
+        darkTheme: AppTheme.dark,
         home: SplashScreen(firebaseReady: firebaseReady),
       ),
     );

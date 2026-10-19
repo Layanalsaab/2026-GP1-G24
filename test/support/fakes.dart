@@ -7,6 +7,7 @@ import 'package:startsa/data_access/repositories/startup_repository.dart';
 import 'package:startsa/data_access/repositories/user_repository.dart';
 import 'package:startsa/models/app_user.dart';
 import 'package:startsa/models/auth_failure.dart';
+import 'package:startsa/models/investor_criteria.dart';
 import 'package:startsa/models/startup.dart';
 
 /// In-memory stand-in for [AuthService]. Set the fields to script behaviour,
@@ -123,6 +124,9 @@ class FakeUserRepository implements UserRepository {
     String? city,
     String? bio,
     List<String> sectorsOfInterest = const [],
+    String? sectorsOther,
+    String? linkedin,
+    String? gain,
   }) async {
     if (createFails) throw const AuthException(AuthFailure.unknown);
     profiles[uid] = AppUser(
@@ -134,6 +138,9 @@ class FakeUserRepository implements UserRepository {
       city: city,
       bio: bio ?? '',
       sectorsOfInterest: sectorsOfInterest,
+      sectorsOther: sectorsOther,
+      linkedin: linkedin,
+      gain: gain ?? '',
     );
   }
 
@@ -144,23 +151,37 @@ class FakeUserRepository implements UserRepository {
     return profiles[uid];
   }
 
-  int criteriaUpdates = 0;
-  Map<String, Object>? savedCriteria;
+  int onboardingSaves = 0;
+  InvestorCriteria? savedInvestorCriteria;
+  String? savedValueOffered;
+  final List<String> completedOnboarding = [];
 
   @override
-  Future<void> updateInvestmentCriteria({
+  Future<void> saveInvestorOnboarding({
     required String uid,
-    required List<String> sectors,
-    required List<String> stages,
-    required String ticketSize,
+    required InvestorCriteria criteria,
+    String? valueOffered,
   }) async {
-    criteriaUpdates++;
+    onboardingSaves++;
     if (updateFails != null) throw AuthException(updateFails!);
-    savedCriteria = {
-      'sectors': sectors,
-      'stages': stages,
-      'ticketSize': ticketSize,
-    };
+    savedInvestorCriteria = criteria;
+    savedValueOffered = valueOffered;
+    final p = profiles[uid];
+    if (p != null) {
+      profiles[uid] = p.copyWith(
+        investorCriteria: criteria,
+        valueOffered: valueOffered,
+        onboardingCompleted: true,
+      );
+    }
+  }
+
+  @override
+  Future<void> completeOnboarding(String uid) async {
+    if (updateFails != null) throw AuthException(updateFails!);
+    completedOnboarding.add(uid);
+    final p = profiles[uid];
+    if (p != null) profiles[uid] = p.copyWith(onboardingCompleted: true);
   }
 
   int profileUpdates = 0;
@@ -175,6 +196,10 @@ class FakeUserRepository implements UserRepository {
     required String phone,
     required List<String> sectorsOfInterest,
     String? city,
+    String? sectorsOther,
+    String? linkedin,
+    String? gain,
+    String? valueOffered,
   }) async {
     profileUpdates++;
     if (updateFails != null) throw AuthException(updateFails!);
@@ -184,6 +209,10 @@ class FakeUserRepository implements UserRepository {
       'city': city,
       'phone': phone,
       'sectors': sectorsOfInterest.join(','),
+      'sectorsOther': sectorsOther,
+      'linkedin': linkedin,
+      'gain': gain,
+      'valueOffered': valueOffered,
     };
   }
 
@@ -265,6 +294,9 @@ class FakeAuthRepository implements AuthRepository {
     String? city,
     String? bio,
     List<String> sectorsOfInterest = const [],
+    String? sectorsOther,
+    String? linkedin,
+    String? gain,
     File? photo,
   }) async {
     signUpCalls++;
@@ -274,6 +306,9 @@ class FakeAuthRepository implements AuthRepository {
       'city': city,
       'bio': bio,
       'sectors': sectorsOfInterest.join(','),
+      'sectorsOther': sectorsOther,
+      'linkedin': linkedin,
+      'gain': gain,
     };
     await gate;
     if (signUpFails != null) throw AuthException(signUpFails!);
@@ -286,6 +321,16 @@ class FakeAuthRepository implements AuthRepository {
     await gate;
     if (logInFails != null) throw AuthException(logInFails!);
     return loggedInUser;
+  }
+
+  int discardCalls = 0;
+  AuthFailure? discardFails;
+
+  @override
+  Future<void> discardUnverifiedAccount(String email, String password) async {
+    discardCalls++;
+    await gate;
+    if (discardFails != null) throw AuthException(discardFails!);
   }
 
   @override

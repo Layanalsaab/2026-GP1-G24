@@ -1,7 +1,6 @@
-import '../app_constants/app_strings.dart';
+import '../app_constants/validation_strings.dart';
 
-/// One line of a live checklist shown under a field ("At least 8 characters").
-/// [met] flips from false (red) to true (green) as the user types.
+/// One line of the live password checklist.
 class FieldRule {
   const FieldRule(this.label, this.met);
 
@@ -9,155 +8,172 @@ class FieldRule {
   final bool met;
 }
 
-/// Pure form validators. Each returns an error message, or null when valid.
-/// The `*Rules` methods return the same checks as a checklist, for live
-/// feedback while typing. No Flutter or Firebase imports, so they are trivial
-/// to unit test and can be reused later (reset password, change password).
+/// Pure account-form validators, following docs/06 exactly. Each returns the
+/// error message, or null when the value is valid. No Flutter or Firebase
+/// imports, so they are trivial to unit test.
 class Validators {
   Validators._();
 
-  static final _emailPattern = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]{2,}$');
-
-  /// Letters in any language, plus spaces, apostrophes, dots and hyphens.
-  static final _namePattern = RegExp(r"^[\p{L}\p{M}\s'’.\-]+$", unicode: true);
-
-  /// Saudi mobile numbers: 9 digits, starting with 5 (without the +966).
-  static final _phonePattern = RegExp(r'^5\d{8}$');
-
-  static final _uppercase = RegExp(r'[A-Z]');
-  static final _lowercase = RegExp(r'[a-z]');
-  static final _digit = RegExp(r'[0-9]');
-  static final _special = RegExp(r'[^A-Za-z0-9\s]');
-
-  /// Minimum length for passwords. Firebase only enforces 6, so we enforce more.
-  static const minPasswordLength = 8;
-
-  static const maxFullNameLength = 50;
-  static const maxEmailLength = 100;
-  static const maxPasswordLength = 32;
+  static const maxFullName = 50;
+  static const maxEmail = 100;
+  static const maxPassword = 32;
+  static const maxLinkedin = 120;
+  static const maxBio = 1000;
+  static const maxValueText = 1000;
+  static const maxOther = 40;
   static const phoneLength = 9;
-  static const maxBioLength = 160;
+
+  static final _emailPattern = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]{2,}$');
+  static final _linkedinPattern = RegExp(
+    r'^(https?://)?([a-z]{2,3}\.)?linkedin\.com/(in|company)/[A-Za-z0-9\-_%.]+/?$',
+    caseSensitive: false,
+  );
+
+  /// A word of a name: letters in any language, with an apostrophe, dot or
+  /// hyphen allowed inside, at least 2 characters (the original app rule for
+  /// which characters a name may hold).
+  static final _nameWord = RegExp(
+    r"^[\p{L}\p{M}][\p{L}\p{M}'’.\-]+$",
+    unicode: true,
+  );
 
   // ------------------------------------------------------------ full name
 
-  static List<FieldRule> fullNameRules(String? value) {
-    final name = (value ?? '').trim();
-    return [
-      FieldRule(AppStrings.ruleNameLength, name.length >= 2),
-      FieldRule(
-        AppStrings.ruleNameLetters,
-        name.isNotEmpty && _namePattern.hasMatch(name),
-      ),
-    ];
+  /// At least two words, each at least two letters.
+  static bool isFullName(String? value) {
+    final words = (value ?? '')
+        .trim()
+        .split(RegExp(r'\s+'))
+        .where((w) => w.isNotEmpty)
+        .toList();
+    return words.length >= 2 && words.every(_nameWord.hasMatch);
   }
 
-  static String? fullName(String? value) {
-    final name = (value ?? '').trim();
-    if (name.isEmpty) return AppStrings.fullNameRequired;
-    if (name.length < 2) return AppStrings.fullNameTooShort;
-    if (!_namePattern.hasMatch(name)) return AppStrings.fullNameLettersOnly;
-    return null;
-  }
+  static String? fullName(String? value) =>
+      isFullName(value) ? null : ValidationStrings.fullName;
 
   // ---------------------------------------------------------------- email
 
-  static List<FieldRule> emailRules(String? value) {
-    final email = (value ?? '').trim();
-    return [
-      FieldRule(
-        AppStrings.ruleEmailAt,
-        RegExp(r'^[^\s@]+@[^@]*$').hasMatch(email),
-      ),
-      FieldRule(
-        AppStrings.ruleEmailDomain,
-        RegExp(r'@[^\s@]+\.[^\s@]{2,}$').hasMatch(email),
-      ),
-    ];
+  static bool isEmail(String? value) =>
+      _emailPattern.hasMatch((value ?? '').trim());
+
+  /// Log in, verify and forgot-password: "Please enter your email address."
+  /// when empty, "Enter a valid email address" when malformed.
+  static String? email(String? value) {
+    final v = (value ?? '').trim();
+    if (v.isEmpty) return ValidationStrings.emailRequired;
+    if (!_emailPattern.hasMatch(v)) return ValidationStrings.emailInvalid;
+    return null;
   }
 
-  static String? email(String? value) {
-    final email = (value ?? '').trim();
-    if (email.isEmpty) return AppStrings.emailRequired;
-    if (!_emailPattern.hasMatch(email)) return AppStrings.emailInvalid;
-    return null;
+  /// Live (while typing) full-name message: shown as soon as something is
+  /// typed and it is not yet a first and last name.
+  static String? fullNameLive(String? value) =>
+      (value ?? '').trim().isEmpty || isFullName(value)
+      ? null
+      : ValidationStrings.fullName;
+
+  /// Live phone message: once something is typed and it is not yet valid.
+  static String? phoneLive(String? value) =>
+      phoneDigits(value).isEmpty || isPhone(value)
+      ? null
+      : ValidationStrings.phoneInvalid;
+
+  /// Live LinkedIn message: once something is typed and it is not a link.
+  static String? linkedinLive(String? value) =>
+      isLinkedin(value) ? null : ValidationStrings.linkedin;
+
+  /// Sign-up: shown live once something is typed.
+  static String? emailLive(String? value) {
+    final v = (value ?? '').trim();
+    if (v.isEmpty || _emailPattern.hasMatch(v)) return null;
+    return ValidationStrings.emailLive;
   }
 
   // ---------------------------------------------------------------- phone
 
-  static List<FieldRule> phoneRules(String? value) {
-    final phone = value ?? '';
-    return [
-      FieldRule(
-        AppStrings.rulePhoneDigits,
-        phone.length == phoneLength && RegExp(r'^\d+$').hasMatch(phone),
-      ),
-      FieldRule(AppStrings.rulePhoneStart, phone.startsWith('5')),
-    ];
+  /// The digits of [value] (spaces and symbols removed), at most 9.
+  static String phoneDigits(String? value) {
+    final digits = (value ?? '').replaceAll(RegExp(r'[^0-9]'), '');
+    return digits.length > phoneLength
+        ? digits.substring(0, phoneLength)
+        : digits;
   }
 
-  /// [value] is the number without the +966 country code.
-  static String? phone(String? value) {
-    final phone = (value ?? '').trim();
-    if (phone.isEmpty) return AppStrings.phoneRequired;
-    if (!_phonePattern.hasMatch(phone)) return AppStrings.phoneInvalid;
-    return null;
+  /// Exactly 9 digits (spaces are not counted) and starting with 5.
+  static bool isPhone(String? value) {
+    final d = phoneDigits(value);
+    return d.length == phoneLength && d.startsWith('5');
   }
+
+  /// Sign-up: empty -> "Please enter your phone number.", wrong -> the
+  /// 9-digit message.
+  static String? phone(String? value) {
+    if (phoneDigits(value).isEmpty) return ValidationStrings.phoneRequired;
+    return isPhone(value) ? null : ValidationStrings.phoneInvalid;
+  }
+
+  /// Edit profile.
+  static String? phoneEdit(String? value) =>
+      isPhone(value) ? null : ValidationStrings.phoneEdit;
+
+  // ------------------------------------------------------------- linkedin
+
+  /// Optional: empty is fine.
+  static bool isLinkedin(String? value) {
+    final v = (value ?? '').trim();
+    return v.isEmpty || _linkedinPattern.hasMatch(v);
+  }
+
+  static String? linkedin(String? value) =>
+      isLinkedin(value) ? null : ValidationStrings.linkedin;
 
   // ------------------------------------------------------------- password
 
+  /// The five live rules under the sign-up password field (8+ characters, one
+  /// uppercase, one lowercase, one number, one special character).
   static List<FieldRule> passwordRules(String? value) {
-    final password = value ?? '';
+    final p = value ?? '';
     return [
+      FieldRule(ValidationStrings.ruleLength, p.length >= 8),
+      FieldRule(ValidationStrings.ruleUpper, RegExp(r'[A-Z]').hasMatch(p)),
+      FieldRule(ValidationStrings.ruleLower, RegExp(r'[a-z]').hasMatch(p)),
+      FieldRule(ValidationStrings.ruleNumber, RegExp(r'[0-9]').hasMatch(p)),
       FieldRule(
-        AppStrings.rulePasswordLength,
-        password.length >= minPasswordLength,
+        ValidationStrings.ruleSpecial,
+        RegExp(r'[^A-Za-z0-9]').hasMatch(p),
       ),
-      FieldRule(AppStrings.rulePasswordUpper, password.contains(_uppercase)),
-      FieldRule(AppStrings.rulePasswordLower, password.contains(_lowercase)),
-      FieldRule(AppStrings.rulePasswordNumber, password.contains(_digit)),
-      FieldRule(AppStrings.rulePasswordSpecial, password.contains(_special)),
     ];
   }
 
-  /// Password rules: 8+ characters, one uppercase, one lowercase, one number,
-  /// one special character. Returns the first rule that fails.
-  static String? password(String? value) {
-    final password = value ?? '';
-    if (password.isEmpty) return AppStrings.passwordRequired;
-    if (password.length < minPasswordLength) return AppStrings.passwordTooShort;
-    if (!password.contains(_uppercase)) {
-      return AppStrings.passwordNeedsUppercase;
-    }
-    if (!password.contains(_lowercase)) {
-      return AppStrings.passwordNeedsLowercase;
-    }
-    if (!password.contains(_digit)) return AppStrings.passwordNeedsNumber;
-    if (!password.contains(_special)) return AppStrings.passwordNeedsSpecial;
-    return null;
-  }
+  static bool isPassword(String? value) =>
+      passwordRules(value).every((r) => r.met);
 
-  static List<FieldRule> confirmPasswordRules(
-    String? password,
-    String? confirmation,
-  ) =>
-      [
-        FieldRule(
-          AppStrings.ruleConfirmMatches,
-          (confirmation ?? '').isNotEmpty && password == confirmation,
-        ),
-      ];
-
+  /// "Passwords don’t match" once something is typed in the confirm field.
   static String? confirmPassword(String? password, String? confirmation) {
-    if ((confirmation ?? '').isEmpty) return AppStrings.confirmPasswordRequired;
-    if (password != confirmation) return AppStrings.passwordsDontMatch;
-    return null;
+    final c = confirmation ?? '';
+    if (c.isEmpty || c == password) return null;
+    return ValidationStrings.confirmMismatch;
   }
 
-  // ----------------------------------------------------- other form fields
+  static bool confirmMatches(String? password, String? confirmation) =>
+      (confirmation ?? '').isNotEmpty && confirmation == password;
+
+  // ----------------------------------------------------- selections / text
 
   static String? city(String? value) =>
-      (value ?? '').isEmpty ? AppStrings.cityRequired : null;
+      (value ?? '').trim().isEmpty ? ValidationStrings.city : null;
 
-  static String? sectors(List<String> value) =>
-      value.isEmpty ? AppStrings.sectorsRequired : null;
+  static String? sectors(Iterable<String> selected) =>
+      selected.isEmpty ? ValidationStrings.sectors : null;
+
+  /// Required free text: [message] when blank.
+  static String? requiredText(String? value, String message) =>
+      (value ?? '').trim().isEmpty ? message : null;
+
+  /// The text typed after choosing "Other": required, at most [maxOther].
+  static bool isOtherText(String? value) {
+    final v = (value ?? '').trim();
+    return v.isNotEmpty && v.length <= maxOther;
+  }
 }

@@ -1,0 +1,196 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:startsa/data_access/repositories/auth_repository.dart';
+import 'package:startsa/features/login_and_signup/screens/choose_role_screen.dart';
+import 'package:startsa/features/login_and_signup/screens/investor_interests_screen.dart';
+import 'package:startsa/features/login_and_signup/screens/investor_investments_screen.dart';
+import 'package:startsa/features/login_and_signup/screens/login_screen.dart';
+import 'package:startsa/features/login_and_signup/screens/signup_screen.dart';
+import 'package:startsa/features/login_and_signup/screens/verify_email_screen.dart';
+import 'package:startsa/features/login_and_signup/screens/welcome_screen.dart';
+import 'package:startsa/features/login_and_signup/view_models/investor_onboarding_view_model.dart';
+import 'package:startsa/features/login_and_signup/view_models/signup_flow.dart';
+import 'package:startsa/models/app_user.dart';
+import 'package:startsa/shared_ui/widgets/overlays/app_toast.dart';
+
+import '../../support/fakes.dart';
+
+const _investor = AppUser(
+  uid: 'u1',
+  role: AccountRole.investor,
+  fullName: 'Layan Alsaab',
+  email: 'layan@gmail.com',
+);
+
+Future<void> _pump(WidgetTester t, Widget home, {double w = 412}) async {
+  await t.binding.setSurfaceSize(Size(w, 892));
+  addTearDown(() => t.binding.setSurfaceSize(null));
+  await t.pumpWidget(
+    MaterialApp(navigatorKey: AppToast.navigatorKey, home: home),
+  );
+  await t.pump(const Duration(milliseconds: 800));
+}
+
+void main() {
+  setUpAll(() => GoogleFonts.config.allowRuntimeFetching = false);
+  setUp(() => AuthRepository.instance = FakeAuthRepository());
+
+  testWidgets('welcome shows the three actions', (t) async {
+    await _pump(t, const WelcomeScreen());
+    expect(find.text('Create account'), findsOneWidget);
+    expect(find.text('Log in'), findsOneWidget);
+    expect(find.text('Continue as guest'), findsOneWidget);
+  });
+
+  for (final w in [412.0, 360.0]) {
+    testWidgets('choose role -> investor sign-up at $w px', (t) async {
+      await _pump(t, const ChooseRoleScreen(), w: w);
+      expect(find.text('Choose your role'), findsOneWidget);
+      await t.tap(find.text('Investor'));
+      await t.pump(const Duration(milliseconds: 300));
+      await t.tap(find.text('Continue'));
+      await t.pump();
+      await t.pump(const Duration(milliseconds: 800));
+      expect(find.text('STEP 1 OF 4'), findsOneWidget);
+      expect(
+        find.textContaining('hope to gain', findRichText: true),
+        findsOneWidget,
+      );
+      expect(t.takeException(), isNull);
+    });
+
+    testWidgets('founder sign-up, empty submit shows errors at $w px', (
+      t,
+    ) async {
+      await _pump(
+        t,
+        SignupScreen(
+          role: AccountRole.founder,
+          flow: SignupFlow(role: AccountRole.founder),
+        ),
+        w: w,
+      );
+      expect(find.text('STEP 1 OF 6'), findsOneWidget);
+      await t.tap(find.text('Continue'));
+      await t.pump(const Duration(milliseconds: 500));
+      expect(find.text('Enter your first and last name.'), findsOneWidget);
+      expect(find.text('Please select your city.'), findsOneWidget);
+      expect(t.takeException(), isNull);
+      await t.pump(const Duration(seconds: 3));
+    });
+  }
+
+  group('sign-up live rules', () {
+    Future<void> openSignup(WidgetTester t, AccountRole role) => _pump(
+      t,
+      SignupScreen(
+        role: role,
+        flow: SignupFlow(role: role),
+      ),
+    );
+
+    testWidgets('full name needs two words, live as you type', (t) async {
+      await openSignup(t, AccountRole.founder);
+      final field = find.widgetWithText(TextField, 'e.g. Mohammed Ahmed');
+      await t.enterText(field, 'Sara');
+      await t.pump();
+      expect(find.text('Enter your first and last name.'), findsOneWidget);
+      await t.enterText(field, 'Sara Ali');
+      await t.pump();
+      expect(find.text('Enter your first and last name.'), findsNothing);
+    });
+
+    testWidgets('email and phone messages are live', (t) async {
+      await openSignup(t, AccountRole.founder);
+      await t.enterText(
+        find.widgetWithText(TextField, 'e.g. example@gmail.com'),
+        'sara@gmail',
+      );
+      await t.pump();
+      expect(
+        find.text('Enter a valid email, like name@example.com'),
+        findsOneWidget,
+      );
+      await t.enterText(find.widgetWithText(TextField, '5X XXX XXXX'), '55 12');
+      await t.pump();
+      expect(find.textContaining('9-digit Saudi number'), findsOneWidget);
+      await t.enterText(
+        find.widgetWithText(TextField, '5X XXX XXXX'),
+        '55 123 4567',
+      );
+      await t.pump();
+      expect(find.textContaining('9-digit Saudi number'), findsNothing);
+    });
+
+    testWidgets('password rules stay hidden until the field is tapped', (
+      t,
+    ) async {
+      await openSignup(t, AccountRole.investor);
+      expect(find.text('One lowercase letter'), findsNothing);
+      final pw = find.widgetWithText(TextField, 'e.g. 12345678');
+      await t.ensureVisible(pw);
+      await t.tap(pw);
+      await t.pump(const Duration(milliseconds: 300));
+      expect(find.text('At least 8 characters'), findsOneWidget);
+      expect(find.text('One lowercase letter'), findsOneWidget);
+      expect(find.text('One uppercase letter'), findsOneWidget);
+      expect(find.text('One number'), findsOneWidget);
+      expect(find.textContaining('One special character'), findsOneWidget);
+    });
+
+    testWidgets('the city picker opens, searches and selects', (t) async {
+      await openSignup(t, AccountRole.founder);
+      await t.ensureVisible(find.text('Select your city'));
+      await t.tap(find.text('Select your city'));
+      await t.pump(const Duration(milliseconds: 600));
+      expect(t.takeException(), isNull);
+      await t.enterText(find.byType(TextField).last, 'Jed');
+      await t.pump(const Duration(milliseconds: 300));
+      expect(find.text('Jeddah'), findsWidgets);
+      expect(t.takeException(), isNull);
+    });
+  });
+
+  testWidgets('login: empty submit shows both errors', (t) async {
+    await _pump(t, const LoginScreen());
+    await t.tap(find.text('Log in').last);
+    await t.pump(const Duration(milliseconds: 300));
+    expect(find.text('Please enter your email address.'), findsOneWidget);
+    expect(find.text('Enter your password'), findsNWidgets(2)); // hint + error
+  });
+
+  testWidgets('verify step opens with its dialog', (t) async {
+    final flow = SignupFlow(role: AccountRole.founder)
+      ..email = 'sara@gmail.com';
+    await _pump(t, VerifyEmailScreen(flow: flow));
+    await t.pump(const Duration(milliseconds: 500));
+    expect(find.text('Resend verification email'), findsOneWidget);
+    expect(find.text('sara@gmail.com'), findsWidgets);
+    await t.tap(find.text('OK'));
+    await t.pump(const Duration(milliseconds: 500));
+    expect(find.text('STEP 2 OF 6'), findsOneWidget);
+  });
+
+  testWidgets('investor steps render and Next is gated', (t) async {
+    await _pump(t, const InvestorInvestmentsScreen(user: _investor), w: 360);
+    expect(find.text('STEP 3 OF 4'), findsOneWidget);
+    await t.tap(find.text('1–5'));
+    await t.pump(const Duration(milliseconds: 200));
+    await t.tap(find.text('Next'));
+    await t.pump(const Duration(milliseconds: 300));
+    expect(find.text('Please choose one.'), findsWidgets);
+    expect(t.takeException(), isNull);
+    await t.pump(const Duration(seconds: 3));
+
+    final vm = InvestorOnboardingViewModel(user: _investor);
+    addTearDown(vm.dispose);
+    await _pump(t, InvestorInterestsScreen(viewModel: vm), w: 360);
+    expect(find.text('STEP 4 OF 4'), findsOneWidget);
+    await t.tap(find.text('Finish'));
+    await t.pump(const Duration(milliseconds: 300));
+    expect(find.text('Select at least one sector.'), findsOneWidget);
+    expect(t.takeException(), isNull);
+    await t.pump(const Duration(seconds: 3));
+  });
+}

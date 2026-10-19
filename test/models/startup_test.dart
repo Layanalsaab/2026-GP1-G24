@@ -3,6 +3,7 @@ import 'package:startsa/app_constants/app_strings.dart';
 import 'package:startsa/app_constants/firestore_collections.dart';
 import 'package:startsa/models/startup.dart';
 import 'package:startsa/models/startup_enums.dart';
+import 'package:startsa/models/team_member.dart';
 
 void main() {
   const startup = Startup(
@@ -42,7 +43,7 @@ void main() {
     expect(map[StartupFields.lookingFor], ['funding', 'mentorship']);
   });
 
-  test('drops the funding amount when not looking for funding', () {
+  test('keeps the funding amount whatever is ticked (it is required)', () {
     const noFunding = Startup(
       id: 's2',
       founderId: 'u1',
@@ -55,7 +56,7 @@ void main() {
       lookingFor: {LookingFor.techDevelopment},
       fundingRequirement: 100,
     );
-    expect(noFunding.toMap()[StartupFields.fundingRequirement], isNull);
+    expect(noFunding.toMap()[StartupFields.fundingRequirement], 100);
   });
 
   test('a document with an unknown sector is skipped, not a crash', () {
@@ -82,6 +83,21 @@ void main() {
         'PropTech',
         'CleanTech',
         'Tourism',
+        'SaaS',
+        'AI',
+        'Cybersecurity',
+        'Gaming',
+        'Media',
+        'FoodTech',
+        'Mobility',
+        'Retail',
+        'Energy',
+        'InsurTech',
+        'LegalTech',
+        'HR Tech',
+        'Biotech',
+        'Manufacturing',
+        'Sports',
         'Other',
       ]);
     });
@@ -137,8 +153,8 @@ void main() {
       expect(Sector.fromValue('fintech'), Sector.fintech);
       expect(Sector.fromValue('ecommerce_retail'), Sector.ecommerce);
       expect(Sector.fromValue('logistics_transport'), Sector.logistics);
-      expect(Sector.fromValue('food_beverage'), Sector.other);
-      expect(Sector.fromValue('software_cloud'), Sector.other);
+      expect(Sector.fromValue('food_beverage'), Sector.foodtech);
+      expect(Sector.fromValue('software_cloud'), Sector.saas);
       expect(Sector.fromValue('space'), isNull);
     });
 
@@ -244,6 +260,52 @@ void main() {
       expect(summary.length, lessThanOrEqualTo(Startup.summaryMaxLength + 1));
       expect(summary, endsWith('…'));
       expect(summary, isNot(contains('wor…')));
+    });
+  });
+
+  group('redesign fields', () {
+    test('round-trip through the map', () {
+      final full = startup.copyWith(
+        problem: 'p',
+        solution: 's',
+        customers: 'c',
+        advantage: 'a',
+        tam: 2400000000,
+        sam: 600000000,
+        som: 24000000,
+        team: const [
+          TeamMember(
+            name: 'Faisal Alkhaldi',
+            role: 'CTO',
+            specialization: 'Mobile',
+            yearsExperience: 10,
+            bio: 'b',
+          ),
+        ],
+        growth: 'g',
+        capital: 350000,
+        revenueYear1: 1,
+        revenueYear2: 2,
+        revenueYear3: 3,
+        valuation: 0,
+        wantsLeadInvestor: true,
+      );
+      final back = Startup.fromMap('s1', full.toMap())!;
+      expect(back.tam, 2400000000);
+      expect(back.team.single.meta, 'CTO · 10 yrs · Mobile');
+      expect(back.team.single.initials, 'FA');
+      expect(back.valuation, 0);
+      expect(back.wantsLeadInvestor, isTrue);
+      expect(back.expectedRevenue, [1, 2, 3]);
+      expect(back.hasBusinessDetails, isTrue);
+    });
+
+    test('an old document without them still loads', () {
+      final back = Startup.fromMap('s1', startup.toMap())!;
+      expect(back.team, isEmpty);
+      expect(back.tam, isNull);
+      expect(back.wantsLeadInvestor, isNull);
+      expect(back.problem, '');
     });
   });
 }

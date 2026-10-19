@@ -1,4 +1,5 @@
 import '../app_constants/firestore_collections.dart';
+import 'investor_criteria.dart';
 
 /// Roles that have an account. Startup seekers never have one.
 enum AccountRole {
@@ -35,6 +36,11 @@ class AppUser {
     this.preferredStages = const [],
     this.ticketSize,
     this.photoUrl,
+    this.linkedin,
+    this.gain = '',
+    this.valueOffered = '',
+    this.sectorsOther,
+    this.investorCriteria,
   });
 
   final String uid;
@@ -72,6 +78,48 @@ class AppUser {
   /// Download URL of the profile photo; null when the user has none.
   final String? photoUrl;
 
+  /// Optional LinkedIn profile link (sign-up, Edit profile).
+  final String? linkedin;
+
+  /// Investors: "What I hope to gain from startups" (at most 1000).
+  final String gain;
+
+  /// Investors: "What I can bring to startups" (at most 1000).
+  final String valueOffered;
+
+  /// What the user typed for "Other" in their sectors of interest.
+  final String? sectorsOther;
+
+  /// Investors: the answers to the sign-up questions (steps 3 and 4).
+  final InvestorCriteria? investorCriteria;
+
+  bool get isInvestor => role == AccountRole.investor;
+  bool get isFounder => role == AccountRole.founder;
+
+  /// First word of the full name ("Welcome back, Shahad").
+  String get firstName {
+    final words = fullName.trim().split(RegExp(r'\s+'));
+    return words.isEmpty ? '' : words.first;
+  }
+
+  /// Two letters for the avatar: first letter of the first and last word.
+  String get initials {
+    final words = fullName
+        .trim()
+        .split(RegExp(r'\s+'))
+        .where((w) => w.isNotEmpty)
+        .toList();
+    if (words.isEmpty) return '?';
+    String first(String w) => String.fromCharCode(w.runes.first);
+    if (words.length == 1) {
+      final runes = words.first.runes.toList();
+      return (first(words.first) +
+              (runes.length > 1 ? String.fromCharCode(runes[1]) : ''))
+          .toUpperCase();
+    }
+    return (first(words.first) + first(words.last)).toUpperCase();
+  }
+
   AppUser copyWith({
     String? fullName,
     String? city,
@@ -84,6 +132,11 @@ class AppUser {
     String? ticketSize,
     String? photoUrl,
     bool clearPhoto = false,
+    String? linkedin,
+    String? gain,
+    String? valueOffered,
+    String? sectorsOther,
+    InvestorCriteria? investorCriteria,
   }) => AppUser(
     uid: uid,
     role: role,
@@ -99,6 +152,11 @@ class AppUser {
     preferredStages: preferredStages ?? this.preferredStages,
     ticketSize: ticketSize ?? this.ticketSize,
     photoUrl: clearPhoto ? null : (photoUrl ?? this.photoUrl),
+    linkedin: linkedin ?? this.linkedin,
+    gain: gain ?? this.gain,
+    valueOffered: valueOffered ?? this.valueOffered,
+    sectorsOther: sectorsOther ?? this.sectorsOther,
+    investorCriteria: investorCriteria ?? this.investorCriteria,
   );
 
   /// Returns null when the document is missing a valid role, so callers never
@@ -124,6 +182,13 @@ class AppUser {
       preferredStages: _strings(data['preferredStages']),
       ticketSize: data['ticketSize'] as String?,
       photoUrl: data[UserFields.photoUrl] as String?,
+      linkedin: data[UserFields.linkedin] as String?,
+      gain: (data[UserFields.gain] as String?) ?? '',
+      valueOffered: (data[UserFields.valueOffered] as String?) ?? '',
+      sectorsOther: data[UserFields.sectorsOther] as String?,
+      investorCriteria: InvestorCriteria.fromMap(
+        data[UserFields.investorCriteria],
+      ),
     );
   }
 

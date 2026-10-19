@@ -1,21 +1,14 @@
-// State management: Provider.
-//
-// The rest of the app already keeps screen state in ChangeNotifier view
-// models. Provider is the thinnest layer on top of that pattern: it creates a
-// view model for a screen, disposes it with the screen, and lets small parts
-// of the widget tree rebuild with `context.watch` / `context.select` instead
-// of passing the view model down by hand. Riverpod would mean rewriting the
-// existing view models for no gain at this size, so Provider is used for the
-// whole startup feature.
-
 import 'package:flutter/foundation.dart';
 
+import '../../../app_constants/founder_tools_strings.dart';
 import '../../../data_access/repositories/startup_repository.dart';
+import '../../../helpers/app_session.dart';
+import '../../../helpers/safe_notifier.dart';
 import '../../../models/startup.dart';
-import 'startup_error_message.dart';
 
-/// State of the My Startups list (Figma "V2 · 44 / 44b").
-class MyStartupsViewModel extends ChangeNotifier {
+/// State of the My Startups list (docs/05 D1): loads the founder's startups
+/// and publishes their ids to [AppSession] so Hub and Explore hide them.
+class MyStartupsViewModel extends ChangeNotifier with SafeNotifier {
   MyStartupsViewModel({StartupRepository? repository})
     : _repository = repository ?? StartupRepository.instance;
 
@@ -23,51 +16,27 @@ class MyStartupsViewModel extends ChangeNotifier {
 
   List<Startup> startups = const [];
 
-  /// True only for the first load, when there is nothing to show yet.
+  /// True only until the first load finishes.
   bool isLoading = true;
 
-  /// Set when the last load failed. Shown as a full-page error when the list
-  /// is empty, or as a snackbar over an existing list.
+  /// Set when the last load failed.
   String? error;
-
-  bool _disposed = false;
 
   bool get isEmpty => !isLoading && error == null && startups.isEmpty;
 
-  /// Loads the list. Used for the first load, Retry, pull-to-refresh, and
-  /// after returning from Add/Edit. Never throws.
+  /// Loads (or reloads) the list. Never throws.
   Future<void> load() async {
     error = null;
     if (startups.isEmpty) isLoading = true;
-    _notify();
+    notifyListeners();
     try {
       startups = await _repository.fetchMyStartups();
-    } catch (e) {
-      error = startupErrorMessage(e);
+      AppSession.instance.setOwnStartupIds([for (final s in startups) s.id]);
+    } catch (_) {
+      error = FounderToolsStrings.loadFailed;
     } finally {
       isLoading = false;
-      _notify();
+      notifyListeners();
     }
-  }
-
-  /// Removes a startup from the list right away after it was deleted on the
-  /// Manage screen, so it doesn't flash back while the list reloads.
-  void removeLocally(String startupId) {
-    startups = [
-      for (final s in startups)
-        if (s.id != startupId) s,
-    ];
-    _notify();
-  }
-
-  // A load can finish after the screen is gone (e.g. the founder logs out).
-  void _notify() {
-    if (!_disposed) notifyListeners();
-  }
-
-  @override
-  void dispose() {
-    _disposed = true;
-    super.dispose();
   }
 }

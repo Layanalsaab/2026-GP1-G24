@@ -1,88 +1,37 @@
 import 'package:flutter/material.dart';
 
-import '../../../app_constants/program_strings.dart';
-import '../../../shared_ui/common_widgets/home_parts.dart';
-import '../../../shared_ui/theme/app_theme.dart';
-import '../view_models/programs_view_model.dart';
-import 'program_profile_screen.dart';
+import '../../../shared_ui/widgets/lists/empty_state.dart';
+import '../../search/screens/hub_screen.dart';
+import '../../search/view_models/home_view_model.dart';
+import '../../search/widgets/home_layout.dart';
+import '../../../app_constants/home_strings.dart';
 
-/// Figma "V2 · 38 / 38b / 38c · Support Systems": accelerators, incubators
-/// and studios, with search and category chips.
-///
-/// Design phase: the list is sample data. Search and the chips filter it.
-class ProgramsScreen extends StatefulWidget {
-  const ProgramsScreen({super.key, required this.topBar, this.isGuest = false});
+/// The Support Channels page (Figma 24, 26e, 27c): program cards (tag = type)
+/// filtered by the shell's search and advanced search (Type, Sector focus,
+/// Program length, City, Sort by). No switch. Rendered inside the shell's
+/// scroll view.
+class ProgramsScreen extends StatelessWidget {
+  const ProgramsScreen({super.key, required this.viewModel});
 
-  /// The shell's top bar (avatar, logo, bell).
-  final Widget topBar;
-
-  /// A guest (startup seeker) has no bookmarks.
-  final bool isGuest;
-
-  @override
-  State<ProgramsScreen> createState() => _ProgramsScreenState();
-}
-
-class _ProgramsScreenState extends State<ProgramsScreen> {
-  final _viewModel = ProgramsViewModel();
-
-  @override
-  void dispose() {
-    _viewModel.dispose();
-    super.dispose();
-  }
+  final HomeViewModel viewModel;
 
   @override
   Widget build(BuildContext context) {
-    return ColoredBox(
-      color: AppColors.cream,
-      child: ListenableBuilder(
-        listenable: _viewModel,
-        builder: (context, _) {
-          final programs = _viewModel.programs;
-          return Column(
-            children: [
-              widget.topBar,
-              HomeSearchField(
-                hint: ProgramStrings.searchHint,
-                onChanged: _viewModel.setQuery,
-              ),
-              HomeFilters(
-                labels: _viewModel.filters,
-                selected: _viewModel.filterIndex,
-                onSelect: _viewModel.selectFilter,
-              ),
-              Expanded(
-                child: programs.isEmpty
-                    ? Center(
-                        child: Padding(
-                          padding: const EdgeInsets.all(32),
-                          child: Text(
-                            'No results match your search.',
-                            textAlign: TextAlign.center,
-                            style: AppText.bodyMuted,
-                          ),
-                        ),
-                      )
-                    : ListView.separated(
-                        padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
-                        itemCount: programs.length,
-                        separatorBuilder: (_, _) => const SizedBox(height: 12),
-                        itemBuilder: (context, i) => SupportSystemCard(
-                          program: programs[i],
-                          showBookmark: !widget.isGuest,
-                          onViewDetails: () => Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) =>
-                                  ProgramProfileScreen(program: programs[i]),
-                            ),
-                          ),
-                        ),
-                      ),
-              ),
-            ],
-          );
-        },
+    final vm = viewModel;
+    final cards = vm.programCards;
+    return KeyedSubtree(
+      key: ValueKey(vm.paneKey),
+      child: HomeColumn(
+        slots: [
+          if (vm.filtering)
+            HomeSlot(
+              homeResultsRow(vm, HomeStrings.resultCount(cards.length)),
+              bottom: -2,
+            ),
+          if (cards.isNotEmpty) cardsSlot(cards),
+          if (cards.isEmpty)
+            HomeSlot(EmptyState.noMatches(onAction: vm.clearAll)),
+        ],
       ),
     );
   }

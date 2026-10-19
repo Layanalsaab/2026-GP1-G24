@@ -2,8 +2,7 @@
 enum ProgramType {
   accelerator('Accelerator'),
   incubator('Incubator'),
-  studio('Venture studio'),
-  angelNetwork('Angel network');
+  studio('Startup studio');
 
   const ProgramType(this.label);
 

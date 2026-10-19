@@ -4,6 +4,12 @@ class FirestoreCollections {
 
   static const users = 'users';
   static const startups = 'startups';
+  static const requests = 'requests';
+  static const interests = 'interests';
+  static const publicProfiles = 'publicProfiles';
+
+  /// `users/{uid}/bookmarks/{itemKey}`
+  static const bookmarks = 'bookmarks';
 }
 
 class UserFields {
@@ -32,6 +38,20 @@ class UserFields {
   static const preferredSectors = 'preferredSectors';
   static const preferredStages = 'preferredStages';
   static const ticketSize = 'ticketSize';
+
+  // Added by the redesigned sign-up (docs/07).
+  static const linkedin = 'linkedin';
+
+  /// Investor: "What I hope to gain from startups".
+  static const gain = 'gain';
+
+  /// Investor: "What I can bring to startups" (also the sign-up step 4
+  /// "Besides funding, what can you offer startups?").
+  static const valueOffered = 'valueOffered';
+  static const sectorsOther = 'sectorsOther';
+
+  /// Investor questions from sign-up steps 3 and 4 (a map, see InvestorCriteria).
+  static const investorCriteria = 'investorCriteria';
 }
 
 /// Fields of a `startups/{startupId}` document. firestore.rules uses the same
@@ -59,6 +79,49 @@ class StartupFields {
   static const logoUrl = 'logoUrl';
   static const createdAt = 'createdAt';
   static const updatedAt = 'updatedAt';
+
+  // Added by the redesigned Add / Edit startup (docs/07).
+  static const problem = 'problem';
+  static const solution = 'solution';
+  static const customers = 'customers';
+  static const advantage = 'advantage';
+  static const tam = 'tam';
+  static const sam = 'sam';
+  static const som = 'som';
+  static const team = 'team';
+  static const growth = 'growth';
+  static const capital = 'capital';
+  static const revenueYear1 = 'revenueYear1';
+  static const revenueYear2 = 'revenueYear2';
+  static const revenueYear3 = 'revenueYear3';
+  static const valuation = 'valuation';
+  static const wantsLeadInvestor = 'wantsLeadInvestor';
+}
+
+/// Fields of a `requests/{id}` document (investor -> startup).
+class RequestFields {
+  RequestFields._();
+
+  static const startupId = 'startupId';
+  static const founderId = 'founderId';
+  static const investorId = 'investorId';
+  static const message = 'message';
+  static const amount = 'amount';
+  static const equity = 'equity';
+  static const status = 'status';
+  static const createdAt = 'createdAt';
+}
+
+/// Fields of an `interests/{id}` document (guest -> startup).
+class InterestFields {
+  InterestFields._();
+
+  static const startupId = 'startupId';
+  static const name = 'name';
+  static const roleLine = 'roleLine';
+  static const message = 'message';
+  static const createdAt = 'createdAt';
+  static const seenByFounder = 'seenByFounder';
 }
 
 /// Firebase Storage folders. storage.rules uses the same paths.

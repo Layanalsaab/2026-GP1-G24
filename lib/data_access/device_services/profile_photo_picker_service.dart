@@ -5,7 +5,7 @@ import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../app_constants/account_strings.dart';
-import '../../shared_ui/theme/app_theme.dart';
+import '../../shared_ui/theme/app_colors.dart';
 
 enum ProfilePhotoFailure { tooLarge, failed }
 

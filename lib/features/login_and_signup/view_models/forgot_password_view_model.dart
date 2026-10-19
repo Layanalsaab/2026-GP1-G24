@@ -1,40 +1,54 @@
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 
 import '../../../app_constants/app_strings.dart';
+import '../../../app_constants/validation_strings.dart';
 import '../../../data_access/repositories/auth_repository.dart';
+import '../../../helpers/safe_notifier.dart';
 import '../../../helpers/validators.dart';
 import '../../../models/auth_failure.dart';
 
-class ForgotPasswordViewModel extends ChangeNotifier {
-  ForgotPasswordViewModel({AuthRepository? authRepository})
-      : _auth = authRepository ?? AuthRepository.instance;
+/// Forgot password (docs/05 A13, docs/06 section 6).
+class ForgotPasswordViewModel extends ChangeNotifier with SafeNotifier {
+  ForgotPasswordViewModel({String email = '', AuthRepository? authRepository})
+    : _auth = authRepository ?? AuthRepository.instance,
+      email = TextEditingController(text: email) {
+    this.email.addListener(notifyListeners);
+  }
 
   final AuthRepository _auth;
+  final TextEditingController email;
 
+  bool attempted = false;
   bool isLoading = false;
-  String? emailError;
+
+  /// A network / rate-limit problem to show as a toast.
   String? formError;
 
-  /// The confirmation shown after sending. It is identical whether or not the
-  /// email is registered, so the app never reveals which emails have accounts.
-  String? successMessage;
+  /// "Enter a valid email address" for an empty or malformed email.
+  String? get emailError =>
+      (attempted || email.text.trim().isNotEmpty) &&
+          !Validators.isEmail(email.text)
+      ? ValidationStrings.emailInvalid
+      : null;
 
-  Future<void> submit(String email) async {
-    if (isLoading) return;
+  bool get emailValid => Validators.isEmail(email.text);
 
-    emailError = Validators.email(email);
+  /// Sends the reset link. Returns the email it was sent to, or null when
+  /// the email is invalid or sending failed ([formError]).
+  Future<String?> submit() async {
+    if (isLoading) return null;
+    attempted = true;
     formError = null;
-    successMessage = null;
-    if (emailError != null) {
+    if (!Validators.isEmail(email.text)) {
       notifyListeners();
-      return;
+      return null;
     }
-
+    final address = email.text.trim();
     isLoading = true;
     notifyListeners();
     try {
-      await _auth.sendPasswordReset(email.trim());
-      successMessage = AppStrings.resetLinkMessage;
+      await _auth.sendPasswordReset(address);
+      return address;
     } on AuthException catch (e) {
       formError = switch (e.failure) {
         AuthFailure.network => AppStrings.networkError,
@@ -47,5 +61,13 @@ class ForgotPasswordViewModel extends ChangeNotifier {
       isLoading = false;
       notifyListeners();
     }
+    return null;
+  }
+
+  @override
+  void dispose() {
+    email.removeListener(notifyListeners);
+    email.dispose();
+    super.dispose();
   }
 }

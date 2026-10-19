@@ -2,11 +2,16 @@ rules_version = '2';
 
 // Deploy with: firebase deploy --only firestore:rules
 // (or paste into Firebase console -> Firestore -> Rules -> Publish).
+//
+// NOT YET TESTED against the emulator: the redesign added fields and the
+// requests / interests / bookmarks / publicProfiles collections (docs/08).
+// Run the rules unit tests or the emulator before publishing.
 service cloud.firestore {
   match /databases/{database}/documents {
 
     // ---------------------------------------------------------------- users
-    // Account management rules (same as the live console rules).
+    // Account management rules. Only the owner reads their own document;
+    // what other people may see of an investor lives in publicProfiles.
     match /users/{uid} {
       allow read: if request.auth != null && request.auth.uid == uid;
 
@@ -16,6 +21,8 @@ service cloud.firestore {
         && request.resource.data.keys().hasOnly(['role', 'fullName', 'email',
                                                  'createdAt', 'phone', 'city',
                                                  'bio', 'sectorsOfInterest',
+                                                 'sectorsOther', 'linkedin',
+                                                 'gain', 'valueOffered',
                                                  'photoUrl'])
         && validProfile(request.resource.data);
 
@@ -24,28 +31,64 @@ service cloud.firestore {
         && request.resource.data.diff(resource.data).affectedKeys()
              .hasOnly(['onboardingCompleted', 'sector', 'stage',
                        'city', 'fullName', 'bio', 'phone',
-                       'sectorsOfInterest',
+                       'sectorsOfInterest', 'sectorsOther',
+                       'linkedin', 'gain', 'valueOffered',
+                       'investorCriteria',
                        'photoUrl',
                        'preferredSectors', 'preferredStages',
                        'ticketSize'])
         && validProfile(request.resource.data);
 
       allow delete: if request.auth != null && request.auth.uid == uid;
+
+      // Bookmarks: owner only. The document id is the item key
+      // (s-<startupId>, i-<investorId>, p-<programId>).
+      match /bookmarks/{itemKey} {
+        allow read, write: if request.auth != null && request.auth.uid == uid;
+      }
     }
 
     // Limits shared with the app (lib/helpers/validators.dart): name 2..50,
-    // bio <= 160, email <= 100, phone = 9 digits starting with 5.
+    // bio <= 1000, email <= 100, phone = 9 digits starting with 5, texts
+    // <= 1000.
     function validProfile(d) {
       return d.fullName is string
           && d.fullName.size() >= 2 && d.fullName.size() <= 50
           && d.email is string && d.email.size() <= 100
-          && (!('bio' in d) || (d.bio is string && d.bio.size() <= 160))
+          && (!('bio' in d) || (d.bio is string && d.bio.size() <= 1000))
           && (!('phone' in d)
               || (d.phone is string && d.phone.matches('^5[0-9]{8}$')))
           && (!('city' in d) || d.city is string)
           && (!('sectorsOfInterest' in d)
-              || (d.sectorsOfInterest is list && d.sectorsOfInterest.size() <= 12))
+              || (d.sectorsOfInterest is list && d.sectorsOfInterest.size() <= 25))
+          && optionalString(d, 'sectorsOther', 40)
+          && optionalString(d, 'linkedin', 120)
+          && optionalString(d, 'gain', 1000)
+          && optionalString(d, 'valueOffered', 1000)
           && optionalString(d, 'photoUrl', 2048);
+    }
+
+    // ------------------------------------------------------- publicProfiles
+    // The public face of an investor (name, title, city, sectors, stages,
+    // ticket, about, what they bring / hope to gain, linkedin, photo) so
+    // founders and guests can browse investors. Never the email or phone.
+    // Written by the owner (or a Cloud Function); readable by everyone.
+    match /publicProfiles/{uid} {
+      allow read: if true;
+      allow create, update: if request.auth != null && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['fullName', 'title', 'city',
+                                                 'sectors', 'stages',
+                                                 'ticketRange', 'about', 'bio',
+                                                 'valueOffered', 'hopeToGain',
+                                                 'linkedin', 'photoUrl',
+                                                 'createdAt'])
+        && request.resource.data.fullName is string
+        && request.resource.data.fullName.size() <= 50
+        && optionalString(request.resource.data, 'about', 1000)
+        && optionalString(request.resource.data, 'bio', 1000)
+        && optionalString(request.resource.data, 'valueOffered', 1000)
+        && optionalString(request.resource.data, 'hopeToGain', 1000);
+      allow delete: if request.auth != null && request.auth.uid == uid;
     }
 
     // ------------------------------------------------------------- startups
@@ -76,10 +119,9 @@ service cloud.firestore {
     }
 
     // Mirrors the app's validation (lib/helpers/startup_validators.dart and
-    // the enums in lib/models/startup_enums.dart; limits come from
-    // lib/helpers/validators.dart). The "legacy" values are what documents
-    // saved before the Figma lists were adopted still contain, so those
-    // startups can be updated without being rewritten first.
+    // the enums in lib/models/startup_enums.dart). The "legacy" values are
+    // what documents saved before the current lists were adopted still
+    // contain, so those startups can be updated without being rewritten first.
     function validStartup(d) {
       return d.keys().hasAll(['founderId', 'name', 'description', 'sector',
                               'stage', 'businessModel', 'location',
@@ -90,15 +132,22 @@ service cloud.firestore {
                              'location', 'foundedYear', 'websiteUrl',
                              'lookingFor', 'lookingForOther',
                              'fundingRequirement', 'isPublic',
-                             'logoUrl', 'createdAt', 'updatedAt'])
-        && d.name is string && d.name.size() >= 3 && d.name.size() <= 40
-        // Legacy, optional: the form no longer asks for it.
-        && optionalString(d, 'tagline', 80)
-        && d.description is string
-        && d.description.size() >= 20 && d.description.size() <= 1000
+                             'logoUrl', 'createdAt', 'updatedAt',
+                             'problem', 'solution', 'customers', 'advantage',
+                             'tam', 'sam', 'som', 'team', 'growth',
+                             'capital', 'revenueYear1', 'revenueYear2',
+                             'revenueYear3', 'valuation',
+                             'wantsLeadInvestor'])
+        && d.name is string && d.name.size() >= 1 && d.name.size() <= 40
+        // The one-line pitch (stored as tagline): at most 120.
+        && optionalString(d, 'tagline', 120)
+        && d.description is string && d.description.size() <= 1500
         && d.sector in ['healthtech', 'fintech', 'edtech', 'ecommerce',
                         'logistics', 'agritech', 'proptech', 'cleantech',
-                        'tourism', 'other',
+                        'tourism', 'saas', 'ai', 'cybersecurity', 'gaming',
+                        'media', 'foodtech', 'mobility', 'retail', 'energy',
+                        'insurtech', 'legaltech', 'hrtech', 'biotech',
+                        'manufacturing', 'sports', 'other',
                         // legacy
                         'ecommerce_retail', 'logistics_transport',
                         'food_beverage', 'software_cloud']
@@ -115,8 +164,9 @@ service cloud.firestore {
                           'buraydah', 'dammam', 'dhahran', 'hafar_al_batin',
                           'hail', 'jazan', 'jeddah', 'khamis_mushait',
                           'makkah', 'madinah', 'najran', 'riyadh', 'sakaka',
-                          'tabuk', 'taif', 'unaizah', 'yanbu',
+                          'tabuk',
                           // legacy
+                          'taif', 'unaizah', 'yanbu',
                           'khobar', 'mecca', 'medina', 'other']
         && d.lookingFor is list && d.lookingFor.size() >= 1
         && d.lookingFor.hasOnly(['funding', 'cofounder', 'talent',
@@ -136,6 +186,23 @@ service cloud.firestore {
         && validFoundedYear(d)
         && optionalString(d, 'websiteUrl', 2048)
         && optionalString(d, 'logoUrl', 2048)
+        && optionalString(d, 'problem', 1000)
+        && optionalString(d, 'solution', 1000)
+        && optionalString(d, 'customers', 1000)
+        && optionalString(d, 'advantage', 1000)
+        && optionalString(d, 'growth', 1000)
+        && optionalMoney(d, 'tam')
+        && optionalMoney(d, 'sam')
+        && optionalMoney(d, 'som')
+        && optionalMoney(d, 'capital')
+        && optionalMoney(d, 'revenueYear1')
+        && optionalMoney(d, 'revenueYear2')
+        && optionalMoney(d, 'revenueYear3')
+        // The valuation may be 0.
+        && optionalMoney(d, 'valuation')
+        && (!('team' in d) || (d.team is list && d.team.size() <= 20))
+        && (!('wantsLeadInvestor' in d) || d.wantsLeadInvestor == null
+            || d.wantsLeadInvestor is bool)
         && validFunding(d)
         && d.isPublic is bool;
     }
@@ -151,18 +218,81 @@ service cloud.firestore {
         || (d[field] is string && d[field].size() <= maxLength);
     }
 
+    // A SAR amount: a whole number, 0 or more, at most 13 digits.
+    function optionalMoney(d, field) {
+      return !(field in d) || d[field] == null
+        || (d[field] is int && d[field] >= 0 && d[field] < 10000000000000);
+    }
+
+    // The founded year runs from 1900 to the current year.
     function validFoundedYear(d) {
       return !('foundedYear' in d) || d.foundedYear == null
-        || (d.foundedYear is int && d.foundedYear >= 2000
+        || (d.foundedYear is int && d.foundedYear >= 1900
             && d.foundedYear <= request.time.year());
     }
 
-    // fundingRequirement is required (> 0) when looking for Funding, and
-    // must be empty otherwise.
+    // The funding amount is required (> 0) in the Funding & goals step.
     function validFunding(d) {
-      return ('funding' in d.lookingFor)
-        ? (d.fundingRequirement is int && d.fundingRequirement > 0)
-        : (!('fundingRequirement' in d) || d.fundingRequirement == null);
+      return d.fundingRequirement is int && d.fundingRequirement > 0;
+    }
+
+    // ------------------------------------------------------------- requests
+    // An investor's request to a startup. Created by the investor, read by
+    // that investor and by the startup's founder, and only the founder can
+    // change the status.
+    match /requests/{requestId} {
+      allow read: if request.auth != null
+        && (resource.data.investorId == request.auth.uid
+            || resource.data.founderId == request.auth.uid);
+
+      allow create: if request.auth != null
+        && request.resource.data.investorId == request.auth.uid
+        && request.resource.data.status == 'pending'
+        && request.resource.data.keys().hasOnly(['startupId', 'founderId',
+                                                 'investorId', 'message',
+                                                 'amount', 'equity', 'status',
+                                                 'createdAt'])
+        && request.resource.data.message is string
+        && request.resource.data.message.size() <= 1000
+        && request.resource.data.amount is int
+        && request.resource.data.amount > 0
+        && request.resource.data.equity is number
+        && request.resource.data.equity > 0
+        && request.resource.data.equity < 100;
+
+      allow update: if request.auth != null
+        && resource.data.founderId == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['status'])
+        && request.resource.data.status in ['pending', 'accepted', 'declined'];
+
+      // The investor may withdraw their own request.
+      allow delete: if request.auth != null
+        && resource.data.investorId == request.auth.uid;
+    }
+
+    // ------------------------------------------------------------ interests
+    // A startup seeker's "Express interest". Guests have no account, so the
+    // app signs them in anonymously (or goes through a Cloud Function).
+    // Only the startup's founder reads them and marks them seen.
+    match /interests/{interestId} {
+      allow create: if request.auth != null
+        && request.resource.data.keys().hasOnly(['startupId', 'name',
+                                                 'roleLine', 'message',
+                                                 'createdAt', 'seenByFounder'])
+        && request.resource.data.seenByFounder == false
+        && request.resource.data.message is string
+        && request.resource.data.message.size() <= 1000;
+
+      allow read: if request.auth != null
+        && get(/databases/$(database)/documents/startups/$(resource.data.startupId))
+             .data.founderId == request.auth.uid;
+
+      allow update: if request.auth != null
+        && get(/databases/$(database)/documents/startups/$(resource.data.startupId))
+             .data.founderId == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['seenByFounder']);
     }
   }
 }

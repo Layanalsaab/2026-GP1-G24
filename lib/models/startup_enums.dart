@@ -33,6 +33,21 @@ enum Sector {
   proptech('proptech', 'PropTech'),
   cleantech('cleantech', 'CleanTech'),
   tourism('tourism', 'Tourism'),
+  saas('saas', 'SaaS'),
+  ai('ai', 'AI'),
+  cybersecurity('cybersecurity', 'Cybersecurity'),
+  gaming('gaming', 'Gaming'),
+  media('media', 'Media'),
+  foodtech('foodtech', 'FoodTech'),
+  mobility('mobility', 'Mobility'),
+  retail('retail', 'Retail'),
+  energy('energy', 'Energy'),
+  insurtech('insurtech', 'InsurTech'),
+  legaltech('legaltech', 'LegalTech'),
+  hrtech('hrtech', 'HR Tech'),
+  biotech('biotech', 'Biotech'),
+  manufacturing('manufacturing', 'Manufacturing'),
+  sports('sports', 'Sports'),
   other('other', 'Other');
 
   const Sector(this.value, this.label);
@@ -40,16 +55,24 @@ enum Sector {
   final String value;
   final String label;
 
-  /// Stored values from before the Figma list: old value -> nearest sector.
+  /// Stored values from before the current list: old value -> nearest sector.
   static const _legacy = {
     'ecommerce_retail': Sector.ecommerce,
     'logistics_transport': Sector.logistics,
-    'food_beverage': Sector.other,
-    'software_cloud': Sector.other,
+    'food_beverage': Sector.foodtech,
+    'software_cloud': Sector.saas,
   };
 
   static Sector? fromValue(Object? raw) =>
       _fromValue(values, raw, (e) => e.value, _legacy);
+
+  /// The sector with this display [label] ("HR Tech"), or null.
+  static Sector? fromLabel(String label) {
+    for (final item in values) {
+      if (item.label == label) return item;
+    }
+    return null;
+  }
 }
 
 enum StartupStage {
@@ -126,6 +149,11 @@ class StartupLocation {
       StartupLocation._(_slug(city), city),
   ]);
 
+  /// A city that is not in the picker list (sample data such as "Qassim" or
+  /// "Al-Ula"). Display only: it can't be picked on a new startup.
+  factory StartupLocation.custom(String label) =>
+      StartupLocation._(_slug(label), label);
+
   /// Only exists so old documents with city "other" still load. It is not in
   /// [values], so it can't be picked on a new startup.
   static const other = StartupLocation._('other', 'Other');
@@ -140,6 +168,9 @@ class StartupLocation {
   static const madinah = StartupLocation._('madinah', 'Madinah');
 
   static const _legacy = {
+    'taif': 'taif',
+    'unaizah': 'unaizah',
+    'yanbu': 'yanbu',
     'khobar': 'al_khobar',
     'mecca': 'makkah',
     'medina': 'madinah',
@@ -151,6 +182,13 @@ class StartupLocation {
     final current = _legacy[raw] ?? raw;
     for (final item in values) {
       if (item.value == current) return item;
+    }
+    // Cities that used to be pickable stay readable on old documents.
+    if (const ['taif', 'unaizah', 'yanbu'].contains(current)) {
+      return StartupLocation._(
+        current,
+        '${current[0].toUpperCase()}${current.substring(1)}',
+      );
     }
     return null;
   }

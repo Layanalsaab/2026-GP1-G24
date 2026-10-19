@@ -22,40 +22,39 @@ class AuthService {
 
   AuthAccount? get currentAccount => _toAccount(_auth.currentUser);
 
-  Future<AuthAccount> createAccount(String email, String password) => _guard(
-        () async {
-          final credential = await _auth.createUserWithEmailAndPassword(
-            email: email,
-            password: password,
-          );
-          return _toAccount(credential.user)!;
-        },
-      );
-
-  /// Signs in and returns fresh account data (including `emailVerified`).
-  Future<AuthAccount> signIn(String email, String password) => _guard(() async {
-        final credential = await _auth.signInWithEmailAndPassword(
+  Future<AuthAccount> createAccount(String email, String password) =>
+      _guard(() async {
+        final credential = await _auth.createUserWithEmailAndPassword(
           email: email,
           password: password,
         );
-        final user = credential.user!;
-        await user.reload();
-        return _toAccount(_auth.currentUser ?? user)!;
+        return _toAccount(credential.user)!;
       });
+
+  /// Signs in and returns fresh account data (including `emailVerified`).
+  Future<AuthAccount> signIn(String email, String password) => _guard(() async {
+    final credential = await _auth.signInWithEmailAndPassword(
+      email: email,
+      password: password,
+    );
+    final user = credential.user!;
+    await user.reload();
+    return _toAccount(_auth.currentUser ?? user)!;
+  });
 
   /// Refreshes the signed-in user from the server. Null when nobody is signed in.
   Future<AuthAccount?> reloadCurrentAccount() => _guard(() async {
-        final user = _auth.currentUser;
-        if (user == null) return null;
-        await user.reload();
-        return _toAccount(_auth.currentUser);
-      });
+    final user = _auth.currentUser;
+    if (user == null) return null;
+    await user.reload();
+    return _toAccount(_auth.currentUser);
+  });
 
   Future<void> sendVerificationEmail() => _guard(() async {
-        final user = _auth.currentUser;
-        if (user == null) throw const AuthException(AuthFailure.unknown);
-        await user.sendEmailVerification();
-      });
+    final user = _auth.currentUser;
+    if (user == null) throw const AuthException(AuthFailure.unknown);
+    await user.sendEmailVerification();
+  });
 
   Future<void> sendPasswordReset(String email) =>
       _guard(() => _auth.sendPasswordResetEmail(email: email));
@@ -63,7 +62,8 @@ class AuthService {
   /// Confirms the signed-in user's password again. Firebase requires a recent
   /// log in before sensitive actions (changing the password, deleting the
   /// account). A wrong password fails with [AuthFailure.invalidCredentials].
-  Future<void> reauthenticate(String email, String password) => _guard(() async {
+  Future<void> reauthenticate(String email, String password) =>
+      _guard(() async {
         final user = _auth.currentUser;
         if (user == null) throw const AuthException(AuthFailure.unknown);
         await user.reauthenticateWithCredential(
@@ -73,14 +73,14 @@ class AuthService {
 
   /// Sets a new password for the signed-in user. Call [reauthenticate] first.
   Future<void> updatePassword(String newPassword) => _guard(() async {
-        final user = _auth.currentUser;
-        if (user == null) throw const AuthException(AuthFailure.unknown);
-        await user.updatePassword(newPassword);
-      });
+    final user = _auth.currentUser;
+    if (user == null) throw const AuthException(AuthFailure.unknown);
+    await user.updatePassword(newPassword);
+  });
 
   Future<void> deleteCurrentAccount() => _guard(() async {
-        await _auth.currentUser?.delete();
-      });
+    await _auth.currentUser?.delete();
+  });
 
   Future<void> signOut() => _guard(_auth.signOut);
 

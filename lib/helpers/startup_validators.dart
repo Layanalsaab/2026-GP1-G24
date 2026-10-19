@@ -1,56 +1,56 @@
-import '../app_constants/startup_strings.dart';
-import '../models/startup_enums.dart';
+import '../app_constants/validation_strings.dart';
 
-/// Pure validators for the startup form. Each returns an error message, or
-/// null when the value is valid. Inputs are the raw text from the fields.
+/// Pure validators for the Add / Edit startup steps (docs/06 section 8).
+/// Each returns the error message, or null when the value is valid. Inputs
+/// are the raw text from the fields.
 class StartupValidators {
   StartupValidators._();
 
-  static const nameMin = 3;
   static const nameMax = 40;
-  static const descriptionMin = 20;
-  static const descriptionMax = 1000;
-  static const firstFoundedYear = 1800;
+  static const pitchMax = 120;
+  static const descriptionMax = 1500;
+  static const longTextMax = 1000;
+  static const websiteMax = 100;
+  static const firstFoundedYear = 1900;
+  static const maxMoneyDigits = 13;
 
-  static final _otherPattern = RegExp(r'^[\p{L}\p{M}\p{N} ]+$', unicode: true);
-  static final _hasLetter = RegExp(r'\p{L}', unicode: true);
+  static String? name(String v) =>
+      v.trim().isEmpty ? ValidationStrings.startupName : null;
 
-  static String? name(String value) {
-    final name = value.trim();
-    if (name.isEmpty) return StartupStrings.nameRequired;
-    if (name.length < nameMin) return StartupStrings.nameTooShort(nameMin);
-    if (name.length > nameMax) return StartupStrings.nameTooLong(nameMax);
-    return null;
-  }
+  static String? pitch(String v) =>
+      v.trim().isEmpty ? ValidationStrings.startupPitch : null;
 
-  static String? description(String value) {
-    final description = value.trim();
-    if (description.isEmpty) return StartupStrings.descriptionRequired;
-    if (description.length < descriptionMin) {
-      return StartupStrings.descriptionTooShort(descriptionMin);
-    }
-    if (description.length > descriptionMax) {
-      return StartupStrings.descriptionTooLong(descriptionMax);
-    }
-    return null;
-  }
+  static String? description(String v) =>
+      v.trim().isEmpty ? ValidationStrings.startupDescription : null;
 
-  /// Optional. [now] is injectable so tests don't depend on today's date.
+  /// A required select: [message] when nothing is chosen.
+  static String? selected(Object? value, String message) =>
+      value == null || (value is String && value.isEmpty) ? message : null;
+
+  /// Required, 1900 up to the current year. [now] is injectable for tests.
   static String? foundedYear(String value, {DateTime? now}) {
     final text = value.trim();
-    if (text.isEmpty) return null;
+    if (text.isEmpty) return ValidationStrings.foundedRequired;
+    final last = (now ?? DateTime.now()).year;
     final year = int.tryParse(text);
-    final lastYear = (now ?? DateTime.now()).year;
-    if (year == null || year < firstFoundedYear || year > lastYear) {
-      return StartupStrings.foundedYearRange(firstFoundedYear, lastYear);
+    if (text.length == 4 &&
+        (year == null || year < firstFoundedYear || year > last)) {
+      return ValidationStrings.foundedRange(last);
     }
+    if (text.length < 4) return ValidationStrings.foundedRange(last);
     return null;
   }
+
+  /// True when [value] is a complete, valid year (for the green check).
+  static bool isFoundedYear(String value, {DateTime? now}) =>
+      foundedYear(value, now: now) == null;
 
   /// Optional. Accepts addresses without a scheme ("example.com").
   static String? websiteUrl(String value) {
     if (value.trim().isEmpty) return null;
-    return normalizeUrl(value) == null ? StartupStrings.websiteInvalid : null;
+    return normalizeUrl(value) == null
+        ? ValidationStrings.websiteInvalid
+        : null;
   }
 
   /// "example.com" -> "https://example.com". Null when it isn't a usable
@@ -62,44 +62,60 @@ class StartupValidators {
     final uri = Uri.tryParse(withScheme);
     if (uri == null) return null;
     if (uri.scheme != 'http' && uri.scheme != 'https') return null;
-    final host = uri.host;
-    final labels = host.split('.');
+    final labels = uri.host.split('.');
     final looksLikeDomain =
         labels.length >= 2 &&
-        labels.every((l) => l.isNotEmpty) &&
+        labels.every(
+          (l) => RegExp(
+            r'^[\p{L}\p{N}](?:[\p{L}\p{N}-]*[\p{L}\p{N}])?$',
+            unicode: true,
+          ).hasMatch(l),
+        ) &&
         RegExp(r'^[a-zA-Z]{2,}$').hasMatch(labels.last);
     return looksLikeDomain ? uri.toString() : null;
   }
 
-  static String? lookingFor(Set<LookingFor> selected) =>
-      selected.isEmpty ? StartupStrings.lookingForRequired : null;
+  // ---- Step 2 ----
+  static String? problem(String v) =>
+      v.trim().isEmpty ? ValidationStrings.problem : null;
+  static String? solution(String v) =>
+      v.trim().isEmpty ? ValidationStrings.solution : null;
+  static String? customers(String v) =>
+      v.trim().isEmpty ? ValidationStrings.targetCustomers : null;
+  static String? advantage(String v) =>
+      v.trim().isEmpty ? ValidationStrings.different : null;
 
-  /// Only checked when the founder is looking for funding.
-  static String? fundingRequirement(String value) {
-    final text = value.trim();
-    if (text.isEmpty) return StartupStrings.fundingRequired;
-    final amount = int.tryParse(text);
-    if (amount == null || amount <= 0) return StartupStrings.fundingInvalid;
-    return null;
+  // ---- Step 4 ----
+  static String? growth(String v) =>
+      v.trim().isEmpty ? ValidationStrings.growth : null;
+
+  /// A money field's digits, or null when empty. "1,200,000" -> 1200000.
+  static int? money(String v) {
+    final digits = v.replaceAll(RegExp(r'[^0-9]'), '');
+    if (digits.isEmpty) return null;
+    return int.tryParse(digits);
   }
 
-  /// The text typed after choosing "Other" (required, at most [max]).
-  static String? otherText(
-    String value, {
-    required String requiredMessage,
-    int max = 40,
-  }) {
-    final text = value.trim();
-    if (text.isEmpty) return requiredMessage;
-    if (text.length > max) return StartupStrings.otherTooLong(max);
-    // Letters (any language), numbers and spaces only: no symbols such as
-    // "--" or an apostrophe, and at least one letter.
-    if (!_otherPattern.hasMatch(text) || !_hasLetter.hasMatch(text)) {
-      return StartupStrings.otherSymbols;
-    }
-    return null;
+  static String? capital(String v) =>
+      money(v) == null ? ValidationStrings.capital : null;
+
+  static String? revenue(String y1, String y2, String y3) =>
+      money(y1) != null && money(y2) != null && money(y3) != null
+      ? null
+      : ValidationStrings.revenue;
+
+  /// Required, and 0 is allowed. Shows no error text: it only keeps Next
+  /// grey, so this returns a bool.
+  static bool valuationOk(String v) => money(v) != null;
+
+  static String? leadInvestor(bool? answer) =>
+      answer == null ? ValidationStrings.chooseOne : null;
+
+  static String? funding(String v) {
+    final amount = money(v);
+    return amount == null || amount <= 0 ? ValidationStrings.funding : null;
   }
 
-  static String? required<T>(T? value, String message) =>
-      value == null ? message : null;
+  static String? lookingFor(Iterable<Object> selected) =>
+      selected.isEmpty ? ValidationStrings.selectAtLeastOneOption : null;
 }

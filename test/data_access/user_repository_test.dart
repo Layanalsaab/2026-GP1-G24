@@ -8,7 +8,6 @@ import 'package:startsa/models/auth_failure.dart';
 class _OldRulesFirestore extends FirestoreService {
   _OldRulesFirestore();
 
-
   final writes = <String, Map<String, Object?>>{};
   int attempts = 0;
 
@@ -49,23 +48,26 @@ class _OldRulesFirestore extends FirestoreService {
 }
 
 void main() {
-  test('Edit profile keeps name, bio and city when the rules are old', () async {
-    final firestore = _OldRulesFirestore();
-    final repo = UserRepository(firestore: firestore);
+  test(
+    'Edit profile keeps name, bio and city when the rules are old',
+    () async {
+      final firestore = _OldRulesFirestore();
+      final repo = UserRepository(firestore: firestore);
 
-    await repo.updateProfile(
-      uid: 'u1',
-      fullName: 'Sara A',
-      bio: 'New bio',
-      phone: '551234567',
-      sectorsOfInterest: const ['Fintech'],
-      city: 'Jeddah',
-    );
+      await repo.updateProfile(
+        uid: 'u1',
+        fullName: 'Sara A',
+        bio: 'New bio',
+        phone: '551234567',
+        sectorsOfInterest: const ['Fintech'],
+        city: 'Jeddah',
+      );
 
-    expect(firestore.writes['u1'], {
-      'fullName': 'Sara A',
-      'bio': 'New bio',
-      'city': 'Jeddah',
-    });
-  });
+      expect(firestore.writes['u1'], {
+        'fullName': 'Sara A',
+        'bio': 'New bio',
+        'city': 'Jeddah',
+      });
+    },
+  );
 }

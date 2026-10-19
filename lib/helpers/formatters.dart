@@ -33,6 +33,32 @@ class Formatters {
     return sar(value);
   }
 
+  /// 2400000000 -> "2.4B", 600000000 -> "600M", 24000 -> "24K". One decimal
+  /// for B and M (a trailing ".0" is dropped), whole numbers for K. The
+  /// prototype's `shortMoney`: used in the market-size legend, revenue bars
+  /// and on cards.
+  static String shortMoney(int value) {
+    String trim(double v) {
+      final t = v.toStringAsFixed(1);
+      return t.endsWith('.0') ? t.substring(0, t.length - 2) : t;
+    }
+
+    if (value >= 1000000000) return '${trim(value / 1000000000)}B';
+    if (value >= 1000000) return '${trim(value / 1000000)}M';
+    if (value >= 1000) return '${(value / 1000).round()}K';
+    return '$value';
+  }
+
+  /// "SAR 2.4B".
+  static String sarShort(int value) =>
+      '${StartupStrings.sar} ${shortMoney(value)}';
+
+  /// Digits only: "1,200,000" -> 1200000, "" -> null.
+  static int? parseMoney(String text) {
+    final digits = text.replaceAll(RegExp(r'[^0-9]'), '');
+    return digits.isEmpty ? null : int.tryParse(digits);
+  }
+
   /// "https://www.example.com/" -> "example.com", for display.
   static String shortUrl(String url) {
     final uri = Uri.tryParse(url);

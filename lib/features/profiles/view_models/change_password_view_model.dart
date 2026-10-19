@@ -2,13 +2,14 @@ import 'package:flutter/foundation.dart';
 
 import '../../../app_constants/account_strings.dart';
 import '../../../app_constants/app_strings.dart';
+import '../../../app_constants/validation_strings.dart';
 import '../../../data_access/repositories/auth_repository.dart';
 import '../../../helpers/safe_notifier.dart';
 import '../../../helpers/validators.dart';
 import '../../../models/auth_failure.dart';
 
 /// Logic for the Change Password screen (PBI 7). Uses the same password rules
-/// as sign up ([Validators.password]).
+/// as sign up ([Validators.isPassword]).
 class ChangePasswordViewModel extends ChangeNotifier with SafeNotifier {
   ChangePasswordViewModel({AuthRepository? authRepository})
     : _auth = authRepository ?? AuthRepository.instance;
@@ -35,16 +36,18 @@ class ChangePasswordViewModel extends ChangeNotifier with SafeNotifier {
     currentPasswordError = currentPassword.isEmpty
         ? AccountStrings.currentPasswordRequired
         : null;
-    newPasswordError = Validators.password(newPassword);
+    newPasswordError = Validators.isPassword(newPassword)
+        ? null
+        : AppStrings.weakPassword;
     if (newPasswordError == null &&
         currentPassword.isNotEmpty &&
         newPassword == currentPassword) {
       newPasswordError = AccountStrings.samePassword;
     }
-    confirmPasswordError = Validators.confirmPassword(
-      newPassword,
-      confirmPassword,
-    );
+    confirmPasswordError =
+        Validators.confirmMatches(newPassword, confirmPassword)
+        ? null
+        : ValidationStrings.confirmMismatch;
     formError = null;
 
     if (currentPasswordError != null ||

@@ -1,251 +1,281 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../app_constants/account_strings.dart';
 import '../../../app_constants/app_strings.dart';
-import '../../../helpers/validators.dart';
+import '../../../app_constants/profile_strings.dart';
+import '../../../data_access/device_services/profile_photo_picker_service.dart';
+import '../../../helpers/app_session.dart';
 import '../../../models/app_user.dart';
-import '../../../shared_ui/common_widgets/app_text_field.dart';
-import '../../../shared_ui/common_widgets/form_message.dart';
-import '../../../shared_ui/common_widgets/profile_banner.dart';
-import '../../../shared_ui/common_widgets/profile_form_fields.dart';
-import '../../../shared_ui/common_widgets/profile_photo_field.dart';
-import '../../../shared_ui/common_widgets/user_avatar.dart';
-import '../../../shared_ui/theme/app_theme.dart';
+import '../../../shared_ui/icons/app_icons.dart';
+import '../../../shared_ui/motion/motion.dart';
+import '../../../shared_ui/navigation/app_route.dart';
+import '../../../shared_ui/theme/app_colors.dart';
+import '../../../shared_ui/theme/app_text.dart';
+import '../../../shared_ui/widgets/buttons/app_button.dart';
+import '../../../shared_ui/widgets/chips/chip_group.dart';
+import '../../../shared_ui/widgets/forms/app_field.dart';
+import '../../../shared_ui/widgets/forms/app_text_field.dart';
+import '../../../shared_ui/widgets/forms/select_field.dart';
+import '../../../shared_ui/widgets/headers/header_buttons.dart';
+import '../../../shared_ui/widgets/lists/press_surface.dart';
+import '../../../shared_ui/widgets/overlays/app_bottom_sheet.dart';
+import '../../../shared_ui/widgets/overlays/app_toast.dart';
+import '../../../shared_ui/widgets/overlays/picker_sheet.dart';
 import '../view_models/edit_account_view_model.dart';
 
-/// Figma: "V2 · 43e · Edit Profile — Founder" and "43be — Investor"
-/// (PBIs 10 and 12). The same screen for founders and investors, with the
-/// same fields, limits and messages as Create Account. On success it closes
-/// and returns the updated user.
-class EditAccountScreen extends StatefulWidget {
-  const EditAccountScreen({super.key, required this.user});
+/// Edit profile (docs/05 C5, docs/06 section 7, screenshots 41 and 41b):
+/// cream top bar with close and "Save", the green photo header, then the
+/// fields. Saving validates, closes with the updated [AppUser] and shows
+/// "Profile saved".
+class EditProfileScreen extends StatefulWidget {
+  const EditProfileScreen({super.key, required this.user});
 
   final AppUser user;
 
   @override
-  State<EditAccountScreen> createState() => _EditAccountScreenState();
+  State<EditProfileScreen> createState() => _EditProfileScreenState();
 }
 
-class _EditAccountScreenState extends State<EditAccountScreen> {
-  late final EditAccountViewModel _viewModel = EditAccountViewModel(
-    user: widget.user,
-  );
-  late final TextEditingController _fullName = TextEditingController(
-    text: widget.user.fullName,
-  );
-  late final TextEditingController _email = TextEditingController(
-    text: widget.user.email,
-  );
-  late final TextEditingController _bio = TextEditingController(
-    text: widget.user.bio,
-  );
-  late final TextEditingController _phone = TextEditingController(
-    text: widget.user.phone ?? '',
-  );
+class _EditProfileScreenState extends State<EditProfileScreen> {
+  late final EditAccountViewModel _vm = EditAccountViewModel(user: widget.user);
 
-  /// The text typed into the "Other:" sector chip.
-  late final TextEditingController _otherSector = TextEditingController(
-    text: _viewModel.initialOtherSector,
-  );
+  /// Which "i" tip is open (one at a time).
+  String? _infoOpen;
+
+  void _toggleInfo(String id) =>
+      setState(() => _infoOpen = _infoOpen == id ? null : id);
 
   @override
   void dispose() {
-    _viewModel.dispose();
-    _fullName.dispose();
-    _email.dispose();
-    _bio.dispose();
-    _phone.dispose();
-    _otherSector.dispose();
+    _vm.dispose();
     super.dispose();
   }
 
   Future<void> _save() async {
     FocusScope.of(context).unfocus();
-    final updated = await _viewModel.submit(
-      fullName: _fullName.text,
-      bio: _bio.text,
-      phone: _phone.text,
-      otherSector: _otherSector.text,
-    );
-    if (updated == null || !mounted) return;
-    if (_viewModel.newPhoto != null || _viewModel.removePhoto) {
-      // The photo keeps its URL, so drop the cached image of the old one.
-      PaintingBinding.instance.imageCache.clear();
-      PaintingBinding.instance.imageCache.clearLiveImages();
-    }
-    Navigator.of(context).pop(updated);
-  }
-
-  String? _photoError;
-
-  /// The avatar was tapped: pick a photo, or change / remove the current one.
-  Future<void> _changePhoto() async {
-    if (_viewModel.isLoading) return;
-    if (_viewModel.hasPhoto) {
-      final choice = await showPhotoOptionsSheet(context);
-      if (choice == null || !mounted) return;
-      if (choice == PhotoChoice.remove) {
-        setState(() => _photoError = null);
-        _viewModel.clearPhoto();
-        return;
-      }
-    }
-    final result = await pickProfilePhoto();
+    final updated = await _vm.submit();
     if (!mounted) return;
-    setState(() => _photoError = result.error);
-    final file = result.file;
-    if (file != null) _viewModel.pickPhoto(file);
-  }
-
-  void _toggleOther() {
-    // Switching "Other" off forgets what was typed.
-    if (_viewModel.otherSelected) _otherSector.clear();
-    _viewModel.toggleOther();
+    if (updated != null) {
+      AppSession.instance.updateUser(updated);
+      AppToast.show(context, ProfileStrings.profileSaved);
+      AppNav.back(context, updated);
+    } else if (_vm.formError != null) {
+      AppToast.show(context, _vm.formError!);
+    } else {
+      AppToast.show(context, ProfileStrings.fixFields);
+    }
   }
 
   Future<void> _pickCity() async {
-    final picked = await showCityPicker(context, selected: _viewModel.city);
-    if (picked != null) _viewModel.selectCity(picked);
+    final result = await showPickerSheet(
+      context,
+      title: ProfileStrings.selectCityTitle,
+      options: AppStrings.allCities,
+      selected: _vm.city,
+      searchHint: ProfileStrings.searchCities,
+      noResultsText: ProfileStrings.noCities,
+    );
+    if (result != null) _vm.setCity(result.value);
   }
 
-  /// A submit error is only shown when every live rule is met; otherwise the
-  /// checklist already explains what is wrong (same as Create Account).
-  String? _errorFor(String? error, List<FieldRule> rules) =>
-      rules.every((r) => r.met) ? error : null;
-
-  static const _bannerHeight = 88.0;
-  static const _avatarSize = 88.0;
+  Future<void> _photo() async {
+    var pick = true;
+    if (_vm.hasPhoto) {
+      final choice = await showAppBottomSheet<String>(
+        context,
+        builder: (sheet) => AppSheetScaffold(
+          title: ProfileStrings.changePhoto,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(12, 0, 12, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _SheetOption(
+                  label: AccountStrings.changePhoto,
+                  onTap: () => Navigator.of(sheet).pop('change'),
+                ),
+                _SheetOption(
+                  label: AccountStrings.removePhoto,
+                  destructive: true,
+                  onTap: () => Navigator.of(sheet).pop('remove'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+      if (choice == 'remove') {
+        _vm.clearPhoto();
+      }
+      pick = choice == 'change';
+    }
+    if (!pick || !mounted) return;
+    try {
+      final file = await ProfilePhotoPickerService.instance.pickSquarePhoto();
+      if (file != null) _vm.pickPhoto(file);
+    } on ProfilePhotoException catch (e) {
+      if (mounted) {
+        AppToast.show(
+          context,
+          e.failure == ProfilePhotoFailure.tooLarge
+              ? AccountStrings.photoTooLarge
+              : AccountStrings.photoFailed,
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
-      listenable: Listenable.merge([_viewModel, _fullName, _phone]),
+      listenable: _vm,
       builder: (context, _) {
-        final loading = _viewModel.isLoading;
-        final attempted = _viewModel.attempted;
-        final nameRules = Validators.fullNameRules(_fullName.text);
-        final phoneRules = Validators.phoneRules(_phone.text);
-        // While saving, Back is blocked so the result is not lost.
+        final u = widget.user;
+        final loading = _vm.isLoading;
         return PopScope(
           canPop: !loading,
-          child: AnnotatedRegion<SystemUiOverlayStyle>(
-            value: SystemUiOverlayStyle.dark.copyWith(
-              statusBarColor: Colors.transparent,
-            ),
-            child: Scaffold(
-              backgroundColor: AppColors.cream,
-              body: SafeArea(
-                bottom: false,
-                child: Column(
-                  children: [
-                    _header(loading),
-                    Expanded(
-                      child: ListView(
-                        padding: EdgeInsets.zero,
-                        children: [
-                          _banner(),
-                          Padding(
-                            padding: const EdgeInsets.fromLTRB(16, 20, 16, 32),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                if (_photoError != null) ...[
-                                  FormMessage.error(_photoError!),
-                                  const SizedBox(height: 16),
-                                ],
-                                if (_viewModel.formError != null) ...[
-                                  FormMessage.error(_viewModel.formError!),
-                                  const SizedBox(height: 16),
-                                ],
-                                AppTextField(
-                                  label: AppStrings.fullNameLabel,
-                                  hint: AppStrings.fullNameHint,
-                                  controller: _fullName,
-                                  rules: nameRules,
-                                  showRules: attempted,
-                                  errorText: _errorFor(
-                                    _viewModel.fullNameError,
-                                    nameRules,
-                                  ),
-                                  maxLength: Validators.maxFullNameLength,
-                                  enabled: !loading,
-                                  textInputAction: TextInputAction.next,
-                                  onChanged: (_) =>
-                                      _viewModel.clearFieldError(),
-                                ),
-                                const SizedBox(height: 20),
-                                AppTextField(
-                                  label: AppStrings.bioLabel,
-                                  hint: AppStrings.bioHint,
-                                  controller: _bio,
-                                  maxLines: 4,
-                                  maxLength: AccountStrings.bioMaxLength,
-                                  enabled: !loading,
-                                  keyboardType: TextInputType.multiline,
-                                  textInputAction: TextInputAction.newline,
-                                ),
-                                const SizedBox(height: 20),
-                                CityField(
-                                  label: AccountStrings.cityLabel,
-                                  city: _viewModel.city,
-                                  error: _viewModel.cityError,
-                                  enabled: !loading,
-                                  onTap: _pickCity,
-                                ),
-                                const SizedBox(height: 20),
-                                SectorsField(
-                                  label: AccountStrings.sectorsOfInterest,
-                                  hint: null,
-                                  softChips: true,
-                                  selected: _viewModel.sectors,
-                                  otherSelected: _viewModel.otherSelected,
-                                  otherController: _otherSector,
-                                  count: 0,
-                                  error: _viewModel.sectorsError,
-                                  enabled: !loading,
-                                  onToggle: _viewModel.toggleSector,
-                                  onToggleOther: _toggleOther,
-                                ),
-                                const SizedBox(height: 20),
-                                AppTextField(
-                                  label: AppStrings.emailLabel,
-                                  hint: AppStrings.emailHint,
-                                  controller: _email,
-                                  readOnly: true,
-                                  maxLength: Validators.maxEmailLength,
-                                ),
-                                const SizedBox(height: 20),
-                                AppTextField(
-                                  label: AppStrings.phoneLabel,
-                                  hint: AppStrings.phoneHint,
-                                  controller: _phone,
-                                  rules: phoneRules,
-                                  showRules: attempted,
-                                  errorText: _errorFor(
-                                    _viewModel.phoneError,
-                                    phoneRules,
-                                  ),
-                                  maxLength: Validators.phoneLength,
-                                  enabled: !loading,
-                                  keyboardType: TextInputType.phone,
-                                  textInputAction: TextInputAction.done,
-                                  inputFormatters: [
-                                    FilteringTextInputFormatter.digitsOnly,
-                                  ],
-                                  prefix: const PhonePrefix(),
-                                  onChanged: (_) =>
-                                      _viewModel.clearFieldError(),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+          child: Scaffold(
+            backgroundColor: AppColors.cream,
+            resizeToAvoidBottomInset: true,
+            body: Column(
+              children: [
+                _TopBar(
+                  onClose: () => AppNav.back(context),
+                  onSave: _save,
+                  loading: loading,
                 ),
-              ),
+                Expanded(
+                  child: SingleChildScrollView(
+                    keyboardDismissBehavior:
+                        ScrollViewKeyboardDismissBehavior.onDrag,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _PhotoHeader(
+                          initials: _initials(),
+                          photoUrl: u.photoUrl,
+                          file: _vm.newPhoto,
+                          showPhoto: _vm.hasPhoto,
+                          onTap: _photo,
+                        ),
+                        FormFieldColumn(
+                          padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
+                          children: [
+                            LabeledTextField(
+                              label: ProfileStrings.fullName,
+                              required: true,
+                              value: _vm.fullName,
+                              onChanged: _vm.setFullName,
+                              maxLength: 50,
+                              error: _vm.fullNameError,
+                              textCapitalization: TextCapitalization.words,
+                            ),
+                            LabeledTextField(
+                              label: ProfileStrings.bio,
+                              value: _vm.bio,
+                              onChanged: _vm.setBio,
+                              maxLength: 1000,
+                              multiline: true,
+                            ),
+                            AppField(
+                              label: ProfileStrings.city,
+                              required: true,
+                              error: _vm.cityError,
+                              child: SelectField(
+                                placeholder: ProfileStrings.cityPlaceholder,
+                                value: _vm.city,
+                                hasError: _vm.cityError != null,
+                                semanticLabel: ProfileStrings.city,
+                                onTap: _pickCity,
+                              ),
+                            ),
+                            ChipGroupField(
+                              label: ProfileStrings.sectorsOfInterest,
+                              required: true,
+                              options: EditAccountViewModel.sectorOptions,
+                              selected: [
+                                ..._vm.sectors,
+                                if (_vm.otherSelected)
+                                  EditAccountViewModel.otherLabel,
+                              ],
+                              onTap: _vm.toggleSector,
+                              error: _vm.sectorsError,
+                              otherValue: _vm.otherSector,
+                              onOtherChanged: _vm.setOtherSector,
+                              otherHint: ProfileStrings.otherSectorHint,
+                              otherError: _vm.otherError,
+                            ),
+                            if (u.isInvestor) ...[
+                              LabeledTextField(
+                                label: ProfileStrings.valueLabel,
+                                required: true,
+                                value: _vm.valueOffered,
+                                onChanged: _vm.setValueOffered,
+                                maxLength: 1000,
+                                multiline: true,
+                                info: ProfileStrings.valueTip,
+                                infoOpen: _infoOpen == 'value',
+                                onInfoToggle: () => _toggleInfo('value'),
+                                error: _vm.valueError,
+                              ),
+                              LabeledTextField(
+                                label: ProfileStrings.gainLabel,
+                                required: true,
+                                value: _vm.gain,
+                                onChanged: _vm.setGain,
+                                maxLength: 1000,
+                                multiline: true,
+                                placeholder: ProfileStrings.gainHint,
+                                info: ProfileStrings.gainTip,
+                                infoOpen: _infoOpen == 'gain',
+                                onInfoToggle: () => _toggleInfo('gain'),
+                                error: _vm.gainError,
+                              ),
+                            ],
+                            LabeledTextField(
+                              label: ProfileStrings.emailLabel,
+                              required: true,
+                              value: u.email,
+                              enabled: false,
+                              maxLength: 100,
+                              keyboardType: TextInputType.emailAddress,
+                            ),
+                            LabeledTextField(
+                              label: ProfileStrings.phoneLabel,
+                              required: true,
+                              value: _vm.phone,
+                              onChanged: _vm.setPhone,
+                              prefix: AppStrings.phoneCountryCode,
+                              maxLength: 9,
+                              keyboardType: TextInputType.phone,
+                              inputFormatters: [
+                                FilteringTextInputFormatter.digitsOnly,
+                              ],
+                              error: _vm.phoneError,
+                            ),
+                            LabeledTextField(
+                              label: ProfileStrings.linkedinLabel,
+                              value: _vm.linkedin,
+                              onChanged: _vm.setLinkedin,
+                              maxLength: 120,
+                              placeholder: ProfileStrings.linkedinHint,
+                              keyboardType: TextInputType.url,
+                              valid:
+                                  _vm.linkedin.trim().isNotEmpty &&
+                                  _vm.linkedinError == null &&
+                                  _vm.linkedin.contains('linkedin'),
+                              error: _vm.linkedinError,
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         );
@@ -253,116 +283,259 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
     );
   }
 
-  /// Close (X), "Edit profile" and the Save pill.
-  Widget _header(bool loading) => Container(
-    height: 56,
-    color: AppColors.cream,
-    padding: const EdgeInsets.only(left: 4, right: 16),
-    child: Row(
-      children: [
-        IconButton(
-          tooltip: AccountStrings.closeEdit,
-          onPressed: loading ? null : () => Navigator.of(context).maybePop(),
-          icon: const Icon(Icons.close, color: AppColors.ink),
-        ),
-        const SizedBox(width: 4),
-        Expanded(
-          child: Text(
-            AccountStrings.editAccountTitle,
-            style: AppText.sans(
-              size: 18,
-              color: AppColors.ink,
-              weight: FontWeight.w600,
-              height: 24,
-            ),
-          ),
-        ),
-        Material(
-          color: AppColors.moss600,
-          shape: const StadiumBorder(),
-          child: InkWell(
-            customBorder: const StadiumBorder(),
-            onTap: loading ? null : _save,
-            child: Container(
-              constraints: const BoxConstraints(minWidth: 72, minHeight: 44),
-              padding: const EdgeInsets.symmetric(horizontal: 18),
-              alignment: Alignment.center,
-              child: loading
-                  ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.white,
-                      ),
-                    )
-                  : Text(
-                      AccountStrings.save,
-                      style: AppText.sans(
-                        size: 14,
-                        color: Colors.white,
-                        weight: FontWeight.w600,
-                        height: 20,
-                      ),
-                    ),
-            ),
-          ),
-        ),
-      ],
-    ),
-  );
+  String _initials() {
+    final words = _vm.fullName
+        .trim()
+        .split(RegExp(r'\s+'))
+        .where((w) => w.isNotEmpty)
+        .toList();
+    if (words.isEmpty) return widget.user.initials;
+    final a = words.first.characters.first;
+    final b = words.length > 1
+        ? words.last.characters.first
+        : (words.first.characters.length > 1
+              ? words.first.characters.elementAt(1)
+              : '');
+    return (a + b).toUpperCase();
+  }
+}
 
-  Widget _banner() => SizedBox(
-    height: _bannerHeight + _avatarSize / 2,
-    child: Stack(
-      children: [
-        const Positioned(
-          top: 0,
-          left: 0,
-          right: 0,
-          child: ProfileBanner(height: _bannerHeight),
+/// Cream top bar (prototype `.topbar`): close, title and the green "Save"
+/// pill (38 high).
+class _TopBar extends StatelessWidget {
+  const _TopBar({
+    required this.onClose,
+    required this.onSave,
+    required this.loading,
+  });
+
+  final VoidCallback onClose;
+  final VoidCallback onSave;
+  final bool loading;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.fromLTRB(
+        12,
+        MediaQuery.paddingOf(context).top,
+        12,
+        0,
+      ),
+      decoration: const BoxDecoration(
+        color: AppColors.cream,
+        border: Border(bottom: BorderSide(color: AppColors.border)),
+      ),
+      child: SizedBox(
+        height: 60,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            AppIconButton(
+              icon: AppIcons.close,
+              semanticLabel: 'Close',
+              onTap: loading ? null : onClose,
+            ),
+            Flexible(
+              child: Semantics(
+                header: true,
+                child: Text(
+                  ProfileStrings.editProfile,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppText.sans(size: 18, weight: FontWeight.w700),
+                ),
+              ),
+            ),
+            SizedBox(
+              height: 38,
+              child: AppButton(
+                label: ProfileStrings.save,
+                expanded: false,
+                size: AppButtonSize.small,
+                loading: loading,
+                onPressed: onSave,
+              ),
+            ),
+          ],
         ),
-        Positioned(
-          top: _bannerHeight - _avatarSize / 2,
-          left: 12,
-          child: Semantics(
-            button: true,
-            label: AccountStrings.changePhoto,
-            excludeSemantics: true,
-            onTap: _changePhoto,
-            child: GestureDetector(
-              onTap: _changePhoto,
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  UserAvatar(
-                    name: _fullName.text,
-                    size: _avatarSize,
-                    ring: true,
-                    file: _viewModel.newPhoto,
-                    photoUrl: _viewModel.removePhoto
-                        ? null
-                        : widget.user.photoUrl,
-                  ),
-                  Container(
-                    width: _avatarSize - 8,
-                    height: _avatarSize - 8,
-                    decoration: const BoxDecoration(
-                      color: Color(0x591C1F1D),
-                      shape: BoxShape.circle,
+      ),
+    );
+  }
+}
+
+/// The 170 px green photo header: gradient with four gold circles, a cream
+/// strip at the bottom and the 92 px avatar with the camera overlay.
+class _PhotoHeader extends StatelessWidget {
+  const _PhotoHeader({
+    required this.initials,
+    required this.photoUrl,
+    required this.file,
+    required this.showPhoto,
+    required this.onTap,
+  });
+
+  final String initials;
+  final String? photoUrl;
+  final File? file;
+  final bool showPhoto;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    ImageProvider? image;
+    if (showPhoto) {
+      if (file != null) {
+        image = FileImage(file!);
+      } else if ((photoUrl ?? '').isNotEmpty) {
+        image = NetworkImage(photoUrl!);
+      }
+    }
+    return SizedBox(
+      height: 170,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Positioned.fill(
+            child: ExcludeSemantics(
+              child: ClipRect(
+                child: DecoratedBox(
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [AppColors.green, AppColors.moss600],
                     ),
-                    child: const Icon(
-                      Icons.photo_camera_outlined,
-                      size: 24,
-                      color: Colors.white,
-                    ),
                   ),
-                ],
+                  child: CustomPaint(painter: _CirclesPainter()),
+                ),
               ),
             ),
           ),
+          const Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            height: 40,
+            child: ColoredBox(color: AppColors.cream),
+          ),
+          Positioned(
+            left: 16,
+            bottom: 0,
+            child: Semantics(
+              button: true,
+              label: ProfileStrings.changePhoto,
+              excludeSemantics: true,
+              child: Pressable(
+                onTap: onTap,
+                child: Container(
+                  width: 92,
+                  height: 92,
+                  alignment: Alignment.center,
+                  clipBehavior: Clip.antiAlias,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: AppColors.moss600,
+                    border: Border.all(color: AppColors.cream, width: 4),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Color(0x801F3F27),
+                        blurRadius: 20,
+                        spreadRadius: -8,
+                        offset: Offset(0, 8),
+                      ),
+                    ],
+                    image: image == null
+                        ? null
+                        : DecorationImage(image: image, fit: BoxFit.cover),
+                  ),
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      if (image == null)
+                        Text(
+                          initials,
+                          style: AppText.sans(
+                            size: 30,
+                            weight: FontWeight.w600,
+                            color: AppColors.white,
+                          ),
+                        ),
+                      Positioned.fill(
+                        child: ColoredBox(
+                          color: const Color(0x991F3F27),
+                          child: const Center(
+                            child: AppIcon.filled(
+                              AppIcons.camera,
+                              size: 26,
+                              color: AppColors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CirclesPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final s = size.width / 390;
+    for (final (r, a) in const [
+      (60.0, .25),
+      (100.0, .18),
+      (140.0, .12),
+      (180.0, .08),
+    ]) {
+      canvas.drawCircle(
+        Offset(330 * s, 60 * s),
+        r * s,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1
+          ..color = AppColors.gold.withValues(alpha: a),
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(_CirclesPainter old) => false;
+}
+
+class _SheetOption extends StatelessWidget {
+  const _SheetOption({
+    required this.label,
+    required this.onTap,
+    this.destructive = false,
+  });
+
+  final String label;
+  final VoidCallback onTap;
+  final bool destructive;
+
+  @override
+  Widget build(BuildContext context) => PressSurface(
+    onTap: onTap,
+    borderRadius: BorderRadius.circular(12),
+    child: Container(
+      height: 50,
+      alignment: Alignment.centerLeft,
+      padding: const EdgeInsets.symmetric(horizontal: 14),
+      child: Text(
+        label,
+        style: AppText.sans(
+          size: 16,
+          color: destructive ? AppColors.error : AppColors.ink,
         ),
-      ],
+      ),
     ),
   );
 }

@@ -1,177 +1,153 @@
 import 'package:flutter/material.dart';
 
-import '../../../app_constants/startup_strings.dart';
+import '../../../app_constants/founder_tools_strings.dart';
 import '../../../helpers/formatters.dart';
 import '../../../models/startup.dart';
 import '../../../models/startup_enums.dart';
-import '../../../shared_ui/common_widgets/svg_asset.dart';
-import '../../../shared_ui/theme/app_theme.dart';
-import 'startup_logo.dart';
-import 'startup_tag.dart';
-import 'visibility_badge.dart';
+import 'founder_ui.dart';
 
-/// A founder's own startup in the My Startups list (Figma "V2 · 44b"):
-/// logo, name, one-line summary, sector / stage / "Looking for" tags, the
-/// Public/Private badge and a Manage link. Tapping anywhere opens Manage;
-/// the "..." button calls [onMore].
+/// The card line under the Public / Private pill: "Raising SAR 500,000" when
+/// the startup looks for funding and has an amount, else "Looking for
+/// partnership" (the first thing it looks for).
+String startupNeedsLine(Startup s) {
+  final amount = s.fundingRequirement;
+  if (s.seeksFunding && amount != null && amount > 0) {
+    return FounderToolsStrings.raising(Formatters.sar(amount));
+  }
+  if (s.lookingFor.isEmpty) return '';
+  final first = LookingFor.values.firstWhere((l) => s.lookingFor.contains(l));
+  return FounderToolsStrings.lookingForLine(s.lookingForLabelOf(first));
+}
+
+/// A My Startups list card (prototype `.scard`): gold tile 48, name 18/700,
+/// tagline, sector / stage / city pills, and a footer with the visibility
+/// pill, the needs line and "Manage ›". Tap opens Manage.
 class MyStartupCard extends StatelessWidget {
-  const MyStartupCard({
-    super.key,
-    required this.startup,
-    required this.onTap,
-    this.onMore,
-  });
+  const MyStartupCard({super.key, required this.startup, required this.onTap});
 
   final Startup startup;
-
-  /// Opens the Manage page.
   final VoidCallback onTap;
-
-  /// The "..." button; hidden when null.
-  final VoidCallback? onMore;
-
-  /// "SAR 500K" for funding, otherwise the other things sought.
-  String get _lookingFor {
-    final funding = startup.fundingRequirement;
-    if (startup.seeksFunding && funding != null) {
-      return Formatters.compactSar(funding);
-    }
-    return [
-      for (final item in LookingFor.values)
-        if (startup.lookingFor.contains(item)) startup.lookingForLabelOf(item),
-    ].join(', ');
-  }
 
   @override
   Widget build(BuildContext context) {
-    final shape = BorderRadius.circular(AppRadius.lg);
-    final lookingFor = _lookingFor;
-    final summary = startup.summary;
-    return Material(
-      color: AppColors.surface,
-      borderRadius: shape,
-      child: InkWell(
-        borderRadius: shape,
+    final s = startup;
+    final needs = startupNeedsLine(s);
+    return Semantics(
+      button: true,
+      label: '${s.name}, ${FounderToolsStrings.manage}',
+      excludeSemantics: true,
+      child: Pressable(
         onTap: onTap,
-        child: Ink(
-          padding: const EdgeInsets.all(AppSpacing.lg),
+        child: Container(
+          padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            borderRadius: shape,
-            border: Border.all(color: AppColors.border),
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(AppRadius.homeCard),
+            boxShadow: AppShadow.listCard,
           ),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  StartupLogo(
-                    initials: startup.initials,
-                    url: startup.logoUrl,
-                    size: 52,
-                    cornerFactor: 0.27,
-                    fontSize: 17,
-                    foreground: AppColors.moss600,
+                  TileAvatar(
+                    initials: s.initials,
+                    tone: TileTone.gold,
+                    size: 48,
+                    radius: 14,
+                    fontSize: 16,
                   ),
-                  const SizedBox(width: AppSpacing.md),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          startup.name,
-                          style: AppText.sans(
-                            size: 16,
-                            color: AppColors.ink,
-                            weight: FontWeight.w700,
-                          ),
+                          s.name,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
+                          style: AppText.sans(
+                            size: 18,
+                            weight: FontWeight.w700,
+                            letterSpacing: -0.2,
+                          ),
                         ),
-                        if (summary.isNotEmpty) ...[
-                          const SizedBox(height: 3),
+                        if (s.summary.isNotEmpty) ...[
+                          const SizedBox(height: 2),
                           Text(
-                            summary,
+                            s.summary,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
                             style: AppText.sans(
                               size: 13,
+                              height: 18,
                               color: AppColors.grey,
                             ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
                           ),
                         ],
                       ],
                     ),
                   ),
-                  if (onMore != null)
-                    Semantics(
-                      button: true,
-                      label: StartupStrings.moreOptions,
-                      excludeSemantics: true,
-                      child: InkResponse(
-                        onTap: onMore,
-                        radius: 22,
-                        child: SizedBox(
-                          width: 32,
-                          height: 40,
-                          child: Center(
-                            child: svgIcon('st_more.svg', size: 22),
-                          ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  AppPill(label: s.sectorLabel, height: 26, fontSize: 12),
+                  AppPill(label: s.stageLabel, height: 26, fontSize: 12),
+                  AppPill(label: s.location.label, height: 26, fontSize: 12),
+                ],
+              ),
+              const SizedBox(height: 14),
+              Container(
+                padding: const EdgeInsets.only(top: 12),
+                decoration: const BoxDecoration(
+                  border: Border(top: BorderSide(color: AppColors.dividerSoft)),
+                ),
+                child: Row(
+                  children: [
+                    AppPill(
+                      label: s.isPublic
+                          ? FounderToolsStrings.publicPill
+                          : FounderToolsStrings.privatePill,
+                      tone: s.isPublic ? AppPillTone.moss : AppPillTone.grey,
+                      icon: s.isPublic ? AppIcons.globe : AppIcons.lock,
+                      height: 26,
+                      fontSize: 12,
+                      weight: FontWeight.w600,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        needs,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppText.sans(
+                          size: 12.5,
+                          weight: FontWeight.w600,
+                          color: AppColors.tagGoldText,
                         ),
                       ),
                     ),
-                ],
-              ),
-              const SizedBox(height: AppSpacing.md),
-              Wrap(
-                spacing: 6,
-                runSpacing: 6,
-                children: [
-                  StartupTag(startup.sectorLabel),
-                  StartupTag(startup.stageLabel),
-                  if (lookingFor.isNotEmpty)
-                    StartupTag(
-                      StartupStrings.lookingForTag(lookingFor),
-                      gold: true,
-                    ),
-                ],
-              ),
-              const SizedBox(height: AppSpacing.md),
-              const Divider(
-                height: 1,
-                thickness: 1,
-                color: AppColors.dividerSoft,
-              ),
-              const SizedBox(height: AppSpacing.md),
-              Row(
-                children: [
-                  VisibilityBadge(isPublic: startup.isPublic),
-                  const SizedBox(width: AppSpacing.sm),
-                  // Figma: "Manage ›" is flush with the card's right edge.
-                  Expanded(
-                    child: Align(
-                      alignment: Alignment.centerRight,
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Flexible(
-                            child: Text(
-                              StartupStrings.manage,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: AppText.sans(
-                                size: 14,
-                                color: AppColors.moss600,
-                                weight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: AppSpacing.xs),
-                          svgIcon('st_chev16.svg', size: 16),
-                        ],
+                    const SizedBox(width: 8),
+                    Text(
+                      FounderToolsStrings.manage,
+                      style: AppText.sans(
+                        size: 15,
+                        weight: FontWeight.w600,
+                        color: AppColors.moss600,
                       ),
                     ),
-                  ),
-                ],
+                    const AppIcon.outline(
+                      AppIcons.rowChevron,
+                      size: 18,
+                      color: AppColors.moss600,
+                    ),
+                  ],
+                ),
               ),
             ],
           ),

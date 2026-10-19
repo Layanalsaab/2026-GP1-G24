@@ -14,6 +14,10 @@ class InvestorProfile {
     this.bio,
     this.matchPercent,
     this.matchReason,
+    this.linkedin,
+    this.valueOffered,
+    this.hopeToGain,
+    this.joinedLabel,
   });
 
   final String id;
@@ -40,6 +44,18 @@ class InvestorProfile {
   /// Only set for the Matches tab.
   final int? matchPercent;
   final String? matchReason;
+
+  /// Optional LinkedIn link ("linkedin.com/in/ahmad-hassan").
+  final String? linkedin;
+
+  /// "What I can bring to startups".
+  final String? valueOffered;
+
+  /// "What I hope to gain".
+  final String? hopeToGain;
+
+  /// "Joined yesterday" / "Joined 3 days ago" on the "New on Start.sa" rail.
+  final String? joinedLabel;
 
   /// First letter of the first and last name; "Sara Al-Mohsen" gives "SM".
   String get initials {
@@ -72,5 +88,9 @@ class InvestorProfile {
     bio: bio,
     matchPercent: percent,
     matchReason: reason,
+    linkedin: linkedin,
+    valueOffered: valueOffered,
+    hopeToGain: hopeToGain,
+    joinedLabel: joinedLabel,
   );
 }

@@ -1,133 +1,129 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
+import '../../../app_constants/auth_strings.dart';
 import '../../../data_access/repositories/app_settings_repository.dart';
 import '../../../data_access/repositories/auth_repository.dart';
 import '../../../models/app_user.dart';
 import '../../../navigation/app_router.dart';
-import '../../../shared_ui/common_widgets/design_canvas.dart';
-import '../../../shared_ui/common_widgets/gold_divider.dart';
-import '../../../shared_ui/common_widgets/house_rings.dart';
-import '../../../shared_ui/theme/app_theme.dart';
-import 'intro_one_screen.dart';
+import '../../../shared_ui/motion/motion.dart';
+import '../../../shared_ui/navigation/app_route.dart';
+import '../../../shared_ui/theme/app_colors.dart';
+import '../../../shared_ui/theme/app_text.dart';
+import '../widgets/auth_decor.dart';
+import 'intro_screen.dart';
+import 'welcome_screen.dart';
 
-/// Figma: "V2 · 01 · Splash"
-///
-/// While the logo shows, it waits for Firebase and checks for a saved session:
-/// a verified, signed-in user goes straight to their home; everyone else
-/// goes to Welcome, or to the intro screens on the very first launch.
+/// Splash (docs/05 A1): cream, three arches drawing in, the logo, "Start.sa",
+/// the tagline and a gold divider. Holds 2.6 s (or until tapped), meanwhile
+/// waiting for Firebase and looking for a saved session: a signed-in user
+/// goes to their home, a first-time visitor to the intro, everyone else to
+/// Welcome.
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key, this.firebaseReady});
 
   /// Completes when Firebase has finished initializing. Null means ready.
   final Future<void>? firebaseReady;
 
+  /// How long the splash holds before moving on.
+  static const hold = Duration(milliseconds: 2600);
+
   @override
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-  late final Animation<double> _fade;
-
-  static const _sparkles = [
-    Offset(48, 90),
-    Offset(310, 130),
-    Offset(70, 560),
-    Offset(300, 600),
-    Offset(40, 260),
-    Offset(320, 310),
-  ];
+class _SplashScreenState extends State<SplashScreen> {
+  final Completer<void> _tap = Completer<void>();
+  bool _left = false;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1200),
-    )..forward();
-    _fade = CurvedAnimation(parent: _controller, curve: Curves.easeOut);
-    _continueAfterSplash();
+    _run();
   }
 
-  Future<void> _continueAfterSplash() async {
-    final minimumSplash = Future<void>.delayed(const Duration(milliseconds: 2800));
+  Future<void> _run() async {
+    final decision = _decide();
+    await Future.any<void>([
+      Future<void>.delayed(SplashScreen.hold),
+      _tap.future,
+    ]);
+    final result = await decision;
+    if (!mounted || _left) return;
+    _left = true;
+    if (result.user != null) {
+      AppRouter.openAfterLogin(context, result.user!);
+    } else if (result.introSeen) {
+      AppNav.reset(context, const WelcomeScreen(), kind: RouteKind.fade);
+    } else {
+      AppNav.reset(context, const IntroScreen(), kind: RouteKind.fade);
+    }
+  }
 
-    final introSeenFuture = AppSettingsRepository.instance.hasSeenIntro();
-
+  Future<({AppUser? user, bool introSeen})> _decide() async {
+    final seen = AppSettingsRepository.instance.hasSeenIntro();
     AppUser? user;
     try {
       await widget.firebaseReady;
       user = await AuthRepository.instance.restoreSession();
     } catch (_) {
-      user = null; // Any problem restoring the session just means "not signed in".
+      user = null; // Any problem restoring the session means "not signed in".
     }
-    final introSeen = await introSeenFuture;
-    await minimumSplash;
-    if (!mounted) return;
-
-    if (user != null) {
-      AppRouter.openHome(context, user); // signed in: straight to their screen
-    } else if (introSeen) {
-      AppRouter.openStart(context); // returning visitor: skip the intros
-    } else {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const IntroOneScreen()),
-      );
-    }
+    return (user: user, introSeen: await seen);
   }
 
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
+  void _skip() {
+    if (!_tap.isCompleted) _tap.complete();
   }
 
   @override
   Widget build(BuildContext context) {
-    return DesignCanvas(
-      background: AppColors.cream,
-      children: [
-        ...houseRings(sparkles: _sparkles),
-        Positioned.fill(
-          child: FadeTransition(
-            opacity: _fade,
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                Positioned(
-                  left: 87,
-                  top: 222,
-                  width: 186,
-                  height: 177,
-                  child: Image.asset('assets/images/logo.png', fit: BoxFit.cover),
+    return Scaffold(
+      backgroundColor: AppColors.cream,
+      body: Semantics(
+        button: true,
+        label: 'Continue',
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: _skip,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              const SplashBackdrop(),
+              Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    LogoIn(child: const BrandLogo(width: 150, height: 143)),
+                    const SizedBox(height: 24),
+                    FadeInOnce(
+                      delay: const Duration(milliseconds: 350),
+                      child: Text(
+                        AuthStrings.appName,
+                        style: AppText.wordmarkSplash,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    FadeInOnce(
+                      delay: const Duration(milliseconds: 550),
+                      child: Text(
+                        AuthStrings.tagline,
+                        style: AppText.sans(size: 15, color: AppColors.grey),
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+                    const FadeInOnce(
+                      delay: Duration(milliseconds: 700),
+                      child: GoldDivider(),
+                    ),
+                  ],
                 ),
-                Positioned(
-                  left: 0,
-                  right: 0,
-                  top: 432,
-                  child: Text(
-                    'Start.sa',
-                    textAlign: TextAlign.center,
-                    style: AppText.serif(size: 44, color: AppColors.green),
-                  ),
-                ),
-                Positioned(
-                  left: 0,
-                  right: 0,
-                  top: 492,
-                  child: Text(
-                    'Connect. Invest. Grow.',
-                    textAlign: TextAlign.center,
-                    style: AppText.sans(size: 15, color: AppColors.grey),
-                  ),
-                ),
-                ...goldDivider(lineTop: 540),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
-      ],
+      ),
     );
   }
 }

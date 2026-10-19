@@ -1,107 +1,121 @@
 import 'package:flutter/material.dart';
 
-import '../../../app_constants/app_strings.dart';
-import '../../../helpers/validators.dart';
-import '../../../shared_ui/common_widgets/app_text_field.dart';
-import '../../../shared_ui/common_widgets/form_message.dart';
-import '../../../shared_ui/common_widgets/form_page_scaffold.dart';
-import '../../../shared_ui/common_widgets/primary_button.dart';
-import '../../../shared_ui/common_widgets/svg_asset.dart';
-import '../../../shared_ui/theme/app_theme.dart';
+import '../../../app_constants/auth_strings.dart';
+import '../../../shared_ui/navigation/app_route.dart';
+import '../../../shared_ui/theme/app_colors.dart';
+import '../../../shared_ui/theme/app_text.dart';
+import '../../../shared_ui/widgets/buttons/app_button.dart';
+import '../../../shared_ui/widgets/forms/app_field.dart';
+import '../../../shared_ui/widgets/forms/app_text_field.dart';
+import '../../../shared_ui/widgets/headers/auth_headers.dart';
+import '../../../shared_ui/widgets/headers/overlap_layout.dart';
+import '../../../shared_ui/widgets/overlays/app_toast.dart';
 import '../view_models/forgot_password_view_model.dart';
+import '../widgets/auth_navigation.dart';
 
-/// Figma: "V2 · 34 · Forgot Password"
+/// Forgot password (docs/05 A13): enter the email, "Send reset link" goes
+/// back with the toast `Reset link sent to <email>`.
 class ForgotPasswordScreen extends StatefulWidget {
-  const ForgotPasswordScreen({super.key});
+  const ForgotPasswordScreen({super.key, this.email = ''});
+
+  /// Pre-filled email (from Log in or the Verify step).
+  final String email;
+
+  /// Pushes Forgot password with [email] pre-filled.
+  static void open(BuildContext context, {String email = ''}) => AppNav.push(
+    context,
+    ForgotPasswordScreen(email: email),
+    greenHeader: true,
+  );
 
   @override
   State<ForgotPasswordScreen> createState() => _ForgotPasswordScreenState();
 }
 
 class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
-  final _viewModel = ForgotPasswordViewModel();
-  final _email = TextEditingController();
+  late final ForgotPasswordViewModel _vm = ForgotPasswordViewModel(
+    email: widget.email,
+  );
 
   @override
   void dispose() {
-    _viewModel.dispose();
-    _email.dispose();
+    _vm.dispose();
     super.dispose();
   }
 
-  void _submit() {
-    FocusScope.of(context).unfocus();
-    _viewModel.submit(_email.text);
+  Future<void> _send() async {
+    final sentTo = await _vm.submit();
+    if (!mounted) return;
+    if (sentTo != null) {
+      // The toast lives in the root overlay, so it survives the pop.
+      AppToast.show(context, AuthStrings.resetLinkSent(sentTo));
+      authBack(context);
+    } else if (_vm.formError != null) {
+      AppToast.show(context, _vm.formError!);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
-      listenable: Listenable.merge([_viewModel, _email]),
+      listenable: _vm,
       builder: (context, _) {
-        return FormPageScaffold(
-          contentTopPadding: 24,
-          bottomTopPadding: 16,
-          bottom: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              PrimaryButton(
-                label: AppStrings.forgotButton,
-                isLoading: _viewModel.isLoading,
-                onPressed: _submit,
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 64,
-                height: 64,
-                decoration: const BoxDecoration(
-                  color: AppColors.moss100,
-                  shape: BoxShape.circle,
+        final vm = _vm;
+        return Scaffold(
+          backgroundColor: AppColors.cream,
+          resizeToAvoidBottomInset: true,
+          body: SingleChildScrollView(
+            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                AuthHeader(
+                  title: AuthStrings.forgotTitle,
+                  onBack: () => authBack(context),
                 ),
-                child: Center(child: svgIcon('lock.svg', size: 28)),
-              ),
-              const SizedBox(height: 20),
-              Text(
-                AppStrings.forgotTitle,
-                style: AppText.sans(
-                  size: 22,
-                  color: AppColors.ink,
-                  weight: FontWeight.w600,
-                  height: 28,
+                AuthCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+                        child: Text(
+                          AuthStrings.forgotIntro,
+                          style: AppText.sans(
+                            size: 14,
+                            color: AppColors.grey,
+                            height: 21,
+                          ),
+                        ),
+                      ),
+                      FormFieldColumn(
+                        children: [
+                          LabeledTextField(
+                            label: AuthStrings.email,
+                            required: true,
+                            controller: vm.email,
+                            placeholder: AuthStrings.forgotPlaceholder,
+                            keyboardType: TextInputType.emailAddress,
+                            valid: vm.emailValid,
+                            error: vm.emailError,
+                            autofillHints: const [AutofillHints.email],
+                          ),
+                        ],
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+                        child: AppButton(
+                          label: AuthStrings.sendResetLink,
+                          onPressed: _send,
+                          loading: vm.isLoading,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                AppStrings.forgotSubtitle,
-                style: AppText.sans(size: 14, color: AppColors.grey, height: 21),
-              ),
-              const SizedBox(height: 28),
-              AppTextField(
-                label: AppStrings.emailLabel,
-                hint: AppStrings.forgotEmailHint,
-                controller: _email,
-                rules: Validators.emailRules(_email.text),
-                // The checklist already explains an invalid email.
-                showRules: _viewModel.emailError != null,
-                enabled: !_viewModel.isLoading,
-                keyboardType: TextInputType.emailAddress,
-                textInputAction: TextInputAction.done,
-                onSubmitted: (_) => _submit(),
-              ),
-              if (_viewModel.formError != null) ...[
-                const SizedBox(height: 12),
-                FormMessage.error(_viewModel.formError!),
+                const SizedBox(height: 28),
               ],
-              if (_viewModel.successMessage != null) ...[
-                const SizedBox(height: 12),
-                FormMessage.success(_viewModel.successMessage!),
-              ],
-            ],
+            ),
           ),
         );
       },

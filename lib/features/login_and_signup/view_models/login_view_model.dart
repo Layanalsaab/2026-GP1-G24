@@ -1,122 +1,97 @@
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 
 import '../../../app_constants/app_strings.dart';
+import '../../../app_constants/auth_strings.dart';
+import '../../../app_constants/validation_strings.dart';
 import '../../../data_access/repositories/auth_repository.dart';
+import '../../../helpers/safe_notifier.dart';
 import '../../../helpers/validators.dart';
 import '../../../models/app_user.dart';
 import '../../../models/auth_failure.dart';
+import 'verify_email_view_model.dart' show ResendOutcome;
 
-class LoginViewModel extends ChangeNotifier {
+/// Log in (docs/05 A12, docs/06 section 5).
+class LoginViewModel extends ChangeNotifier with SafeNotifier {
   LoginViewModel({AuthRepository? authRepository})
-      : _auth = authRepository ?? AuthRepository.instance;
+    : _auth = authRepository ?? AuthRepository.instance {
+    email.addListener(_edited);
+    password.addListener(_edited);
+  }
 
   final AuthRepository _auth;
 
+  final email = TextEditingController();
+  final password = TextEditingController();
+
+  bool attempted = false;
   bool isLoading = false;
   bool isResending = false;
 
-  /// Shown under the form after a failed log in.
+  /// A problem that is not about one field (network, unknown).
   String? formError;
 
-  /// Field-level errors from the last submit ("Enter your password").
-  String? emailError;
-  String? passwordError;
-
-  /// True after the first submit attempt, so empty fields show their
-  /// checklist instead of staying silent.
-  bool attempted = false;
-
-  /// True when the credentials were right but the email isn't verified yet.
+  /// True when the credentials were right but the email is not verified yet.
   bool needsVerification = false;
 
-  /// True when the pop-up is a reminder: the user tried to log in without
-  /// verifying. False for the first pop-up, right after sign up.
-  bool verificationReminder = false;
+  String? _credentialsError;
 
-  /// Result of the last "Resend verification email" tap.
-  String? resendMessage;
-  bool resendFailed = false;
+  // Kept in memory only, so the verify pop-up can resend the link.
+  String _sentEmail = '';
+  String _sentPassword = '';
 
-  // Kept in memory only, so we can resend the verification email later.
-  String _email = '';
-  String _password = '';
+  String get verificationEmail => _sentEmail;
 
-  /// The email the verification link was (or will be) sent to.
-  String get verificationEmail => _email;
-
-  /// Opens the "Verify your email" pop-up right after sign up: the account
-  /// exists but its email isn't verified yet. [emailSent] is false when the
-  /// first email could not be sent, so the pop-up says so.
-  void promptVerification({
-    required String email,
-    required String password,
-    required bool emailSent,
-  }) {
-    _email = email.trim();
-    _password = password;
-    needsVerification = true;
-    verificationReminder = false;
-    resendFailed = !emailSent;
-    resendMessage = emailSent ? null : AppStrings.checkEmailSendFailed;
+  void _edited() {
+    _credentialsError = null;
     notifyListeners();
   }
 
-  /// Called when the pop-up is closed.
-  void dismissVerification() {
-    // No notification: the pop-up is already animating out and must not
-    // change its text while it does.
-    needsVerification = false;
-    resendMessage = null;
-    resendFailed = false;
+  String? get emailError => attempted || email.text.trim().isNotEmpty
+      ? Validators.email(email.text)
+      : null;
+
+  String? get passwordError {
+    if (_credentialsError != null) return _credentialsError;
+    if (attempted && password.text.isEmpty) {
+      return ValidationStrings.passwordRequired;
+    }
+    return null;
   }
 
-  /// Returns the signed-in user's profile, or null when log in failed (see
-  /// [formError] / [needsVerification]). When the email isn't verified yet,
-  /// [needsVerification] is true and the screen shows the pop-up.
-  Future<AppUser?> submit({
-    required String email,
-    required String password,
-  }) async {
-    if (isLoading) return null;
+  bool get emailValid => Validators.isEmail(email.text);
 
+  /// Returns the signed-in profile, or null (see [emailError], [passwordError],
+  /// [formError], [needsVerification]).
+  Future<AppUser?> submit() async {
+    if (isLoading) return null;
     attempted = true;
     formError = null;
     needsVerification = false;
-    resendMessage = null;
-    resendFailed = false;
-
-    _email = email.trim();
-    _password = password;
-
-    // A missing or malformed value is reported under its own field. Wrong
-    // credentials still get one generic message (see below).
-    emailError =
-        Validators.email(_email) == null ? null : AppStrings.loginEmailInvalid;
-    passwordError =
-        password.isEmpty ? AppStrings.loginPasswordRequired : null;
-    if (emailError != null || passwordError != null) {
+    _credentialsError = null;
+    if (Validators.email(email.text) != null || password.text.isEmpty) {
       notifyListeners();
       return null;
     }
 
+    _sentEmail = email.text.trim();
+    _sentPassword = password.text;
     isLoading = true;
     notifyListeners();
     try {
-      return await _auth.logIn(_email, password);
+      return await _auth.logIn(_sentEmail, _sentPassword);
     } on AuthException catch (e) {
       switch (e.failure) {
         case AuthFailure.emailNotVerified:
           needsVerification = true;
-          verificationReminder = true;
+        case AuthFailure.invalidCredentials:
+        case AuthFailure.invalidEmail:
+          _credentialsError = AuthStrings.incorrectCredentials;
         case AuthFailure.profileMissing:
           formError = AppStrings.profileMissing;
         case AuthFailure.network:
           formError = AppStrings.networkError;
         case AuthFailure.tooManyRequests:
           formError = AppStrings.tooManyRequests;
-        case AuthFailure.invalidCredentials:
-        case AuthFailure.invalidEmail:
-          formError = AppStrings.incorrectCredentials;
         default:
           formError = AppStrings.genericError;
       }
@@ -129,40 +104,39 @@ class LoginViewModel extends ChangeNotifier {
     return null;
   }
 
-  /// Clears the field errors as soon as the user edits a field.
-  void fieldEdited() {
-    if (emailError == null && passwordError == null && formError == null) return;
-    emailError = null;
-    passwordError = null;
+  /// "Resend verification email" in the verify pop-up.
+  Future<ResendOutcome> resend() async {
+    if (isResending) return ResendOutcome.failed;
+    isResending = true;
     formError = null;
     notifyListeners();
-  }
-
-  Future<void> resendVerification() async {
-    if (isResending || !needsVerification) return;
-
-    isResending = true;
-    resendMessage = null;
-    notifyListeners();
     try {
-      final result = await _auth.resendVerification(_email, _password);
-      resendFailed = false;
-      resendMessage = result == ResendResult.sent
-          ? AppStrings.verificationSent
-          : AppStrings.alreadyVerified;
+      final result = await _auth.resendVerification(_sentEmail, _sentPassword);
+      return result == ResendResult.sent
+          ? ResendOutcome.sent
+          : ResendOutcome.alreadyVerified;
     } on AuthException catch (e) {
-      resendFailed = true;
-      resendMessage = switch (e.failure) {
+      formError = switch (e.failure) {
         AuthFailure.network => AppStrings.networkError,
         AuthFailure.tooManyRequests => AppStrings.tooManyRequests,
         _ => AppStrings.genericError,
       };
+      return ResendOutcome.failed;
     } catch (_) {
-      resendFailed = true;
-      resendMessage = AppStrings.genericError;
+      formError = AppStrings.genericError;
+      return ResendOutcome.failed;
     } finally {
       isResending = false;
       notifyListeners();
     }
+  }
+
+  @override
+  void dispose() {
+    email.removeListener(_edited);
+    password.removeListener(_edited);
+    email.dispose();
+    password.dispose();
+    super.dispose();
   }
 }

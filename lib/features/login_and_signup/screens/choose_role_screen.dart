@@ -1,178 +1,82 @@
 import 'package:flutter/material.dart';
 
+import '../../../app_constants/auth_strings.dart';
 import '../../../models/app_user.dart';
-import '../../../navigation/seeker_main_screen.dart';
-import '../../../shared_ui/common_widgets/form_page_scaffold.dart';
-import '../../../shared_ui/common_widgets/primary_button.dart';
-import '../../../shared_ui/common_widgets/svg_asset.dart';
-import '../../../shared_ui/theme/app_theme.dart';
+import '../../../shared_ui/icons/app_icons.dart';
+import '../../../shared_ui/navigation/app_route.dart';
+import '../../../shared_ui/theme/app_colors.dart';
+import '../../../shared_ui/widgets/buttons/app_button.dart';
+import '../../../shared_ui/widgets/forms/form_page.dart';
+import '../../../shared_ui/widgets/headers/auth_headers.dart';
+import '../../../shared_ui/widgets/headers/overlap_layout.dart';
+import '../widgets/auth_navigation.dart';
+import '../widgets/role_card.dart';
+import 'login_screen.dart';
 import 'signup_screen.dart';
 
-enum UserRole {
-  founder(
-    'Founder',
-    'Create and manage your startups, connect with investors, and access support programs.',
-    'role_founder.svg',
-  ),
-  investor(
-    'Investor',
-    'Discover startups aligned with your investment interests and connect with founders.',
-    'role_investor.svg',
-  ),
-  seeker(
-    'Startup Seeker',
-    'Browse Saudi startups and express your interest in joining or supporting them.',
-    'role_seeker.svg',
-  );
-
-  const UserRole(this.title, this.description, this.iconAsset);
-
-  final String title;
-  final String description;
-  final String iconAsset;
-
-  /// The role stored on an account. Null for seekers, who have no account.
-  AccountRole? get accountRole => switch (this) {
-        UserRole.founder => AccountRole.founder,
-        UserRole.investor => AccountRole.investor,
-        UserRole.seeker => null,
-      };
-}
-
-/// Figma: "V2 · 03 · Choose Role"
+/// Choose role (docs/05 A6): Founder (pre-selected) or Investor, then
+/// Continue to the sign-up form for that role.
 class ChooseRoleScreen extends StatefulWidget {
   const ChooseRoleScreen({super.key});
+
+  /// Pushes Choose role (Welcome's "Create account", the Log in footer and
+  /// the guest "Sign up" pill).
+  static void open(BuildContext context) =>
+      AppNav.push(context, const ChooseRoleScreen(), greenHeader: true);
 
   @override
   State<ChooseRoleScreen> createState() => _ChooseRoleScreenState();
 }
 
 class _ChooseRoleScreenState extends State<ChooseRoleScreen> {
-  UserRole _selected = UserRole.founder;
-
-  /// Founders and investors create an account. Seekers have no account, so
-  /// they go straight to the seeker's Hub / Explore / Programs.
-  void _continue() {
-    final accountRole = _selected.accountRole;
-    final Widget next = accountRole == null
-        ? const SeekerMainScreen()
-        : SignupScreen(role: accountRole);
-    Navigator.of(context).push(MaterialPageRoute(builder: (_) => next));
-  }
+  AccountRole _role = AccountRole.founder;
 
   @override
   Widget build(BuildContext context) {
-    return FormPageScaffold(
-      bottom: PrimaryButton(label: 'Continue', onPressed: _continue),
-      child: Column(
-        children: [
-          SizedBox(
-            width: 72,
-            height: 68,
-            child: Image.asset('assets/images/logo.png', fit: BoxFit.cover),
-          ),
-          const SizedBox(height: 24),
-          Text(
-            'Choose your role',
-            style: AppText.sans(
-              size: 28,
-              color: AppColors.ink,
-              weight: FontWeight.w600,
-              height: 36,
-            ),
-          ),
-          // Seekers no longer pick a role here: they use "Continue as guest"
-          // on the Welcome screen.
-          for (final role in UserRole.values.where((r) => r != UserRole.seeker)) ...[
-            const SizedBox(height: 24),
-            _RoleCard(
-              role: role,
-              selected: role == _selected,
-              onTap: () => setState(() => _selected = role),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-class _RoleCard extends StatelessWidget {
-  const _RoleCard({
-    required this.role,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final UserRole role;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 20),
-        decoration: BoxDecoration(
-          color: selected ? AppColors.moss100 : AppColors.surface,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: selected ? AppColors.moss600 : AppColors.border,
-            width: selected ? 2 : 1,
-          ),
-          boxShadow: selected
-              ? const [
-                  BoxShadow(
-                    color: Color(0x142F5D3A),
-                    offset: Offset(0, 2),
-                    blurRadius: 8,
-                  ),
-                ]
-              : null,
-        ),
-        child: Row(
+    return Scaffold(
+      backgroundColor: AppColors.cream,
+      body: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: selected ? AppColors.moss600 : AppColors.mutedFill,
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Center(
-                child: svgIcon(
-                  role.iconAsset,
-                  size: 22,
-                  color: selected ? Colors.white : AppColors.grey,
+            RoleHeader(
+              title: AuthStrings.chooseRoleTitle,
+              onBack: () => authBack(context),
+            ),
+            OverlapList(
+              gap: 14,
+              children: [
+                RoleCard(
+                  icon: AppIcons.sprout,
+                  title: AuthStrings.founder,
+                  description: AuthStrings.founderDescription,
+                  selected: _role == AccountRole.founder,
+                  onTap: () => setState(() => _role = AccountRole.founder),
                 ),
-              ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    role.title,
-                    style: AppText.sans(
-                      size: 17,
-                      color: AppColors.ink,
-                      weight: FontWeight.w600,
-                      height: 24,
-                    ),
+                RoleCard(
+                  icon: AppIcons.trend,
+                  title: AuthStrings.investor,
+                  description: AuthStrings.investorDescription,
+                  selected: _role == AccountRole.investor,
+                  onTap: () => setState(() => _role = AccountRole.investor),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(top: 10),
+                  child: AppButton(
+                    label: AuthStrings.continueLabel,
+                    onPressed: () => SignupScreen.open(context, _role),
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    role.description,
-                    style: AppText.sans(size: 12, color: AppColors.grey, height: 16),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: FooterLink.moss(
+                    prefix: AuthStrings.haveAccount,
+                    linkLabel: AuthStrings.logIn,
+                    onTap: () => LoginScreen.open(context),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-            const SizedBox(width: 14),
-            svgIcon(selected ? 'radio_selected.svg' : 'radio_unselected.svg', size: 22),
           ],
         ),
       ),

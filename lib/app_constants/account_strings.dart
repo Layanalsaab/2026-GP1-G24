@@ -54,7 +54,7 @@ class AccountStrings {
 
   // Edit account
   static const editAccountTitle = 'Edit profile';
-  static const bioMaxLength = Validators.maxBioLength;
+  static const bioMaxLength = Validators.maxBio;
   static const save = 'Save';
   static const closeEdit = 'Close';
   static const saveChanges = 'Save changes';
@@ -120,7 +120,8 @@ class AccountStrings {
   static const cropPhotoTitle = 'Crop photo';
   static const photoTooLarge =
       'That photo is too large. Please choose one under 2 MB.';
-  static const photoFailed = "We couldn't use that photo. Please try another one.";
+  static const photoFailed =
+      "We couldn't use that photo. Please try another one.";
   static const photoSaveFailed =
       "Your changes were saved, but the photo couldn't be updated. "
       "Please try again.";

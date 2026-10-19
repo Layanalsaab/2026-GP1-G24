@@ -1,58 +1,82 @@
 import 'package:flutter/foundation.dart';
 
-import '../../../app_constants/startup_strings.dart';
+import '../../../app_constants/founder_tools_strings.dart';
 import '../../../data_access/repositories/startup_repository.dart';
+import '../../../helpers/app_session.dart';
+import '../../../helpers/safe_notifier.dart';
 import '../../../models/startup.dart';
-import 'startup_error_message.dart';
 
-/// State of the Manage page for one startup (Figma "V2 · 44c"): the startup
-/// as last saved, and the delete request.
-class ManageStartupViewModel extends ChangeNotifier {
+/// State of Manage startup (docs/05 D3): the startup as last saved, the
+/// current tab, the visibility switch and the delete.
+class ManageStartupViewModel extends ChangeNotifier with SafeNotifier {
   ManageStartupViewModel({required this.startup, StartupRepository? repository})
     : _repository = repository ?? StartupRepository.instance;
 
   final StartupRepository _repository;
-  bool _disposed = false;
 
   /// The startup as last saved.
   Startup startup;
 
+  /// 0 Overview, 1 Requests, 2 Interest, 3 Settings.
+  int tab = 0;
+
   bool isDeleting = false;
+  bool isSavingVisibility = false;
+  String? error;
 
-  /// Message from the last failed delete.
-  String? deleteError;
-
-  /// Shows the startup as saved on the Edit page.
-  void update(Startup startup) {
-    this.startup = startup;
-    _notify();
+  void selectTab(int index) {
+    if (index == tab) return;
+    tab = index;
+    notifyListeners();
   }
 
-  /// Deletes the startup (and its logo). Returns true on success.
-  Future<bool> delete() async {
-    if (isDeleting) return false;
-    isDeleting = true;
-    deleteError = null;
-    _notify();
+  /// The startup was edited elsewhere.
+  void replace(Startup updated) {
+    startup = updated;
+    notifyListeners();
+  }
+
+  /// Flips Public / Private and saves it. Returns the new value, or null
+  /// when saving failed (the switch goes back).
+  Future<bool?> setPublic(bool value) async {
+    if (isSavingVisibility || value == startup.isPublic) return null;
+    final before = startup;
+    startup = startup.copyWith(isPublic: value);
+    isSavingVisibility = true;
+    error = null;
+    notifyListeners();
     try {
-      await _repository.delete(startup);
-      return true;
-    } catch (e) {
-      deleteError = '${StartupStrings.deleteFailed} ${startupErrorMessage(e)}';
-      return false;
+      startup = await _repository.update(startup);
+      return value;
+    } catch (_) {
+      startup = before;
+      error = FounderToolsStrings.saveFailed;
+      return null;
     } finally {
-      isDeleting = false;
-      _notify();
+      isSavingVisibility = false;
+      notifyListeners();
     }
   }
 
-  void _notify() {
-    if (!_disposed) notifyListeners();
-  }
-
-  @override
-  void dispose() {
-    _disposed = true;
-    super.dispose();
+  /// Deletes the startup (and its logo). True on success.
+  Future<bool> delete() async {
+    if (isDeleting) return false;
+    isDeleting = true;
+    error = null;
+    notifyListeners();
+    try {
+      await _repository.delete(startup);
+      AppSession.instance.setOwnStartupIds([
+        for (final id in AppSession.instance.ownStartupIds)
+          if (id != startup.id) id,
+      ]);
+      return true;
+    } catch (_) {
+      error = FounderToolsStrings.deleteFailed;
+      return false;
+    } finally {
+      isDeleting = false;
+      notifyListeners();
+    }
   }
 }

@@ -31,21 +31,24 @@ void main() {
 
   group('signUp', () {
     Future<SignupResult> signUp() => repo.signUp(
-          fullName: 'Mohammed Ahmed',
-          email: 'a@b.co',
-          password: 'Startup1',
-          role: AccountRole.investor,
-        );
+      fullName: 'Mohammed Ahmed',
+      email: 'a@b.co',
+      password: 'Startup1',
+      role: AccountRole.investor,
+    );
 
-    test('creates the account and profile, sends verification, signs out', () async {
-      final result = await signUp();
+    test(
+      'creates the account and profile, sends verification, signs out',
+      () async {
+        final result = await signUp();
 
-      expect(result.verificationEmailSent, isTrue);
-      expect(users.profiles['uid1']?.role, AccountRole.investor);
-      expect(users.profiles['uid1']?.fullName, 'Mohammed Ahmed');
-      expect(auth.calls, ['createAccount', 'sendVerification', 'signOut']);
-      expect(auth.signedIn, isNull);
-    });
+        expect(result.verificationEmailSent, isTrue);
+        expect(users.profiles['uid1']?.role, AccountRole.investor);
+        expect(users.profiles['uid1']?.fullName, 'Mohammed Ahmed');
+        expect(auth.calls, ['createAccount', 'sendVerification', 'signOut']);
+        expect(auth.signedIn, isNull);
+      },
+    );
 
     test('deletes the Auth account when the profile cannot be saved', () async {
       users.createFails = true;
@@ -72,15 +75,18 @@ void main() {
       expect(users.profiles, isEmpty);
     });
 
-    test('still succeeds if only the verification email fails to send', () async {
-      auth.sendVerificationFails = AuthFailure.unknown;
+    test(
+      'still succeeds if only the verification email fails to send',
+      () async {
+        auth.sendVerificationFails = AuthFailure.unknown;
 
-      final result = await signUp();
+        final result = await signUp();
 
-      expect(result.verificationEmailSent, isFalse);
-      expect(users.profiles['uid1'], isNotNull);
-      expect(auth.signedIn, isNull);
-    });
+        expect(result.verificationEmailSent, isFalse);
+        expect(users.profiles['uid1'], isNotNull);
+        expect(auth.signedIn, isNull);
+      },
+    );
   });
 
   group('logIn', () {
@@ -103,7 +109,10 @@ void main() {
     });
 
     test('every wrong-credentials case becomes the same failure', () async {
-      for (final code in [AuthFailure.invalidCredentials, AuthFailure.invalidEmail]) {
+      for (final code in [
+        AuthFailure.invalidCredentials,
+        AuthFailure.invalidEmail,
+      ]) {
         auth.signInFails = code;
         expect(
           await failureOf(() => repo.logIn('a@b.co', 'x')),
@@ -114,8 +123,11 @@ void main() {
     });
 
     test('blocks unverified users and signs them out', () async {
-      auth.account =
-          const AuthAccount(uid: 'uid1', email: 'a@b.co', emailVerified: false);
+      auth.account = const AuthAccount(
+        uid: 'uid1',
+        email: 'a@b.co',
+        emailVerified: false,
+      );
 
       expect(
         await failureOf(() => repo.logIn('a@b.co', 'Startup1')),
@@ -149,10 +161,16 @@ void main() {
 
   group('resendVerification', () {
     test('sends the email and always signs out again', () async {
-      auth.account =
-          const AuthAccount(uid: 'uid1', email: 'a@b.co', emailVerified: false);
+      auth.account = const AuthAccount(
+        uid: 'uid1',
+        email: 'a@b.co',
+        emailVerified: false,
+      );
 
-      expect(await repo.resendVerification('a@b.co', 'Startup1'), ResendResult.sent);
+      expect(
+        await repo.resendVerification('a@b.co', 'Startup1'),
+        ResendResult.sent,
+      );
       expect(auth.calls, ['signIn', 'sendVerification', 'signOut']);
       expect(auth.signedIn, isNull);
     });
@@ -180,7 +198,8 @@ void main() {
 
   group('sendPasswordReset', () {
     test('does not reveal unregistered emails', () async {
-      auth.resetFails = AuthFailure.invalidCredentials; // Firebase: "user not found"
+      auth.resetFails =
+          AuthFailure.invalidCredentials; // Firebase: "user not found"
       await repo.sendPasswordReset('nobody@example.com'); // must not throw
     });
 
@@ -192,7 +211,10 @@ void main() {
 
     test('still reports network and rate-limit problems', () async {
       auth.resetFails = AuthFailure.network;
-      expect(await failureOf(() => repo.sendPasswordReset('a@b.co')), AuthFailure.network);
+      expect(
+        await failureOf(() => repo.sendPasswordReset('a@b.co')),
+        AuthFailure.network,
+      );
 
       auth.resetFails = AuthFailure.tooManyRequests;
       expect(
@@ -222,8 +244,11 @@ void main() {
     });
 
     test('signs out an unverified user', () async {
-      auth.signedIn =
-          const AuthAccount(uid: 'uid1', email: 'a@b.co', emailVerified: false);
+      auth.signedIn = const AuthAccount(
+        uid: 'uid1',
+        email: 'a@b.co',
+        emailVerified: false,
+      );
       users.profiles['uid1'] = profile;
 
       expect(await repo.restoreSession(), isNull);

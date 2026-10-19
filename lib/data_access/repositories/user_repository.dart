@@ -3,6 +3,7 @@ import 'dart:io';
 import '../../app_constants/firestore_collections.dart';
 import '../../models/app_user.dart';
 import '../../models/auth_failure.dart';
+import '../../models/investor_criteria.dart';
 import '../firebase_services/firestore_service.dart';
 import '../firebase_services/storage_service.dart';
 
@@ -35,6 +36,9 @@ class UserRepository {
     String? city,
     String? bio,
     List<String> sectorsOfInterest = const [],
+    String? sectorsOther,
+    String? linkedin,
+    String? gain,
   }) async {
     final core = <String, Object?>{
       UserFields.role: role.value,
@@ -49,6 +53,11 @@ class UserRepository {
       if (bio != null && bio.trim().isNotEmpty) UserFields.bio: bio.trim(),
       if (sectorsOfInterest.isNotEmpty)
         UserFields.sectorsOfInterest: List.of(sectorsOfInterest),
+      if (sectorsOther != null && sectorsOther.trim().isNotEmpty)
+        UserFields.sectorsOther: sectorsOther.trim(),
+      if (linkedin != null && linkedin.trim().isNotEmpty)
+        UserFields.linkedin: linkedin.trim(),
+      if (gain != null && gain.trim().isNotEmpty) UserFields.gain: gain.trim(),
     };
     if (extra.isEmpty) {
       await _firestore.setDocument(FirestoreCollections.users, uid, core);
@@ -94,17 +103,24 @@ class UserRepository {
     return AppUser.fromMap(uid, data);
   }
 
-  /// Saves an investor's edited investment criteria (PBI 22).
-  Future<void> updateInvestmentCriteria({
+  /// Saves the investor's answers to sign-up steps 3 and 4 and marks their
+  /// onboarding as finished.
+  Future<void> saveInvestorOnboarding({
     required String uid,
-    required List<String> sectors,
-    required List<String> stages,
-    required String ticketSize,
+    required InvestorCriteria criteria,
+    String? valueOffered,
   }) => _firestore.updateDocument(FirestoreCollections.users, uid, {
-    UserFields.preferredSectors: sectors,
-    UserFields.preferredStages: stages,
-    UserFields.ticketSize: ticketSize,
+    UserFields.investorCriteria: criteria.toMap(),
+    if (valueOffered != null) UserFields.valueOffered: valueOffered.trim(),
+    UserFields.onboardingCompleted: true,
   });
+
+  /// Marks a founder's onboarding as finished (after their first startup).
+  Future<void> completeOnboarding(String uid) => _firestore.updateDocument(
+    FirestoreCollections.users,
+    uid,
+    {UserFields.onboardingCompleted: true},
+  );
 
   /// Saves the fields a user can change on the Edit profile screen. The
   /// email and role never change here. [phone] is the 9 digits without +966.
@@ -120,6 +136,10 @@ class UserRepository {
     required String phone,
     required List<String> sectorsOfInterest,
     String? city,
+    String? sectorsOther,
+    String? linkedin,
+    String? gain,
+    String? valueOffered,
   }) async {
     try {
       await _firestore.updateDocument(FirestoreCollections.users, uid, {
@@ -128,6 +148,10 @@ class UserRepository {
         UserFields.phone: phone,
         UserFields.sectorsOfInterest: sectorsOfInterest,
         UserFields.city: ?city,
+        UserFields.sectorsOther: sectorsOther,
+        UserFields.linkedin: linkedin,
+        UserFields.gain: gain,
+        UserFields.valueOffered: valueOffered,
       });
     } on AuthException catch (e) {
       if (e.failure != AuthFailure.permissionDenied) rethrow;

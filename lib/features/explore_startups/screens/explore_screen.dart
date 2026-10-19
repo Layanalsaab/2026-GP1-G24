@@ -1,265 +1,199 @@
 import 'package:flutter/material.dart';
 
-import '../../../app_constants/explore_strings.dart';
-import '../../../data_access/mock_data/mock_startups.dart';
-import '../../../models/app_user.dart';
-import '../../../shared_ui/common_widgets/home_parts.dart';
-import '../../../shared_ui/theme/app_theme.dart';
-import '../../profiles/screens/investor_profile_screen.dart';
-import '../../profiles/screens/edit_criteria_screen.dart';
-import '../../startups/screens/startup_profile_screen.dart';
-import '../view_models/explore_view_model.dart';
-import 'seeker_startup_profile_screen.dart';
+import '../../../app_constants/home_strings.dart';
+import '../../../data_access/repositories/interaction_repository.dart';
+import '../../../models/home_item.dart';
+import '../../../navigation/open_item.dart';
+import '../../../shared_ui/widgets/cards/home_card.dart';
+import '../../../shared_ui/widgets/cards/trending.dart';
+import '../../../shared_ui/widgets/lists/empty_state.dart';
+import '../../../shared_ui/widgets/lists/section_header.dart';
+import '../../../shared_ui/widgets/lists/segmented_switch.dart';
+import '../../../shared_ui/widgets/overlays/app_dropdown.dart';
+import '../../search/screens/hub_screen.dart';
+import '../../search/view_models/home_view_model.dart';
+import '../../search/widgets/home_layout.dart';
 
-/// Figma "V2 · 40 / 40b / 40c · Explore" (Founder, Investor, Guest), with the
-/// For You, Trending and Matches tabs.
-///
-/// Design phase: the lists are sample data. Search and the sector chips
-/// filter them. A guest (startup seeker) has only the Trending list.
-class ExploreScreen extends StatefulWidget {
+/// The Explore page (Figma 21-23, 26b-d, 27b): For You, Trending and Matches
+/// (the sub-tabs live in the shell's header; guests only get Trending).
+/// Searching or filtering on any sub-tab turns it into the results view.
+/// Rendered inside the shell's scroll view.
+class ExploreScreen extends StatelessWidget {
   const ExploreScreen({
     super.key,
-    required this.role,
-    required this.topBar,
-    this.isGuest = false,
-    this.user,
+    required this.viewModel,
+    required this.onSignUp,
   });
 
-  final AccountRole role;
+  final HomeViewModel viewModel;
 
-  /// The signed-in user; needed to edit the investor's criteria from Matches.
-  final AppUser? user;
+  /// Guest "Sign up" button of the Join Start.sa card.
+  final VoidCallback onSignUp;
 
-  /// The shell's top bar (avatar, logo, bell).
-  final Widget topBar;
-  final bool isGuest;
+  HomeSlot _switch(int selected, ValueChanged<int> onChanged) => HomeSlot(
+    SegmentedSwitch(
+      labels: HomeStrings.switchLabels,
+      selectedIndex: selected,
+      onChanged: onChanged,
+    ),
+    top: 2,
+  );
 
-  @override
-  State<ExploreScreen> createState() => _ExploreScreenState();
-}
+  /// The section heading (`.shd2`: margin 4 2 -2, or 4 2 0 with a dropdown).
+  HomeSlot _heading(Widget header, {double bottom = -2}) =>
+      HomeSlot(header, top: 4, bottom: bottom);
 
-class _ExploreScreenState extends State<ExploreScreen> {
-  late final ExploreViewModel _viewModel = widget.isGuest
-      ? ExploreViewModel.seeker()
-      : ExploreViewModel(role: widget.role);
-
-  /// Which of the founder's startups the Matches tab is "for".
-  late String _matchesFor = MockStartups.forYou.first.name;
-
-  static const _tabs = [
-    ExploreTab.forYou,
-    ExploreTab.trending,
-    ExploreTab.matches,
-  ];
-
-  @override
-  void dispose() {
-    _viewModel.dispose();
-    super.dispose();
-  }
-
-  void _open(ExploreEntry entry) {
-    final Widget page;
-    if (entry.investor != null) {
-      page = InvestorProfileScreen(investor: entry.investor!);
-    } else if (widget.isGuest) {
-      page = SeekerStartupProfileScreen(
-        listing: entry.startup!,
-        founderName: MockStartups.founderNameOf(entry.startup!.startup),
-      );
-    } else {
-      page = StartupProfileScreen(
-        startup: entry.startup!.startup,
-        founderName: MockStartups.founderNameOf(entry.startup!.startup),
-        associations: entry.startup!.associations,
-      );
-    }
-    Navigator.of(context).push(MaterialPageRoute(builder: (_) => page));
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return ColoredBox(
-      color: AppColors.cream,
-      child: ListenableBuilder(
-        listenable: _viewModel,
-        builder: (context, _) {
-          final entries = _viewModel.entries;
-          final trending = _viewModel.tab == ExploreTab.trending;
-          return Column(
-            children: [
-              widget.topBar,
-              if (widget.isGuest)
-                HomeTabs(
-                  labels: const [ExploreStrings.tabTrending],
-                  selected: 0,
-                  onSelect: (_) {},
-                )
-              else ...[
-                HomeTabs(
-                  labels: const [
-                    ExploreStrings.tabForYou,
-                    ExploreStrings.tabTrending,
-                    ExploreStrings.tabMatches,
-                  ],
-                  selected: _tabs.indexOf(_viewModel.tab),
-                  onSelect: (i) => _viewModel.selectTab(_tabs[i]),
-                ),
-                if (_viewModel.tab == ExploreTab.forYou)
-                  HomeSearchField(
-                    hint: _viewModel.isFounder
-                        ? ExploreStrings.searchInvestors
-                        : ExploreStrings.searchStartups,
-                    onChanged: _viewModel.setQuery,
-                  )
-                else if (_viewModel.tab == ExploreTab.matches)
-                  if (_viewModel.isFounder)
-                    _matchesFor_()
-                  else
-                    MatchContextLine(onEdit: _editCriteria),
-              ],
-              // Figma: Matches has no sector chips.
-              if (_viewModel.tab != ExploreTab.matches)
-                HomeFilters(
-                  labels: ExploreStrings.filters,
-                  selected: _viewModel.filterIndex,
-                  onSelect: _viewModel.selectFilter,
-                ),
-              Expanded(
-                child: entries.isEmpty
-                    ? const _EmptyList()
-                    : ListView(
-                        padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
-                        children: [
-                          for (final entry in entries) ...[
-                            if (trending)
-                              TrendingCard(
-                                rank: entry.rank ?? 0,
-                                listing: entry.startup!,
-                                showBookmark: !widget.isGuest,
-                                onTap: () => _open(entry),
-                              )
-                            else
-                              _card(entry),
-                            const SizedBox(height: 8),
-                          ],
-                        ],
-                      ),
-              ),
-            ],
-          );
-        },
+  List<HomeSlot> _results(HomeViewModel vm) {
+    final res = vm.exploreResults;
+    return [
+      HomeSlot(homeResultsRow(vm, HomeStrings.results), bottom: -2),
+      _switch(vm.resultsSwitch, vm.setResultsSwitch),
+      _heading(
+        SectionHeader(title: HomeStrings.matchCount(res.length)),
+        bottom: 0,
       ),
-    );
+      if (res.isNotEmpty) cardsSlot(res),
+      if (res.isEmpty) HomeSlot(EmptyState.noMatches(onAction: vm.clearAll)),
+    ];
   }
 
-  Widget _card(ExploreEntry entry) {
-    final investor = entry.investor;
-    if (investor != null) {
-      return InvestorBrowseCard(
-        investor: investor,
-        onViewProfile: () => _open(entry),
-      );
-    }
-    return StartupBrowseCard(
-      listing: entry.startup!,
-      isGuest: widget.isGuest,
-      onViewProfile: () => _open(entry),
-    );
-  }
-
-  /// Opens the investor's criteria editor (Matches > Edit).
-  void _editCriteria() {
-    final user = widget.user;
-    if (user == null) return;
-    Navigator.of(
-      context,
-    ).push(MaterialPageRoute(builder: (_) => EditCriteriaScreen(user: user)));
-  }
-
-  /// "Matches for [Rafeeq Health v]": the founder picks which of their
-  /// startups the investor matches are for.
-  // ignore: non_constant_identifier_names
-  Widget _matchesFor_() {
-    final names = [for (final s in MockStartups.forYou) s.name];
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-      child: Row(
-        children: [
-          Flexible(
-            flex: 1,
-            child: Text(
-              ExploreStrings.matchesFor,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: AppText.sans(size: 14, color: AppColors.grey),
+  List<HomeSlot> _forYou(HomeViewModel vm) {
+    final newItems = vm.newItems;
+    if (vm.showAllNew) {
+      return [
+        HomeSlot(
+          Transform.translate(
+            offset: const Offset(-6, 0),
+            child: BackLink(
+              label: HomeStrings.forYouBack,
+              onTap: () => vm.setShowAllNew(false),
             ),
           ),
-          const SizedBox(width: 12),
-          Flexible(
-            flex: 2,
-            child: PopupMenuButton<String>(
-              onSelected: (name) => setState(() => _matchesFor = name),
-              position: PopupMenuPosition.under,
-              color: AppColors.surface,
-              itemBuilder: (_) => [
-                for (final name in names)
-                  PopupMenuItem(value: name, child: Text(name)),
-              ],
-              child: Container(
-                height: 36,
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(4),
-                  border: Border.all(color: AppColors.borderStrong),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Flexible(
-                      child: Text(
-                        _matchesFor,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppText.sans(
-                          size: 14,
-                          color: AppColors.ink,
-                          weight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    const Icon(
-                      Icons.keyboard_arrow_down_rounded,
-                      size: 20,
-                      color: AppColors.ink,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ],
+          top: -4,
+          bottom: -4,
+        ),
+        _switch(vm.forYouSwitch, vm.setForYouSwitch),
+        _heading(
+          const SectionHeader(title: HomeStrings.newOnStartSa),
+          bottom: 0,
+        ),
+        cardsSlot(newItems),
+      ];
+    }
+    return [
+      _switch(vm.forYouSwitch, vm.setForYouSwitch),
+      _heading(
+        SectionHeader(
+          title: HomeStrings.newOnStartSa,
+          onSeeAll: () => vm.setShowAllNew(true),
+        ),
+        bottom: -8,
       ),
-    );
+      HomeSlot(_NewRail(items: newItems), bleed: true),
+      _heading(const SectionHeader(title: HomeStrings.recommended)),
+      cardsSlot(vm.recommended),
+    ];
   }
-}
 
-class _EmptyList extends StatelessWidget {
-  const _EmptyList();
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Text(
-          'No results match your search.',
-          textAlign: TextAlign.center,
-          style: AppText.bodyMuted,
+  List<HomeSlot> _trending(BuildContext context, HomeViewModel vm) {
+    final items = vm.trending;
+    return [
+      _switch(vm.trendingSwitch, vm.setTrendingSwitch),
+      _heading(
+        SectionHeader(
+          title: HomeStrings.top30,
+          trailing: RangeDropdown(
+            options: [for (final r in TrendingRange.values) r.label],
+            selectedIndex: vm.range.index,
+            onSelected: vm.setRange,
+          ),
+        ),
+        bottom: 0,
+      ),
+      HomeSlot(
+        TrendingBox(
+          children: [
+            for (var i = 0; i < items.length; i++)
+              TrendingRow(
+                rank: i + 1,
+                category: items[i].tag,
+                name: items[i].name,
+                kind: avatarKindOf(items[i].kind),
+                onTap: () => openHomeItem(context, items[i]),
+              ),
+          ],
         ),
       ),
+      HomeSlot(TrendingNote(vm.range.note), top: -2),
+      if (vm.isGuest) HomeSlot(GuestJoinCard(onSignUp: onSignUp)),
+    ];
+  }
+
+  List<HomeSlot> _matches(HomeViewModel vm) {
+    final own = vm.ownStartups;
+    return [
+      if (vm.isFounder && own.isNotEmpty)
+        HomeSlot(
+          MatchesForDropdown(
+            options: [
+              for (final s in own)
+                MatchesForOption(
+                  name: s.name,
+                  subtitle: '${s.sectorLabel} · ${s.stageLabel}',
+                ),
+            ],
+            selectedIndex: vm.matchFor.clamp(0, own.length - 1),
+            onSelected: vm.setMatchFor,
+          ),
+        ),
+      cardsSlot(vm.matches, showMatch: true),
+    ];
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final vm = viewModel;
+    final List<HomeSlot> slots;
+    if (vm.filtering) {
+      slots = _results(vm);
+    } else {
+      switch (vm.effectiveExploreTab) {
+        case 0:
+          slots = _forYou(vm);
+        case 1:
+          slots = _trending(context, vm);
+        default:
+          slots = _matches(vm);
+      }
+    }
+    return KeyedSubtree(
+      key: ValueKey(vm.paneKey),
+      child: HomeColumn(slots: slots),
+    );
+  }
+}
+
+/// The "New on Start.sa" rail: snapping, full-bleed rail cards.
+class _NewRail extends StatelessWidget {
+  const _NewRail({required this.items});
+
+  final List<HomeItem> items;
+
+  @override
+  Widget build(BuildContext context) {
+    return SnapRail(
+      children: [
+        for (final it in items)
+          RailCard(
+            name: it.name,
+            tag: it.tag,
+            city: it.city,
+            body: it.line,
+            joined: it.joinedLabel ?? 'Joined this week',
+            kind: avatarKindOf(it.kind),
+            onTap: () => openHomeItem(context, it),
+          ),
+      ],
     );
   }
 }
