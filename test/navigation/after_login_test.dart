@@ -5,6 +5,7 @@ import 'package:startsa/data_access/mock_data/prototype_seed.dart';
 import 'package:startsa/data_access/repositories/auth_repository.dart';
 import 'package:startsa/data_access/repositories/discovery_repository.dart';
 import 'package:startsa/data_access/repositories/startup_repository.dart';
+import 'package:startsa/features/login_and_signup/screens/investor_investments_screen.dart';
 import 'package:startsa/features/login_and_signup/screens/verify_email_screen.dart';
 import 'package:startsa/features/login_and_signup/screens/welcome_screen.dart';
 import 'package:startsa/features/startups/screens/startup_steps_screen.dart';
@@ -36,7 +37,7 @@ void main() {
     AppSession.instance.reset();
   });
 
-  Future<void> logIn(WidgetTester t) async {
+  Future<void> logIn(WidgetTester t, {AppUser user = _founder}) async {
     t.view.physicalSize = const Size(412, 892);
     t.view.devicePixelRatio = 1;
     addTearDown(t.view.reset);
@@ -45,7 +46,7 @@ void main() {
         navigatorKey: AppToast.navigatorKey,
         home: Builder(
           builder: (context) => TextButton(
-            onPressed: () => AppRouter.openAfterLogin(context, _founder),
+            onPressed: () => AppRouter.openAfterLogin(context, user),
             child: const Text('log in'),
           ),
         ),
@@ -81,6 +82,40 @@ void main() {
 
   testWidgets('Back on that first step logs out to Welcome', (t) async {
     await logIn(t);
+    await t.tap(find.bySemanticsLabel('Back').first);
+    await t.pump();
+    await t.pump(const Duration(milliseconds: 600));
+    expect(find.byType(WelcomeScreen), findsOneWidget);
+    expect(AppSession.instance.user, isNull);
+    await t.pump(const Duration(seconds: 3));
+  });
+
+  const investor = AppUser(
+    uid: 'u2',
+    role: AccountRole.investor,
+    fullName: 'Layan Alsaab',
+    email: 'layan@gmail.com',
+  );
+
+  testWidgets('an investor who did not finish the steps lands on step 3', (
+    t,
+  ) async {
+    await logIn(t, user: investor);
+    expect(find.byType(InvestorInvestmentsScreen), findsOneWidget);
+    expect(find.text('STEP 3 OF 4'), findsOneWidget);
+    expect(find.byType(VerifyEmailScreen), findsNothing);
+    await t.pump(const Duration(seconds: 3));
+  });
+
+  testWidgets('an investor who finished the steps goes to Home', (t) async {
+    await logIn(t, user: investor.copyWith(onboardingCompleted: true));
+    expect(find.byType(MainScreen), findsOneWidget);
+    expect(find.byType(InvestorInvestmentsScreen), findsNothing);
+    await t.pump(const Duration(seconds: 3));
+  });
+
+  testWidgets('Back on investor step 3 logs out to Welcome', (t) async {
+    await logIn(t, user: investor);
     await t.tap(find.bySemanticsLabel('Back').first);
     await t.pump();
     await t.pump(const Duration(milliseconds: 600));

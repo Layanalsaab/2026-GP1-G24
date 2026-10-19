@@ -7,6 +7,7 @@ import '../data_access/repositories/bookmark_repository.dart';
 import '../data_access/repositories/interest_repository.dart';
 import '../data_access/repositories/request_repository.dart';
 import '../data_access/repositories/startup_repository.dart';
+import '../features/login_and_signup/screens/investor_investments_screen.dart';
 import '../features/login_and_signup/screens/welcome_screen.dart';
 import '../features/startups/screens/startup_steps_screen.dart';
 import '../helpers/app_session.dart';
@@ -40,8 +41,9 @@ class AppRouter {
   );
 
   /// Where a user lands after log in, sign up or a restored session. A founder
-  /// with no startup goes to the onboarding "Add your startup" steps; everyone
-  /// else to Home. [welcomeBack] shows "Welcome back" with the first name.
+  /// with no startup goes to the onboarding "Add your startup" steps, an
+  /// investor who did not finish the investor steps to step 3; everyone else
+  /// to Home. [welcomeBack] shows "Welcome back" with the first name.
   static Future<void> openAfterLogin(
     BuildContext context,
     AppUser user, {
@@ -63,6 +65,12 @@ class AppRouter {
       // A verified founder who never created a startup continues where they
       // stopped: the first "Add your startup" step (no second verification).
       StartupStepsScreen.openOnboarding(context);
+      return;
+    }
+    if (user.role == AccountRole.investor && !user.onboardingCompleted) {
+      // Likewise a verified investor who did not finish the investor steps
+      // continues at "Your investments" (step 3 of 4).
+      InvestorInvestmentsScreen.open(context, user);
       return;
     }
     openHome(context);
