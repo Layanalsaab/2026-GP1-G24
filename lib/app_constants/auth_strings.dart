@@ -69,9 +69,12 @@ class AuthStrings {
   static const citiesNone = 'No cities found';
   static const sectorsQuestion = 'Which sectors are you interested in?';
   static const sectorOtherHint = 'Type your sector, e.g. SportsTech';
+  static const valueQuestion = 'What value can you bring to startups?';
+  static const valuePlaceholder = 'Describe the value you can bring';
+  static const valueTip =
+      'For example: connections with venture capital firms, experience in real estate, mentoring founders, industry partnerships.';
   static const gainQuestion = 'What do you hope to gain from startups?';
-  static const gainPlaceholder =
-      'For example: financial returns, early access to new technology, or a long-term role with founders';
+  static const gainPlaceholder = 'Describe what you hope to gain';
   static const gainTip =
       'For example: strong returns, early access to new tech, growing your portfolio in a sector, long-term partnerships with founders.';
   static const bio = 'Bio';
@@ -117,12 +120,6 @@ class AuthStrings {
   static const stageOtherHint = 'Type your stage';
   static const investModels = 'Which commerce models interest you?';
   static const modelOtherHint = 'Type your commerce model';
-  static const offerQuestion = 'Besides funding, what can you offer startups?';
-  static const offerPlaceholder =
-      'For example: mentoring, industry connections, or help with hiring';
-  static const lookForQuestion = 'What do you look for in a startup?';
-  static const lookForPlaceholder =
-      'For example: the team, traction, or the market';
 
   // Log in
   static const loginTitle = 'Welcome back';

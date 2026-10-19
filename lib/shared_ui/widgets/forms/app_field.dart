@@ -39,7 +39,11 @@ class InfoButton extends StatelessWidget {
       label: semanticLabel,
       excludeSemantics: true,
       child: Pressable(
-        scale: 0.92,
+        scale: PressScale.icon,
+        // Pointer hover: moss50 (white 10 % on the green card), 160 ms.
+        hoverColor: light ? const Color(0x1AFFFFFF) : AppColors.moss50,
+        hoverDuration: AppDur.fast,
+        borderRadius: BorderRadius.circular(box / 2),
         onTap: onTap,
         child: SizedBox(
           width: box,
@@ -316,13 +320,35 @@ class AppField extends StatefulWidget {
 }
 
 class _AppFieldState extends State<AppField> {
+  /// The self-managed field whose tip is open: only one tip is open at a
+  /// time, opening another closes this one.
+  static _AppFieldState? _current;
+
   bool _localOpen = false;
 
   bool get _open => widget.infoOpen ?? _localOpen;
 
   void _toggle() {
     if (widget.onInfoToggle != null) widget.onInfoToggle!();
-    if (widget.infoOpen == null) setState(() => _localOpen = !_localOpen);
+    if (widget.infoOpen == null) {
+      final opening = !_localOpen;
+      if (opening) {
+        final prev = _current;
+        if (prev != null && prev != this && prev.mounted) {
+          prev.setState(() => prev._localOpen = false);
+        }
+        _current = this;
+      } else if (_current == this) {
+        _current = null;
+      }
+      setState(() => _localOpen = opening);
+    }
+  }
+
+  @override
+  void dispose() {
+    if (_current == this) _current = null;
+    super.dispose();
   }
 
   @override

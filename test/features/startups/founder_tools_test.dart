@@ -24,6 +24,7 @@ import 'package:startsa/shared_ui/widgets/overlays/picker_sheet.dart';
 import 'package:startsa/features/startups/view_models/startup_steps_view_model.dart';
 import 'package:startsa/helpers/app_session.dart';
 import 'package:startsa/models/connection_request.dart';
+import 'package:startsa/models/startup.dart';
 import 'package:startsa/models/startup_enums.dart';
 import 'package:startsa/shared_ui/theme/app_theme.dart';
 import 'package:startsa/shared_ui/widgets/headers/tabbed_header.dart';
@@ -200,11 +201,19 @@ void main() {
       expect(vm.hasOthers, isTrue);
     });
 
-    test('empty start shows errors and keeps the last ownership', () {
+    test('empty start shows no errors; they appear once you type', () {
       var vm = ValuationCalculatorViewModel();
-      expect(vm.fundingError, 'Enter the amount you want to raise.');
-      expect(vm.equityError, 'Enter a percentage above 0 and below 100.');
+      expect(vm.fundingError, isNull, reason: 'just opened: nothing is red');
+      expect(vm.equityError, isNull);
       expect(vm.ownershipError, isNull);
+      expect(vm.isValid, isFalse, reason: 'but there is no result yet');
+      vm.funds.text = '5';
+      vm.funds.text = '';
+      expect(vm.fundingError, 'Enter the amount you want to raise.');
+      vm.equity.text = '100';
+      expect(vm.equityError, 'Enter a percentage above 0 and below 100.');
+      vm.dispose();
+      vm = ValuationCalculatorViewModel();
       expect(vm.postText, 'SAR —');
       expect(vm.workText, 'Fill in the fields above');
       vm.ownership.text = '60';
@@ -399,38 +408,110 @@ void main() {
       expect(vm.memberError(vm.memberName), isNull);
     });
 
-    testWidgets('Leaving a half-filled new startup offers a draft', (
+    for (final choice in ['Save as draft', 'Discard', 'Keep editing']) {
+      testWidgets('Leaving a half-filled new startup: $choice', (tester) async {
+        SharedPreferences.setMockInitialValues({});
+        StartupDraftRepository.instance = StartupDraftRepository();
+        AppSession.instance.signIn(
+          const AppUser(
+            uid: 'uid1',
+            role: AccountRole.founder,
+            fullName: 'Shahad Alabdulkarim',
+            email: 'a@b.co',
+          ),
+        );
+        _bigScreen(tester);
+        await tester.pumpWidget(
+          _app(
+            Builder(
+              builder: (context) => TextButton(
+                onPressed: () => StartupStepsScreen.openAdd(context),
+                child: const Text('open form'),
+              ),
+            ),
+          ),
+        );
+        await tester.tap(find.text('open form'));
+        await tester.pumpAndSettle();
+        final hint = find.widgetWithText(
+          TextField,
+          FounderToolsStrings.nameHint,
+        );
+        await tester.enterText(hint, 'Nakhla Pay');
+        await tester.pump();
+        await tester.tap(find.bySemanticsLabel('Back').first);
+        await tester.pumpAndSettle();
+        expect(find.text('Leave without finishing?'), findsOneWidget);
+        await tester.tap(find.text(choice));
+        await tester.pumpAndSettle();
+        final stillOnForm = hint.evaluate().isNotEmpty;
+        final draft = StartupDraftRepository.instance.current.value;
+        if (choice == 'Keep editing') {
+          expect(stillOnForm, isTrue);
+          expect(draft, isNull);
+        } else {
+          expect(stillOnForm, isFalse, reason: '$choice must leave the form');
+          expect(find.text('open form'), findsOneWidget);
+          expect(
+            draft?['name'],
+            choice == 'Save as draft' ? 'Nakhla Pay' : null,
+          );
+        }
+        await tester.pump(const Duration(seconds: 5));
+      });
+    }
+
+    testWidgets('Save changes on the last step leaves the edit form', (
       tester,
     ) async {
-      SharedPreferences.setMockInitialValues({});
-      StartupDraftRepository.instance = StartupDraftRepository();
-      AppSession.instance.signIn(
-        const AppUser(
-          uid: 'uid1',
-          role: AccountRole.founder,
-          fullName: 'Shahad Alabdulkarim',
-          email: 'a@b.co',
+      repo.startups.add(PrototypeSeed.rafeeq);
+      _bigScreen(tester);
+      Startup? result;
+      await tester.pumpWidget(
+        _app(
+          Builder(
+            builder: (context) => TextButton(
+              onPressed: () async => result = await StartupStepsScreen.pushEdit(
+                context,
+                PrototypeSeed.rafeeq,
+              ),
+              child: const Text('edit'),
+            ),
+          ),
         ),
       );
-      _bigScreen(tester);
-      await tester.pumpWidget(
-        _app(const StartupStepsScreen(mode: StartupStepsMode.add)),
-      );
+      await tester.tap(find.text('edit'));
       await tester.pumpAndSettle();
-      final hint = find.widgetWithText(TextField, FounderToolsStrings.nameHint);
-      await tester.enterText(hint, 'Nakhla Pay');
+      // Change something so the form is "dirty" (the back guard is on).
+      final name = find.widgetWithText(TextField, 'Rafeeq Health');
+      await tester.enterText(name, 'Rafeeq Health Plus');
       await tester.pump();
-      await tester.tap(find.bySemanticsLabel('Back').first);
+      for (var i = 0; i < 3; i++) {
+        await tester.tap(find.text('Next'));
+        await tester.pumpAndSettle();
+      }
+      expect(find.text('Save changes'), findsOneWidget);
+      await tester.tap(find.text('Save changes'));
       await tester.pumpAndSettle();
-      expect(find.text('Leave without finishing?'), findsOneWidget);
-      expect(find.text('Save as draft'), findsOneWidget);
-      expect(find.text('Discard'), findsOneWidget);
-      expect(find.text('Keep editing'), findsOneWidget);
-      await tester.tap(find.text('Save as draft'));
-      await tester.pumpAndSettle();
-      final draft = StartupDraftRepository.instance.current.value;
-      expect(draft?['name'], 'Nakhla Pay');
+      expect(find.text('Save changes'), findsNothing, reason: 'left the form');
+      expect(find.text('edit'), findsOneWidget);
+      expect(result?.name, 'Rafeeq Health Plus');
       await tester.pump(const Duration(seconds: 5));
+    });
+
+    test('a draft remembers the furthest step even after going Back', () {
+      final vm = StartupStepsViewModel();
+      _fillAll(vm);
+      expect(vm.next(), StepAdvance.advanced);
+      expect(vm.next(), StepAdvance.advanced);
+      expect(vm.step, 2);
+      vm.previous();
+      vm.previous();
+      expect(vm.step, 0);
+      final draft = vm.toDraft();
+      expect(draft['step'], 2, reason: 'step 3 of 4');
+      final reopened = StartupStepsViewModel()..loadDraft(draft);
+      expect(reopened.step, 2);
     });
 
     test('a draft restores the form and an untouched form is not dirty', () {

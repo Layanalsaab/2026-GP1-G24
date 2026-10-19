@@ -92,6 +92,9 @@ class AppRoute<T> extends PageRouteBuilder<T> {
 
 double _distance(bool greenHeader) => greenHeader ? 12 : 28;
 
+/// 200 ms of the route's 260 ms: the reduced-motion fade.
+const double _reducedShare = 200 / 260;
+
 class _Enter extends StatelessWidget {
   const _Enter({
     required this.animation,
@@ -110,7 +113,8 @@ class _Enter extends StatelessWidget {
     final reduced = Motion.reduced(context);
     final curved = CurvedAnimation(
       parent: animation,
-      curve: reduced ? Curves.linear : Motion.easeOut,
+      // Reduced motion: a plain 200 ms fade (the route runs 260 ms).
+      curve: reduced ? const Interval(0, _reducedShare) : Motion.easeOut,
     );
     final fades = reduced || (!greenHeader);
     return AnimatedBuilder(
@@ -176,7 +180,11 @@ class _BackEnterState extends State<_BackEnter>
   }
 
   void _play() {
-    if (mounted) _c.forward(from: 0);
+    if (!mounted) return;
+    _c.duration = Motion.reduced(context)
+        ? AppDur.reducedFade
+        : const Duration(milliseconds: 260);
+    _c.forward(from: 0);
   }
 
   @override

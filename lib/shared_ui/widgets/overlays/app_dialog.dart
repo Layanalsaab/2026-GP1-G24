@@ -24,7 +24,8 @@ Future<T?> showAppDialog<T>(
     dimDuration: const Duration(milliseconds: 260),
     duration: const Duration(milliseconds: 260),
     entry: AppOverlayEntry.fadeScale,
-    curve: Motion.easeOut,
+    // The route runs 260 ms for the scrim; the card finishes at 240 ms.
+    curve: const Interval(0, 240 / 260, curve: Motion.easeOut),
     label: barrierLabel,
     dismissible: dismissible,
   );

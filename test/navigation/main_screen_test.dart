@@ -75,16 +75,21 @@ void main() {
     expect(find.text('Matches'), findsOneWidget);
   });
 
-  testWidgets('typing in search with no match shows No matches', (
-    tester,
-  ) async {
-    AppSession.instance.signIn(founder);
-    await pumpMain(tester);
-    await tester.enterText(find.byType(TextField), 'zzzzzz');
-    await tester.pump(const Duration(milliseconds: 500));
-    expect(find.text('No matches'), findsOneWidget);
-    expect(find.text('0 results'), findsOneWidget);
-  });
+  testWidgets(
+    'a search with no match says no results, not that a filter is on',
+    (tester) async {
+      AppSession.instance.signIn(founder);
+      await pumpMain(tester);
+      await tester.enterText(find.byType(TextField), 'zzzzzz');
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(find.text('No results for “zzzzzz”'), findsOneWidget);
+      expect(find.text('No matches'), findsNothing);
+      expect(find.text('Clear all'), findsNothing);
+      expect(find.textContaining('Check the spelling'), findsNothing);
+      expect(find.byTooltip('Remove filter “zzzzzz”'), findsNothing);
+      expect(find.text('0 results'), findsOneWidget);
+    },
+  );
 
   testWidgets('drawer and bottom sheets open with semantics on, no assertion', (
     tester,

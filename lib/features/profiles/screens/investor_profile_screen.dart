@@ -166,8 +166,6 @@ class _InvestorProfileScreenState extends State<InvestorProfileScreen> {
                       : ProfileStrings.sendRequest,
                   icon: AppIcons.send,
                   done: sent,
-                  onPressed: () =>
-                      ProfileActions.toggleRequest(context, _vm.key, inv.name),
                 ),
             ],
           ),

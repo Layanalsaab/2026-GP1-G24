@@ -69,10 +69,9 @@ class HomeCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final showActions = onShare != null || onBookmark != null;
-    final card = Pressable(
+    final card = _HoverCard(
       onTap: onTap,
-      scale: 0.985,
-      child: Semantics(
+      builder: (context, hover) => Semantics(
         container: true,
         button: true,
         label: '$name, $tag, $city',
@@ -106,7 +105,14 @@ class HomeCard extends StatelessWidget {
                     const SizedBox(height: 12),
                     Padding(
                       padding: const EdgeInsets.only(right: 20),
-                      child: Text(body, style: AppText.cardBody),
+                      // A long description stops at 3 lines with "..."; the
+                      // profile (tap the card) shows all of it.
+                      child: Text(
+                        body,
+                        style: AppText.cardBody,
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                     if (matchPercent != null) ...[
                       const SizedBox(height: 12),
@@ -179,7 +185,11 @@ class HomeCard extends StatelessWidget {
                     ],
                   ),
                 ),
-              const Positioned(right: 14, bottom: 18, child: _CardChevron()),
+              Positioned(
+                right: 14,
+                bottom: 18,
+                child: _CardChevron(hover: hover),
+              ),
             ],
           ),
         ),
@@ -268,23 +278,90 @@ class _MatchPill extends StatelessWidget {
   }
 }
 
+/// The chevron nudges 2 px to the right while the card is hovered (200 ms
+/// easeOut; not under reduced motion).
 class _CardChevron extends StatelessWidget {
-  const _CardChevron();
+  const _CardChevron({this.hover = false});
+
+  final bool hover;
 
   @override
   Widget build(BuildContext context) {
-    return const ExcludeSemantics(
-      child: AppIcon.outline(
-        AppIcons.cardChevron,
-        size: 18,
-        stroke: 2.2,
-        color: AppColors.chevron,
+    final moves = hover && !Motion.reduced(context);
+    return ExcludeSemantics(
+      child: AnimatedContainer(
+        duration: Motion.dur(context, AppDur.base),
+        curve: AppCurves.easeOut,
+        transform: Matrix4.translationValues(moves ? 2 : 0, 0, 0),
+        child: const AppIcon.outline(
+          AppIcons.cardChevron,
+          size: 18,
+          stroke: 2.2,
+          color: AppColors.chevron,
+        ),
       ),
     );
   }
 }
 
-/// 36 x 38 icon button on a home card (share / bookmark). Press scale 0.92.
+/// Shared hover/press wrapper of [HomeCard] and [RailCard]: press .985, and on
+/// a mouse pointer lift -2 + shadow `0 18 30 -20 rgba(31,63,39,.55)` + ring
+/// `0 0 0 1.5 #CFDCD2` over 200 ms easeOut. [builder] gets the hover flag (for
+/// the chevron).
+class _HoverCard extends StatefulWidget {
+  const _HoverCard({required this.onTap, required this.builder});
+
+  final VoidCallback? onTap;
+  final Widget Function(BuildContext context, bool hover) builder;
+
+  @override
+  State<_HoverCard> createState() => _HoverCardState();
+}
+
+class _HoverCardState extends State<_HoverCard> {
+  bool _hover = false;
+
+  static final _radius = BorderRadius.circular(AppRadius.homeCard);
+  static final _hoverDecoration = BoxDecoration(
+    borderRadius: _radius,
+    boxShadow: const [
+      BoxShadow(
+        color: Color(0x8C1F3F27),
+        offset: Offset(0, 18),
+        blurRadius: 30,
+        spreadRadius: -20,
+      ),
+      BoxShadow(color: Color(0xFFCFDCD2), spreadRadius: 1.5),
+    ],
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) {
+        if (!_hover && mounted) setState(() => _hover = true);
+      },
+      onExit: (_) {
+        if (_hover && mounted) setState(() => _hover = false);
+      },
+      child: Pressable(
+        onTap: widget.onTap,
+        scale: PressScale.homeCard,
+        hoverOffset: const Offset(0, -2),
+        hoverDecoration: _hoverDecoration,
+        hoverDuration: AppDur.base,
+        borderRadius: _radius,
+        child: widget.builder(
+          context,
+          _hover && widget.onTap != null && !Motion.reduced(context),
+        ),
+      ),
+    );
+  }
+}
+
+/// 36 x 38 icon button on a home card (share / bookmark). Press scale 0.90,
+/// hover fill `#F3F1EC` (200 ms).
 class _CardAction extends StatelessWidget {
   const _CardAction({
     required this.child,
@@ -308,7 +385,10 @@ class _CardAction extends StatelessWidget {
       onTap: onTap,
       child: Pressable(
         onTap: onTap,
-        scale: 0.92,
+        scale: PressScale.cardAction,
+        hoverColor: const Color(0xFFF3F1EC),
+        hoverDuration: AppDur.base,
+        borderRadius: BorderRadius.circular(10),
         child: SizedBox(width: 36, height: 38, child: Center(child: child)),
       ),
     );
@@ -345,10 +425,9 @@ class RailCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Pressable(
+    return _HoverCard(
       onTap: onTap,
-      scale: 0.985,
-      child: Semantics(
+      builder: (context, hover) => Semantics(
         container: true,
         button: true,
         label: 'New: $name, $tag, $city. $joined',
@@ -408,7 +487,11 @@ class RailCard extends StatelessWidget {
                   ],
                 ),
               ),
-              const Positioned(right: 14, bottom: 18, child: _CardChevron()),
+              Positioned(
+                right: 14,
+                bottom: 18,
+                child: _CardChevron(hover: hover),
+              ),
             ],
           ),
         ),

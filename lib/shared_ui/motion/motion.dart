@@ -4,6 +4,10 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:path_drawing/path_drawing.dart';
 
+import 'motion_tokens.dart';
+
+export 'motion_tokens.dart';
+
 /// Motion tokens and reusable effects (docs/03_motion.md).
 ///
 /// Every effect here honours reduced motion: with
@@ -13,22 +17,22 @@ class Motion {
   Motion._();
 
   /// Default curve for almost everything.
-  static const easeOut = Cubic(0.23, 1, 0.32, 1);
+  static const easeOut = AppCurves.easeOut;
 
   /// SVG line drawing, legacy tab bar.
-  static const easeInOut = Cubic(0.77, 0, 0.175, 1);
+  static const easeInOut = AppCurves.easeInOut;
 
   /// Sheets and the side drawer.
-  static const drawer = Cubic(0.32, 0.72, 0, 1);
+  static const drawer = AppCurves.drawer;
 
-  static const press = Duration(milliseconds: 140);
-  static const fast = Duration(milliseconds: 160);
-  static const color = Duration(milliseconds: 180);
-  static const medium = Duration(milliseconds: 260);
-  static const slow = Duration(milliseconds: 340);
+  static const press = AppDur.press;
+  static const fast = AppDur.fast;
+  static const color = AppDur.chip;
+  static const medium = AppDur.screen;
+  static const slow = AppDur.sheet;
 
   /// Reduced-motion fade used in place of every movement.
-  static const reducedFade = Duration(milliseconds: 200);
+  static const reducedFade = AppDur.reducedFade;
 
   /// True when the user (or platform) asked for less motion.
   static bool reduced(BuildContext context) =>
@@ -403,18 +407,28 @@ class _TwinkleState extends State<Twinkle> with SingleTickerProviderStateMixin {
 
 double _cosTurns(double t) => math.cos(2 * math.pi * t);
 
-/// Scales to [scale] while pressed (140 ms, easeOut) and calls [onTap].
-/// The prototype's `press` effect. Buttons and pressable cards 0.97, icon
-/// buttons 0.92, selection chips 0.96, home cards 0.985, header avatar 0.94,
-/// guest "Sign up" pill 0.95. No scale under reduced motion.
+/// One wrapper for everything tappable (§0.4): scales to [scale] while
+/// pressed (140 ms, easeOut), optionally reacts to a mouse pointer
+/// ([hoverOffset] lift, [hoverColor] / [hoverDecoration] background), shows a
+/// 2 px moss600 focus outline (2 px offset) for keyboard users only, and does
+/// nothing when it has no action (disabled). No ripple, ever.
+///
+/// Use the [PressScale] constants for [scale]. Under reduced motion the press
+/// scale and hover lift are off (hover colors change instantly).
 class Pressable extends StatefulWidget {
   const Pressable({
     super.key,
     required this.child,
     this.onTap,
     this.onLongPress,
-    this.scale = 0.97,
+    this.scale = PressScale.button,
     this.behavior = HitTestBehavior.opaque,
+    this.hoverOffset,
+    this.hoverColor,
+    this.hoverDecoration,
+    this.hoverDuration = AppDur.base,
+    this.borderRadius,
+    this.focusRadius,
   });
 
   final Widget child;
@@ -423,12 +437,36 @@ class Pressable extends StatefulWidget {
   final double scale;
   final HitTestBehavior behavior;
 
+  /// Translation while the pointer hovers (cards lift `Offset(0, -2)`).
+  final Offset? hoverOffset;
+
+  /// Background painted behind the child while hovered (needs
+  /// [borderRadius] to match the child's shape).
+  final Color? hoverColor;
+
+  /// Decoration applied while hovered (a shadow, a border, a ring), animated
+  /// over [hoverDuration].
+  final BoxDecoration? hoverDecoration;
+  final Duration hoverDuration;
+
+  /// Corner radius of the child's shape (for [hoverColor]).
+  final BorderRadius? borderRadius;
+
+  /// Corner radius of the keyboard focus outline; defaults to [borderRadius]
+  /// or 12.
+  final BorderRadius? focusRadius;
+
+  bool get _hasHover =>
+      hoverOffset != null || hoverColor != null || hoverDecoration != null;
+
   @override
   State<Pressable> createState() => _PressableState();
 }
 
 class _PressableState extends State<Pressable> {
   bool _down = false;
+  bool _hover = false;
+  bool _focus = false;
 
   void _set(bool v) {
     if (_down != v && mounted) setState(() => _down = v);
@@ -437,19 +475,115 @@ class _PressableState extends State<Pressable> {
   @override
   Widget build(BuildContext context) {
     final enabled = widget.onTap != null || widget.onLongPress != null;
-    final animate = enabled && !Motion.reduced(context);
-    return GestureDetector(
-      behavior: widget.behavior,
-      onTapDown: enabled ? (_) => _set(true) : null,
-      onTapUp: enabled ? (_) => _set(false) : null,
-      onTapCancel: enabled ? () => _set(false) : null,
-      onTap: widget.onTap,
-      onLongPress: widget.onLongPress,
-      child: AnimatedScale(
-        scale: animate && _down ? widget.scale : 1,
-        duration: Motion.press,
-        curve: Motion.easeOut,
-        child: widget.child,
+    final reduced = Motion.reduced(context);
+    final animate = enabled && !reduced;
+    final hovering = enabled && _hover;
+
+    Widget content = widget.child;
+    if (widget._hasHover) {
+      final shape = widget.borderRadius;
+      content = AnimatedContainer(
+        duration: reduced ? Duration.zero : widget.hoverDuration,
+        curve: AppCurves.easeOut,
+        transformAlignment: Alignment.center,
+        transform: hovering && !reduced && widget.hoverOffset != null
+            ? Matrix4.translationValues(
+                widget.hoverOffset!.dx,
+                widget.hoverOffset!.dy,
+                0,
+              )
+            : Matrix4.identity(),
+        decoration: hovering
+            ? (widget.hoverDecoration ??
+                  BoxDecoration(color: widget.hoverColor, borderRadius: shape))
+            : BoxDecoration(borderRadius: shape),
+        foregroundDecoration: null,
+        child: content,
+      );
+      if (widget.hoverDecoration != null && widget.hoverColor != null) {
+        // Both given: the color sits under the decoration's own fill.
+        content = ColoredBox(
+          color: hovering ? widget.hoverColor! : const Color(0x00000000),
+          child: content,
+        );
+      }
+    }
+
+    final radius =
+        widget.focusRadius ??
+        widget.borderRadius ??
+        const BorderRadius.all(Radius.circular(12));
+
+    return MouseRegion(
+      cursor: enabled ? SystemMouseCursors.click : MouseCursor.defer,
+      // A real pointer only: touch never hovers.
+      onEnter: (_) {
+        if (!_hover && mounted) setState(() => _hover = true);
+      },
+      onExit: (_) {
+        if (_hover && mounted) setState(() => _hover = false);
+      },
+      child: FocusableActionDetector(
+        enabled: enabled,
+        // Only true while the keyboard drives focus (never after a tap).
+        onShowFocusHighlight: (v) {
+          if (_focus != v && mounted) setState(() => _focus = v);
+        },
+        actions: {
+          ActivateIntent: CallbackAction<ActivateIntent>(
+            onInvoke: (_) {
+              widget.onTap?.call();
+              return null;
+            },
+          ),
+        },
+        child: GestureDetector(
+          behavior: widget.behavior,
+          onTapDown: enabled ? (_) => _set(true) : null,
+          onTapUp: enabled ? (_) => _set(false) : null,
+          onTapCancel: enabled ? () => _set(false) : null,
+          onTap: widget.onTap,
+          onLongPress: widget.onLongPress,
+          child: AnimatedScale(
+            scale: animate && _down ? widget.scale : 1,
+            duration: AppDur.press,
+            curve: AppCurves.easeOut,
+            child: Stack(
+              // Passthrough keeps the parent's constraints exactly as before.
+              fit: StackFit.passthrough,
+              clipBehavior: Clip.none,
+              children: [
+                content,
+                if (_focus)
+                  Positioned(
+                    left: -3,
+                    top: -3,
+                    right: -3,
+                    bottom: -3,
+                    child: IgnorePointer(
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.only(
+                            topLeft: radius.topLeft + const Radius.circular(3),
+                            topRight:
+                                radius.topRight + const Radius.circular(3),
+                            bottomLeft:
+                                radius.bottomLeft + const Radius.circular(3),
+                            bottomRight:
+                                radius.bottomRight + const Radius.circular(3),
+                          ),
+                          border: Border.all(
+                            color: const Color(0xFF2F5D3A),
+                            width: 2,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -553,3 +687,57 @@ class _DrawPainter extends CustomPainter {
   bool shouldRepaint(_DrawPainter old) =>
       old.progress != progress || old.color != color || old.path != path;
 }
+
+/// `cardIn`: a list card appears with opacity 0 -> 1 and translateY 8 -> 0
+/// over 320 ms, delayed 40 ms x [index] (§0.3). Off (instant) under reduced
+/// motion. The start state is shown during the delay.
+class CardIn extends StatelessWidget {
+  const CardIn({super.key, required this.index, required this.child});
+
+  final int index;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) =>
+      Rise.card(delay: Motion.stagger(context, index), child: child);
+}
+
+/// `chipIn`: opacity 0 -> 1 and scale .94 -> 1 over 220 ms (§0.3), for a
+/// filter chip that has just appeared.
+class ChipIn extends StatefulWidget {
+  const ChipIn({super.key, required this.child});
+
+  final Widget child;
+
+  @override
+  State<ChipIn> createState() => _ChipInState();
+}
+
+class _ChipInState extends _OneShotState<ChipIn> {
+  @override
+  Duration get delay => Duration.zero;
+  @override
+  Duration get duration => AppDur.card;
+
+  @override
+  Widget build(BuildContext context) {
+    final reduced = Motion.reduced(context);
+    final a = CurvedAnimation(
+      parent: controller,
+      curve: reduced ? Curves.linear : AppCurves.easeOut,
+    );
+    return AnimatedBuilder(
+      animation: a,
+      child: widget.child,
+      builder: (context, child) => Opacity(
+        opacity: a.value,
+        child: reduced
+            ? child
+            : Transform.scale(scale: 0.94 + 0.06 * a.value, child: child),
+      ),
+    );
+  }
+}
+
+/// `fade-in`: opacity 0 -> 1 over 500 ms after an optional delay (§0.3).
+typedef FadeIn = FadeInOnce;

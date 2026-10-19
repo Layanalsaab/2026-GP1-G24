@@ -39,6 +39,7 @@ class UserRepository {
     String? sectorsOther,
     String? linkedin,
     String? gain,
+    String? valueOffered,
   }) async {
     final core = <String, Object?>{
       UserFields.role: role.value,
@@ -58,6 +59,8 @@ class UserRepository {
       if (linkedin != null && linkedin.trim().isNotEmpty)
         UserFields.linkedin: linkedin.trim(),
       if (gain != null && gain.trim().isNotEmpty) UserFields.gain: gain.trim(),
+      if (valueOffered != null && valueOffered.trim().isNotEmpty)
+        UserFields.valueOffered: valueOffered.trim(),
     };
     if (extra.isEmpty) {
       await _firestore.setDocument(FirestoreCollections.users, uid, core);

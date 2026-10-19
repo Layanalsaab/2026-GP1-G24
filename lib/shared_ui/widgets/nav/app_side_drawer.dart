@@ -11,6 +11,9 @@ import '../../theme/app_text.dart';
 import '../lists/press_surface.dart';
 import '../overlays/app_overlay_route.dart';
 
+/// Menu row hover background (`#EFECE5`).
+const Color _menuHover = Color(0xFFEFECE5);
+
 /// One row of the side drawer: a stroke [icon] path (e.g.
 /// [AppIcons.menuRocket]), a [label] and an optional gold count [badge]
 /// (hidden when null or 0).
@@ -63,6 +66,7 @@ Future<void> openAppDrawer(
     dimDuration: const Duration(milliseconds: 300),
     duration: Motion.slow,
     entry: AppOverlayEntry.slideLeft,
+    dimCurve: Curves.ease,
     label: 'Close menu',
   );
 }
@@ -149,6 +153,7 @@ class AppSideDrawer extends StatelessWidget {
               child: PressSurface(
                 onTap: () => _then(context, onLogOut),
                 pressedColor: AppColors.rangeFill,
+                hoverColor: _menuHover,
                 semanticLabel: logOutLabel,
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(minHeight: 50),
@@ -262,17 +267,19 @@ class _Header extends StatelessWidget {
                     child: Container(
                       height: 34,
                       padding: const EdgeInsets.symmetric(horizontal: 15),
-                      alignment: Alignment.center,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(999),
                         border: Border.all(color: const Color(0x59FFFFFF)),
                       ),
-                      child: Text(
-                        'View profile',
-                        style: AppText.sans(
-                          size: 13,
-                          color: AppColors.white,
-                          weight: FontWeight.w600,
+                      child: Center(
+                        widthFactor: 1,
+                        child: Text(
+                          'View profile',
+                          style: AppText.sans(
+                            size: 13,
+                            color: AppColors.white,
+                            weight: FontWeight.w600,
+                          ),
                         ),
                       ),
                     ),
@@ -327,6 +334,7 @@ class _DrawerRow extends StatelessWidget {
     return PressSurface(
       onTap: onTap,
       pressedColor: AppColors.rangeFill,
+      hoverColor: _menuHover,
       borderRadius: BorderRadius.circular(12),
       semanticLabel: badge > 0 ? '${item.label}, $badge' : item.label,
       child: ConstrainedBox(

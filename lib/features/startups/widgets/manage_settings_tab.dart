@@ -54,26 +54,24 @@ class ManageSettingsTab extends StatelessWidget {
           button: true,
           label: FounderToolsStrings.deleteStartup,
           excludeSemantics: true,
-          child: Pressable(
+          child: ManageCard(
             onTap: onDelete,
-            child: const ManageCard(
-              child: Row(
-                children: [
-                  _IconBox(
-                    icon: AppIcons.trash,
-                    fill: AppColors.errorFill,
-                    color: AppColors.error,
+            child: Row(
+              children: [
+                _IconBox(
+                  icon: AppIcons.trash,
+                  fill: AppColors.errorFill,
+                  color: AppColors.error,
+                ),
+                SizedBox(width: 12),
+                Expanded(
+                  child: _Texts(
+                    title: FounderToolsStrings.deleteStartup,
+                    text: FounderToolsStrings.deleteStartupText,
+                    titleColor: AppColors.error,
                   ),
-                  SizedBox(width: 12),
-                  Expanded(
-                    child: _Texts(
-                      title: FounderToolsStrings.deleteStartup,
-                      text: FounderToolsStrings.deleteStartupText,
-                      titleColor: AppColors.error,
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),

@@ -149,23 +149,7 @@ class InterestTab extends StatelessWidget {
                                   label:
                                       '${FounderToolsStrings.replyLabel} ${items[i].name}',
                                   excludeSemantics: true,
-                                  child: Pressable(
-                                    child: Container(
-                                      width: 38,
-                                      height: 38,
-                                      decoration: const BoxDecoration(
-                                        color: AppColors.moss50,
-                                        shape: BoxShape.circle,
-                                      ),
-                                      child: const Center(
-                                        child: AppIcon.filled(
-                                          AppIcons.chat,
-                                          size: 20,
-                                          color: AppColors.moss600,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
+                                  child: const InterestReplyButton(),
                                 ),
                               ],
                             ),
@@ -181,4 +165,47 @@ class InterestTab extends StatelessWidget {
 
   static String _sub(String role, String? when) =>
       when == null || when.isEmpty ? role : '$role · $when';
+}
+
+/// The round reply button of an interest row: moss50 fill, moss100 while a
+/// mouse pointer hovers (150 ms). Messaging is not built yet, so it has no
+/// action (and no click cursor).
+class InterestReplyButton extends StatefulWidget {
+  const InterestReplyButton({super.key});
+
+  @override
+  State<InterestReplyButton> createState() => _InterestReplyButtonState();
+}
+
+class _InterestReplyButtonState extends State<InterestReplyButton> {
+  bool _hover = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) {
+        if (!_hover && mounted) setState(() => _hover = true);
+      },
+      onExit: (_) {
+        if (_hover && mounted) setState(() => _hover = false);
+      },
+      child: AnimatedContainer(
+        duration: Motion.dur(context, const Duration(milliseconds: 150)),
+        curve: Curves.ease,
+        width: 38,
+        height: 38,
+        decoration: BoxDecoration(
+          color: _hover ? AppColors.moss100 : AppColors.moss50,
+          shape: BoxShape.circle,
+        ),
+        child: const Center(
+          child: AppIcon.filled(
+            AppIcons.chat,
+            size: 20,
+            color: AppColors.moss600,
+          ),
+        ),
+      ),
+    );
+  }
 }

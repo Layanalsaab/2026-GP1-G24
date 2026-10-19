@@ -21,12 +21,16 @@ class IntroScreen extends StatefulWidget {
 
 class _IntroScreenState extends State<IntroScreen> {
   int _page = 0;
+  int _from = 0;
 
   void _next() {
     if (_page >= 2) {
       _finish();
     } else {
-      setState(() => _page++);
+      setState(() {
+        _from = _page;
+        _page++;
+      });
     }
   }
 
@@ -39,9 +43,9 @@ class _IntroScreenState extends State<IntroScreen> {
       body: _PageEnter(
         key: ValueKey(_page),
         child: switch (_page) {
-          0 => _PageOne(onNext: _next, onSkip: _finish),
-          1 => _PageTwo(onNext: _next, onSkip: _finish),
-          _ => _PageThree(onStart: _finish),
+          0 => _PageOne(onNext: _next, onSkip: _finish, from: _from),
+          1 => _PageTwo(onNext: _next, onSkip: _finish, from: _from),
+          _ => _PageThree(onStart: _finish, from: _from),
         },
       ),
     );
@@ -59,7 +63,8 @@ class _PageEnter extends StatelessWidget {
     final reduced = Motion.reduced(context);
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0, end: 1),
-      duration: Motion.dur(context, Motion.medium),
+      // Reduced motion: a 200 ms fade without the slide.
+      duration: reduced ? Motion.reducedFade : Motion.medium,
       curve: Motion.easeOut,
       child: child,
       builder: (context, v, child) => Opacity(
@@ -127,12 +132,14 @@ class _SkipButton extends StatelessWidget {
 /// Dots, then the Skip + round button row (pages 1 and 2).
 class _Bottom extends StatelessWidget {
   const _Bottom({
+    required this.from,
     required this.index,
     required this.skipColor,
     required this.onSkip,
     required this.button,
   });
 
+  final int from;
   final int index;
   final Color skipColor;
   final VoidCallback onSkip;
@@ -142,7 +149,7 @@ class _Bottom extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        IntroDots(index: index),
+        IntroDots(index: index, fromIndex: from),
         const SizedBox(height: 24),
         Padding(
           padding: const EdgeInsets.fromLTRB(28, 0, 28, 32),
@@ -160,10 +167,15 @@ class _Bottom extends StatelessWidget {
 }
 
 class _PageOne extends StatelessWidget {
-  const _PageOne({required this.onNext, required this.onSkip});
+  const _PageOne({
+    required this.onNext,
+    required this.onSkip,
+    required this.from,
+  });
 
   final VoidCallback onNext;
   final VoidCallback onSkip;
+  final int from;
 
   @override
   Widget build(BuildContext context) {
@@ -203,6 +215,7 @@ class _PageOne extends StatelessWidget {
             ),
             const Spacer(),
             _Bottom(
+              from: from,
               index: 0,
               skipColor: const Color(0xCCFFFFFF),
               onSkip: onSkip,
@@ -221,10 +234,15 @@ class _PageOne extends StatelessWidget {
 }
 
 class _PageTwo extends StatelessWidget {
-  const _PageTwo({required this.onNext, required this.onSkip});
+  const _PageTwo({
+    required this.onNext,
+    required this.onSkip,
+    required this.from,
+  });
 
   final VoidCallback onNext;
   final VoidCallback onSkip;
+  final int from;
 
   @override
   Widget build(BuildContext context) {
@@ -258,6 +276,7 @@ class _PageTwo extends StatelessWidget {
         ),
         const Spacer(),
         _Bottom(
+          from: from,
           index: 1,
           skipColor: AppColors.grey,
           onSkip: onSkip,
@@ -274,9 +293,10 @@ class _PageTwo extends StatelessWidget {
 }
 
 class _PageThree extends StatelessWidget {
-  const _PageThree({required this.onStart});
+  const _PageThree({required this.onStart, required this.from});
 
   final VoidCallback onStart;
+  final int from;
 
   @override
   Widget build(BuildContext context) {
@@ -309,7 +329,7 @@ class _PageThree extends StatelessWidget {
           ),
         ),
         const Spacer(),
-        const IntroDots(index: 2, dark: true),
+        IntroDots(index: 2, dark: true, fromIndex: from),
         const SizedBox(height: 20),
         Padding(
           padding: const EdgeInsets.fromLTRB(28, 0, 28, 32),

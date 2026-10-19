@@ -54,6 +54,7 @@ class SignupViewModel extends ChangeNotifier with SafeNotifier {
   final linkedin = TextEditingController();
   final password = TextEditingController();
   final confirm = TextEditingController();
+  final value = TextEditingController();
   final gain = TextEditingController();
   final bio = TextEditingController();
   final sectorsOther = TextEditingController();
@@ -65,6 +66,7 @@ class SignupViewModel extends ChangeNotifier with SafeNotifier {
     linkedin,
     password,
     confirm,
+    value,
     gain,
     bio,
     sectorsOther,
@@ -150,6 +152,11 @@ class SignupViewModel extends ChangeNotifier with SafeNotifier {
       ? ValidationStrings.otherChips(AuthStrings.nounSector)
       : null;
 
+  /// "What value can you bring to startups?" (investors): required.
+  String? get valueError => attempted && !isFounder
+      ? Validators.requiredText(value.text, ValidationStrings.bringRequired)
+      : null;
+
   String? get gainError => attempted && !isFounder
       ? Validators.requiredText(gain.text, ValidationStrings.gainRequired)
       : null;
@@ -166,7 +173,9 @@ class SignupViewModel extends ChangeNotifier with SafeNotifier {
         Validators.isPassword(password.text) &&
         Validators.confirmMatches(password.text, confirm.text) &&
         (city ?? '').trim().isNotEmpty &&
-        (isFounder ? founderOk : gain.text.trim().isNotEmpty);
+        (isFounder
+            ? founderOk
+            : gain.text.trim().isNotEmpty && value.text.trim().isNotEmpty);
   }
 
   bool get nameValid => Validators.isFullName(name.text);
@@ -264,6 +273,7 @@ class SignupViewModel extends ChangeNotifier with SafeNotifier {
         sectorsOther: other,
         linkedin: linkedin.text.trim(),
         gain: isFounder ? null : gain.text.trim(),
+        valueOffered: isFounder ? null : value.text.trim(),
         photo: photo,
       );
       // An earlier attempt that was never verified (the app was closed or

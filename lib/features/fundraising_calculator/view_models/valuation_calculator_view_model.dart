@@ -14,10 +14,23 @@ class ValuationCalculatorViewModel extends ChangeNotifier with SafeNotifier {
     funds.text = funding == null ? '' : _group(funding);
     equity.text = equityPercent == null ? '' : formatNumber(equityPercent);
     ownership.text = lastOwnership;
+    _startFunds = funds.text;
+    _startEquity = equity.text;
+    _startOwnership = ownership.text;
     for (final c in [funds, equity, ownership]) {
       c.addListener(_changed);
     }
   }
+
+  late final String _startFunds;
+  late final String _startEquity;
+  late final String _startOwnership;
+
+  // A field only shows its error once the founder has typed in it: opening
+  // the calculator with empty boxes must not look like a mistake.
+  bool _fundsTouched = false;
+  bool _equityTouched = false;
+  bool _ownershipTouched = false;
 
   /// The ownership typed last, kept for the next time the calculator opens
   /// from Manage (default 100).
@@ -29,6 +42,9 @@ class ValuationCalculatorViewModel extends ChangeNotifier with SafeNotifier {
 
   void _changed() {
     lastOwnership = ownership.text;
+    if (funds.text != _startFunds) _fundsTouched = true;
+    if (equity.text != _startEquity) _equityTouched = true;
+    if (ownership.text != _startOwnership) _ownershipTouched = true;
     notifyListeners();
   }
 
@@ -44,20 +60,30 @@ class ValuationCalculatorViewModel extends ChangeNotifier with SafeNotifier {
   double get equityValue => parse(equity.text);
   double get ownershipValue => parse(ownership.text);
 
-  String? get fundingError =>
-      fundingValue > 0 ? null : ValidationStrings.calcFunding;
+  bool get _fundingBad => !(fundingValue > 0);
+  bool get _equityBad => !(equityValue > 0 && equityValue < 100);
+  bool get _ownershipBad =>
+      ownershipValue.isNaN || ownershipValue < 0 || ownershipValue > 100;
 
-  String? get equityError => (equityValue > 0 && equityValue < 100)
-      ? null
-      : ValidationStrings.calcEquity;
+  /// The messages shown under the boxes: only for a box the founder has
+  /// typed in (an untouched, empty box is not red).
+  String? get fundingError =>
+      _fundingBad && (_fundsTouched || funds.text.isNotEmpty)
+      ? ValidationStrings.calcFunding
+      : null;
+
+  String? get equityError =>
+      _equityBad && (_equityTouched || equity.text.isNotEmpty)
+      ? ValidationStrings.calcEquity
+      : null;
 
   String? get ownershipError =>
-      (ownershipValue.isNaN || ownershipValue < 0 || ownershipValue > 100)
+      _ownershipBad && (_ownershipTouched || ownership.text.isNotEmpty)
       ? ValidationStrings.calcOwnership
       : null;
 
-  bool get isValid =>
-      fundingError == null && equityError == null && ownershipError == null;
+  /// All three boxes are valid (the result card uses this, not the messages).
+  bool get isValid => !_fundingBad && !_equityBad && !_ownershipBad;
 
   double get post => isValid ? fundingValue / (equityValue / 100) : 0;
   double get pre => post - (isValid ? fundingValue : 0);

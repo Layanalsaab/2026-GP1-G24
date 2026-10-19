@@ -30,14 +30,16 @@ class ExploreScreen extends StatelessWidget {
   /// Guest "Sign up" button of the Join Start.sa card.
   final VoidCallback onSignUp;
 
-  HomeSlot _switch(int selected, ValueChanged<int> onChanged) => HomeSlot(
-    SegmentedSwitch(
-      labels: HomeStrings.switchLabels,
-      selectedIndex: selected,
-      onChanged: onChanged,
-    ),
-    top: 2,
-  );
+  HomeSlot _switch(String id, int selected, ValueChanged<int> onChanged) =>
+      HomeSlot(
+        SegmentedSwitch(
+          key: ValueKey('switch-$id'),
+          labels: HomeStrings.switchLabels,
+          selectedIndex: selected,
+          onChanged: onChanged,
+        ),
+        top: 2,
+      );
 
   /// The section heading (`.shd2`: margin 4 2 -2, or 4 2 0 with a dropdown).
   HomeSlot _heading(Widget header, {double bottom = -2}) =>
@@ -47,12 +49,12 @@ class ExploreScreen extends StatelessWidget {
     final res = vm.exploreResults;
     return [
       HomeSlot(homeResultsRow(vm, HomeStrings.results), bottom: -2),
-      _switch(vm.resultsSwitch, vm.setResultsSwitch),
+      _switch('results', vm.resultsSwitch, vm.setResultsSwitch),
       _heading(
         SectionHeader(title: HomeStrings.matchCount(res.length)),
         bottom: 0,
       ),
-      if (res.isNotEmpty) cardsSlot(res),
+      if (res.isNotEmpty) cardsSlot(res, scope: vm.paneKey),
       if (res.isEmpty) HomeSlot(homeEmptyState(vm)),
     ];
   }
@@ -72,16 +74,16 @@ class ExploreScreen extends StatelessWidget {
           top: -4,
           bottom: -4,
         ),
-        _switch(vm.forYouSwitch, vm.setForYouSwitch),
+        _switch('for-you', vm.forYouSwitch, vm.setForYouSwitch),
         _heading(
           const SectionHeader(title: HomeStrings.newOnStartSa),
           bottom: 0,
         ),
-        cardsSlot(newItems),
+        cardsSlot(newItems, scope: vm.paneKey),
       ];
     }
     return [
-      _switch(vm.forYouSwitch, vm.setForYouSwitch),
+      _switch('for-you', vm.forYouSwitch, vm.setForYouSwitch),
       _heading(
         SectionHeader(
           title: HomeStrings.newOnStartSa,
@@ -91,14 +93,14 @@ class ExploreScreen extends StatelessWidget {
       ),
       HomeSlot(_NewRail(items: newItems), bleed: true),
       _heading(const SectionHeader(title: HomeStrings.recommended)),
-      cardsSlot(vm.recommended),
+      cardsSlot(vm.recommended, scope: vm.paneKey),
     ];
   }
 
   List<HomeSlot> _trending(BuildContext context, HomeViewModel vm) {
     final items = vm.trending;
     return [
-      _switch(vm.trendingSwitch, vm.setTrendingSwitch),
+      _switch('trending', vm.trendingSwitch, vm.setTrendingSwitch),
       _heading(
         SectionHeader(
           title: HomeStrings.top30,
@@ -112,6 +114,10 @@ class ExploreScreen extends StatelessWidget {
       ),
       HomeSlot(
         TrendingBox(
+          // A new ranking (another range or side) enters again.
+          key: ValueKey(
+            '${vm.paneKey}|${vm.range.name}|${contentSignature(items)}',
+          ),
           children: [
             for (var i = 0; i < items.length; i++)
               TrendingRow(
@@ -146,7 +152,7 @@ class ExploreScreen extends StatelessWidget {
             onSelected: vm.setMatchFor,
           ),
         ),
-      cardsSlot(vm.matches, showMatch: true),
+      cardsSlot(vm.matches, showMatch: true, scope: vm.paneKey),
     ];
   }
 
@@ -166,10 +172,7 @@ class ExploreScreen extends StatelessWidget {
           slots = _matches(vm);
       }
     }
-    return KeyedSubtree(
-      key: ValueKey(vm.paneKey),
-      child: HomeColumn(slots: slots),
-    );
+    return HomeColumn(slots: slots);
   }
 }
 

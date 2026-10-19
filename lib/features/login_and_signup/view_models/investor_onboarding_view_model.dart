@@ -55,8 +55,6 @@ class InvestorOnboardingViewModel extends ChangeNotifier with SafeNotifier {
   final stagesOther = TextEditingController();
   final Set<String> models = {};
   final modelsOther = TextEditingController();
-  final offer = TextEditingController();
-  final lookFor = TextEditingController();
   bool step4Tried = false;
 
   bool isSaving = false;
@@ -69,8 +67,6 @@ class InvestorOnboardingViewModel extends ChangeNotifier with SafeNotifier {
     sectorsOther,
     stagesOther,
     modelsOther,
-    offer,
-    lookFor,
   ];
 
   // ------------------------------------------------------------ step 3
@@ -205,7 +201,8 @@ class InvestorOnboardingViewModel extends ChangeNotifier with SafeNotifier {
       commerceModelsOther: models.contains(otherLabel)
           ? modelsOther.text.trim()
           : null,
-      lookFor: lookFor.text.trim(),
+      // Asked once, at sign-up ("What do you hope to gain from startups?").
+      lookFor: user.gain.trim(),
     );
   }
 
@@ -220,19 +217,13 @@ class InvestorOnboardingViewModel extends ChangeNotifier with SafeNotifier {
       return null;
     }
     final criteria = buildCriteria();
-    final offered = offer.text.trim();
     isSaving = true;
     notifyListeners();
     try {
-      await _users.saveInvestorOnboarding(
-        uid: user.uid,
-        criteria: criteria,
-        valueOffered: offered,
-      );
+      await _users.saveInvestorOnboarding(uid: user.uid, criteria: criteria);
       return user.copyWith(
         onboardingCompleted: true,
         investorCriteria: criteria,
-        valueOffered: offered,
       );
     } on AuthException catch (e) {
       formError = e.failure == AuthFailure.network

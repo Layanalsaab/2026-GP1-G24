@@ -28,7 +28,11 @@ class HomeStrings {
   static const bookmarkAdded = 'Added to bookmarks';
   static const bookmarkRemoved = 'Removed from bookmarks';
 
+  // Long lists are shown a page at a time
+  static String showMore(int left) => 'Show more ($left more)';
+
   // Empty lists
+  static String noResultsTitle(String query) => 'No results for “$query”';
   static const loadFailedTitle = 'Couldn’t load the list';
   static const loadFailedMessage = 'Check your connection and try again.';
   static const retry = 'Try again';

@@ -141,56 +141,51 @@ class ManageOverviewTab extends StatelessWidget {
           button: true,
           label: FounderToolsStrings.calcCardTitle,
           excludeSemantics: true,
-          child: Pressable(
+          child: ManageCard(
             onTap: onCalculator,
-            child: ManageCard(
-              child: Row(
-                children: [
-                  Container(
-                    width: 42,
-                    height: 42,
-                    decoration: BoxDecoration(
-                      color: AppColors.tagGoldFill,
-                      borderRadius: BorderRadius.circular(12),
+            child: Row(
+              children: [
+                Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: AppColors.tagGoldFill,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Center(
+                    child: AppIcon.filled(
+                      AppIcons.calc,
+                      size: 20,
+                      color: AppColors.tagGoldText,
                     ),
-                    child: const Center(
-                      child: AppIcon.filled(
-                        AppIcons.calc,
-                        size: 20,
-                        color: AppColors.tagGoldText,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        FounderToolsStrings.calcCardTitle,
+                        style: AppText.sans(size: 15, weight: FontWeight.w600),
                       ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          FounderToolsStrings.calcCardTitle,
-                          style: AppText.sans(
-                            size: 15,
-                            weight: FontWeight.w600,
-                          ),
+                      Text(
+                        FounderToolsStrings.calcCardText,
+                        style: AppText.sans(
+                          size: 12.5,
+                          height: 17,
+                          color: AppColors.grey,
                         ),
-                        Text(
-                          FounderToolsStrings.calcCardText,
-                          style: AppText.sans(
-                            size: 12.5,
-                            height: 17,
-                            color: AppColors.grey,
-                          ),
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                  const AppIcon.filled(
-                    AppIcons.chevRight,
-                    size: 22,
-                    color: AppColors.hint,
-                  ),
-                ],
-              ),
+                ),
+                const AppIcon.filled(
+                  AppIcons.chevRight,
+                  size: 22,
+                  color: AppColors.hint,
+                ),
+              ],
             ),
           ),
         ),

@@ -6,6 +6,28 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_metrics.dart';
 import '../../theme/app_text.dart';
 
+/// Tracks whether a mouse/trackpad pointer is over [builder]'s widget (never
+/// true for touch) and hands that to [builder].
+class _HoverBuilder extends StatefulWidget {
+  const _HoverBuilder({required this.builder});
+
+  final Widget Function(BuildContext context, bool hovering) builder;
+
+  @override
+  State<_HoverBuilder> createState() => _HoverBuilderState();
+}
+
+class _HoverBuilderState extends State<_HoverBuilder> {
+  bool _hover = false;
+
+  @override
+  Widget build(BuildContext context) => MouseRegion(
+    onEnter: (_) => setState(() => _hover = true),
+    onExit: (_) => setState(() => _hover = false),
+    child: widget.builder(context, _hover),
+  );
+}
+
 /// Form selection chip (docs/02 §8.6): 34 high, padding 0 16, radius 999,
 /// 13/500, soft (moss50 fill, moss600 text) or [selected] (moss600 fill, white
 /// text, a 16 px check that pops in, left padding 12, gap 6). Colors animate
@@ -30,43 +52,49 @@ class AppChip extends StatelessWidget {
       selected: selected,
       label: label,
       excludeSemantics: true,
-      child: Pressable(
-        scale: 0.96,
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: Motion.dur(context, Motion.color),
-          curve: Curves.ease,
-          height: 34,
-          padding: EdgeInsets.only(left: selected ? 12 : 16, right: 16),
-          decoration: BoxDecoration(
-            color: selected ? AppColors.moss600 : AppColors.moss50,
-            borderRadius: BorderRadius.circular(AppRadius.pill),
-            border: Border.all(
-              color: selected ? AppColors.moss600 : const Color(0x00000000),
+      child: _HoverBuilder(
+        builder: (context, hovering) => Pressable(
+          scale: PressScale.chip,
+          onTap: onTap,
+          child: AnimatedContainer(
+            duration: Motion.dur(context, Motion.color),
+            curve: Curves.ease,
+            height: 34,
+            padding: EdgeInsets.only(left: selected ? 12 : 16, right: 16),
+            decoration: BoxDecoration(
+              color: selected ? AppColors.moss600 : AppColors.moss50,
+              borderRadius: BorderRadius.circular(AppRadius.pill),
+              border: Border.all(
+                color: selected
+                    ? AppColors.moss600
+                    : (hovering && onTap != null
+                          ? AppColors.borderStrong
+                          : const Color(0x008C918D)),
+              ),
             ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (selected) ...[
-                Pop(
-                  key: const ValueKey('chip-check'),
-                  child: AppIcon.filled(AppIcons.check, size: 16, color: fg),
-                ),
-                const SizedBox(width: 6),
-              ],
-              Flexible(
-                child: AnimatedDefaultTextStyle(
-                  duration: Motion.dur(context, Motion.color),
-                  style: AppText.chip.copyWith(color: fg),
-                  child: Text(
-                    label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (selected) ...[
+                  Pop(
+                    key: const ValueKey('chip-check'),
+                    child: AppIcon.filled(AppIcons.check, size: 16, color: fg),
+                  ),
+                  const SizedBox(width: 6),
+                ],
+                Flexible(
+                  child: AnimatedDefaultTextStyle(
+                    duration: Motion.dur(context, Motion.color),
+                    style: AppText.chip.copyWith(color: fg),
+                    child: Text(
+                      label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -98,27 +126,37 @@ class AppFilterChip extends StatelessWidget {
       selected: selected,
       label: label,
       excludeSemantics: true,
-      child: Pressable(
-        scale: 0.96,
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: Motion.dur(context, Motion.color),
-          height: 34,
-          padding: const EdgeInsets.symmetric(horizontal: 14),
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: selected ? AppColors.green : AppColors.surface,
-            borderRadius: BorderRadius.circular(AppRadius.pill),
-            border: Border.all(
-              color: selected ? AppColors.green : AppColors.border,
+      child: _HoverBuilder(
+        builder: (context, hovering) => Pressable(
+          scale: PressScale.chip,
+          onTap: onTap,
+          child: AnimatedContainer(
+            duration: Motion.dur(context, Motion.color),
+            curve: Curves.ease,
+            height: 34,
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            decoration: BoxDecoration(
+              color: selected ? AppColors.green : AppColors.surface,
+              borderRadius: BorderRadius.circular(AppRadius.pill),
+              border: Border.all(
+                color: selected
+                    ? AppColors.green
+                    : (hovering && onTap != null
+                          ? AppColors.borderStrong
+                          : AppColors.border),
+              ),
             ),
-          ),
-          child: Text(
-            label,
-            style: AppText.sans(
-              size: 13,
-              weight: FontWeight.w600,
-              color: selected ? AppColors.onDark : AppColors.grey,
+            child: Center(
+              widthFactor: 1,
+              child: AnimatedDefaultTextStyle(
+                duration: Motion.dur(context, Motion.color),
+                style: AppText.sans(
+                  size: 13,
+                  weight: FontWeight.w600,
+                  color: selected ? AppColors.onDark : AppColors.grey,
+                ),
+                child: Text(label),
+              ),
             ),
           ),
         ),
@@ -231,6 +269,7 @@ class RangeControl extends StatelessWidget {
                   onTap: () => onChanged(i),
                   child: AnimatedContainer(
                     duration: Motion.dur(context, Motion.color),
+                    curve: Curves.ease,
                     height: 34,
                     alignment: Alignment.center,
                     decoration: BoxDecoration(

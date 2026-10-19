@@ -4,8 +4,6 @@ import 'package:flutter/material.dart';
 
 import '../../../app_constants/profile_strings.dart';
 import '../../../data_access/repositories/bookmark_repository.dart';
-import '../../../data_access/repositories/interest_repository.dart';
-import '../../../data_access/repositories/request_repository.dart';
 import '../../../shared_ui/icons/app_icons.dart';
 import '../../../shared_ui/motion/motion.dart';
 import '../../../shared_ui/theme/app_colors.dart';
@@ -24,36 +22,7 @@ class ProfileActions {
 
   /// Toggles the bookmark under [key] (`s-<id>`, `i-<id>`, `p-<id>`).
   static void toggleBookmark(BuildContext context, String key) {
-    final on = BookmarkRepository.instance.toggle(key);
-    AppToast.show(
-      context,
-      on
-          ? ProfileStrings.addedToBookmarks
-          : ProfileStrings.removedFromBookmarks,
-    );
-  }
-
-  /// Investor -> startup / founder -> investor "Send investment request",
-  /// toggled: a second tap withdraws it.
-  static void toggleRequest(BuildContext context, String key, String name) {
-    final sent = RequestRepository.instance.toggleOutgoing(key);
-    AppToast.show(
-      context,
-      sent
-          ? ProfileStrings.requestSentTo(name)
-          : ProfileStrings.withdrawnFrom(name),
-    );
-  }
-
-  /// Guest "Express interest", toggled.
-  static void toggleInterest(BuildContext context, String key, String name) {
-    final sent = InterestRepository.instance.toggleSent(key);
-    AppToast.show(
-      context,
-      sent
-          ? ProfileStrings.interestSentTo(name)
-          : ProfileStrings.withdrawnFrom(name),
-    );
+    BookmarkRepository.instance.toggle(key);
   }
 }
 
@@ -66,7 +35,7 @@ class ProfileCtaBar extends StatelessWidget {
     required this.label,
     required this.icon,
     required this.done,
-    required this.onPressed,
+    this.onPressed,
   });
 
   final String label;
@@ -74,7 +43,10 @@ class ProfileCtaBar extends StatelessWidget {
   /// Filled icon path shown while not [done].
   final String icon;
   final bool done;
-  final VoidCallback onPressed;
+
+  /// Null while requests are not built yet: the button looks the same and
+  /// does nothing (no message either).
+  final VoidCallback? onPressed;
 
   @override
   Widget build(BuildContext context) {
@@ -138,40 +110,42 @@ class ProfileHead extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 96,
-            height: 96,
-            alignment: Alignment.center,
-            clipBehavior: Clip.antiAlias,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: AppColors.mossChip,
-              border: Border.all(color: AppColors.profileBg, width: 4),
-              boxShadow: const [
-                BoxShadow(
-                  color: Color(0x73000000),
-                  blurRadius: 20,
-                  spreadRadius: -10,
-                  offset: Offset(0, 8),
-                ),
-              ],
-              image: hasPhoto
-                  ? DecorationImage(
-                      image: NetworkImage(photoUrl!),
-                      fit: BoxFit.cover,
-                    )
-                  : null,
-            ),
-            child: hasPhoto
-                ? null
-                : Text(
-                    initials,
-                    style: AppText.sans(
-                      size: 30,
-                      weight: FontWeight.w700,
-                      color: AppColors.moss600,
-                    ),
+          _AvatarIn(
+            child: Container(
+              width: 96,
+              height: 96,
+              alignment: Alignment.center,
+              clipBehavior: Clip.antiAlias,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppColors.mossChip,
+                border: Border.all(color: AppColors.profileBg, width: 4),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x73000000),
+                    blurRadius: 20,
+                    spreadRadius: -10,
+                    offset: Offset(0, 8),
                   ),
+                ],
+                image: hasPhoto
+                    ? DecorationImage(
+                        image: NetworkImage(photoUrl!),
+                        fit: BoxFit.cover,
+                      )
+                    : null,
+              ),
+              child: hasPhoto
+                  ? null
+                  : Text(
+                      initials,
+                      style: AppText.sans(
+                        size: 30,
+                        weight: FontWeight.w700,
+                        color: AppColors.moss600,
+                      ),
+                    ),
+            ),
           ),
           const SizedBox(height: 12),
           Semantics(
@@ -307,7 +281,7 @@ class _LinkedInPill extends StatelessWidget {
         excludeSemantics: true,
         child: Pressable(
           onTap: onTap,
-          scale: 0.97,
+          scale: PressScale.smallPill,
           child: Container(
             height: 36,
             padding: const EdgeInsets.symmetric(horizontal: 15),
@@ -357,6 +331,64 @@ class ProfileSections extends StatelessWidget {
             children[i],
           ],
         ],
+      ),
+    );
+  }
+}
+
+/// Big profile avatar entrance: opacity 0 -> 1 and scale .9 -> 1 over 450 ms
+/// easeOut. Under reduced motion it is a plain 200 ms fade.
+class _AvatarIn extends StatefulWidget {
+  const _AvatarIn({required this.child});
+
+  final Widget child;
+
+  @override
+  State<_AvatarIn> createState() => _AvatarInState();
+}
+
+class _AvatarInState extends State<_AvatarIn>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _c = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 450),
+  );
+  bool _started = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_started) return;
+    _started = true;
+    if (Motion.reduced(context)) _c.duration = Motion.reducedFade;
+    _c.forward();
+  }
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final reduced = Motion.reduced(context);
+    final a = CurvedAnimation(
+      parent: _c,
+      curve: reduced ? Curves.linear : AppCurves.easeOut,
+    );
+    return AnimatedBuilder(
+      animation: a,
+      child: widget.child,
+      builder: (context, child) => Opacity(
+        opacity: a.value,
+        child: reduced
+            ? child
+            : Transform.scale(
+                scale: 0.9 + 0.1 * a.value,
+                alignment: Alignment.center,
+                child: child,
+              ),
       ),
     );
   }

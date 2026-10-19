@@ -16,11 +16,17 @@ void main() {
 
   group('defaults', () {
     test(
-      'founder and investor open the Hub on Investors, guest on Startups',
+      'a founder opens on Investors; an investor and a guest on Startups',
       () {
-        expect(vm(SessionRole.founder).hubSwitch, 1);
-        expect(vm(SessionRole.investor).hubSwitch, 1);
-        expect(vm(SessionRole.guest).hubSwitch, 0);
+        for (final r in SessionRole.values) {
+          final want = r == SessionRole.founder ? 1 : 0;
+          final m = vm(r);
+          expect(m.hubSwitch, want, reason: '$r Hub');
+          expect(m.resultsSwitch, want, reason: '$r Explore results');
+          expect(m.forYouSwitch, want, reason: '$r For You');
+          expect(m.trendingSwitch, want, reason: '$r Trending');
+          m.dispose();
+        }
         expect(vm(SessionRole.founder).tab, HomeTab.hub);
       },
     );
@@ -152,9 +158,12 @@ void main() {
 
     test('new on Start.sa follows the For You switch', () {
       final m = vm(SessionRole.investor);
-      expect(m.newItems.every((i) => i.kind == HomeItemKind.investor), isTrue);
-      m.setForYouSwitch(0);
       expect(m.newItems.every((i) => i.kind == HomeItemKind.startup), isTrue);
+      m.setForYouSwitch(1);
+      expect(m.newItems.every((i) => i.kind == HomeItemKind.investor), isTrue);
+      final f = vm(SessionRole.founder);
+      expect(f.newItems.every((i) => i.kind == HomeItemKind.investor), isTrue);
+      f.dispose();
       expect(m.recommended.length, 3);
       m.dispose();
     });

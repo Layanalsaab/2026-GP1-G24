@@ -245,7 +245,17 @@ class _SignupScreenState extends State<SignupScreen> {
                           otherHint: AuthStrings.sectorOtherHint,
                           otherError: vm.sectorsOtherError,
                         )
-                      else
+                      else ...[
+                        LabeledTextField(
+                          label: AuthStrings.valueQuestion,
+                          required: true,
+                          controller: vm.value,
+                          placeholder: AuthStrings.valuePlaceholder,
+                          maxLength: Validators.maxValueText,
+                          multiline: true,
+                          info: AuthStrings.valueTip,
+                          error: vm.valueError,
+                        ),
                         LabeledTextField(
                           label: AuthStrings.gainQuestion,
                           required: true,
@@ -256,6 +266,7 @@ class _SignupScreenState extends State<SignupScreen> {
                           info: AuthStrings.gainTip,
                           error: vm.gainError,
                         ),
+                      ],
                       LabeledTextField(
                         label: AuthStrings.bio,
                         controller: vm.bio,

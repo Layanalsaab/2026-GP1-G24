@@ -21,7 +21,12 @@ class AppOverlayRoute<T> extends PopupRoute<T> {
     required this.reduced,
     this.label = 'Close',
     this.dismissible = true,
+    this.dimCurve = Motion.easeOut,
   });
+
+  /// Curve of the dim fade (CSS `ease` for the side menu and the advanced
+  /// search sheet, easeOut for picker sheets).
+  final Curve dimCurve;
 
   final WidgetBuilder builder;
   final Color dim;
@@ -76,7 +81,7 @@ class AppOverlayRoute<T> extends PopupRoute<T> {
     final dimA = reduced
         ? animation
         : animation.drive(
-            CurveTween(curve: Interval(0, dimEnd, curve: Motion.easeOut)),
+            CurveTween(curve: Interval(0, dimEnd, curve: dimCurve)),
           );
     Widget panel;
     if (reduced) {
@@ -135,6 +140,7 @@ Future<T?> showAppOverlay<T>(
   Curve curve = Motion.drawer,
   String label = 'Close',
   bool dismissible = true,
+  Curve dimCurve = Motion.easeOut,
 }) {
   return Navigator.of(context, rootNavigator: true).push<T>(
     AppOverlayRoute<T>(
@@ -147,6 +153,7 @@ Future<T?> showAppOverlay<T>(
       reduced: Motion.reduced(context),
       label: label,
       dismissible: dismissible,
+      dimCurve: dimCurve,
     ),
   );
 }

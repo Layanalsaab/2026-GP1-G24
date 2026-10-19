@@ -95,7 +95,11 @@ void main() {
       expect(vm.lookingFor, ['Funding', 'Talent']);
       final cells = vm.financials.map((c) => c.$1).toList();
       expect(cells, contains('Raising'));
-      expect(cells, contains('City'));
+      expect(
+        cells,
+        isNot(contains('City')),
+        reason: 'the city is in the header',
+      );
       expect(
         cells,
         isNot(contains('Founded')),

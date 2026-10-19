@@ -79,6 +79,13 @@ class StartupProfilePane extends StatelessWidget {
           title: ProfileStrings.ourSolution,
           child: ProfileText(s.solution.trim()),
         ),
+      if (s.advantage.trim().isNotEmpty)
+        ProfileCard(
+          icon: AppIcons.star,
+          title: ProfileStrings.different,
+          tone: ProfileIconTone.gold,
+          child: ProfileText(s.advantage.trim()),
+        ),
     ];
   }
 
@@ -102,13 +109,6 @@ class StartupProfilePane extends StatelessWidget {
           icon: AppIcons.people,
           title: ProfileStrings.targetCustomers,
           child: ProfileText(s.customers.trim()),
-        ),
-      if (s.advantage.trim().isNotEmpty)
-        ProfileCard(
-          icon: AppIcons.star,
-          title: ProfileStrings.different,
-          tone: ProfileIconTone.gold,
-          child: ProfileText(s.advantage.trim()),
         ),
       if (viewModel.hasMarket)
         ProfileCard(

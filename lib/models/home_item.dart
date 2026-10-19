@@ -1,6 +1,7 @@
 import 'investor_profile.dart';
 import 'program.dart';
 import 'startup.dart';
+import 'startup_enums.dart';
 
 /// What a Hub / Explore / Support Channels card shows.
 enum HomeItemKind { startup, investor, program }
@@ -18,6 +19,9 @@ class HomeItem {
     required this.city,
     required this.line,
     this.stage = '',
+    this.stages = const [],
+    this.ticket = '',
+    this.raising,
     this.sectors = const [],
     this.lookingFor = const [],
     this.commerceModel = '',
@@ -44,6 +48,17 @@ class HomeItem {
   /// A startup's stage ("Pre-seed") or an investor's stage range
   /// ("Pre-seed – Seed").
   final String stage;
+
+  /// Every stage the item has / invests in (matched one by one by the
+  /// "Stage" filters).
+  final List<String> stages;
+
+  /// An investor's ticket size as stored ("SAR 100K – 500K").
+  final String ticket;
+
+  /// A startup's funding ask in SAR (null when none).
+  final int? raising;
+
   final List<String> sectors;
   final List<String> lookingFor;
 
@@ -75,6 +90,9 @@ class HomeItem {
     city: city,
     line: line,
     stage: stage,
+    stages: stages,
+    ticket: ticket,
+    raising: raising,
     sectors: sectors,
     lookingFor: lookingFor,
     commerceModel: commerceModel,
@@ -94,6 +112,9 @@ class HomeItem {
     city: city,
     line: line,
     stage: stage,
+    stages: stages,
+    ticket: ticket,
+    raising: raising,
     sectors: sectors,
     lookingFor: lookingFor,
     commerceModel: commerceModel,
@@ -113,7 +134,9 @@ class HomeItem {
     city: s.location.label,
     line: s.summary,
     stage: s.stageLabel,
-    sectors: [s.sectorLabel],
+    stages: [s.stageLabel, if (s.stage == StartupStage.other) 'Other'],
+    raising: s.fundingRequirement,
+    sectors: [s.sectorLabel, if (s.sector == Sector.other) 'Other'],
     lookingFor: [for (final l in s.lookingFor) s.lookingForLabelOf(l)],
     commerceModel: s.businessModelLabel,
   );
@@ -127,6 +150,8 @@ class HomeItem {
     city: i.city,
     line: i.about ?? i.profileBio,
     stage: i.stageRange,
+    stages: i.stages,
+    ticket: i.ticketRange,
     sectors: i.sectors,
     matchPercent: i.matchPercent,
     matchReason: i.matchReason,

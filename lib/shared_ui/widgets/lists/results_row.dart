@@ -36,13 +36,16 @@ class ResultsRow extends StatelessWidget {
   const ResultsRow({
     super.key,
     required this.title,
-    required this.onClearAll,
+    this.onClearAll,
     this.chips = const [],
   });
 
   /// "3 results", "1 result" or "Results".
   final String title;
-  final VoidCallback onClearAll;
+
+  /// Null hides the "Clear all" link (a plain search has nothing to clear
+  /// but the text).
+  final VoidCallback? onClearAll;
   final List<ResultChip> chips;
 
   @override
@@ -66,27 +69,28 @@ class ResultsRow extends StatelessWidget {
                   style: AppText.sans(size: 15.5, weight: FontWeight.w700),
                 ),
               ),
-              Semantics(
-                button: true,
-                label: 'Clear all filters',
-                excludeSemantics: true,
-                onTap: onClearAll,
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
+              if (onClearAll != null)
+                Semantics(
+                  button: true,
+                  label: 'Clear all filters',
+                  excludeSemantics: true,
                   onTap: onClearAll,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 2),
-                    child: Text(
-                      'Clear all',
-                      style: AppText.sans(
-                        size: 13,
-                        color: AppColors.moss600,
-                        weight: FontWeight.w600,
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: onClearAll,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 2),
+                      child: Text(
+                        'Clear all',
+                        style: AppText.sans(
+                          size: 13,
+                          color: AppColors.moss600,
+                          weight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
             ],
           ),
         ),
@@ -97,7 +101,7 @@ class ResultsRow extends StatelessWidget {
             runSpacing: 6,
             children: [
               for (final c in chips)
-                _ChipIn(
+                ChipIn(
                   key: ValueKey(c.label),
                   child: _RemovableChip(chip: c),
                 ),
@@ -159,32 +163,6 @@ class _RemovableChip extends StatelessWidget {
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-/// chipIn: opacity 0 -> 1 and scale 0.94 -> 1 over 220 ms (easeOut).
-class _ChipIn extends StatelessWidget {
-  const _ChipIn({super.key, required this.child});
-
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    final reduced = Motion.reduced(context);
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0, end: 1),
-      duration: reduced
-          ? Motion.reducedFade
-          : const Duration(milliseconds: 220),
-      curve: reduced ? Curves.linear : Motion.easeOut,
-      child: child,
-      builder: (context, t, child) => Opacity(
-        opacity: t,
-        child: reduced
-            ? child
-            : Transform.scale(scale: 0.94 + 0.06 * t, child: child),
       ),
     );
   }

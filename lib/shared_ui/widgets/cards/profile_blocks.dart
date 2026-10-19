@@ -349,6 +349,7 @@ class ListRow extends StatelessWidget {
       child: PressSurface(
         onTap: onTap,
         pressedColor: const Color(0xFFF7F5F0),
+        hoverColor: const Color(0xFFF7F5F0),
         semanticLabel: subtitle == null ? title : '$title, $subtitle',
         child: Padding(
           padding: EdgeInsets.symmetric(vertical: _card ? 8 : 6),

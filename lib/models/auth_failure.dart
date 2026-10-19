@@ -11,6 +11,10 @@ enum AuthFailure {
   tooManyRequests,
   network,
 
+  /// Firebase wants a fresh sign-in before a sensitive action (deleting the
+  /// account).
+  requiresRecentLogin,
+
   /// Firestore/Storage refused the request (security rules), or nobody is
   /// signed in when an action needs an account.
   permissionDenied,

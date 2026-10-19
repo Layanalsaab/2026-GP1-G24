@@ -78,6 +78,14 @@ class AuthService {
     await user.updatePassword(newPassword);
   });
 
+  /// True when the user signed in within the last few minutes, which is what
+  /// Firebase requires before it deletes an account without asking for the
+  /// password again.
+  bool get signedInRecently {
+    final at = _auth.currentUser?.metadata.lastSignInTime;
+    return at != null && DateTime.now().difference(at).inMinutes < 4;
+  }
+
   Future<void> deleteCurrentAccount() => _guard(() async {
     await _auth.currentUser?.delete();
   });
@@ -115,6 +123,8 @@ class AuthService {
       case 'invalid-login-credentials':
       case 'user-disabled':
         return AuthFailure.invalidCredentials;
+      case 'requires-recent-login':
+        return AuthFailure.requiresRecentLogin;
       case 'too-many-requests':
         return AuthFailure.tooManyRequests;
       case 'network-request-failed':

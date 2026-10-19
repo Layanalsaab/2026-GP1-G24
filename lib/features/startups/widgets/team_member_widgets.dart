@@ -88,6 +88,10 @@ class AddMemberButton extends StatelessWidget {
       label: FounderToolsStrings.addMember,
       excludeSemantics: true,
       child: Pressable(
+        scale: PressScale.button,
+        hoverColor: AppColors.moss50,
+        hoverDuration: AppDur.fast,
+        borderRadius: BorderRadius.circular(14),
         onTap: onTap,
         child: CustomPaint(
           painter: DashedBorderPainter(color: AppColors.moss600, radius: 14),
@@ -177,6 +181,14 @@ class TeamMemberEditor extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // The editor card rises in (320 ms) when it opens.
+    return Rise(
+      duration: const Duration(milliseconds: 320),
+      child: _card(context),
+    );
+  }
+
+  Widget _card(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(

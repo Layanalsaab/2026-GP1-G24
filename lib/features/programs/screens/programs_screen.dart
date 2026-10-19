@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../../shared_ui/widgets/lists/empty_state.dart';
 import '../../search/screens/hub_screen.dart';
 import '../../search/view_models/home_view_model.dart';
 import '../../search/widgets/home_layout.dart';
@@ -19,20 +18,16 @@ class ProgramsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final vm = viewModel;
     final cards = vm.programCards;
-    return KeyedSubtree(
-      key: ValueKey(vm.paneKey),
-      child: HomeColumn(
-        slots: [
-          if (vm.filtering)
-            HomeSlot(
-              homeResultsRow(vm, HomeStrings.resultCount(cards.length)),
-              bottom: -2,
-            ),
-          if (cards.isNotEmpty) cardsSlot(cards),
-          if (cards.isEmpty)
-            HomeSlot(EmptyState.noMatches(onAction: vm.clearAll)),
-        ],
-      ),
+    return HomeColumn(
+      slots: [
+        if (vm.filtering)
+          HomeSlot(
+            homeResultsRow(vm, HomeStrings.resultCount(cards.length)),
+            bottom: -2,
+          ),
+        if (cards.isNotEmpty) cardsSlot(cards, scope: vm.paneKey),
+        if (cards.isEmpty) HomeSlot(homeNoResults(vm)),
+      ],
     );
   }
 }

@@ -1,4 +1,7 @@
+import '../../../app_constants/app_strings.dart';
 import '../../../models/home_item.dart';
+import '../../../models/investor_criteria.dart';
+import '../../../models/startup_enums.dart';
 import '../../../shared_ui/widgets/overlays/advanced_search_sheet.dart';
 
 /// Which list the search bar and the advanced search sheet act on
@@ -24,24 +27,28 @@ class HomeFilterGroup {
 }
 
 /// The item field a group filters on.
-enum HomeFilterField { sectors, stage, looking, type, city, model }
+enum HomeFilterField {
+  sectors,
+  stage,
+  looking,
+  type,
+  city,
+  model,
+  ticket,
+  raising,
+}
 
 /// The advanced search groups, the filtering and the sorting of the home
 /// pages. Pure so it is easy to test (docs/05 section B5).
 class HomeFilters {
   HomeFilters._();
 
-  static const _sectors = [
-    'HealthTech',
-    'Fintech',
-    'EdTech',
-    'Logistics',
-    'AgriTech',
-    'SaaS',
-    'E-commerce',
-  ];
-  static const _stages = ['Pre-seed', 'Seed', 'Series A', 'Series B+'];
-  static const _money = [
+  /// The options are the same lists the forms use, so every stored value
+  /// can be found.
+  static final _sectors = [for (final v in Sector.values) v.label];
+  static final _stages = [for (final v in StartupStage.values) v.label];
+  static final _cities = List<String>.of(AppStrings.allCities);
+  static const _raising = [
     'Under SAR 250K',
     'SAR 250K – 1M',
     'SAR 1M – 5M',
@@ -85,63 +92,41 @@ class HomeFilters {
           HomeFilterGroup('Sort by', ['Name A–Z', 'Newest'], single: true),
         ];
       case HomeContext.investors:
-        return const [
+        return [
           HomeFilterGroup('Sector', _sectors, field: HomeFilterField.sectors),
           HomeFilterGroup(
             'Stages they invest in',
             _stages,
             field: HomeFilterField.stage,
           ),
-          HomeFilterGroup('Investor type', [
-            'Angel investor',
-            'VC firm',
-            'Angel network',
-            'Corporate',
-          ]),
-          HomeFilterGroup('Ticket size', _money),
-          HomeFilterGroup('City', [
-            'Riyadh',
-            'Jeddah',
-            'Dammam',
-            'Khobar',
-          ], field: HomeFilterField.city),
+          HomeFilterGroup(
+            'Ticket size',
+            InvestorCriteria.ticketOptions,
+            field: HomeFilterField.ticket,
+          ),
+          HomeFilterGroup('City', _cities, field: HomeFilterField.city),
           _sort,
         ];
       case HomeContext.explore:
-        return const [
+        return [
           HomeFilterGroup('Sector', _sectors, field: HomeFilterField.sectors),
           HomeFilterGroup('Stage', _stages, field: HomeFilterField.stage),
-          HomeFilterGroup('City', [
-            'Riyadh',
-            'Jeddah',
-            'Dammam',
-            'Qassim',
-          ], field: HomeFilterField.city),
+          HomeFilterGroup('City', _cities, field: HomeFilterField.city),
           _sort,
         ];
       case HomeContext.startups:
-        return const [
+        return [
           HomeFilterGroup('Sector', _sectors, field: HomeFilterField.sectors),
           HomeFilterGroup('Stage', _stages, field: HomeFilterField.stage),
           HomeFilterGroup('Looking for', [
-            'Funding',
-            'Talent',
-            'Partnership',
-            'Mentorship',
+            for (final v in LookingFor.values) v.label,
           ], field: HomeFilterField.looking),
-          HomeFilterGroup('Raising', _money),
+          HomeFilterGroup('Raising', _raising, field: HomeFilterField.raising),
           HomeFilterGroup('Commerce model', [
-            'B2B',
-            'B2C',
-            'B2B2C',
-            'C2C',
+            for (final v in BusinessModel.values)
+              if (v != BusinessModel.other) v.shortLabel,
           ], field: HomeFilterField.model),
-          HomeFilterGroup('City', [
-            'Riyadh',
-            'Jeddah',
-            'Dammam',
-            'Qassim',
-          ], field: HomeFilterField.city),
+          HomeFilterGroup('City', _cities, field: HomeFilterField.city),
           _sort,
         ];
     }
@@ -180,7 +165,19 @@ class HomeFilters {
       case HomeFilterField.sectors:
         return it.sectors.contains(v);
       case HomeFilterField.stage:
-        return it.stage.contains(v.replaceAll('+', ''));
+        return it.stages.contains(v);
+      case HomeFilterField.ticket:
+        return it.ticket == v;
+      case HomeFilterField.raising:
+        final r = it.raising;
+        if (r == null || r <= 0) return false;
+        return switch (v) {
+          'Under SAR 250K' => r < 250000,
+          'SAR 250K – 1M' => r >= 250000 && r < 1000000,
+          'SAR 1M – 5M' => r >= 1000000 && r <= 5000000,
+          'Over SAR 5M' => r > 5000000,
+          _ => false,
+        };
       case HomeFilterField.looking:
         return it.lookingFor.contains(v);
       case HomeFilterField.type:

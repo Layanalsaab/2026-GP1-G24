@@ -137,6 +137,7 @@ class ProfileStrings {
 
   // ---- Delete account ----
   static const deleteTitle = 'Delete your account?';
+  static const deleteConfirm = 'Yes, delete my account';
   static const deletePasswordLabel = 'Enter your password to confirm';
   static const deletePasswordHint = 'Password';
   static const cancel = 'Cancel';

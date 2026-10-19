@@ -11,6 +11,7 @@ class PressSurface extends StatefulWidget {
     required this.child,
     this.onTap,
     this.pressedColor = const Color(0xFFF6F4EF),
+    this.hoverColor,
     this.borderRadius,
     this.semanticLabel,
     this.selected,
@@ -21,6 +22,10 @@ class PressSurface extends StatefulWidget {
 
   /// Background while pressed.
   final Color pressedColor;
+
+  /// Background while a mouse pointer hovers (null: no hover reaction).
+  /// Never triggers on touch.
+  final Color? hoverColor;
   final BorderRadius? borderRadius;
 
   /// Optional explicit accessibility label (otherwise the child's text is
@@ -34,6 +39,7 @@ class PressSurface extends StatefulWidget {
 
 class _PressSurfaceState extends State<PressSurface> {
   bool _down = false;
+  bool _hover = false;
 
   void _set(bool v) {
     if (_down != v && mounted) setState(() => _down = v);
@@ -48,19 +54,33 @@ class _PressSurfaceState extends State<PressSurface> {
       label: widget.semanticLabel,
       container: true,
       onTap: widget.onTap,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTapDown: enabled ? (_) => _set(true) : null,
-        onTapUp: enabled ? (_) => _set(false) : null,
-        onTapCancel: enabled ? () => _set(false) : null,
-        onTap: widget.onTap,
-        child: AnimatedContainer(
-          duration: Motion.dur(context, const Duration(milliseconds: 150)),
-          decoration: BoxDecoration(
-            color: _down ? widget.pressedColor : Colors.transparent,
-            borderRadius: widget.borderRadius,
+      child: MouseRegion(
+        cursor: enabled ? SystemMouseCursors.click : MouseCursor.defer,
+        onEnter: (_) {
+          if (!_hover && mounted) setState(() => _hover = true);
+        },
+        onExit: (_) {
+          if (_hover && mounted) setState(() => _hover = false);
+        },
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTapDown: enabled ? (_) => _set(true) : null,
+          onTapUp: enabled ? (_) => _set(false) : null,
+          onTapCancel: enabled ? () => _set(false) : null,
+          onTap: widget.onTap,
+          child: AnimatedContainer(
+            duration: Motion.dur(context, const Duration(milliseconds: 150)),
+            curve: Curves.ease,
+            decoration: BoxDecoration(
+              color: _down
+                  ? widget.pressedColor
+                  : (_hover && enabled && widget.hoverColor != null
+                        ? widget.hoverColor
+                        : Colors.transparent),
+              borderRadius: widget.borderRadius,
+            ),
+            child: widget.child,
           ),
-          child: widget.child,
         ),
       ),
     );

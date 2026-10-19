@@ -10,12 +10,13 @@ import 'auth_decor.dart';
 
 /// The three page dots of the intro: 8 x 8 grey, the current one widens to 24
 /// and turns gold (green on the last page, [dark]); 260 ms easeOut.
-class IntroDots extends StatelessWidget {
+class IntroDots extends StatefulWidget {
   const IntroDots({
     super.key,
     required this.index,
     this.count = 3,
     this.dark = false,
+    this.fromIndex,
   });
 
   final int index;
@@ -24,25 +25,53 @@ class IntroDots extends StatelessWidget {
   /// Green current dot (cream pages) instead of gold.
   final bool dark;
 
+  /// The page we are coming from. Each intro page builds its own dots, so a
+  /// new page starts them on the old page's dot and slides to [index]
+  /// (a plain rebuild would show the final state with no animation).
+  final int? fromIndex;
+
+  @override
+  State<IntroDots> createState() => _IntroDotsState();
+}
+
+class _IntroDotsState extends State<IntroDots> {
+  late int _shown = widget.fromIndex ?? widget.index;
+
+  @override
+  void initState() {
+    super.initState();
+    if (_shown != widget.index) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) setState(() => _shown = widget.index);
+      });
+    }
+  }
+
+  @override
+  void didUpdateWidget(IntroDots old) {
+    super.didUpdateWidget(old);
+    if (old.index != widget.index) _shown = widget.index;
+  }
+
   @override
   Widget build(BuildContext context) {
-    final d = Motion.dur(context, const Duration(milliseconds: 260));
+    final d = Motion.dur(context, AppDur.screen);
     return Semantics(
-      label: 'Page ${index + 1} of $count',
+      label: 'Page ${widget.index + 1} of ${widget.count}',
       child: ExcludeSemantics(
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            for (var i = 0; i < count; i++) ...[
+            for (var i = 0; i < widget.count; i++) ...[
               if (i > 0) const SizedBox(width: 6),
               AnimatedContainer(
                 duration: d,
-                curve: Motion.easeOut,
-                width: i == index ? 24 : 8,
+                curve: AppCurves.easeOut,
+                width: i == _shown ? 24 : 8,
                 height: 8,
                 decoration: BoxDecoration(
-                  color: i == index
-                      ? (dark ? AppColors.green : AppColors.gold)
+                  color: i == _shown
+                      ? (widget.dark ? AppColors.green : AppColors.gold)
                       : AppColors.switchOff,
                   borderRadius: BorderRadius.circular(4),
                 ),
@@ -79,7 +108,7 @@ class IntroNextButton extends StatelessWidget {
       label: 'Next',
       excludeSemantics: true,
       child: Pressable(
-        scale: 0.92,
+        scale: PressScale.button,
         onTap: onTap,
         child: Container(
           width: 56,

@@ -13,6 +13,7 @@ import 'package:startsa/features/login_and_signup/view_models/investor_onboardin
 import 'package:startsa/features/login_and_signup/view_models/signup_flow.dart';
 import 'package:startsa/models/app_user.dart';
 import 'package:startsa/models/auth_failure.dart';
+import 'package:startsa/shared_ui/widgets/forms/app_field.dart';
 import 'package:startsa/shared_ui/widgets/overlays/app_toast.dart';
 
 import '../../support/fakes.dart';
@@ -56,7 +57,7 @@ void main() {
       expect(find.text('STEP 1 OF 4'), findsOneWidget);
       expect(
         find.textContaining('hope to gain', findRichText: true),
-        findsOneWidget,
+        findsWidgets,
       );
       expect(t.takeException(), isNull);
     });
@@ -81,6 +82,53 @@ void main() {
       await t.pump(const Duration(seconds: 3));
     });
   }
+
+  testWidgets('investor sign-up asks the value and the gain questions', (
+    t,
+  ) async {
+    await _pump(
+      t,
+      SignupScreen(
+        role: AccountRole.investor,
+        flow: SignupFlow(role: AccountRole.investor),
+      ),
+    );
+    final value = find.widgetWithText(
+      TextField,
+      'Describe the value you can bring',
+    );
+    final gain = find.widgetWithText(
+      TextField,
+      'Describe what you hope to gain',
+    );
+    await t.ensureVisible(value);
+    expect(value, findsOneWidget);
+    expect(gain, findsOneWidget);
+    expect(
+      find.textContaining('What value can you bring', findRichText: true),
+      findsOneWidget,
+    );
+    expect(
+      find.textContaining('hope to gain', findRichText: true),
+      findsWidgets,
+    );
+    // The "i" button opens the example.
+    final tip =
+        'For example: connections with venture capital firms, experience in real estate, mentoring founders, industry partnerships.';
+    expect(find.text(tip), findsNothing);
+    await t.ensureVisible(find.byType(InfoButton).first);
+    await t.tap(find.byType(InfoButton).first);
+    await t.pump(const Duration(milliseconds: 400));
+    expect(find.text(tip), findsOneWidget);
+    // Submitting empty shows the error under the value question.
+    await t.tap(find.text('Continue'));
+    await t.pump(const Duration(milliseconds: 500));
+    expect(
+      find.text('Tell founders what you can bring — it can’t be blank.'),
+      findsOneWidget,
+    );
+    await t.pump(const Duration(seconds: 3));
+  });
 
   group('sign-up live rules', () {
     Future<void> openSignup(WidgetTester t, AccountRole role) => _pump(

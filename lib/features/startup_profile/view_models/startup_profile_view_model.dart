@@ -130,7 +130,6 @@ class StartupProfileViewModel extends ChangeNotifier with SafeNotifier {
       (ProfileStrings.kvValuation, _money(startup.valuation) ?? ''),
       (ProfileStrings.kvCapital, _money(startup.capital) ?? ''),
       (ProfileStrings.kvModel, startup.businessModelLabel),
-      (ProfileStrings.kvCity, startup.location.label),
     ].where((r) => r.$2.isNotEmpty).toList();
   }
 

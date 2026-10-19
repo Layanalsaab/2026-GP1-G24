@@ -26,6 +26,7 @@ void _fillValid(SignupViewModel vm, {String email = 'sara@gmail.com'}) {
   if (vm.isFounder) {
     vm.toggleSector('HealthTech');
   } else {
+    vm.value.text = 'Introductions to venture capital firms.';
     vm.gain.text = 'Early access to good startups.';
   }
 }
@@ -129,6 +130,10 @@ void main() {
       expect(await vm.submit(), isTrue);
       expect(vm.flow.totalSteps, 4);
       expect(auth.lastSignUp!['gain'], 'Early access to good startups.');
+      expect(
+        auth.lastSignUp!['valueOffered'],
+        'Introductions to venture capital firms.',
+      );
       expect(auth.lastSignUp!['sectors'], '');
     });
 
@@ -430,6 +435,8 @@ void main() {
       role: AccountRole.investor,
       fullName: 'Layan Alsaab',
       email: 'layan@gmail.com',
+      gain: 'The team',
+      valueOffered: 'Mentoring',
     );
 
     setUp(() {
@@ -515,8 +522,6 @@ void main() {
       vm.toggleSector('HealthTech');
       vm.toggleStage('Seed');
       vm.toggleModel('Business-to-Business (B2B)');
-      vm.offer.text = ' Mentoring ';
-      vm.lookFor.text = 'The team';
       final updated = await vm.finish();
       expect(updated, isNotNull);
       expect(updated!.onboardingCompleted, isTrue);
@@ -532,8 +537,11 @@ void main() {
       expect(c.sectors, ['HealthTech', 'Fintech']);
       expect(c.stages, ['Seed']);
       expect(c.commerceModels, ['Business-to-Business (B2B)']);
+      // What they look for is what they said they hope to gain at sign-up.
       expect(c.lookFor, 'The team');
-      expect(users.savedValueOffered, 'Mentoring');
+      // The value they bring was saved at sign-up: not asked or touched here.
+      expect(users.savedValueOffered, isNull);
+      expect(updated.valueOffered, 'Mentoring');
     });
 
     test('a failed save is a form error and nothing is lost', () async {

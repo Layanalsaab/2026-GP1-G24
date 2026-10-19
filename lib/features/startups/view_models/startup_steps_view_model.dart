@@ -132,7 +132,7 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
       newLogo != null || removeLogo || _signature() != _baseline;
 
   /// The form as a draft (the logo is not kept).
-  Map<String, Object?> toDraft() => {..._state(), 'step': step};
+  Map<String, Object?> toDraft() => {..._state(), 'step': furthestStep};
 
   /// Fills the form from [toDraft] output and makes that the new starting
   /// point, so opening a draft and leaving at once asks nothing.
@@ -176,6 +176,7 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
     wantsLead = d['wantsLead'] as bool?;
     isPublic = d['isPublic'] != false;
     step = ((d['step'] as num?)?.toInt() ?? 0).clamp(0, stepCount - 1);
+    furthestStep = step;
     _baseline = _signature();
     notifyListeners();
   }
@@ -196,6 +197,10 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
 
   /// The current step, 0-based.
   int step = 0;
+
+  /// The furthest step the founder reached (Back moves [step] down, but a
+  /// saved draft should reopen where they got to).
+  int furthestStep = 0;
   final Set<int> _tried = {};
 
   // ---- Step 1
@@ -528,6 +533,7 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
     }
     if (step < stepCount - 1) {
       step++;
+      if (step > furthestStep) furthestStep = step;
       notifyListeners();
       return StepAdvance.advanced;
     }

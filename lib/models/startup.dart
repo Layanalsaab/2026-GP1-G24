@@ -163,7 +163,6 @@ class Startup {
 
   bool get hasBusinessDetails =>
       customers.isNotEmpty ||
-      advantage.isNotEmpty ||
       tam != null ||
       sam != null ||
       som != null ||

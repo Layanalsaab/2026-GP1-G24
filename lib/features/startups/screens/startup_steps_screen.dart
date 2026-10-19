@@ -142,17 +142,23 @@ class _StartupStepsScreenState extends State<StartupStepsScreen> {
         if (_fromDraft && uid != null) {
           await StartupDraftRepository.instance.clear(uid);
         }
-        if (!mounted) return;
-        AppNav.back(context);
+        _exit();
       case LeaveChoice.saveDraft:
         final uid = _uid;
         if (uid != null) {
           await StartupDraftRepository.instance.save(uid, _vm.toDraft());
         }
-        if (!mounted) return;
-        AppNav.back(context);
+        _exit();
         AppToast.showGlobal(FounderToolsStrings.draftSaved);
     }
+  }
+
+  /// Leaves the form. A plain pop, not `maybePop`: this screen's PopScope
+  /// blocks the back gesture while there are unsaved changes, and the founder
+  /// has just decided what happens to them.
+  void _exit() {
+    if (!mounted) return;
+    Navigator.of(context).pop();
   }
 
   String _title(int step) => _onboarding && step == 0
@@ -202,7 +208,10 @@ class _StartupStepsScreenState extends State<StartupStepsScreen> {
         AppNav.resetStack(context, [MainScreen(), const MyStartupsScreen()]);
       case StartupStepsMode.edit:
         AppToast.show(context, FounderToolsStrings.changesSaved);
-        AppNav.back(context, saved);
+        // A plain pop: maybePop would hit this screen's own back guard (it
+        // blocks leaving while there are unsaved changes) and step back to
+        // the previous step instead of leaving.
+        Navigator.of(context).pop(saved);
     }
   }
 

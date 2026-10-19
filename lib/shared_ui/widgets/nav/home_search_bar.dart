@@ -118,6 +118,7 @@ class _FilterButton extends StatelessWidget {
                   context,
                   const Duration(milliseconds: 200),
                 ),
+                curve: Curves.ease,
                 width: 40,
                 height: 40,
                 alignment: Alignment.center,

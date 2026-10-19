@@ -66,6 +66,7 @@ Future<AdvancedSelection?> showAdvancedSearchSheet(
     dimDuration: const Duration(milliseconds: 300),
     duration: const Duration(milliseconds: 420),
     entry: AppOverlayEntry.slideUp,
+    dimCurve: Curves.ease,
     label: 'Close advanced search',
   );
 }
@@ -175,7 +176,10 @@ class _AdvancedSearchSheetState extends State<AdvancedSearchSheet> {
                     onTap: () => Navigator.of(context).maybePop(),
                     child: Pressable(
                       onTap: () => Navigator.of(context).maybePop(),
-                      scale: 0.92,
+                      scale: PressScale.icon,
+                      hoverColor: const Color(0x0F1F3F27),
+                      hoverDuration: AppDur.fast,
+                      borderRadius: BorderRadius.circular(20),
                       child: const SizedBox(
                         width: 40,
                         height: 40,
@@ -378,9 +382,9 @@ class _OptionChip extends StatelessWidget {
         scale: 0.96,
         child: AnimatedContainer(
           duration: Motion.dur(context, const Duration(milliseconds: 200)),
+          curve: Curves.ease,
           height: 36,
           padding: const EdgeInsets.symmetric(horizontal: 14),
-          alignment: Alignment.center,
           decoration: BoxDecoration(
             color: on ? AppColors.green : AppColors.surface,
             borderRadius: BorderRadius.circular(999),
@@ -388,14 +392,18 @@ class _OptionChip extends StatelessWidget {
               color: on ? AppColors.green : AppColors.filterOptBorder,
             ),
           ),
-          child: AnimatedDefaultTextStyle(
-            duration: Motion.dur(context, const Duration(milliseconds: 200)),
-            style: AppText.sans(
-              size: 13.5,
-              weight: FontWeight.w600,
-              color: on ? AppColors.white : AppColors.paragraph,
+          child: Center(
+            widthFactor: 1,
+            child: AnimatedDefaultTextStyle(
+              duration: Motion.dur(context, const Duration(milliseconds: 200)),
+              curve: Curves.ease,
+              style: AppText.sans(
+                size: 13.5,
+                weight: FontWeight.w600,
+                color: on ? AppColors.white : AppColors.paragraph,
+              ),
+              child: Text(label),
             ),
-            child: Text(label),
           ),
         ),
       ),

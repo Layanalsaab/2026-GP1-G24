@@ -116,6 +116,32 @@ class AppButton extends StatelessWidget {
     _ => null,
   };
 
+  /// The look while a mouse pointer is over the button.
+  Color _hoverFill() => switch (variant) {
+    AppButtonVariant.primary || AppButtonVariant.dark => _brighter(_fill, 1.06),
+    AppButtonVariant.outline => AppColors.moss50,
+    _ => _fill,
+  };
+
+  List<BoxShadow>? _hoverShadow() => switch (variant) {
+    AppButtonVariant.primary || AppButtonVariant.dark => const [
+      BoxShadow(
+        color: Color(0xA61F3F27),
+        offset: Offset(0, 10),
+        blurRadius: 20,
+        spreadRadius: -8,
+      ),
+    ],
+    _ => _shadow,
+  };
+
+  static Color _brighter(Color c, double factor) => Color.from(
+    alpha: c.a,
+    red: (c.r * factor).clamp(0.0, 1.0),
+    green: (c.g * factor).clamp(0.0, 1.0),
+    blue: (c.b * factor).clamp(0.0, 1.0),
+  );
+
   @override
   Widget build(BuildContext context) {
     final radius = BorderRadius.circular(
@@ -168,25 +194,29 @@ class AppButton extends StatelessWidget {
             ],
           );
 
-    final body = Container(
+    final interactive = onPressed != null && !loading;
+    Widget bodyFor(bool hover) => AnimatedContainer(
+      // Fill, border and shadow change over 200 ms (hover, off <-> enabled).
+      duration: Motion.dur(context, AppDur.base),
+      curve: AppCurves.ease,
       height: _height,
       width: expanded ? double.infinity : null,
       padding: const EdgeInsets.symmetric(horizontal: 20),
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: _fill,
+        color: hover ? _hoverFill() : _fill,
         borderRadius: radius,
         border: _border,
-        boxShadow: _shadow,
+        boxShadow: hover ? _hoverShadow() : _shadow,
       ),
       child: content,
     );
 
     // The `inset 0 1px 0 #ffffff26` top highlight of primary/dark buttons.
-    final shined = showShine
+    Widget shined(bool hover) => showShine
         ? Stack(
             children: [
-              body,
+              bodyFor(hover),
               Positioned(
                 top: 0,
                 left: 0,
@@ -205,15 +235,44 @@ class AppButton extends StatelessWidget {
               ),
             ],
           )
-        : body;
+        : bodyFor(hover);
 
-    final interactive = onPressed != null && !loading;
     return Semantics(
       button: true,
       enabled: interactive,
       label: label,
       excludeSemantics: true,
-      child: Pressable(onTap: interactive ? onPressed : null, child: shined),
+      child: _HoverBuilder(
+        enabled: interactive,
+        builder: (hover) => Pressable(
+          onTap: interactive ? onPressed : null,
+          scale: PressScale.button,
+          child: shined(hover),
+        ),
+      ),
     );
   }
+}
+
+/// Reports whether a mouse pointer is over [builder]'s widget (never for
+/// touch), so a button can restyle itself on hover.
+class _HoverBuilder extends StatefulWidget {
+  const _HoverBuilder({required this.enabled, required this.builder});
+
+  final bool enabled;
+  final Widget Function(bool hover) builder;
+
+  @override
+  State<_HoverBuilder> createState() => _HoverBuilderState();
+}
+
+class _HoverBuilderState extends State<_HoverBuilder> {
+  bool _hover = false;
+
+  @override
+  Widget build(BuildContext context) => MouseRegion(
+    onEnter: (_) => setState(() => _hover = true),
+    onExit: (_) => setState(() => _hover = false),
+    child: widget.builder(widget.enabled && _hover),
+  );
 }

@@ -46,6 +46,7 @@ class AuthRepository {
     String? sectorsOther,
     String? linkedin,
     String? gain,
+    String? valueOffered,
     File? photo,
   }) async {
     final account = await _auth.createAccount(email, password);
@@ -63,6 +64,7 @@ class AuthRepository {
         sectorsOther: sectorsOther,
         linkedin: linkedin,
         gain: gain,
+        valueOffered: valueOffered,
       );
     } catch (e) {
       debugPrint('Saving the profile failed, removing the new account: $e');
@@ -206,10 +208,19 @@ class AuthRepository {
   /// after it don't run, so a wrong password deletes nothing.
   // TODO(Sprint 2+): also delete the founder's startups, requests and
   // Investment Associations once those collections exist (PBI 13).
-  Future<void> deleteAccount(String password) async {
+  ///
+  /// Without a [password] the account is deleted straight away when the user
+  /// signed in a moment ago; otherwise it throws
+  /// [AuthFailure.requiresRecentLogin] before anything is removed, and the
+  /// caller asks for the password once and calls again with it.
+  Future<void> deleteAccount({String? password}) async {
     final account = _auth.currentAccount;
     if (account == null) throw const AuthException(AuthFailure.unknown);
-    await _auth.reauthenticate(account.email, password);
+    if (password != null) {
+      await _auth.reauthenticate(account.email, password);
+    } else if (!_auth.signedInRecently) {
+      throw const AuthException(AuthFailure.requiresRecentLogin);
+    }
     // A founder's startups go with the account, so none stay public.
     try {
       await StartupRepository.instance.deleteAllMine();

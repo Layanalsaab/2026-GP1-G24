@@ -76,7 +76,7 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
 
   int? _hubSwitch;
   int? _resultsSwitch;
-  int _forYouSwitch = 1;
+  int? _forYouSwitch;
   int? _trendingSwitch;
 
   TrendingRange range = TrendingRange.week;
@@ -97,13 +97,15 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
     notifyListeners();
   }
 
-  // ---- Switches (defaults: guest -> Startups, others -> Investors) ----
+  // ---- Switches (a founder starts on Investors; investors and guests on
+  // Startups) ----
 
   /// 0 = Startups, 1 = Investors.
-  int get hubSwitch => _hubSwitch ?? (isGuest ? 0 : 1);
-  int get resultsSwitch => _resultsSwitch ?? (isGuest ? 0 : 1);
-  int get forYouSwitch => _forYouSwitch;
-  int get trendingSwitch => _trendingSwitch ?? (isGuest ? 0 : 1);
+  int get _defaultSwitch => isFounder ? 1 : 0;
+  int get hubSwitch => _hubSwitch ?? _defaultSwitch;
+  int get resultsSwitch => _resultsSwitch ?? _defaultSwitch;
+  int get forYouSwitch => _forYouSwitch ?? _defaultSwitch;
+  int get trendingSwitch => _trendingSwitch ?? _defaultSwitch;
 
   void setHubSwitch(int v) => _set(() => _hubSwitch = v);
   void setResultsSwitch(int v) => _set(() => _resultsSwitch = v);

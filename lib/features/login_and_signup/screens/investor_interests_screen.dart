@@ -3,12 +3,10 @@ import 'package:flutter/material.dart';
 import '../../../app_constants/auth_strings.dart';
 import '../../../app_constants/validation_strings.dart';
 import '../../../helpers/app_session.dart';
-import '../../../helpers/validators.dart';
 import '../../../navigation/app_router.dart';
 import '../../../shared_ui/widgets/buttons/app_button.dart';
 import '../../../shared_ui/widgets/chips/chip_group.dart';
 import '../../../shared_ui/widgets/forms/app_field.dart';
-import '../../../shared_ui/widgets/forms/app_text_field.dart';
 import '../../../shared_ui/widgets/forms/form_page.dart';
 import '../../../shared_ui/widgets/headers/auth_headers.dart';
 import '../../../shared_ui/widgets/headers/overlap_layout.dart';
@@ -101,20 +99,6 @@ class InvestorInterestsScreen extends StatelessWidget {
                     otherController: vm.modelsOther,
                     otherHint: AuthStrings.modelOtherHint,
                     otherError: vm.modelsOtherError,
-                  ),
-                  LabeledTextField(
-                    label: AuthStrings.offerQuestion,
-                    controller: vm.offer,
-                    placeholder: AuthStrings.offerPlaceholder,
-                    maxLength: Validators.maxValueText,
-                    multiline: true,
-                  ),
-                  LabeledTextField(
-                    label: AuthStrings.lookForQuestion,
-                    controller: vm.lookFor,
-                    placeholder: AuthStrings.lookForPlaceholder,
-                    maxLength: Validators.maxValueText,
-                    multiline: true,
                   ),
                 ],
               ),

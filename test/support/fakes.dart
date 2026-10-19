@@ -32,6 +32,12 @@ class FakeAuthService implements AuthService {
   AuthFailure? resetFails;
   bool deleteFails = false;
 
+  /// Whether the user signed in a moment ago (account deletion needs it).
+  bool recentlySignedIn = true;
+
+  @override
+  bool get signedInRecently => recentlySignedIn;
+
   @override
   AuthAccount? get currentAccount => signedIn;
 
@@ -127,6 +133,7 @@ class FakeUserRepository implements UserRepository {
     String? sectorsOther,
     String? linkedin,
     String? gain,
+    String? valueOffered,
   }) async {
     if (createFails) throw const AuthException(AuthFailure.unknown);
     profiles[uid] = AppUser(
@@ -141,6 +148,7 @@ class FakeUserRepository implements UserRepository {
       sectorsOther: sectorsOther,
       linkedin: linkedin,
       gain: gain ?? '',
+      valueOffered: valueOffered ?? '',
     );
   }
 
@@ -300,6 +308,7 @@ class FakeAuthRepository implements AuthRepository {
     String? sectorsOther,
     String? linkedin,
     String? gain,
+    String? valueOffered,
     File? photo,
   }) async {
     signUpCalls++;
@@ -312,6 +321,7 @@ class FakeAuthRepository implements AuthRepository {
       'sectorsOther': sectorsOther,
       'linkedin': linkedin,
       'gain': gain,
+      'valueOffered': valueOffered,
     };
     await gate;
     if (signUpFails != null) {
@@ -380,7 +390,7 @@ class FakeAuthRepository implements AuthRepository {
   AuthFailure? deleteAccountFails;
 
   @override
-  Future<void> deleteAccount(String password) async {
+  Future<void> deleteAccount({String? password}) async {
     deleteAccountCalls++;
     await gate;
     if (deleteAccountFails != null) throw AuthException(deleteAccountFails!);

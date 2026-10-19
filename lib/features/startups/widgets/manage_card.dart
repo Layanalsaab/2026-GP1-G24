@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'founder_ui.dart';
+import 'hover_lift_card.dart';
 
 /// The white card of the Manage startup panes (prototype `.mcard`): radius 20,
 /// padding 16, hairline border and the soft card shadow.
@@ -9,13 +10,27 @@ class ManageCard extends StatelessWidget {
     super.key,
     required this.child,
     this.padding = const EdgeInsets.all(16),
+    this.onTap,
   });
+
+  /// When set the card is tappable: it lifts 2 px with a hover shadow under a
+  /// mouse and scales to .97 while pressed.
+  final VoidCallback? onTap;
 
   final Widget child;
   final EdgeInsetsGeometry padding;
 
   @override
   Widget build(BuildContext context) {
+    if (onTap != null) {
+      return HoverLiftCard(
+        onTap: onTap,
+        padding: padding,
+        baseShadow: AppShadow.card,
+        border: Border.all(color: AppColors.cardBorder),
+        child: child,
+      );
+    }
     return Container(
       padding: padding,
       decoration: BoxDecoration(

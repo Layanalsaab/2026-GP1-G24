@@ -10,7 +10,7 @@ import '../../theme/app_text.dart';
 /// segments and a white thumb (radius 10, segment-thumb shadow) that slides
 /// 300 ms easeOut. Labels 14.5/600 (`#6B726C`, selected green) change colour
 /// in 200 ms. No press scale. Works for any number of labels >= 2.
-class SegmentedSwitch extends StatelessWidget {
+class SegmentedSwitch extends StatefulWidget {
   const SegmentedSwitch({
     super.key,
     required this.labels,
@@ -22,6 +22,17 @@ class SegmentedSwitch extends StatelessWidget {
   final List<String> labels;
   final int selectedIndex;
   final ValueChanged<int> onChanged;
+
+  @override
+  State<SegmentedSwitch> createState() => _SegmentedSwitchState();
+}
+
+class _SegmentedSwitchState extends State<SegmentedSwitch> {
+  int? _hover;
+
+  List<String> get labels => widget.labels;
+  int get selectedIndex => widget.selectedIndex;
+  ValueChanged<int> get onChanged => widget.onChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -69,23 +80,32 @@ class SegmentedSwitch extends StatelessWidget {
                       label: labels[i],
                       excludeSemantics: true,
                       onTap: () => onChanged(i),
-                      child: GestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        onTap: () {
-                          if (i != selectedIndex) onChanged(i);
+                      child: MouseRegion(
+                        cursor: SystemMouseCursors.click,
+                        onEnter: (_) => setState(() => _hover = i),
+                        onExit: (_) {
+                          if (_hover == i) setState(() => _hover = null);
                         },
-                        child: Center(
-                          child: AnimatedDefaultTextStyle(
-                            duration: colorDur,
-                            curve: Curves.ease,
-                            style: AppText.sans(
-                              size: 14.5,
-                              weight: FontWeight.w600,
-                              color: i == selectedIndex
-                                  ? AppColors.green
-                                  : AppColors.metaText,
+                        child: GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: () {
+                            if (i != selectedIndex) onChanged(i);
+                          },
+                          child: Center(
+                            child: AnimatedDefaultTextStyle(
+                              duration: colorDur,
+                              curve: Curves.ease,
+                              style: AppText.sans(
+                                size: 14.5,
+                                weight: FontWeight.w600,
+                                color: i == selectedIndex
+                                    ? AppColors.green
+                                    : (_hover == i
+                                          ? AppColors.moss600
+                                          : AppColors.metaText),
+                              ),
+                              child: Text(labels[i]),
                             ),
-                            child: Text(labels[i]),
                           ),
                         ),
                       ),

@@ -7,18 +7,22 @@ import '../view_models/home_view_model.dart';
 import '../widgets/home_layout.dart';
 
 /// Results row for the current search text and filters (shared by the pages).
-ResultsRow homeResultsRow(HomeViewModel vm, String title) => ResultsRow(
-  title: title,
-  onClearAll: vm.clearAll,
-  chips: [
-    for (final c in vm.chips)
-      ResultChip(
-        label: c.isQuery ? '“${c.label}”' : c.label,
-        quoted: c.isQuery,
-        onRemove: c.onRemove,
-      ),
-  ],
-);
+ResultsRow homeResultsRow(HomeViewModel vm, String title) {
+  // Only a search is not "filtering": just the count, no chip, no Clear all.
+  if (vm.selectionCount == 0) return ResultsRow(title: title);
+  return ResultsRow(
+    title: title,
+    onClearAll: vm.clearAll,
+    chips: [
+      for (final c in vm.chips)
+        ResultChip(
+          label: c.isQuery ? '“${c.label}”' : c.label,
+          quoted: c.isQuery,
+          onRemove: c.onRemove,
+        ),
+    ],
+  );
+}
 
 /// The Hub page (Figma 20-20e, 26, 27): the Startups | Investors switch and the
 /// cards of the selected side. While searching or filtering a results row
@@ -33,27 +37,25 @@ class HubScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final vm = viewModel;
     final cards = vm.hubCards;
-    return KeyedSubtree(
-      key: ValueKey(vm.paneKey),
-      child: HomeColumn(
-        slots: [
-          if (vm.filtering)
-            HomeSlot(
-              homeResultsRow(vm, HomeStrings.resultCount(cards.length)),
-              bottom: -2,
-            ),
+    return HomeColumn(
+      slots: [
+        if (vm.filtering)
           HomeSlot(
-            SegmentedSwitch(
-              labels: HomeStrings.switchLabels,
-              selectedIndex: vm.hubSwitch,
-              onChanged: vm.setHubSwitch,
-            ),
-            top: 2,
+            homeResultsRow(vm, HomeStrings.resultCount(cards.length)),
+            bottom: -2,
           ),
-          if (cards.isNotEmpty) cardsSlot(cards),
-          if (cards.isEmpty) HomeSlot(homeEmptyState(vm)),
-        ],
-      ),
+        HomeSlot(
+          SegmentedSwitch(
+            labels: HomeStrings.switchLabels,
+            key: const ValueKey('hub-switch'),
+            selectedIndex: vm.hubSwitch,
+            onChanged: vm.setHubSwitch,
+          ),
+          top: 2,
+        ),
+        if (cards.isNotEmpty) cardsSlot(cards, scope: vm.paneKey),
+        if (cards.isEmpty) HomeSlot(homeEmptyState(vm)),
+      ],
     );
   }
 }

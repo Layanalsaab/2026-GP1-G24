@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../app_constants/home_strings.dart';
 import '../data_access/repositories/bookmark_repository.dart';
@@ -170,55 +171,64 @@ class _MainScreenState extends State<MainScreen> {
     return PopScope(
       // Back on Home does nothing.
       canPop: false,
-      child: Scaffold(
-        backgroundColor: AppColors.cream,
-        body: Column(
-          children: [
-            Expanded(
-              child: ListenableBuilder(
+      child: AnnotatedRegion<SystemUiOverlayStyle>(
+        // The system navigation area under the green bar is green too, so
+        // there is no pale strip below it.
+        value: const SystemUiOverlayStyle(
+          systemNavigationBarColor: AppColors.green,
+          systemNavigationBarIconBrightness: Brightness.light,
+          systemNavigationBarDividerColor: AppColors.green,
+        ),
+        child: Scaffold(
+          backgroundColor: AppColors.cream,
+          body: Column(
+            children: [
+              Expanded(
+                child: ListenableBuilder(
+                  listenable: _vm,
+                  builder: (context, _) {
+                    final showTabs = _vm.tab == HomeTab.explore && !guest;
+                    return SingleChildScrollView(
+                      controller: _scroll,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          HomeHeader(
+                            title: _vm.title,
+                            initials: _session.user?.initials ?? '',
+                            guest: guest,
+                            hasNotification: !guest,
+                            menuLabel: HomeStrings.menuLabel,
+                            onAvatarTap: _openMenu,
+                            onSignUp: () => ChooseRoleScreen.open(context),
+                            tabs: showTabs ? ExploreTab.defaults : null,
+                            selectedTab: _vm.exploreTab,
+                            onTabChanged: _vm.selectExploreTab,
+                          ),
+                          HomeSearchBar(
+                            controller: _vm.searchController,
+                            hint: 'Search',
+                            overlap: 0,
+                            activeCount: _vm.selectionCount,
+                            onChanged: _vm.setQuery,
+                            onFilterTap: _openAdvanced,
+                          ),
+                          _page(),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+              ListenableBuilder(
                 listenable: _vm,
-                builder: (context, _) {
-                  final showTabs = _vm.tab == HomeTab.explore && !guest;
-                  return SingleChildScrollView(
-                    controller: _scroll,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        HomeHeader(
-                          title: _vm.title,
-                          initials: _session.user?.initials ?? '',
-                          guest: guest,
-                          hasNotification: !guest,
-                          menuLabel: HomeStrings.menuLabel,
-                          onAvatarTap: _openMenu,
-                          onSignUp: () => ChooseRoleScreen.open(context),
-                          tabs: showTabs ? ExploreTab.defaults : null,
-                          selectedTab: _vm.exploreTab,
-                          onTabChanged: _vm.selectExploreTab,
-                        ),
-                        HomeSearchBar(
-                          controller: _vm.searchController,
-                          hint: 'Search',
-                          overlap: 0,
-                          activeCount: _vm.selectionCount,
-                          onChanged: _vm.setQuery,
-                          onFilterTap: _openAdvanced,
-                        ),
-                        _page(),
-                      ],
-                    ),
-                  );
-                },
+                builder: (context, _) => AppBottomNav(
+                  currentIndex: _vm.tabIndex,
+                  onSelect: _selectTab,
+                ),
               ),
-            ),
-            ListenableBuilder(
-              listenable: _vm,
-              builder: (context, _) => AppBottomNav(
-                currentIndex: _vm.tabIndex,
-                onSelect: _selectTab,
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

@@ -97,31 +97,23 @@ class HomeItemCard extends StatelessWidget {
     final canBookmark = AppSession.instance.canBookmark;
     return ValueListenableBuilder<Set<String>>(
       valueListenable: BookmarkRepository.instance.keys,
-      builder: (context, keys, _) => HomeCard(
-        name: item.name,
-        tag: item.tag,
-        city: item.city,
-        body: item.line,
-        kind: avatarKindOf(item.kind),
-        index: index,
-        bookmarked: keys.contains(item.bookmarkKey),
-        matchPercent: showMatch ? item.matchPercent : null,
-        matchReason: showMatch ? item.matchReason : null,
-        onTap: () => openHomeItem(context, item),
-        onShare: () => AppToast.show(context, HomeStrings.linkCopied),
-        onBookmark: canBookmark
-            ? () {
-                final added = BookmarkRepository.instance.toggle(
-                  item.bookmarkKey,
-                );
-                AppToast.show(
-                  context,
-                  added
-                      ? HomeStrings.bookmarkAdded
-                      : HomeStrings.bookmarkRemoved,
-                );
-              }
-            : null,
+      builder: (context, keys, _) => RepaintBoundary(
+        child: HomeCard(
+          name: item.name,
+          tag: item.tag,
+          city: item.city,
+          body: item.line,
+          kind: avatarKindOf(item.kind),
+          index: index,
+          bookmarked: keys.contains(item.bookmarkKey),
+          matchPercent: showMatch ? item.matchPercent : null,
+          matchReason: showMatch ? item.matchReason : null,
+          onTap: () => openHomeItem(context, item),
+          onShare: () => AppToast.show(context, HomeStrings.linkCopied),
+          onBookmark: canBookmark
+              ? () => BookmarkRepository.instance.toggle(item.bookmarkKey)
+              : null,
+        ),
       ),
     );
   }
@@ -136,13 +128,108 @@ List<Widget> homeCardsOf(List<HomeItem> items, {bool showMatch = false}) => [
     ),
 ];
 
-/// The cards as one slot (the prototype's `.hcards`, gap 16).
-HomeSlot cardsSlot(List<HomeItem> items, {bool showMatch = false}) => HomeSlot(
-  Column(
-    crossAxisAlignment: CrossAxisAlignment.stretch,
-    children: homeCardsOf(items, showMatch: showMatch),
+/// The cards as one slot (the prototype's `.hcards`, gap 16). Only the first
+/// page is built; "Show more" adds the next one, so a list of hundreds of
+/// startups stays smooth to scroll.
+///
+/// The list is keyed by [scope] plus the content of [items], so whenever the
+/// list changes (tab, sub-tab, switch side, search text, filters, "See all")
+/// every card is built again and replays its staggered entrance.
+HomeSlot cardsSlot(
+  List<HomeItem> items, {
+  bool showMatch = false,
+  String scope = '',
+}) => HomeSlot(
+  PagedCards(
+    key: ValueKey('$scope|${contentSignature(items)}|$showMatch'),
+    items: items,
+    showMatch: showMatch,
   ),
 );
+
+/// A value that changes whenever the items shown (or their order) change.
+int contentSignature(List<HomeItem> items) =>
+    Object.hashAll([for (final i in items) i.bookmarkKey]);
+
+/// [homeCardsOf] in pages of [pageSize].
+class PagedCards extends StatefulWidget {
+  const PagedCards({
+    super.key,
+    required this.items,
+    this.showMatch = false,
+    this.pageSize = 20,
+  });
+
+  final List<HomeItem> items;
+  final bool showMatch;
+  final int pageSize;
+
+  @override
+  State<PagedCards> createState() => _PagedCardsState();
+}
+
+class _PagedCardsState extends State<PagedCards> {
+  late int _visible = widget.pageSize;
+
+  @override
+  void didUpdateWidget(PagedCards old) {
+    super.didUpdateWidget(old);
+    // A different list (a filter, a search, another tab): back to page one.
+    final a = old.items, b = widget.items;
+    final same =
+        a.length == b.length &&
+        (a.isEmpty || (a.first.bookmarkKey == b.first.bookmarkKey));
+    if (!same) _visible = widget.pageSize;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final items = widget.items;
+    final shown = items.length <= _visible ? items : items.sublist(0, _visible);
+    final left = items.length - shown.length;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        ...homeCardsOf(shown, showMatch: widget.showMatch),
+        if (left > 0)
+          Padding(
+            padding: const EdgeInsets.only(top: HomeColumn.gap),
+            child: Center(
+              child: Pressable(
+                scale: PressScale.smallPill,
+                onTap: () => setState(() => _visible += widget.pageSize),
+                child: Semantics(
+                  button: true,
+                  label: HomeStrings.showMore(left),
+                  excludeSemantics: true,
+                  child: Container(
+                    height: 44,
+                    padding: const EdgeInsets.symmetric(horizontal: 22),
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(999),
+                      border: Border.all(color: AppColors.border),
+                    ),
+                    child: Center(
+                      widthFactor: 1,
+                      child: Text(
+                        HomeStrings.showMore(left),
+                        style: AppText.sans(
+                          size: 14.5,
+                          weight: FontWeight.w600,
+                          color: AppColors.moss600,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
 
 /// The "‹ For You" link of the "See all" view (prototype `.xback`).
 class BackLink extends StatelessWidget {
@@ -220,9 +307,27 @@ Widget homeEmptyState(HomeViewModel vm) {
       onAction: vm.refreshDirectory,
     );
   }
-  if (vm.filtering) return EmptyState.noMatches(onAction: vm.clearAll);
+  final searching = vm.query.trim().isNotEmpty;
+  if (searching || vm.selectionCount > 0) return homeNoResults(vm);
   return const EmptyState(
     title: HomeStrings.nothingYetTitle,
     message: HomeStrings.nothingYetMessage,
   );
+}
+
+/// "No results" for a search, "No matches" when filters are on.
+Widget homeNoResults(HomeViewModel vm) {
+  final searching = vm.query.trim().isNotEmpty;
+  if (vm.selectionCount > 0) {
+    // Filters are on (with or without a search): the filter wording.
+    return EmptyState.noMatches(onAction: vm.clearAll);
+  }
+  if (searching) {
+    // Only a search: say it was not found, not that a filter is on.
+    return EmptyState(
+      title: HomeStrings.noResultsTitle(vm.query.trim()),
+      message: '',
+    );
+  }
+  return EmptyState.noMatches(onAction: vm.clearAll);
 }

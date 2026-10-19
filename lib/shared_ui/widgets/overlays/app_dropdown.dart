@@ -62,6 +62,10 @@ class _AppDropdownState extends State<AppDropdown> {
         minWidth: widget.minMenuWidth,
         reduced: Motion.reduced(context),
         builder: widget.menuBuilder,
+        onClosing: () {
+          // The caret turns back as soon as the menu starts to close.
+          if (mounted && _open) setState(() => _open = false);
+        },
       ),
     );
     if (mounted) setState(() => _open = false);
@@ -90,13 +94,21 @@ class _DropdownRoute extends PopupRoute<void> {
     required this.minWidth,
     required this.reduced,
     required this.builder,
+    this.onClosing,
   });
 
+  final VoidCallback? onClosing;
   final Rect anchor;
   final AppDropdownOrigin origin;
   final double minWidth;
   final bool reduced;
   final Widget Function(BuildContext, VoidCallback) builder;
+
+  @override
+  bool didPop(void result) {
+    onClosing?.call();
+    return super.didPop(result);
+  }
 
   @override
   Color? get barrierColor => null;
@@ -233,6 +245,38 @@ class _MenuCard extends StatelessWidget {
   }
 }
 
+/// Tracks a mouse pointer over its child (never touch) and rebuilds with the
+/// hover flag. Used for the dropdown rows and the "Matches for" button.
+class _Hoverable extends StatefulWidget {
+  const _Hoverable({required this.builder});
+
+  final Widget Function(BuildContext context, bool hover) builder;
+
+  @override
+  State<_Hoverable> createState() => _HoverableState();
+}
+
+class _HoverableState extends State<_Hoverable> {
+  bool _hover = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) {
+        if (!_hover && mounted) setState(() => _hover = true);
+      },
+      onExit: (_) {
+        if (_hover && mounted) setState(() => _hover = false);
+      },
+      child: widget.builder(context, _hover),
+    );
+  }
+}
+
+/// Row hover fill of the dropdown menus (`#F6F4EF`).
+const Color _rowHover = Color(0xFFF6F4EF);
+
 /// The dropdown caret (`M7 10l5 5 5-5z`, filled) that rotates 180 degrees in
 /// 200 ms when [open].
 class DropdownCaret extends StatelessWidget {
@@ -280,22 +324,28 @@ class DropdownOption extends StatelessWidget {
       label: label,
       excludeSemantics: true,
       onTap: onTap,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: onTap,
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: selected ? AppColors.mossChip : Colors.transparent,
-            borderRadius: BorderRadius.circular(9),
-          ),
-          child: Text(
-            label,
-            style: AppText.sans(
-              size: 14,
-              color: selected ? AppColors.moss600 : AppColors.ink,
-              weight: selected ? FontWeight.w700 : FontWeight.w400,
+      child: _Hoverable(
+        builder: (context, hover) => GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: onTap,
+          child: AnimatedContainer(
+            duration: Motion.dur(context, AppDur.base),
+            curve: Curves.ease,
+            width: double.infinity,
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: selected
+                  ? AppColors.mossChip
+                  : (hover ? _rowHover : Colors.transparent),
+              borderRadius: BorderRadius.circular(9),
+            ),
+            child: Text(
+              label,
+              style: AppText.sans(
+                size: 14,
+                color: selected ? AppColors.moss600 : AppColors.ink,
+                weight: selected ? FontWeight.w700 : FontWeight.w400,
+              ),
             ),
           ),
         ),
@@ -396,43 +446,52 @@ class MatchesForDropdown extends StatelessWidget {
     return AppDropdown(
       origin: AppDropdownOrigin.topCenter,
       semanticLabel: '$kicker $current',
-      anchorBuilder: (context, open) => Container(
-        width: double.infinity,
-        padding: const EdgeInsets.fromLTRB(14, 10, 12, 10),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.border),
-          boxShadow: const [
-            BoxShadow(
-              color: Color(0x0D1F3F27),
-              offset: Offset(0, 1),
-              blurRadius: 2,
+      anchorBuilder: (context, open) => _Hoverable(
+        builder: (context, hover) => AnimatedContainer(
+          duration: Motion.dur(context, const Duration(milliseconds: 150)),
+          curve: Curves.ease,
+          width: double.infinity,
+          padding: const EdgeInsets.fromLTRB(14, 10, 12, 10),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: hover ? const Color(0xFFB9C8BD) : AppColors.border,
             ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    kicker,
-                    style: AppText.sans(size: 11.5, color: AppColors.metaText),
-                  ),
-                  Text(
-                    current,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppText.sans(size: 15, weight: FontWeight.w700),
-                  ),
-                ],
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x0D1F3F27),
+                offset: Offset(0, 1),
+                blurRadius: 2,
               ),
-            ),
-            DropdownCaret(open: open, color: AppColors.moss600),
-          ],
+            ],
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      kicker,
+                      style: AppText.sans(
+                        size: 11.5,
+                        color: AppColors.metaText,
+                      ),
+                    ),
+                    Text(
+                      current,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppText.sans(size: 15, weight: FontWeight.w700),
+                    ),
+                  ],
+                ),
+              ),
+              DropdownCaret(open: open, color: AppColors.moss600),
+            ],
+          ),
         ),
       ),
       menuBuilder: (context, close) => Column(
@@ -455,57 +514,64 @@ class MatchesForDropdown extends StatelessWidget {
                   close();
                   if (i != selectedIndex) onSelected(i);
                 },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
-                    color: i == selectedIndex
-                        ? AppColors.mossChip
-                        : Colors.transparent,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Row(
-                    children: [
-                      HueAvatar(
-                        name: options[i].name,
-                        size: AppSize.avatarDropdown,
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              options[i].name,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: AppText.sans(
-                                size: 14.5,
-                                weight: FontWeight.w700,
-                              ),
-                            ),
-                            Text(
-                              options[i].subtitle,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: AppText.sans(
-                                size: 12,
-                                color: AppColors.metaText,
-                              ),
-                            ),
-                          ],
+                child: _Hoverable(
+                  builder: (context, hover) => AnimatedContainer(
+                    duration: Motion.dur(
+                      context,
+                      const Duration(milliseconds: 150),
+                    ),
+                    curve: Curves.ease,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: i == selectedIndex
+                          ? AppColors.mossChip
+                          : (hover ? _rowHover : Colors.transparent),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Row(
+                      children: [
+                        HueAvatar(
+                          name: options[i].name,
+                          size: AppSize.avatarDropdown,
                         ),
-                      ),
-                      if (i == selectedIndex)
-                        const AppIcon.filled(
-                          AppIcons.check,
-                          size: 18,
-                          color: AppColors.moss600,
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                options[i].name,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: AppText.sans(
+                                  size: 14.5,
+                                  weight: FontWeight.w700,
+                                ),
+                              ),
+                              Text(
+                                options[i].subtitle,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: AppText.sans(
+                                  size: 12,
+                                  color: AppColors.metaText,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                    ],
+                        if (i == selectedIndex)
+                          const AppIcon.filled(
+                            AppIcons.check,
+                            size: 18,
+                            color: AppColors.moss600,
+                          ),
+                      ],
+                    ),
                   ),
                 ),
               ),

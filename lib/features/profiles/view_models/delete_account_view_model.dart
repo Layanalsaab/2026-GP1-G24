@@ -33,7 +33,7 @@ class DeleteAccountViewModel extends ChangeNotifier with SafeNotifier {
     isLoading = true;
     notifyListeners();
     try {
-      await _auth.deleteAccount(password);
+      await _auth.deleteAccount(password: password);
       return true;
     } on AuthException catch (e) {
       switch (e.failure) {

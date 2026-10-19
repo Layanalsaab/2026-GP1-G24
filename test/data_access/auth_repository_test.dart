@@ -270,4 +270,28 @@ void main() {
       expect(auth.signedIn, isNotNull);
     });
   });
+
+  group('deleteAccount', () {
+    test('a fresh sign-in deletes without asking for the password', () async {
+      auth.signedIn = verified();
+      await repo.deleteAccount();
+      expect(auth.calls, isNot(contains('reauth')));
+      expect(auth.calls, contains('delete'));
+      expect(users.deletedProfiles, contains('uid1'));
+    });
+
+    test('an old sign-in removes nothing and asks for the password', () async {
+      auth.signedIn = verified();
+      auth.recentlySignedIn = false;
+      expect(
+        await failureOf(() => repo.deleteAccount()),
+        AuthFailure.requiresRecentLogin,
+      );
+      expect(auth.calls, isNot(contains('delete')));
+      expect(users.deletedProfiles, isEmpty);
+      await repo.deleteAccount(password: 'Startup1');
+      expect(auth.calls, contains('reauth'));
+      expect(auth.calls, contains('delete'));
+    });
+  });
 }

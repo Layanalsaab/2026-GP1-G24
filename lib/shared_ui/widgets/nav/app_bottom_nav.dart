@@ -42,7 +42,7 @@ class AppBottomNav extends StatelessWidget {
       ),
       child: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 270),
+          constraints: const BoxConstraints(maxWidth: 336),
           child: SizedBox(
             height: 46,
             child: LayoutBuilder(

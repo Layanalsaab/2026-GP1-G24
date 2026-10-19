@@ -55,12 +55,21 @@ class AppIconButton extends StatelessWidget {
     this.size = AppSize.iconButton,
     this.stroke,
     this.child,
+    this.hoverColor,
+    this.pressScale = PressScale.icon,
   });
 
   final String icon;
   final VoidCallback? onTap;
   final String semanticLabel;
   final Color color;
+
+  /// Pointer-hover fill; defaults to `#1F3F270F` on light backgrounds and
+  /// `#FFFFFF1F` when the icon [color] is light (button on a green header).
+  final Color? hoverColor;
+
+  /// Pressed scale (icon buttons .92; the profile back button .95).
+  final double pressScale;
   final double iconSize;
   final double size;
 
@@ -87,7 +96,14 @@ class AppIconButton extends StatelessWidget {
       label: semanticLabel,
       excludeSemantics: true,
       child: Pressable(
-        scale: 0.92,
+        scale: pressScale,
+        hoverColor:
+            hoverColor ??
+            (color.computeLuminance() > 0.6
+                ? const Color(0x1FFFFFFF)
+                : const Color(0x0F1F3F27)),
+        hoverDuration: AppDur.fast,
+        borderRadius: BorderRadius.circular(size / 2),
         onTap: onTap,
         child: SizedBox(
           width: size,
@@ -138,6 +154,7 @@ class HeaderBackButton extends StatelessWidget {
         color: color,
         onTap: onTap,
         semanticLabel: semanticLabel,
+        pressScale: PressScale.pill,
       );
     }
     return AppIconButton(
@@ -200,7 +217,12 @@ class GlassIconButton extends StatelessWidget {
       label: semanticLabel,
       excludeSemantics: true,
       child: Pressable(
-        scale: 0.92,
+        scale: PressScale.icon,
+        // The button already has a white 12 % fill; this overlay brings the
+        // total to the spec's hover fill (white 20 %, #FFFFFF33).
+        hoverColor: const Color(0x17FFFFFF),
+        hoverDuration: AppDur.fast,
+        borderRadius: BorderRadius.circular(AppSize.glassIconButton / 2),
         onTap: onTap,
         child: Container(
           width: AppSize.glassIconButton,
@@ -371,7 +393,10 @@ class _GoldPillButtonState extends State<GoldPillButton> {
       child: Padding(
         padding: EdgeInsets.only(right: compact ? 0 : 6),
         child: Pressable(
-          scale: compact ? 0.95 : 0.97,
+          scale: compact ? PressScale.pill : PressScale.button,
+          hoverColor: const Color(0x1FE3CF9B),
+          hoverDuration: const Duration(milliseconds: 120),
+          borderRadius: BorderRadius.circular(AppRadius.pill),
           onTap: widget.onTap,
           child: pill,
         ),

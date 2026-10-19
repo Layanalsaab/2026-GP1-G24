@@ -288,7 +288,10 @@ class _AppTextFieldState extends State<AppTextField> {
           label: _obscure ? 'Show password' : 'Hide password',
           excludeSemantics: true,
           child: Pressable(
-            scale: 0.92,
+            scale: PressScale.icon,
+            hoverColor: const Color(0x0F1F3F27),
+            hoverDuration: AppDur.fast,
+            borderRadius: BorderRadius.circular(12),
             onTap: () => setState(() => _obscure = !_obscure),
             child: SizedBox(
               width: 44,

@@ -222,7 +222,7 @@ class _PickerSheetState extends State<PickerSheet> {
   }
 }
 
-class _OptionRow extends StatelessWidget {
+class _OptionRow extends StatefulWidget {
   const _OptionRow({
     required this.label,
     required this.selected,
@@ -234,6 +234,17 @@ class _OptionRow extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
+  State<_OptionRow> createState() => _OptionRowState();
+}
+
+class _OptionRowState extends State<_OptionRow> {
+  bool _hover = false;
+
+  String get label => widget.label;
+  bool get selected => widget.selected;
+  VoidCallback get onTap => widget.onTap;
+
+  @override
   Widget build(BuildContext context) {
     return Semantics(
       button: true,
@@ -241,38 +252,46 @@ class _OptionRow extends StatelessWidget {
       label: label,
       excludeSemantics: true,
       onTap: onTap,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: Motion.dur(context, const Duration(milliseconds: 160)),
-          constraints: const BoxConstraints(minHeight: 50),
-          padding: const EdgeInsets.symmetric(horizontal: 14),
-          decoration: BoxDecoration(
-            color: selected ? AppColors.moss100 : Colors.transparent,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  label,
-                  style: AppText.sans(
-                    size: 16,
-                    color: selected ? AppColors.green : AppColors.ink,
-                    weight: selected ? FontWeight.w600 : FontWeight.w400,
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        onEnter: (_) => setState(() => _hover = true),
+        onExit: (_) => setState(() => _hover = false),
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: onTap,
+          child: AnimatedContainer(
+            duration: Motion.dur(context, const Duration(milliseconds: 160)),
+            curve: Curves.ease,
+            constraints: const BoxConstraints(minHeight: 50),
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            decoration: BoxDecoration(
+              color: selected
+                  ? AppColors.moss100
+                  : (_hover ? AppColors.moss50 : Colors.transparent),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    label,
+                    style: AppText.sans(
+                      size: 16,
+                      color: selected ? AppColors.green : AppColors.ink,
+                      weight: selected ? FontWeight.w600 : FontWeight.w400,
+                    ),
                   ),
                 ),
-              ),
-              if (selected)
-                const Pop(
-                  child: AppIcon.filled(
-                    AppIcons.check,
-                    size: 20,
-                    color: AppColors.moss600,
+                if (selected)
+                  const Pop(
+                    child: AppIcon.filled(
+                      AppIcons.check,
+                      size: 20,
+                      color: AppColors.moss600,
+                    ),
                   ),
-                ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

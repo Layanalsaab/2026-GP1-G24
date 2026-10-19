@@ -61,15 +61,6 @@ class _StartupProfileScreenState extends State<StartupProfileScreen> {
     super.dispose();
   }
 
-  void _cta() {
-    final name = widget.startup.name;
-    if (_vm.isGuest) {
-      ProfileActions.toggleInterest(context, _vm.key, name);
-    } else {
-      ProfileActions.toggleRequest(context, _vm.key, name);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final bookmarks = BookmarkRepository.instance.keys;
@@ -178,7 +169,6 @@ class _StartupProfileScreenState extends State<StartupProfileScreen> {
                   label: _vm.ctaLabel,
                   icon: _vm.isGuest ? AppIcons.chat : AppIcons.send,
                   done: _vm.ctaDone,
-                  onPressed: _cta,
                 ),
             ],
           ),
