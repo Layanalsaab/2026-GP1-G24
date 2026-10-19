@@ -179,6 +179,29 @@ void main() {
       },
     );
 
+    test('an unverified account left by an earlier attempt is replaced, not "in use"', () async {
+      auth.signUpFails = AuthFailure.emailInUse;
+      auth.signUpFailsOnce = true;
+      final vm = make(AccountRole.founder);
+      addTearDown(vm.dispose);
+      _fillValid(vm);
+      expect(await vm.submit(), isTrue);
+      expect(auth.discardCalls, 1);
+      expect(auth.signUpCalls, 2);
+      expect(vm.emailError, isNull);
+    });
+
+    test('a verified or other-password account stays "in use"', () async {
+      auth.signUpFails = AuthFailure.emailInUse;
+      auth.discardFails = AuthFailure.unknown;
+      final vm = make(AccountRole.founder);
+      addTearDown(vm.dispose);
+      _fillValid(vm);
+      expect(await vm.submit(), isFalse);
+      expect(auth.discardCalls, 1);
+      expect(vm.emailError, isNotNull);
+    });
+
     test('a network failure is a form error, not a field error', () async {
       auth.signUpFails = AuthFailure.network;
       final vm = make(AccountRole.founder);

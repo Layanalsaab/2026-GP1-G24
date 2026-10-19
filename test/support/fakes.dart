@@ -267,6 +267,9 @@ class FakeAuthRepository implements AuthRepository {
   Map<String, String?>? lastSignUp;
 
   AuthFailure? signUpFails;
+
+  /// When true, [signUpFails] applies to the next sign-up only.
+  bool signUpFailsOnce = false;
   AuthFailure? logInFails;
   AuthFailure? resendFails;
   AuthFailure? resetFails;
@@ -311,7 +314,11 @@ class FakeAuthRepository implements AuthRepository {
       'gain': gain,
     };
     await gate;
-    if (signUpFails != null) throw AuthException(signUpFails!);
+    if (signUpFails != null) {
+      final failure = signUpFails!;
+      if (signUpFailsOnce) signUpFails = null;
+      throw AuthException(failure);
+    }
     return SignupResult(verificationEmailSent: verificationEmailSent);
   }
 
