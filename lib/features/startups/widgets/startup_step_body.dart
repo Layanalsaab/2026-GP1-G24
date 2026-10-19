@@ -106,7 +106,6 @@ class _Basics extends StatelessWidget {
       selected: vm.model?.label,
       otherText: vm.modelOther.text,
       otherNoun: FounderToolsStrings.modelNoun,
-      tall: true,
     );
     if (r != null) vm.selectModel(r.value, r.otherText);
   }

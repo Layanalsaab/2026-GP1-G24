@@ -148,7 +148,10 @@ class _PickerSheetState extends State<PickerSheet> {
           o,
     ];
     final all = [...shown, if (_hasOther) widget.otherLabel];
-    final tall = widget.tall || widget.searchHint != null || _otherOpen;
+    // Only a searchable (long) list is pinned tall. A short list, such as the
+    // commerce model, fits its content and grows by the write-in field when
+    // "Other" is picked, so there is never an empty gap under it.
+    final tall = widget.tall || widget.searchHint != null;
     return PopScope(
       onPopInvokedWithResult: (didPop, _) {
         if (didPop && !_committed && _otherOpen && _other.text.trim().isEmpty) {
