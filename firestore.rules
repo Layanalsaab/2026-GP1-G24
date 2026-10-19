@@ -237,26 +237,28 @@ service cloud.firestore {
         && d.isPublic is bool;
     }
 
+    // Rules stop evaluating after a fixed number of expressions per request,
+    // so these helpers use d.get() (one call) instead of several checks.
     function validOther(d, field, value) {
-      return optionalString(d, field, 40)
-        && (value != 'other'
-            || (field in d && d[field] is string && d[field].size() >= 1));
+      let v = d.get(field, null);
+      return (v == null || (v is string && v.size() <= 40))
+        && (value != 'other' || (v is string && v.size() >= 1));
     }
 
     function optionalList(d, field, maxSize) {
-      return !(field in d) || d[field] == null
-        || (d[field] is list && d[field].size() <= maxSize);
+      let v = d.get(field, null);
+      return v == null || (v is list && v.size() <= maxSize);
     }
 
     function optionalString(d, field, maxLength) {
-      return !(field in d) || d[field] == null
-        || (d[field] is string && d[field].size() <= maxLength);
+      let v = d.get(field, null);
+      return v == null || (v is string && v.size() <= maxLength);
     }
 
     // A SAR amount: a whole number, 0 or more, at most 13 digits.
     function optionalMoney(d, field) {
-      return !(field in d) || d[field] == null
-        || (d[field] is int && d[field] >= 0 && d[field] < 10000000000000);
+      let v = d.get(field, null);
+      return v == null || (v is int && v >= 0 && v < 10000000000000);
     }
 
     // The founded year runs from 1900 to the current year.
