@@ -12,6 +12,7 @@ import 'package:startsa/features/login_and_signup/screens/welcome_screen.dart';
 import 'package:startsa/features/login_and_signup/view_models/investor_onboarding_view_model.dart';
 import 'package:startsa/features/login_and_signup/view_models/signup_flow.dart';
 import 'package:startsa/models/app_user.dart';
+import 'package:startsa/models/auth_failure.dart';
 import 'package:startsa/shared_ui/widgets/overlays/app_toast.dart';
 
 import '../../support/fakes.dart';
@@ -170,6 +171,23 @@ void main() {
     await t.tap(find.text('OK'));
     await t.pump(const Duration(milliseconds: 500));
     expect(find.text('STEP 2 OF 6'), findsOneWidget);
+  });
+
+  testWidgets('Continue before verifying says the email is not verified yet', (
+    t,
+  ) async {
+    (AuthRepository.instance as FakeAuthRepository).logInFails =
+        AuthFailure.emailNotVerified;
+    final flow = SignupFlow(role: AccountRole.founder)
+      ..email = 'sara@gmail.com';
+    await _pump(t, VerifyEmailScreen(flow: flow, showDialogOnOpen: false));
+    final fields = find.byType(TextField);
+    await t.enterText(fields.at(1), 'Sara@1234');
+    await t.tap(find.text('Continue'));
+    await t.pump();
+    await t.pump(const Duration(milliseconds: 600));
+    expect(find.text('Email not verified yet'), findsOneWidget);
+    expect(find.text('Resend verification email'), findsOneWidget);
   });
 
   testWidgets('investor steps render and Next is gated', (t) async {

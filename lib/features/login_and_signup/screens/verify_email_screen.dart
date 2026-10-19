@@ -129,12 +129,13 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
     }
   }
 
-  void _showDialog() {
+  void _showDialog({bool notVerified = false}) {
     showAppDialog<void>(
       context,
       builder: (ctx) => VerifyEmailDialog(
         email: widget.flow.email,
         inSignup: true,
+        notVerifiedYet: notVerified,
         onResend: () {
           Navigator.of(ctx).pop();
           _resend(AuthStrings.verifyEmailSent);
@@ -165,7 +166,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
       case VerifyResult.wrongPassword:
         break; // The errors are already under the fields.
       case VerifyResult.notVerified:
-        _showDialog();
+        _showDialog(notVerified: true);
       case VerifyResult.failed:
         AppToast.show(context, _vm.formError ?? '');
       case VerifyResult.verified:
