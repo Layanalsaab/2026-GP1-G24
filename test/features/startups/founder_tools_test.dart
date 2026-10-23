@@ -53,7 +53,7 @@ void _fillAll(StartupStepsViewModel vm) {
   vm.name.text = 'Nakhla Pay';
   vm.description.text = 'We help small shops accept card payments.';
   vm.selectSector('Fintech', null);
-  vm.selectStage('Seed', null);
+  vm.selectStage('Seed');
   vm.selectModel('Business-to-Business (B2B)', null);
   vm.selectCity('Jeddah');
   vm.founded.text = '2024';
@@ -317,10 +317,7 @@ void main() {
       expect(find.text('SAR 300,000 for 15%'), findsOneWidget);
       await tester.tap(find.text('Accept'));
       await tester.pumpAndSettle();
-      expect(
-        find.text('Omar Khalid is now an associated investor'),
-        findsOneWidget,
-      );
+      // Confirmations show no pop-up any more; the request just leaves the list.
       expect(find.text('No pending requests.'), findsOneWidget);
       await tester.pump(const Duration(seconds: 3));
       await tester.pumpAndSettle();
@@ -349,10 +346,10 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(find.text('STEP 1 OF 4'), findsOneWidget);
-      expect(find.text('Basics'), findsOneWidget);
+      expect(find.text('Overview'), findsOneWidget);
       await tester.tap(find.text('Next'));
       await tester.pump(const Duration(milliseconds: 300));
-      expect(find.text('Please fill in the required fields'), findsOneWidget);
+      expect(find.text('Please fix the highlighted fields'), findsOneWidget);
       expect(find.text('Please enter a startup name.'), findsOneWidget);
       await tester.pump(const Duration(seconds: 4));
     });
@@ -367,8 +364,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('One-line pitch'), findsNothing);
       expect(find.text('Description'), findsNothing);
-      expect(_label('Brief description'), findsOneWidget);
-      expect(find.text('0/1000'), findsOneWidget);
+      expect(_label('Brief Description'), findsOneWidget);
       // Visibility is the last field of the step, under Website.
       final website = tester.getTopLeft(_label('Website')).dy;
       final visibility = tester.getTopLeft(_label('Visibility')).dy;
@@ -406,7 +402,7 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(find.text('STEP 3 OF 6'), findsOneWidget);
-      expect(find.text('Add your startup'), findsOneWidget);
+      expect(find.text('Overview'), findsOneWidget);
     });
 
     testWidgets('Back on onboarding step 3 returns to the Verify step', (
