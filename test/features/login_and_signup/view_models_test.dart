@@ -122,7 +122,7 @@ void main() {
         expect(vm.flow.email, 'sara@gmail.com');
         expect(vm.flow.password, 'Sara@1234');
         expect(vm.flow.accountCreated, isTrue);
-        expect(vm.flow.totalSteps, 6);
+        expect(vm.flow.totalSteps, 7);
       },
     );
 

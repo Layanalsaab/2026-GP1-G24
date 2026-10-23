@@ -154,6 +154,9 @@ class Startup {
   /// Longest text in the Problem / solution / growth fields and team bios.
   static const longTextMax = 1000;
 
+  /// Longest "Who are your target customers?" answer.
+  static const customersMax = 300;
+
   /// Longest brief description.
   static const descriptionMax = 150;
   static const nameMax = 40;

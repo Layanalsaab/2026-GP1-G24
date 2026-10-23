@@ -62,7 +62,7 @@ void main() {
     (t) async {
       await logIn(t);
       expect(find.byType(StartupStepsScreen), findsOneWidget);
-      expect(find.text('STEP 3 OF 6'), findsOneWidget);
+      expect(find.text('STEP 3 OF 7'), findsOneWidget);
       expect(
         find.byType(VerifyEmailScreen),
         findsNothing,

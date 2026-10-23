@@ -42,9 +42,10 @@ class FounderToolsStrings {
   // ---- Steps ----
   static const stepTitles = [
     'Overview',
-    'Problem & solution',
-    'Market & team',
+    'Startup Description',
+    'Target Market',
     'Funding & goals',
+    'Startup Team',
   ];
   static const onboardingFirstTitle = 'Overview';
   static const next = 'Next';
@@ -92,22 +93,20 @@ class FounderToolsStrings {
   static const websiteHint = 'e.g. example.com';
 
   // Step 2
-  static const problemLabel = 'What problem are you solving?';
+  static const problemLabel = 'What problem does your startup solve?';
   static const problemHint = 'Describe the problem your customers face';
   static const solutionLabel = 'What is your solution?';
   static const solutionHint = 'Explain how your product solves it';
   static const customersLabel = 'Who are your target customers?';
   static const customersHint =
       'e.g. families caring for elderly parents in Riyadh';
-  static const advantageLabel =
-      'What makes you different from your competitors?';
-  static const advantageHint = 'What you do better or differently';
+  static const advantageLabel = 'What makes your startup unique?';
+  static const advantageHint = 'What you do better or differently than others';
 
   // Step 3
-  static const marketLabel = 'Market size';
-  static const marketHint = 'Amounts in SAR per year';
+  static const marketLabel = 'Target market size';
   static const marketInfo =
-      'TAM is the yearly revenue of the whole market for your kind of product. SAM is the part of that market your product can serve, based on where and how you sell. SOM is the share of SAM you expect to win in the next few years. Enter amounts in SAR per year.';
+      'The total amount customers in your target market spend per year on products like yours. Enter it in SAR.';
   static const teamLabel = 'Team members';
   static const teamInfo =
       'Show that your team has the experience to run this project: relevant skills, past roles and results, and why you are the best team to build it.';

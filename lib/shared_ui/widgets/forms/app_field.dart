@@ -123,11 +123,19 @@ class FieldLabel extends StatelessWidget {
     'to', 'for', 'by', 'with', 'as', 'per', 'vs',
   };
 
+  /// Questions shown as written ("Which city are you in?"), not title case.
+  static const _sentenceCase = {
+    'which city are you in?',
+    'which sectors are you interested in?',
+  };
+
   /// "Which city are you in?" -> "Which City Are You in?". Every field name
   /// is shown in title case: each word starts with a capital, except small
   /// joining words; words that already have inner capitals or digits
   /// (LinkedIn, TAM, Year 1) are left alone.
   static String titleCase(String text) {
+    // These two sign-up questions keep a capital first letter only.
+    if (_sentenceCase.contains(text.trim().toLowerCase())) return text;
     String cap(String w) {
       final i = w.indexOf(RegExp(r'[A-Za-zÀ-ɏ]'));
       if (i < 0) return w;
@@ -152,11 +160,16 @@ class FieldLabel extends StatelessWidget {
     this.hasError = false,
     this.onInfoTap,
     this.infoOpen = false,
+    this.sentenceCase = false,
   });
 
   final String label;
   final bool required;
   final bool hasError;
+
+  /// Shows the label as written (only the first letter capital) instead of
+  /// Title Case.
+  final bool sentenceCase;
 
   /// Shows the inline "i" button when non-null.
   final VoidCallback? onInfoTap;
@@ -170,7 +183,7 @@ class FieldLabel extends StatelessWidget {
       TextSpan(
         style: style,
         children: [
-          TextSpan(text: titleCase(label)),
+          TextSpan(text: sentenceCase ? label : titleCase(label)),
           if (required) ...[
             const WidgetSpan(child: SizedBox(width: 2)),
             TextSpan(
@@ -419,7 +432,11 @@ class AppField extends StatefulWidget {
     this.labelTrailing,
     this.warning,
     this.onErrorTap,
+    this.sentenceCase = false,
   });
+
+  /// Label as written, not Title Case (see [FieldLabel.sentenceCase]).
+  final bool sentenceCase;
 
   /// Soft amber note (not an error), shown when there is no [error].
   final String? warning;
@@ -505,6 +522,7 @@ class _AppFieldState extends State<AppField> {
                 hasError: hasError,
                 onInfoTap: hasInfo ? _toggle : null,
                 infoOpen: tipOpen,
+                sentenceCase: widget.sentenceCase,
               ),
             )
           else
@@ -524,6 +542,7 @@ class _AppFieldState extends State<AppField> {
                       hasError: hasError,
                       onInfoTap: hasInfo ? _toggle : null,
                       infoOpen: tipOpen,
+                      sentenceCase: widget.sentenceCase,
                     ),
                   ),
                   Positioned(right: 0, top: -3, child: widget.labelTrailing!),

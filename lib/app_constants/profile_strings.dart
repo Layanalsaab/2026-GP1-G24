@@ -16,9 +16,9 @@ class ProfileStrings {
   static const theProblem = 'The problem';
   static const ourSolution = 'Our solution';
   static const targetCustomers = 'Target customers';
-  static const different = 'What makes us different';
-  static const marketSize = 'Market size';
-  static const yearlyRevenue = 'Yearly revenue';
+  static const different = 'What makes us unique';
+  static const marketSize = 'Target market size';
+  static const yearlyRevenue = 'Total yearly revenue in the target market';
   static const expectedGrowth = 'Expected growth';
   static const noBusinessDetails =
       'This startup hasn’t added business details yet.';

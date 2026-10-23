@@ -32,6 +32,7 @@ enum StartupField {
   problem,
   solution,
   customers,
+  marketSize,
   advantage,
   growth,
   capital,
@@ -192,7 +193,13 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
 
   bool get isEditing => initial != null;
 
-  static const stepCount = 4;
+  /// One step per title: Overview, Startup Description, Target Market,
+  /// Funding & goals, Startup Team. Built from the list so a new step only
+  /// needs a new title.
+  static int get stepCount => FounderToolsStrings.stepTitles.length;
+
+  /// The step that holds the team member list and editor (the last one).
+  static int get teamStep => stepCount - 1;
 
   /// The current step, 0-based.
   int step = 0;
@@ -339,6 +346,8 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
         return StartupValidators.solution(solution.text);
       case StartupField.customers:
         return StartupValidators.customers(customers.text);
+      case StartupField.marketSize:
+        return StartupValidators.marketSize(tam.text);
       case StartupField.advantage:
         return StartupValidators.advantage(advantage.text);
       case StartupField.growth:
@@ -375,13 +384,9 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
       StartupField.founded,
       StartupField.website,
     ],
-    [
-      StartupField.problem,
-      StartupField.solution,
-      StartupField.customers,
-      StartupField.advantage,
-    ],
-    [],
+    [StartupField.problem, StartupField.solution, StartupField.advantage],
+    // Target Market: who the customers are and how big the market is.
+    [StartupField.customers, StartupField.marketSize],
     [
       StartupField.growth,
       StartupField.capital,
@@ -392,6 +397,8 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
       StartupField.lookingFor,
       StartupField.lookingForOther,
     ],
+    // Startup Team: no required field (the member editor must be closed).
+    [],
   ];
 
   int _stepOf(StartupField f) {
@@ -409,6 +416,10 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
     if (raw == null) return null;
     if (f == StartupField.valuation) return null;
     if (f == StartupField.founded && founded.text.trim().length == 4) {
+      return raw;
+    }
+    // A typed zero says so at once (an empty field waits for Next).
+    if (f == StartupField.marketSize && tam.text.trim().isNotEmpty) {
       return raw;
     }
     // The website shows its message from the first character typed.
@@ -429,7 +440,7 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
 
   /// Every required answer of [s] (0-based) is given.
   bool stepComplete(int s) {
-    if (s == 2) return !editorOpen;
+    if (s == teamStep && editorOpen) return false;
     for (final f in _stepFields[s]) {
       if (_rawError(f) != null) return false;
     }
@@ -514,7 +525,9 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
     if (!currentComplete) {
       _tried.add(step);
       notifyListeners();
-      return step == 2 ? StepAdvance.memberOpen : StepAdvance.incomplete;
+      return step == teamStep && editorOpen
+          ? StepAdvance.memberOpen
+          : StepAdvance.incomplete;
     }
     if (step < stepCount - 1) {
       step++;

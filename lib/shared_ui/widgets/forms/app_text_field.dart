@@ -513,9 +513,13 @@ class LabeledTextField extends StatelessWidget {
     this.labelTrailing,
     this.warning,
     this.onWarningTap,
+    this.sentenceCase = false,
   });
 
   final String label;
+
+  /// Shows the label as written (sentence case) instead of Title Case.
+  final bool sentenceCase;
   final bool required;
 
   /// At the right end of the label row (the Private / Public pill).
@@ -585,6 +589,7 @@ class LabeledTextField extends StatelessWidget {
       warning: warning,
       onErrorTap: onWarningTap,
       labelTrailing: labelTrailing,
+      sentenceCase: sentenceCase,
       below: below,
       linkLabel: linkLabel,
       onLink: onLink,

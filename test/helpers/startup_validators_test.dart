@@ -89,4 +89,10 @@ void main() {
     expect(Formatters.shortMoney(500000), '500K');
     expect(Formatters.shortMoney(900), '900');
   });
+
+  test('target market size: empty and zero have their own messages', () {
+    expect(StartupValidators.marketSize(''), ValidationStrings.marketSize);
+    expect(StartupValidators.marketSize('0'), ValidationStrings.marketSizeZero);
+    expect(StartupValidators.marketSize('1,000'), isNull);
+  });
 }

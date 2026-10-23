@@ -73,6 +73,13 @@ class StartupValidators {
   static String? advantage(String v) =>
       v.trim().isEmpty ? ValidationStrings.different : null;
 
+  /// Target market size: required, a positive SAR amount.
+  static String? marketSize(String v) {
+    final n = money(v);
+    if (n == null) return ValidationStrings.marketSize;
+    return n <= 0 ? ValidationStrings.marketSizeZero : null;
+  }
+
   // ---- Step 4 ----
   static String? growth(String v) =>
       v.trim().isEmpty ? ValidationStrings.growth : null;

@@ -57,7 +57,7 @@ void main() {
       await t.pump(const Duration(milliseconds: 800));
       expect(find.text('STEP 1 OF 4'), findsOneWidget);
       expect(
-        find.textContaining('hope to gain', findRichText: true),
+        find.textContaining('Hope to Gain', findRichText: true),
         findsWidgets,
       );
       expect(t.takeException(), isNull);
@@ -74,7 +74,7 @@ void main() {
         ),
         w: w,
       );
-      expect(find.text('STEP 1 OF 6'), findsOneWidget);
+      expect(find.text('STEP 1 OF 7'), findsOneWidget);
       await t.tap(find.text('Continue'));
       await t.pump(const Duration(milliseconds: 500));
       expect(find.text('Enter your first and last name.'), findsOneWidget);
@@ -106,11 +106,11 @@ void main() {
     expect(value, findsOneWidget);
     expect(gain, findsOneWidget);
     expect(
-      find.textContaining('What value can you bring', findRichText: true),
+      find.textContaining('What Value Can You Bring', findRichText: true),
       findsOneWidget,
     );
     expect(
-      find.textContaining('hope to gain', findRichText: true),
+      find.textContaining('Hope to Gain', findRichText: true),
       findsWidgets,
     );
     // The "i" button opens the example.
@@ -214,7 +214,7 @@ void main() {
     testWidgets('no log-in footer, a photo row and private pills', (t) async {
       await openFounder(t);
       expect(find.textContaining('Already have an account?'), findsNothing);
-      expect(find.text('Profile photo'), findsOneWidget);
+      expect(find.text('Profile Photo'), findsOneWidget);
       expect(find.text('Upload photo'), findsOneWidget);
       expect(find.text('Private'), findsNWidgets(2));
       await t.tap(find.text('Private').first);
@@ -443,6 +443,9 @@ void main() {
     await t.pump(const Duration(milliseconds: 300));
     expect(find.text('Enter a valid email'), findsOneWidget);
     expect(find.text('Enter your password'), findsNWidgets(2)); // hint + error
+    // The "fix the highlighted fields" pop-up shows, then goes away.
+    expect(find.text('Please fix the highlighted fields'), findsOneWidget);
+    await t.pump(const Duration(seconds: 3));
   });
 
   testWidgets('verify step opens with its dialog', (t) async {
@@ -455,7 +458,7 @@ void main() {
     expect(find.text('sara@gmail.com'), findsWidgets);
     await t.tap(find.text('OK'));
     await t.pump(const Duration(milliseconds: 500));
-    expect(find.text('STEP 2 OF 6'), findsOneWidget);
+    expect(find.text('STEP 2 OF 7'), findsOneWidget);
   });
 
   testWidgets('Continue before verifying says the email is not verified yet', (

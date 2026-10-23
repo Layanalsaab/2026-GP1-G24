@@ -117,12 +117,17 @@ class StartupProfilePane extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              MarketCircles(
-                tam: viewModel.tam,
-                sam: viewModel.sam,
-                som: viewModel.som,
+              // One big number in short form, e.g. "SAR 2.4B".
+              Text(
+                viewModel.targetMarketShort,
+                style: AppText.sans(
+                  size: 28,
+                  weight: FontWeight.w700,
+                  color: AppColors.green,
+                  height: 34,
+                ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 4),
               Text(
                 ProfileStrings.yearlyRevenue,
                 style: AppText.sans(size: 12, color: AppColors.grey),

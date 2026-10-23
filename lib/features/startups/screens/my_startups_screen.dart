@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../app_constants/founder_tools_strings.dart';
 import '../../../data_access/repositories/startup_draft_repository.dart';
 import '../../../helpers/app_session.dart';
+import '../../../models/list_entries.dart';
 import '../../../models/startup.dart';
 import '../../../shared_ui/widgets/headers/list_screen_header.dart';
 import '../../../shared_ui/widgets/lists/filter_sort_pills.dart';
@@ -20,7 +21,11 @@ import 'startup_steps_screen.dart';
 /// founder's startups plus the ones they joined as a team member, or the
 /// illustrated empty card.
 class MyStartupsScreen extends StatefulWidget {
-  const MyStartupsScreen({super.key});
+  const MyStartupsScreen({super.key, this.teamStartups});
+
+  /// The startups the user joined as a team member. Null = the mockup list
+  /// in `PrototypeSeed.sampleTeamStartups`; the backend passes the real ones.
+  final List<MyStartupEntry>? teamStartups;
 
   /// Opens the screen with the forward transition.
   static void open(BuildContext context) =>
@@ -31,7 +36,9 @@ class MyStartupsScreen extends StatefulWidget {
 }
 
 class _MyStartupsScreenState extends State<MyStartupsScreen> {
-  late final MyStartupsViewModel _vm = MyStartupsViewModel();
+  late final MyStartupsViewModel _vm = MyStartupsViewModel(
+    teamStartups: widget.teamStartups,
+  );
 
   final _drafts = StartupDraftRepository.instance;
 

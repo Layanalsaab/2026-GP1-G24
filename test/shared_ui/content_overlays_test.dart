@@ -87,7 +87,7 @@ void main() {
           builder: (c) => Column(
             children: [
               TextButton(
-                onPressed: () => AppToast.show(c, 'Link copied'),
+                onPressed: () => AppToast.error(c, 'Link copied'),
                 child: const Text('t'),
               ),
               TextButton(

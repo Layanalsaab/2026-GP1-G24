@@ -62,7 +62,7 @@ void main() {
     for (var i = 1; i < tops.length; i++) {
       // The field with a link ("Forgot password?") has a little extra room
       // under it so the link text is not cut off.
-      final expected = i == 5 ? 120 : 106;
+      final expected = i == 5 ? 116 : 106;
       expect(tops[i] - tops[i - 1], expected, reason: 'field $i');
     }
     // The first label sits 28 px below the top of the card.
@@ -106,7 +106,7 @@ void main() {
       LabeledTextField(label: 'Before', controller: a),
       StatefulBuilder(
         builder: (context, setState) => LabeledTextField(
-          label: 'With pill',
+          label: 'With Pill',
           controller: b,
           labelTrailing: VisibilityPill(
             isPublic: isPublic,
@@ -117,8 +117,8 @@ void main() {
       ),
       LabeledTextField(label: 'After', controller: c),
     ]);
-    expect(top(t, find.text('With pill')) - top(t, find.text('Before')), 106);
-    expect(top(t, find.text('After')) - top(t, find.text('With pill')), 106);
+    expect(top(t, find.text('With Pill')) - top(t, find.text('Before')), 106);
+    expect(top(t, find.text('After')) - top(t, find.text('With Pill')), 106);
 
     // One tap switches Private -> Public (no sheet), and back.
     expect(find.text('Private'), findsOneWidget);
@@ -126,7 +126,7 @@ void main() {
     await t.pump(const Duration(milliseconds: 300));
     expect(find.text('Public'), findsOneWidget);
     expect(find.text('Private'), findsNothing);
-    expect(top(t, find.text('After')) - top(t, find.text('With pill')), 106);
+    expect(top(t, find.text('After')) - top(t, find.text('With Pill')), 106);
     await t.tap(find.text('Public'));
     await t.pump(const Duration(milliseconds: 300));
     expect(find.text('Private'), findsOneWidget);

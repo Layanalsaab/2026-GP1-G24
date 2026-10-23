@@ -61,6 +61,7 @@ void _fillAll(StartupStepsViewModel vm) {
   vm.solution.text = 's';
   vm.customers.text = 'c';
   vm.advantage.text = 'a';
+  vm.tam.text = '2,400,000,000';
   vm.growth.text = 'g';
   vm.capital.text = '350,000';
   vm.rev1.text = '1,000';
@@ -103,6 +104,8 @@ void main() {
       expect(vm.next(), StepAdvance.advanced);
       expect(vm.next(), StepAdvance.advanced);
       expect(vm.step, 3);
+      expect(vm.next(), StepAdvance.advanced);
+      expect(vm.step, StartupStepsViewModel.teamStep);
       expect(vm.next(), StepAdvance.readyToSave);
       expect(vm.previous(), isTrue);
     });
@@ -136,7 +139,7 @@ void main() {
       final vm = StartupStepsViewModel();
       addTearDown(vm.dispose);
       _fillAll(vm);
-      vm.step = 2;
+      vm.step = StartupStepsViewModel.teamStep;
       expect(vm.currentComplete, isTrue);
       vm.openMemberEditor();
       expect(vm.next(), StepAdvance.memberOpen);
@@ -264,7 +267,7 @@ void main() {
   group('screens', () {
     testWidgets('My Startups empty state', (tester) async {
       _bigScreen(tester);
-      await tester.pumpWidget(_app(const MyStartupsScreen()));
+      await tester.pumpWidget(_app(const MyStartupsScreen(teamStartups: [])));
       await tester.pump(const Duration(seconds: 1));
       expect(find.text('Add your first startup'), findsOneWidget);
       expect(find.text(FounderToolsStrings.emptyButton), findsOneWidget);
@@ -277,9 +280,10 @@ void main() {
         PrototypeSeed.rafeeq,
         PrototypeSeed.daftar.copyWith(isPublic: false),
       ]);
-      await tester.pumpWidget(_app(const MyStartupsScreen()));
+      await tester.pumpWidget(_app(const MyStartupsScreen(teamStartups: [])));
       await tester.pumpAndSettle();
-      expect(find.text('2 startups'), findsOneWidget);
+      // No count line under the title any more.
+      expect(find.text('2 startups'), findsNothing);
       expect(find.text('Rafeeq Health'), findsOneWidget);
       expect(find.text('Raising SAR 500,000'), findsOneWidget);
       expect(find.text('Looking for partnership'), findsOneWidget);
@@ -345,7 +349,7 @@ void main() {
         _app(const StartupStepsScreen(mode: StartupStepsMode.add)),
       );
       await tester.pumpAndSettle();
-      expect(find.text('STEP 1 OF 4'), findsOneWidget);
+      expect(find.text('STEP 1 OF 5'), findsOneWidget);
       expect(find.text('Overview'), findsOneWidget);
       await tester.tap(find.text('Next'));
       await tester.pump(const Duration(milliseconds: 300));
@@ -395,13 +399,13 @@ void main() {
       expect(_label('Visibility'), findsNothing);
     });
 
-    testWidgets('Onboarding numbering starts at STEP 3 OF 6', (tester) async {
+    testWidgets('Onboarding numbering starts at STEP 3 OF 7', (tester) async {
       _bigScreen(tester);
       await tester.pumpWidget(
         _app(const StartupStepsScreen(mode: StartupStepsMode.onboarding)),
       );
       await tester.pumpAndSettle();
-      expect(find.text('STEP 3 OF 6'), findsOneWidget);
+      expect(find.text('STEP 3 OF 7'), findsOneWidget);
       expect(find.text('Overview'), findsOneWidget);
     });
 
@@ -535,7 +539,7 @@ void main() {
       final name = find.widgetWithText(TextField, 'Rafeeq Health');
       await tester.enterText(name, 'Rafeeq Health Plus');
       await tester.pump();
-      for (var i = 0; i < 3; i++) {
+      for (var i = 0; i < 4; i++) {
         await tester.tap(find.text('Next'));
         await tester.pumpAndSettle();
       }

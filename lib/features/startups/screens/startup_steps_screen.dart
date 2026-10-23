@@ -15,7 +15,8 @@ import 'my_startups_screen.dart';
 
 /// Which flow the 4-step startup form is in.
 enum StartupStepsMode {
-  /// Founder sign-up: "STEP 3 OF 6" .. "STEP 6 OF 6"; Create goes Home.
+  /// Founder sign-up: "STEP 3 OF 7" .. "STEP 7 OF 7" (the total follows the
+  /// list of steps); Create goes Home.
   onboarding,
 
   /// My Startups -> Add: "STEP N OF 4"; Create goes back to My Startups.
@@ -219,7 +220,7 @@ class _StartupStepsScreenState extends State<StartupStepsScreen> {
       builder: (context, _) {
         final step = _vm.step;
         final offset = _onboarding ? 2 : 0;
-        final total = _onboarding ? 6 : 4;
+        final total = offset + StartupStepsViewModel.stepCount;
         return PopScope(
           // The first step can only be left through the unsaved-changes check.
           canPop: step == 0 && (_onboarding || !_vm.isDirty),

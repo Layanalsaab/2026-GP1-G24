@@ -82,7 +82,9 @@ class ValidationStrings {
   static const problem = 'Please describe the problem.';
   static const solution = 'Please describe your solution.';
   static const targetCustomers = 'Please describe your target customers.';
-  static const different = 'Please explain what makes you different.';
+  static const marketSize = 'Please enter your target market size.';
+  static const marketSizeZero = 'Target market size cannot be zero.';
+  static const different = 'Please explain what makes your startup unique.';
   static const growth = 'Please describe your expected growth.';
   static const capital = 'Please enter your current capital.';
   static const revenue =

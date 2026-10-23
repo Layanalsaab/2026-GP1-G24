@@ -1,3 +1,4 @@
+import '../../../app_constants/founder_tools_strings.dart';
 import '../../../models/app_user.dart';
 import 'signup_view_model.dart';
 
@@ -36,5 +37,7 @@ class SignupFlow {
   SignupViewModel? form;
 
   /// "STEP n OF total": 6 for a founder, 4 for an investor.
-  int get totalSteps => role == AccountRole.founder ? 6 : 4;
+  int get totalSteps => role == AccountRole.founder
+      ? 2 + FounderToolsStrings.stepTitles.length
+      : 4;
 }

@@ -25,8 +25,9 @@ class StartupStepBody extends StatelessWidget {
       builder: (context, _) => switch (step) {
         0 => _Basics(vm: vm),
         1 => _ProblemSolution(vm: vm),
-        2 => _MarketTeam(vm: vm),
-        _ => _Funding(vm: vm),
+        2 => _TargetMarket(vm: vm),
+        3 => _Funding(vm: vm),
+        _ => _Team(vm: vm),
       },
     );
   }
@@ -41,6 +42,7 @@ Widget _text(
   required StartupField field,
   bool multiline = false,
   int rows = 4,
+  bool sentenceCase = false,
 }) => LabeledTextField(
   label: label,
   required: true,
@@ -49,6 +51,7 @@ Widget _text(
   maxLength: max,
   multiline: multiline,
   rows: rows,
+  sentenceCase: sentenceCase,
   error: vm.errorOf(field),
 );
 
@@ -280,6 +283,7 @@ class _ProblemSolution extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Exactly three questions, shown in sentence case (not Title Case).
     return FormFieldColumn(
       children: [
         _text(
@@ -290,6 +294,7 @@ class _ProblemSolution extends StatelessWidget {
           max: Startup.longTextMax,
           field: StartupField.problem,
           multiline: true,
+          sentenceCase: true,
         ),
         _text(
           vm,
@@ -299,15 +304,7 @@ class _ProblemSolution extends StatelessWidget {
           max: Startup.longTextMax,
           field: StartupField.solution,
           multiline: true,
-        ),
-        _text(
-          vm,
-          label: FounderToolsStrings.customersLabel,
-          controller: vm.customers,
-          hint: FounderToolsStrings.customersHint,
-          max: Startup.longTextMax,
-          field: StartupField.customers,
-          multiline: true,
+          sentenceCase: true,
         ),
         _text(
           vm,
@@ -317,6 +314,7 @@ class _ProblemSolution extends StatelessWidget {
           max: Startup.longTextMax,
           field: StartupField.advantage,
           multiline: true,
+          sentenceCase: true,
         ),
       ],
     );
@@ -325,8 +323,10 @@ class _ProblemSolution extends StatelessWidget {
 
 // ----------------------------------------------------------------- step 3
 
-class _MarketTeam extends StatelessWidget {
-  const _MarketTeam({required this.vm});
+/// Target Market: who the customers are and how big their yearly spend is.
+/// Both labels are shown in sentence case.
+class _TargetMarket extends StatelessWidget {
+  const _TargetMarket({required this.vm});
 
   final StartupStepsViewModel vm;
 
@@ -334,50 +334,28 @@ class _MarketTeam extends StatelessWidget {
   Widget build(BuildContext context) {
     return FormFieldColumn(
       children: [
+        _text(
+          vm,
+          label: FounderToolsStrings.customersLabel,
+          controller: vm.customers,
+          hint: FounderToolsStrings.customersHint,
+          max: Startup.customersMax,
+          field: StartupField.customers,
+          multiline: true,
+          sentenceCase: true,
+        ),
+        // One SAR amount (no K/M/B picker, no hint under it: the explanation
+        // is in the "i"). Stored in the existing `tam` value.
         AppField(
           label: FounderToolsStrings.marketLabel,
+          required: true,
+          sentenceCase: true,
           info: FounderToolsStrings.marketInfo,
-          hint: FounderToolsStrings.marketHint,
-          child: TrioField(
-            layout: TrioLayout.stack,
-            entries: [
-              TrioEntry(label: 'TAM', controller: vm.tam),
-              TrioEntry(label: 'SAM', controller: vm.sam),
-              TrioEntry(label: 'SOM', controller: vm.som),
-            ],
-          ),
-        ),
-        AppField(
-          label: FounderToolsStrings.teamLabel,
-          info: FounderToolsStrings.teamInfo,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              for (var i = 0; i < vm.team.length; i++) ...[
-                if (i > 0) const SizedBox(height: 10),
-                TeamMemberRow(
-                  member: vm.team[i],
-                  onEdit: () => vm.openMemberEditor(i),
-                ),
-              ],
-              if (vm.team.isNotEmpty) const SizedBox(height: 14),
-              if (vm.editorOpen)
-                TeamMemberEditor(
-                  editing: vm.editingIndex != null,
-                  name: vm.memberName,
-                  role: vm.memberRole,
-                  specialization: vm.memberSpec,
-                  years: vm.memberYears,
-                  bio: vm.memberBio,
-                  complete: vm.memberComplete,
-                  errorOf: vm.memberError,
-                  onCancel: vm.cancelMemberEditor,
-                  onSave: vm.saveMember,
-                  onRemove: vm.removeMember,
-                )
-              else
-                AddMemberButton(onTap: () => vm.openMemberEditor()),
-            ],
+          error: vm.errorOf(StartupField.marketSize),
+          child: MoneyField(
+            controller: vm.tam,
+            hasError: vm.hasError(StartupField.marketSize),
+            semanticLabel: FounderToolsStrings.marketLabel,
           ),
         ),
       ],
@@ -471,6 +449,57 @@ class _Funding extends StatelessWidget {
           otherController: vm.lookingForOther,
           otherHint: FounderToolsStrings.lookingForOtherHint,
           otherError: vm.errorOf(StartupField.lookingForOther),
+        ),
+      ],
+    );
+  }
+}
+
+// ---------------------------------------------------------------- last step
+
+/// Startup Team: the team member list and editor (moved here from the old
+/// "Market & team" step; otherwise unchanged).
+class _Team extends StatelessWidget {
+  const _Team({required this.vm});
+
+  final StartupStepsViewModel vm;
+
+  @override
+  Widget build(BuildContext context) {
+    return FormFieldColumn(
+      children: [
+        AppField(
+          label: FounderToolsStrings.teamLabel,
+          info: FounderToolsStrings.teamInfo,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              for (var i = 0; i < vm.team.length; i++) ...[
+                if (i > 0) const SizedBox(height: 10),
+                TeamMemberRow(
+                  member: vm.team[i],
+                  onEdit: () => vm.openMemberEditor(i),
+                ),
+              ],
+              if (vm.team.isNotEmpty) const SizedBox(height: 14),
+              if (vm.editorOpen)
+                TeamMemberEditor(
+                  editing: vm.editingIndex != null,
+                  name: vm.memberName,
+                  role: vm.memberRole,
+                  specialization: vm.memberSpec,
+                  years: vm.memberYears,
+                  bio: vm.memberBio,
+                  complete: vm.memberComplete,
+                  errorOf: vm.memberError,
+                  onCancel: vm.cancelMemberEditor,
+                  onSave: vm.saveMember,
+                  onRemove: vm.removeMember,
+                )
+              else
+                AddMemberButton(onTap: () => vm.openMemberEditor()),
+            ],
+          ),
         ),
       ],
     );
