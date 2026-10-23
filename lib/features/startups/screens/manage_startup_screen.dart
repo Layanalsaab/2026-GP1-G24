@@ -81,7 +81,7 @@ class _ManageStartupScreenState extends State<ManageStartupScreen> {
     final result = await _vm.setPublic(value);
     if (!mounted) return;
     if (result == null) {
-      if (_vm.error != null) _toast(_vm.error!);
+      if (_vm.error != null) AppToast.error(context, _vm.error!);
       return;
     }
     _toast(
@@ -101,7 +101,7 @@ class _ManageStartupScreenState extends State<ManageStartupScreen> {
     final ok = await _vm.delete();
     if (!mounted) return;
     if (!ok) {
-      _toast(_vm.error ?? FounderToolsStrings.deleteFailed);
+      AppToast.error(context, _vm.error ?? FounderToolsStrings.deleteFailed);
       return;
     }
     _toast(FounderToolsStrings.deleted(name));

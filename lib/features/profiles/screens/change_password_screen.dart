@@ -48,8 +48,8 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
     if (changed) {
       AppToast.show(context, ProfileStrings.passwordUpdated);
       AppNav.back(context);
-    } else if (_viewModel.formError != null) {
-      AppToast.show(context, _viewModel.formError!);
+    } else {
+      AppToast.error(context, _viewModel.formError ?? ProfileStrings.fixFields);
     }
   }
 

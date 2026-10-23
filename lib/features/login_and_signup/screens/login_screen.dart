@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../app_constants/auth_strings.dart';
+import '../../../app_constants/validation_strings.dart';
 import '../../../navigation/app_router.dart';
 import '../../../shared_ui/navigation/app_route.dart';
 import '../../../shared_ui/theme/app_colors.dart';
@@ -13,7 +14,6 @@ import '../../../shared_ui/widgets/headers/overlap_layout.dart';
 import '../../../shared_ui/widgets/overlays/app_dialog.dart';
 import '../../../shared_ui/widgets/overlays/app_toast.dart';
 import '../view_models/login_view_model.dart';
-import '../view_models/verify_email_view_model.dart' show ResendOutcome;
 import '../widgets/auth_navigation.dart';
 import 'choose_role_screen.dart';
 import 'forgot_password_screen.dart';
@@ -47,8 +47,8 @@ class _LoginScreenState extends State<LoginScreen> {
       AppRouter.openAfterLogin(context, user, welcomeBack: true);
     } else if (_vm.needsVerification) {
       _showVerifyDialog();
-    } else if (_vm.formError != null) {
-      AppToast.show(context, _vm.formError!);
+    } else {
+      AppToast.error(context, _vm.formError ?? ValidationStrings.fixFields);
     }
   }
 
@@ -59,26 +59,9 @@ class _LoginScreenState extends State<LoginScreen> {
         email: _vm.verificationEmail,
         needLogin: true,
         notVerifiedYet: true,
-        onResend: () {
-          Navigator.of(ctx).pop();
-          _resend();
-        },
         onClose: () => Navigator.of(ctx).pop(),
       ),
     );
-  }
-
-  Future<void> _resend() async {
-    final outcome = await _vm.resend();
-    if (!mounted) return;
-    switch (outcome) {
-      case ResendOutcome.sent:
-        AppToast.show(context, AuthStrings.verifyEmailSent);
-      case ResendOutcome.alreadyVerified:
-        AppToast.show(context, AuthStrings.alreadyVerifiedLogin);
-      case ResendOutcome.failed:
-        AppToast.show(context, _vm.formError ?? '');
-    }
   }
 
   @override

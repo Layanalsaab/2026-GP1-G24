@@ -52,6 +52,11 @@ class AppTextField extends StatefulWidget {
     this.autofocus = false,
     this.tabularFigures = false,
     this.fontSize = 16,
+    this.counterOf,
+    this.counterMax,
+    this.showCounter = true,
+    this.warnLow = true,
+    this.onOverflow,
   }) : assert(
          controller == null || value == null,
          'Pass either a controller or a value, not both.',
@@ -94,6 +99,22 @@ class AppTextField extends StatefulWidget {
   final bool autofocus;
   final bool tabularFigures;
   final double fontSize;
+
+  /// Counts something other than the characters (the phone: digits only).
+  final int Function(String text)? counterOf;
+
+  /// The limit shown in the counter when it is not [maxLength] (phone: 9).
+  final int? counterMax;
+
+  /// False hides the on-border counter (it is never shown on passwords).
+  final bool showCounter;
+
+  /// Turns the counter red when 10 or fewer characters are left.
+  final bool warnLow;
+
+  /// Told true when a paste or typing went past [maxLength] (the extra is
+  /// cut) and false on the next edit that stays within it.
+  final ValueChanged<bool>? onOverflow;
 
   @override
   State<AppTextField> createState() => _AppTextFieldState();
@@ -200,7 +221,7 @@ class _AppTextFieldState extends State<AppTextField> {
 
     final formatters = <TextInputFormatter>[
       ...?w.inputFormatters,
-      if (w.maxLength != null) LengthLimitingTextInputFormatter(w.maxLength),
+      if (w.maxLength != null) _MaxLengthFormatter(w.maxLength!, w.onOverflow),
     ];
 
     final field = Semantics(
@@ -322,28 +343,130 @@ class _AppTextFieldState extends State<AppTextField> {
         ),
     ];
 
+    final limit = w.counterMax ?? w.maxLength;
+    final showCounter = w.showCounter && !w.password && limit != null;
+    final fill = w.enabled ? AppColors.surface : AppColors.mutedFill;
+
+    final box = AnimatedContainer(
+      duration: Motion.dur(context, const Duration(milliseconds: 160)),
+      curve: Curves.ease,
+      constraints: BoxConstraints(minHeight: minHeight),
+      decoration: BoxDecoration(
+        color: w.enabled ? AppColors.surface : AppColors.mutedFill,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: border),
+        boxShadow: [BoxShadow(color: ring, spreadRadius: 3)],
+      ),
+      child: Row(
+        crossAxisAlignment: w.multiline
+            ? CrossAxisAlignment.start
+            : CrossAxisAlignment.center,
+        children: children,
+      ),
+    );
+
     return GestureDetector(
       behavior: HitTestBehavior.translucent,
       onTap: w.enabled ? _focus.requestFocus : null,
-      child: AnimatedContainer(
-        duration: Motion.dur(context, const Duration(milliseconds: 160)),
-        curve: Curves.ease,
-        constraints: BoxConstraints(minHeight: minHeight),
-        decoration: BoxDecoration(
-          color: w.enabled ? AppColors.surface : AppColors.mutedFill,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: border),
-          boxShadow: [BoxShadow(color: ring, spreadRadius: 3)],
-        ),
-        child: Row(
-          crossAxisAlignment: w.multiline
-              ? CrossAxisAlignment.start
-              : CrossAxisAlignment.center,
-          children: children,
-        ),
-      ),
+      child: !showCounter
+          ? box
+          : Stack(
+              clipBehavior: Clip.none,
+              children: [
+                box,
+                // "typed/max" sits on the bottom border, 12 px from the right
+                // edge, its background notching the line. Only while the
+                // field is focused.
+                Positioned(
+                  right: 12,
+                  bottom: -8,
+                  child: IgnorePointer(
+                    child: AnimatedOpacity(
+                      duration: Motion.dur(
+                        context,
+                        const Duration(milliseconds: 160),
+                      ),
+                      opacity: focused ? 1 : 0,
+                      child: ListenableBuilder(
+                        listenable: _controller,
+                        builder: (context, _) {
+                          final text = _controller.text;
+                          final count = (w.counterOf ?? (t) => t.length)(text);
+                          final low = w.warnLow && limit - count <= 10;
+                          return Container(
+                            height: 16,
+                            padding: const EdgeInsets.symmetric(horizontal: 6),
+                            color: fill,
+                            alignment: Alignment.center,
+                            child: Text(
+                              '$count/$limit',
+                              style: AppText.sans(
+                                size: 12,
+                                height: 16,
+                                weight: FontWeight.w500,
+                                tabular: true,
+                                color: low ? AppColors.error : AppColors.grey,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
     );
   }
+}
+
+/// Cuts text at [max] characters (like a length limit) and reports through
+/// [onOverflow] whether the edit tried to go past it.
+class _MaxLengthFormatter extends TextInputFormatter {
+  _MaxLengthFormatter(this.max, this.onOverflow);
+
+  final int max;
+  final ValueChanged<bool>? onOverflow;
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final over = newValue.text.characters.length > max;
+    if (onOverflow != null && over != _last) {
+      _last = over;
+      // Not during the framework's editing callback: tell the field after.
+      WidgetsBinding.instance.addPostFrameCallback((_) => onOverflow!(over));
+    }
+    if (!over) return newValue;
+    return LengthLimitingTextInputFormatter(max)
+        .formatEditUpdate(oldValue, newValue);
+  }
+
+  bool _last = false;
+}
+
+/// Holds the "went past the limit" flag of one [LabeledTextField].
+class _OverflowFlag extends StatefulWidget {
+  const _OverflowFlag({required this.builder});
+
+  final Widget Function(BuildContext context, bool over, ValueChanged<bool> set)
+  builder;
+
+  @override
+  State<_OverflowFlag> createState() => _OverflowFlagState();
+}
+
+class _OverflowFlagState extends State<_OverflowFlag> {
+  bool _over = false;
+
+  void _set(bool v) {
+    if (mounted && v != _over) setState(() => _over = v);
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.builder(context, _over, _set);
 }
 
 /// [AppField] + [AppTextField] in one widget for the common case: label,
@@ -387,10 +510,23 @@ class LabeledTextField extends StatelessWidget {
     this.autofillHints,
     this.textCapitalization = TextCapitalization.none,
     this.enabled = true,
+    this.labelTrailing,
+    this.warning,
+    this.onWarningTap,
   });
 
   final String label;
   final bool required;
+
+  /// At the right end of the label row (the Private / Public pill).
+  final Widget? labelTrailing;
+
+  /// A soft amber note (not an error) shown in the helper line when there is
+  /// no error, e.g. "Make sure your email domain is correct."
+  final String? warning;
+
+  /// Makes the [error] tappable (e.g. "Did you mean name@gmail.com?").
+  final VoidCallback? onWarningTap;
   final String? info;
   final bool? infoOpen;
   final VoidCallback? onInfoToggle;
@@ -428,17 +564,27 @@ class LabeledTextField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return _OverflowFlag(builder: _buildField);
+  }
+
+  Widget _buildField(BuildContext context, bool over, ValueChanged<bool> set) {
+    // Going past the character limit (a long paste) is an error too.
+    final shownError = (error != null && error!.isNotEmpty)
+        ? error
+        : (over && maxLength != null
+              ? 'Maximum $maxLength characters allowed.'
+              : null);
     Widget inner(String text) => AppField(
       label: label,
       required: required,
       info: info,
       infoOpen: infoOpen,
       onInfoToggle: onInfoToggle,
-      error: error,
+      error: shownError,
       hint: hint,
-      counter: maxLength != null && showCounter
-          ? '${(counterFrom ?? (t) => t.length)(text)}/$maxLength'
-          : null,
+      warning: warning,
+      onErrorTap: onWarningTap,
+      labelTrailing: labelTrailing,
       below: below,
       linkLabel: linkLabel,
       onLink: onLink,
@@ -459,7 +605,10 @@ class LabeledTextField extends StatelessWidget {
         suffix: suffix,
         password: password,
         valid: valid,
-        hasError: error != null && error!.isNotEmpty,
+        hasError: shownError != null && shownError.isNotEmpty,
+        onOverflow: set,
+        counterOf: counterFrom,
+        showCounter: showCounter,
         focusNode: focusNode,
         autofillHints: autofillHints,
         textCapitalization: textCapitalization,

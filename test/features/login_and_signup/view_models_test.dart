@@ -1,6 +1,8 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:startsa/app_constants/app_strings.dart';
+import 'package:startsa/app_constants/auth_strings.dart';
 import 'package:startsa/app_constants/validation_strings.dart';
 import 'package:startsa/data_access/device_services/profile_photo_picker_service.dart';
 import 'package:startsa/data_access/repositories/auth_repository.dart';
@@ -25,6 +27,7 @@ void _fillValid(SignupViewModel vm, {String email = 'sara@gmail.com'}) {
   vm.setCity('Riyadh');
   if (vm.isFounder) {
     vm.toggleSector('HealthTech');
+    vm.bio.text = 'I build health startups in Riyadh.';
   } else {
     vm.value.text = 'Introductions to venture capital firms.';
     vm.gain.text = 'Early access to good startups.';
@@ -65,7 +68,7 @@ void main() {
       addTearDown(vm.dispose);
       expect(await vm.submit(), isFalse);
       expect(vm.nameError, ValidationStrings.fullName);
-      expect(vm.emailError, ValidationStrings.emailLive);
+      expect(vm.emailError, ValidationStrings.emailRequired);
       expect(vm.phoneError, ValidationStrings.phoneRequired);
       expect(vm.cityError, ValidationStrings.city);
       expect(vm.sectorsError, ValidationStrings.sectors);
@@ -89,7 +92,7 @@ void main() {
       _fillValid(vm);
       vm.toggleSector('Other');
       expect(await vm.submit(), isFalse);
-      expect(vm.sectorsOtherError, ValidationStrings.otherChips('sector'));
+      expect(vm.sectorsOtherError, AuthStrings.sectorsOtherEmpty);
       vm.sectorsOther.text = 'SportsTech';
       expect(vm.isValid, isTrue);
     });
@@ -327,12 +330,44 @@ void main() {
     test('resend uses the credentials kept from step 1', () async {
       final vm = make();
       expect(await vm.resend(), ResendOutcome.sent);
+      // The 60 s cooldown has passed.
+      vm.flow.nextResendAt = DateTime.now().subtract(
+        const Duration(seconds: 1),
+      );
+      vm.refreshCountdown();
       auth.resendResult = ResendResult.alreadyVerified;
       expect(await vm.resend(), ResendOutcome.alreadyVerified);
       auth.resendFails = AuthFailure.tooManyRequests;
       expect(await vm.resend(), ResendOutcome.failed);
-      expect(vm.formError, isNotNull);
+      // Firebase's too-many-requests shows under the resend row.
+      expect(vm.resendError, AppStrings.resendTooMany);
       expect(auth.resendCalls, 3);
+    });
+
+    test(
+      'a sent email starts a 60 second cooldown that blocks resending',
+      () async {
+        final vm = make();
+        expect(vm.resendSeconds, 0);
+        expect(await vm.resend(), ResendOutcome.sent);
+        expect(vm.resendSeconds, inInclusiveRange(59, 60));
+        // Tapping again while it runs does nothing.
+        expect(await vm.resend(), ResendOutcome.failed);
+        expect(auth.resendCalls, 1);
+      },
+    );
+
+    test('the countdown follows the end time (background safe)', () {
+      final flow = SignupFlow(role: AccountRole.founder)
+        ..email = 'sara@gmail.com'
+        ..nextResendAt = DateTime.now().add(const Duration(seconds: 20));
+      final vm = VerifyEmailViewModel(flow: flow, authRepository: auth);
+      addTearDown(vm.dispose);
+      expect(vm.resendSeconds, inInclusiveRange(19, 20));
+      // The app was in the background past the end time.
+      flow.nextResendAt = DateTime.now().subtract(const Duration(seconds: 5));
+      vm.refreshCountdown();
+      expect(vm.resendSeconds, 0);
     });
   });
 

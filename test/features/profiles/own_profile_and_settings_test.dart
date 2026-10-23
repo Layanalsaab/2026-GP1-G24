@@ -22,6 +22,8 @@ const _founder = AppUser(
   email: 'shahad@gmail.com',
   city: 'Riyadh',
   phone: '551234567',
+  // Only the phone was made public at sign-up; the email stays private.
+  phonePublic: true,
   bio: 'Building Rafeeq Health.',
   sectorsOfInterest: ['HealthTech', 'Fintech'],
   linkedin: 'linkedin.com/in/shahad',
@@ -73,6 +75,7 @@ void main() {
         expect(find.text('Shahad Alabdulkarim'), findsOneWidget);
         expect(find.text('Edit profile'), findsOneWidget);
         expect(find.text('+966 55 123 4567'), findsOneWidget);
+        expect(find.text('shahad@gmail.com'), findsNothing);
         expect(find.text('My startups'), findsOneWidget);
 
         await _pump(t, const SettingsScreen(), size: size);

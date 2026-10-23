@@ -41,7 +41,6 @@ class InvestorCriteria {
     'Series A',
     'Series B',
     'Series C',
-    'Other',
   ];
 
   /// Longest "What do you look for in a startup?" text.

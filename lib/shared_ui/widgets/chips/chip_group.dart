@@ -129,11 +129,7 @@ class OtherWriteIn extends StatelessWidget {
             fontSize: 15,
             dense: true,
           ),
-          FieldHelperRow(
-            error: error,
-            hint: hasError ? null : 'Required',
-            counter: '${text.length}/$max',
-          ),
+          FieldHelperRow(error: error, hint: hasError ? null : 'Required'),
         ],
       );
     }

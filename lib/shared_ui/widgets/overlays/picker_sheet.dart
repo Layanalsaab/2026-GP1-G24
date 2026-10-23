@@ -168,7 +168,7 @@ class _PickerSheetState extends State<PickerSheet> {
             if (widget.searchHint != null)
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
-                child: _SearchField(
+                child: PickerSearchField(
                   controller: _query,
                   hint: widget.searchHint!,
                   onChanged: (_) => setState(() {}),
@@ -197,7 +197,7 @@ class _PickerSheetState extends State<PickerSheet> {
                   if (_otherOpen)
                     Padding(
                       padding: const EdgeInsets.only(top: 8),
-                      child: _OtherField(
+                      child: PickerOtherField(
                         controller: _other,
                         placeholder: 'Describe your other ${widget.otherNoun}',
                         max: widget.otherMax,
@@ -299,8 +299,10 @@ class _OptionRowState extends State<_OptionRow> {
   }
 }
 
-class _SearchField extends StatelessWidget {
-  const _SearchField({
+/// The grey search box at the top of a picker sheet.
+class PickerSearchField extends StatelessWidget {
+  const PickerSearchField({
+    super.key,
     required this.controller,
     required this.hint,
     required this.onChanged,
@@ -358,8 +360,9 @@ class _SearchField extends StatelessWidget {
 /// Tiny private text field for the "Other" write-in: white, 1 px
 /// `#8C918D` border radius 12 (moss600 + ring on focus, red when [error]),
 /// helper row "Required" / error on the left and `n/max` on the right.
-class _OtherField extends StatefulWidget {
-  const _OtherField({
+class PickerOtherField extends StatefulWidget {
+  const PickerOtherField({
+    super.key,
     required this.controller,
     required this.placeholder,
     required this.max,
@@ -374,10 +377,10 @@ class _OtherField extends StatefulWidget {
   final ValueChanged<String> onChanged;
 
   @override
-  State<_OtherField> createState() => _OtherFieldState();
+  State<PickerOtherField> createState() => PickerOtherFieldState();
 }
 
-class _OtherFieldState extends State<_OtherField> {
+class PickerOtherFieldState extends State<PickerOtherField> {
   final FocusNode _focus = FocusNode();
 
   @override

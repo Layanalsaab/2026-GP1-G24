@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../app_constants/founder_tools_strings.dart';
+import '../../../helpers/startup_validators.dart';
 import '../../../models/startup.dart';
 import '../../../models/startup_enums.dart';
 import '../view_models/startup_steps_view_model.dart';
@@ -90,19 +91,17 @@ class _Basics extends StatelessWidget {
     final r = await showPickerSheet(
       context,
       title: FounderToolsStrings.stageTitle,
-      options: [for (final s in StartupStage.values) s.label],
+      options: [for (final s in StartupStage.picks) s.label],
       selected: vm.stage?.label,
-      otherText: vm.stageOther.text,
-      otherNoun: FounderToolsStrings.stageNoun,
     );
-    if (r != null) vm.selectStage(r.value, r.otherText);
+    if (r != null) vm.selectStage(r.value);
   }
 
   Future<void> _pickModel(BuildContext context) async {
     final r = await showPickerSheet(
       context,
       title: FounderToolsStrings.modelTitle,
-      options: [for (final m in BusinessModel.values) m.label],
+      options: [for (final m in BusinessModel.picks) m.label],
       selected: vm.model?.label,
       otherText: vm.modelOther.text,
       otherNoun: FounderToolsStrings.modelNoun,
@@ -156,14 +155,6 @@ class _Basics extends StatelessWidget {
             ),
             _text(
               vm,
-              label: FounderToolsStrings.pitchLabel,
-              controller: vm.pitch,
-              hint: FounderToolsStrings.pitchHint,
-              max: Startup.pitchMax,
-              field: StartupField.pitch,
-            ),
-            _text(
-              vm,
               label: FounderToolsStrings.descriptionLabel,
               controller: vm.description,
               hint: FounderToolsStrings.descriptionHint,
@@ -194,20 +185,12 @@ class _Basics extends StatelessWidget {
             AppField(
               label: FounderToolsStrings.stageLabel,
               required: true,
-              error:
-                  vm.errorOf(StartupField.stage) ??
-                  vm.errorOf(StartupField.stageOther),
+              error: vm.errorOf(StartupField.stage),
               child: SelectField(
                 placeholder: FounderToolsStrings.stageHint,
                 semanticLabel: FounderToolsStrings.stageLabel,
-                value: vm.stage == null
-                    ? null
-                    : (vm.isStageOther
-                          ? SelectField.otherText(vm.stageOther.text)
-                          : vm.stage!.label),
-                hasError:
-                    vm.hasError(StartupField.stage) ||
-                    vm.hasError(StartupField.stageOther),
+                value: vm.stage?.label,
+                hasError: vm.hasError(StartupField.stage),
                 onTap: () => _pickStage(context),
               ),
             ),
@@ -260,9 +243,26 @@ class _Basics extends StatelessWidget {
               controller: vm.website,
               placeholder: FounderToolsStrings.websiteHint,
               maxLength: Startup.websiteMax,
-              showCounter: false,
+              valid:
+                  vm.website.text.trim().isNotEmpty &&
+                  vm.errorOf(StartupField.website) == null &&
+                  StartupValidators.isWebsite(vm.website.text),
               keyboardType: TextInputType.url,
               error: vm.errorOf(StartupField.website),
+            ),
+            AppField(
+              label: FounderToolsStrings.visibilityLabel,
+              child: ToggleCard(
+                icon: vm.isPublic ? AppIcons.globe : AppIcons.lock,
+                title: vm.isPublic
+                    ? FounderToolsStrings.visibilityPublicTitle
+                    : FounderToolsStrings.visibilityPrivateTitle,
+                description: vm.isPublic
+                    ? FounderToolsStrings.visibilityPublicText
+                    : FounderToolsStrings.visibilityPrivateText,
+                value: vm.isPublic,
+                onChanged: vm.setPublic,
+              ),
             ),
           ],
         ),
@@ -471,20 +471,6 @@ class _Funding extends StatelessWidget {
           otherController: vm.lookingForOther,
           otherHint: FounderToolsStrings.lookingForOtherHint,
           otherError: vm.errorOf(StartupField.lookingForOther),
-        ),
-        AppField(
-          label: FounderToolsStrings.visibilityLabel,
-          child: ToggleCard(
-            icon: vm.isPublic ? AppIcons.globe : AppIcons.lock,
-            title: vm.isPublic
-                ? FounderToolsStrings.visibilityPublicTitle
-                : FounderToolsStrings.visibilityPrivateTitle,
-            description: vm.isPublic
-                ? FounderToolsStrings.visibilityPublicText
-                : FounderToolsStrings.visibilityPrivateText,
-            value: vm.isPublic,
-            onChanged: vm.setPublic,
-          ),
         ),
       ],
     );

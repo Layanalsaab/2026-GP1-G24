@@ -41,6 +41,8 @@ class AppUser {
     this.valueOffered = '',
     this.sectorsOther,
     this.investorCriteria,
+    this.emailPublic = false,
+    this.phonePublic = false,
   });
 
   final String uid;
@@ -93,6 +95,10 @@ class AppUser {
   /// Investors: the answers to the sign-up questions (steps 3 and 4).
   final InvestorCriteria? investorCriteria;
 
+  /// Whether the profile shows the email / phone. Private by default.
+  final bool emailPublic;
+  final bool phonePublic;
+
   bool get isInvestor => role == AccountRole.investor;
   bool get isFounder => role == AccountRole.founder;
 
@@ -137,6 +143,8 @@ class AppUser {
     String? valueOffered,
     String? sectorsOther,
     InvestorCriteria? investorCriteria,
+    bool? emailPublic,
+    bool? phonePublic,
   }) => AppUser(
     uid: uid,
     role: role,
@@ -157,6 +165,8 @@ class AppUser {
     valueOffered: valueOffered ?? this.valueOffered,
     sectorsOther: sectorsOther ?? this.sectorsOther,
     investorCriteria: investorCriteria ?? this.investorCriteria,
+    emailPublic: emailPublic ?? this.emailPublic,
+    phonePublic: phonePublic ?? this.phonePublic,
   );
 
   /// Returns null when the document is missing a valid role, so callers never
@@ -189,6 +199,8 @@ class AppUser {
       investorCriteria:
           InvestorCriteria.fromFields(data) ??
           InvestorCriteria.fromMap(data[UserFields.investorCriteria]),
+      emailPublic: data[UserFields.emailPublic] == true,
+      phonePublic: data[UserFields.phonePublic] == true,
     );
   }
 

@@ -90,6 +90,48 @@ class SignupViewModel extends ChangeNotifier with SafeNotifier {
   final Set<String> sectors = {};
   File? photo;
 
+  /// Whether the email / phone are shown on the profile. Private by default;
+  /// the Private / Public pill switches them with one tap.
+  bool emailPublic = false;
+  bool phonePublic = false;
+
+  void setEmailPublic(bool v) {
+    emailPublic = v;
+    notifyListeners();
+  }
+
+  void setPhonePublic(bool v) {
+    phonePublic = v;
+    notifyListeners();
+  }
+
+  /// True when the user has typed or picked anything (the discard dialog is
+  /// only needed then).
+  bool get hasInput =>
+      _controllers.any((c) => c.text.trim().isNotEmpty) ||
+      (city ?? '').isNotEmpty ||
+      sectors.isNotEmpty ||
+      photo != null ||
+      emailPublic ||
+      phonePublic;
+
+  /// Clears the whole form ("Discard" in the leave dialog).
+  void reset() {
+    for (final c in _controllers) {
+      c.clear();
+    }
+    city = null;
+    sectors.clear();
+    photo = null;
+    emailPublic = false;
+    phonePublic = false;
+    attempted = false;
+    passwordTouched = false;
+    formError = null;
+    _serverEmailError = null;
+    notifyListeners();
+  }
+
   /// True after the first tap on Continue: every error then shows.
   bool attempted = false;
   bool isLoading = false;
@@ -117,12 +159,14 @@ class SignupViewModel extends ChangeNotifier with SafeNotifier {
       Validators.fullNameLive(name.text) ??
       (attempted ? Validators.fullName(name.text) : null);
 
-  /// Live once something is typed; after a submit also when empty.
+  /// Live once something is typed; after a submit also when empty. The
+  /// domain must be a common provider (.com) or a university address; a
+  /// misspelled domain is simply "not valid" (no correction is offered).
   String? get emailError {
     if (_serverEmailError != null) return _serverEmailError;
     final v = email.text.trim();
-    if (v.isEmpty) return attempted ? ValidationStrings.emailLive : null;
-    return Validators.isEmail(v) ? null : ValidationStrings.emailLive;
+    if (v.isEmpty) return attempted ? ValidationStrings.emailRequired : null;
+    return Validators.isSignupEmail(v) ? null : ValidationStrings.emailLive;
   }
 
   String? get phoneError =>
@@ -149,8 +193,15 @@ class SignupViewModel extends ChangeNotifier with SafeNotifier {
           isFounder &&
           sectors.contains(otherLabel) &&
           !Validators.isOtherText(sectorsOther.text)
-      ? ValidationStrings.otherChips(AuthStrings.nounSector)
+      ? AuthStrings.sectorsOtherEmpty
       : null;
+
+  /// Founders: the bio is required (the investor bio stays optional).
+  String? get bioError => attempted && isFounder && bio.text.trim().isEmpty
+      ? ValidationStrings.bioRequired
+      : null;
+
+  int get bioMax => isFounder ? Validators.maxFounderBio : Validators.maxBio;
 
   /// "What value can you bring to startups?" (investors): required.
   String? get valueError => attempted && !isFounder
@@ -167,19 +218,19 @@ class SignupViewModel extends ChangeNotifier with SafeNotifier {
         (!sectors.contains(otherLabel) ||
             Validators.isOtherText(sectorsOther.text));
     return Validators.isFullName(name.text) &&
-        Validators.isEmail(email.text) &&
+        Validators.isSignupEmail(email.text) &&
         Validators.isPhone(phone.text) &&
         Validators.isLinkedin(linkedin.text) &&
         Validators.isPassword(password.text) &&
         Validators.confirmMatches(password.text, confirm.text) &&
         (city ?? '').trim().isNotEmpty &&
         (isFounder
-            ? founderOk
+            ? founderOk && bio.text.trim().isNotEmpty
             : gain.text.trim().isNotEmpty && value.text.trim().isNotEmpty);
   }
 
   bool get nameValid => Validators.isFullName(name.text);
-  bool get emailValid => Validators.isEmail(email.text);
+  bool get emailValid => Validators.isSignupEmail(email.text);
   bool get phoneValid => Validators.isPhone(phone.text);
   bool get linkedinValid =>
       linkedin.text.trim().isNotEmpty && Validators.isLinkedin(linkedin.text);
@@ -199,8 +250,9 @@ class SignupViewModel extends ChangeNotifier with SafeNotifier {
     notifyListeners();
   }
 
-  /// Taps on the photo picker: removes the photo when there is one, else
-  /// picks and crops a square photo. Returns the toast to show, or null.
+  /// Investor sign-up (unchanged): taps on the round photo picker remove the
+  /// photo when there is one, else pick and crop a square photo. Returns the
+  /// toast to show, or null.
   Future<String?> togglePhoto() async {
     if (photo != null) {
       photo = null;
@@ -213,6 +265,25 @@ class SignupViewModel extends ChangeNotifier with SafeNotifier {
       photo = file;
       notifyListeners();
       return AuthStrings.photoAdded;
+    } on ProfilePhotoException catch (e) {
+      return e.failure == ProfilePhotoFailure.tooLarge
+          ? AccountStrings.photoTooLarge
+          : AccountStrings.photoFailed;
+    } catch (_) {
+      return AccountStrings.photoFailed;
+    }
+  }
+
+  /// Picks and crops a square photo (the same button changes it later).
+  /// Returns an error message to show in a toast, or null: picking a photo
+  /// shows no toast, the square simply shows the photo.
+  Future<String?> pickPhoto() async {
+    try {
+      final file = await _picker.pickSquarePhoto();
+      if (file == null) return null;
+      photo = file;
+      notifyListeners();
+      return null;
     } on ProfilePhotoException catch (e) {
       return e.failure == ProfilePhotoFailure.tooLarge
           ? AccountStrings.photoTooLarge
@@ -275,6 +346,8 @@ class SignupViewModel extends ChangeNotifier with SafeNotifier {
         gain: isFounder ? null : gain.text.trim(),
         valueOffered: isFounder ? null : value.text.trim(),
         photo: photo,
+        emailPublic: emailPublic,
+        phonePublic: phonePublic,
       );
       // An earlier attempt that was never verified (the app was closed or
       // refreshed) left an unverified account behind. With the same password
@@ -297,6 +370,9 @@ class SignupViewModel extends ChangeNotifier with SafeNotifier {
         ..email = mail
         ..password = pw
         ..emailSent = result.verificationEmailSent
+        ..nextResendAt = result.verificationEmailSent
+            ? DateTime.now().add(const Duration(seconds: 60))
+            : null
         ..createdRole = role
         ..accountCreated = true;
       return true;

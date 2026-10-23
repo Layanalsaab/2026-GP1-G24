@@ -94,7 +94,7 @@ class _StartupProfileScreenState extends State<StartupProfileScreen> {
               GlassIconButton.share(onTap: () => ProfileActions.share(context)),
           ],
           avatar: HeaderAvatarTile(initials: s.initials),
-          pitch: _vm.pitch.isEmpty ? null : _vm.pitch,
+          // The brief description is shown once, in About.
           infoLine: _vm.infoLine,
           metaLeft: _vm.website.isEmpty
               ? null

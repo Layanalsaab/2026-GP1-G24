@@ -117,6 +117,34 @@ class InfoTip extends StatelessWidget {
 /// screen-reader "(required)"); the whole label turns red when [hasError].
 /// An inline [InfoButton] is added when [onInfoTap] is set.
 class FieldLabel extends StatelessWidget {
+  /// Words kept lower-case inside a title (unless they come first).
+  static const _small = {
+    'a', 'an', 'the', 'and', 'or', 'but', 'nor', 'of', 'in', 'on', 'at', //
+    'to', 'for', 'by', 'with', 'as', 'per', 'vs',
+  };
+
+  /// "Which city are you in?" -> "Which City Are You in?". Every field name
+  /// is shown in title case: each word starts with a capital, except small
+  /// joining words; words that already have inner capitals or digits
+  /// (LinkedIn, TAM, Year 1) are left alone.
+  static String titleCase(String text) {
+    String cap(String w) {
+      final i = w.indexOf(RegExp(r'[A-Za-zÀ-ɏ]'));
+      if (i < 0) return w;
+      final rest = w.substring(i + 1);
+      if (rest.contains(RegExp(r'[A-Z0-9]'))) return w; // LinkedIn, TAM
+      return w.substring(0, i) + w[i].toUpperCase() + rest;
+    }
+
+    final words = text.split(' ');
+    for (var n = 0; n < words.length; n++) {
+      final bare = words[n].replaceAll(RegExp(r'[^A-Za-z]'), '').toLowerCase();
+      if (n > 0 && _small.contains(bare)) continue;
+      words[n] = words[n].split('-').map(cap).join('-');
+    }
+    return words.join(' ');
+  }
+
   const FieldLabel(
     this.label, {
     super.key,
@@ -142,7 +170,7 @@ class FieldLabel extends StatelessWidget {
       TextSpan(
         style: style,
         children: [
-          TextSpan(text: label),
+          TextSpan(text: titleCase(label)),
           if (required) ...[
             const WidgetSpan(child: SizedBox(width: 2)),
             TextSpan(
@@ -184,63 +212,104 @@ class FieldLabel extends StatelessWidget {
   }
 }
 
-/// The helper row under a field (12/16): the error on the left (red, 14 px
-/// error icon, gap 4) or the hint (grey), and the counter ("12/50") on the
-/// right. Renders nothing when all three are empty.
+/// The helper row under a field. It is ALWAYS reserved: 4 px under the
+/// control, min height 18, empty or not, so the distance from one control to
+/// the next label is the same on every form (8 + 18 + 2 = 28 px).
+///
+/// Holds the error on the left (red, 14 px error icon, gap 4) or the hint
+/// (grey), and on the right the counter ("12/50") or a field link such as
+/// "Forgot password?" ([linkLabel] + [onLink]).
 class FieldHelperRow extends StatelessWidget {
-  const FieldHelperRow({super.key, this.error, this.hint, this.counter});
+  const FieldHelperRow({
+    super.key,
+    this.error,
+    this.hint,
+    this.counter,
+    this.linkLabel,
+    this.onLink,
+    this.warning,
+    this.onErrorTap,
+  });
+
+  /// Soft amber note shown in place of the hint when there is no error.
+  final String? warning;
+
+  /// Makes the error text tappable ("Did you mean name@gmail.com?").
+  final VoidCallback? onErrorTap;
+
+  /// Height of the helper line (excluding the 4 px above it).
+  static const double lineHeight = 18;
+
+  /// Gap between the helper line and the next field's label.
+  static const double gapAfter = 2;
 
   final String? error;
   final String? hint;
   final String? counter;
+  final String? linkLabel;
+  final VoidCallback? onLink;
 
   @override
   Widget build(BuildContext context) {
     final hasError = error != null && error!.isNotEmpty;
     final hasHint = hint != null && hint!.isNotEmpty;
     final hasCounter = counter != null && counter!.isNotEmpty;
-    if (!hasError && !hasHint && !hasCounter) return const SizedBox.shrink();
+    final hasLink = linkLabel != null;
+    final hasWarning = !hasError && warning != null && warning!.isNotEmpty;
     return Padding(
-      padding: const EdgeInsets.only(top: 6),
-      child: LayoutBuilder(
-        builder: (context, box) {
-          // An error that would wrap only because of the counter keeps its one
-          // line: the counter steps aside while the error is showing.
-          var showCounter = hasCounter;
-          if (hasError && hasCounter) {
-            final scaler = MediaQuery.textScalerOf(context);
-            double width(String t, TextStyle st) {
-              final tp = TextPainter(
-                text: TextSpan(text: t, style: st),
-                textDirection: TextDirection.ltr,
-                textScaler: scaler,
-              )..layout();
-              return tp.width;
-            }
+      // 8 px of air under the control; a line with a link ("Forgot password?")
+      // is taller so the 14/20 text is not cut off.
+      padding: const EdgeInsets.only(top: 8),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(minHeight: hasLink ? 28 : lineHeight),
+        child: LayoutBuilder(
+          builder: (context, box) {
+            // An error that would wrap only because of the counter keeps its
+            // one line: the counter steps aside while the error is showing.
+            var showCounter = hasCounter && !hasLink;
+            if (hasError && showCounter) {
+              final scaler = MediaQuery.textScalerOf(context);
+              double width(String t, TextStyle st) {
+                final tp = TextPainter(
+                  text: TextSpan(text: t, style: st),
+                  textDirection: TextDirection.ltr,
+                  textScaler: scaler,
+                )..layout();
+                return tp.width;
+              }
 
-            final errorW = 18 + width(error!, AppText.error);
-            final counterW = 8 + width(counter!, AppText.helper);
-            final fitsAlone = errorW <= box.maxWidth;
-            if (fitsAlone && errorW + counterW > box.maxWidth) {
-              showCounter = false;
+              final errorW = 18 + width(error!, AppText.error);
+              final counterW = 8 + width(counter!, AppText.helper);
+              final fitsAlone = errorW <= box.maxWidth;
+              if (fitsAlone && errorW + counterW > box.maxWidth) {
+                showCounter = false;
+              }
             }
-          }
-          return _row(hasError, hasHint, showCounter);
-        },
+            return _row(hasError, hasHint, showCounter, hasLink, hasWarning);
+          },
+        ),
       ),
     );
   }
 
-  Widget _row(bool hasError, bool hasHint, bool hasCounter) {
-    return Padding(
-      padding: EdgeInsets.zero,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Expanded(
-            child: hasError
-                ? Semantics(
-                    liveRegion: true,
+  Widget _row(
+    bool hasError,
+    bool hasHint,
+    bool hasCounter,
+    bool hasLink,
+    bool hasWarning,
+  ) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Expanded(
+          child: hasError
+              ? Semantics(
+                  liveRegion: true,
+                  button: onErrorTap != null,
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: onErrorTap,
                     child: Row(
                       children: [
                         AppIcon.filled(
@@ -249,20 +318,73 @@ class FieldHelperRow extends StatelessWidget {
                           color: AppColors.error,
                         ),
                         const SizedBox(width: 4),
-                        Flexible(child: Text(error!, style: AppText.error)),
+                        Flexible(
+                          child: Text(
+                            error!,
+                            style: onErrorTap == null
+                                ? AppText.error
+                                : AppText.error.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                    decoration: TextDecoration.underline,
+                                    decorationColor: AppColors.error,
+                                  ),
+                          ),
+                        ),
                       ],
                     ),
-                  )
-                : hasHint
-                ? Text(hint!, style: AppText.helper)
-                : const SizedBox.shrink(),
+                  ),
+                )
+              : hasWarning
+              ? Semantics(
+                  liveRegion: true,
+                  child: Row(
+                    children: [
+                      AppIcon.filled(
+                        AppIcons.warn,
+                        size: 14,
+                        color: AppColors.warning,
+                      ),
+                      const SizedBox(width: 4),
+                      Flexible(
+                        child: Text(
+                          warning!,
+                          style: AppText.helper.copyWith(
+                            color: AppColors.warning,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              : hasHint
+              ? Text(hint!, style: AppText.helper)
+              : const SizedBox.shrink(),
+        ),
+        if (hasLink) ...[
+          const SizedBox(width: 8),
+          Semantics(
+            button: true,
+            label: linkLabel,
+            excludeSemantics: true,
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: onLink,
+              // The 14/20 link, centered in its 28 px line (also a bigger tap area).
+              child: SizedBox(
+                height: 28,
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  widthFactor: 1,
+                  child: Text(linkLabel!, style: AppText.link),
+                ),
+              ),
+            ),
           ),
-          if (hasCounter) ...[
-            const SizedBox(width: 8),
-            Text(counter!, style: AppText.helper),
-          ],
+        ] else if (hasCounter) ...[
+          const SizedBox(width: 8),
+          Text(counter!, style: AppText.helper),
         ],
-      ),
+      ],
     );
   }
 }
@@ -274,7 +396,8 @@ class FieldHelperRow extends StatelessWidget {
 /// left, [counter] right) and an optional right-aligned link
 /// ("Forgot password?" via [linkLabel] + [onLink]).
 ///
-/// Stack fields with a 20 px gap (`FormFieldColumn`). The info tip is
+/// Stack fields with [FormFieldColumn] (6 px gap after the always-reserved
+/// helper line = 28 px from one control to the next label). The info tip is
 /// controlled with [infoOpen] + [onInfoToggle] (so a screen can keep only one
 /// open); leave [infoOpen] null to let the field manage it itself.
 class AppField extends StatefulWidget {
@@ -293,10 +416,23 @@ class AppField extends StatefulWidget {
     this.below,
     this.linkLabel,
     this.onLink,
+    this.labelTrailing,
+    this.warning,
+    this.onErrorTap,
   });
+
+  /// Soft amber note (not an error), shown when there is no [error].
+  final String? warning;
+
+  /// Makes the [error] line tappable.
+  final VoidCallback? onErrorTap;
 
   final Widget child;
   final String? label;
+
+  /// Shown at the right end of the label row (e.g. the Private / Public
+  /// pill). It may be taller than the label: the row stays 20 px high.
+  final Widget? labelTrailing;
   final bool required;
 
   /// Tip text; presence adds the "i" button.
@@ -360,23 +496,48 @@ class _AppFieldState extends State<AppField> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (widget.label != null) ...[
-          Align(
-            alignment: Alignment.centerLeft,
-            child: FieldLabel(
-              widget.label!,
-              required: widget.required,
-              hasError: hasError,
-              onInfoTap: hasInfo ? _toggle : null,
-              infoOpen: tipOpen,
+          if (widget.labelTrailing == null)
+            Align(
+              alignment: Alignment.centerLeft,
+              child: FieldLabel(
+                widget.label!,
+                required: widget.required,
+                hasError: hasError,
+                onInfoTap: hasInfo ? _toggle : null,
+                infoOpen: tipOpen,
+              ),
+            )
+          else
+            // The trailing widget (the Private / Public pill) is taller than
+            // the 20 px label line, so it hangs over it: the row stays 20 px
+            // high and the spacing between fields never changes.
+            SizedBox(
+              height: 20,
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: FieldLabel(
+                      widget.label!,
+                      required: widget.required,
+                      hasError: hasError,
+                      onInfoTap: hasInfo ? _toggle : null,
+                      infoOpen: tipOpen,
+                    ),
+                  ),
+                  Positioned(right: 0, top: -3, child: widget.labelTrailing!),
+                ],
+              ),
             ),
-          ),
-          // The sub-text has a -2 top margin in the prototype.
-          SizedBox(height: widget.subLabel != null && !tipOpen ? 4 : 6),
+          // Label -> control is always 8 px (the sub-text, when present,
+          // sits between them).
+          SizedBox(height: widget.subLabel != null && !tipOpen ? 2 : 8),
         ],
         if (tipOpen) InfoTip(widget.info!),
         if (widget.subLabel != null)
           Padding(
-            padding: const EdgeInsets.only(bottom: 10),
+            padding: const EdgeInsets.only(bottom: 8),
             child: Text(widget.subLabel!, style: AppText.helper),
           ),
         widget.child,
@@ -385,37 +546,25 @@ class _AppFieldState extends State<AppField> {
           error: widget.error,
           hint: widget.hint,
           counter: widget.counter,
+          linkLabel: widget.linkLabel,
+          onLink: widget.onLink,
+          warning: widget.warning,
+          onErrorTap: widget.onErrorTap,
         ),
-        if (widget.linkLabel != null)
-          Align(
-            alignment: Alignment.centerRight,
-            child: Padding(
-              padding: const EdgeInsets.only(top: 10),
-              child: Semantics(
-                button: true,
-                label: widget.linkLabel,
-                excludeSemantics: true,
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: widget.onLink,
-                  child: Text(widget.linkLabel!, style: AppText.link),
-                ),
-              ),
-            ),
-          ),
       ],
     );
   }
 }
 
-/// A column of fields with the documented 20 px gap and the form block
-/// padding `20 16 24` (override [padding] when needed).
+/// A column of fields: the form card padding `28 16 16` and a 6 px gap (the
+/// helper line of every [AppField] is always reserved, so control -> next
+/// label is always 28 px). Never add ad-hoc spacing between fields.
 class FormFieldColumn extends StatelessWidget {
   const FormFieldColumn({
     super.key,
     required this.children,
-    this.padding = const EdgeInsets.fromLTRB(16, 20, 16, 24),
-    this.gap = 20,
+    this.padding = const EdgeInsets.fromLTRB(16, 28, 16, 16),
+    this.gap = FieldHelperRow.gapAfter,
   });
 
   final List<Widget> children;

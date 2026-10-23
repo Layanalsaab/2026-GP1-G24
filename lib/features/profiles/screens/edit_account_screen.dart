@@ -8,6 +8,7 @@ import '../../../app_constants/app_strings.dart';
 import '../../../app_constants/profile_strings.dart';
 import '../../../data_access/device_services/profile_photo_picker_service.dart';
 import '../../../helpers/app_session.dart';
+import '../../../helpers/validators.dart';
 import '../../../models/app_user.dart';
 import '../../../shared_ui/icons/app_icons.dart';
 import '../../../shared_ui/motion/motion.dart';
@@ -63,9 +64,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       AppToast.show(context, ProfileStrings.profileSaved);
       AppNav.back(context, updated);
     } else if (_vm.formError != null) {
-      AppToast.show(context, _vm.formError!);
+      AppToast.error(context, _vm.formError!);
     } else {
-      AppToast.show(context, ProfileStrings.fixFields);
+      AppToast.error(context, ProfileStrings.fixFields);
     }
   }
 
@@ -118,7 +119,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       if (file != null) _vm.pickPhoto(file);
     } on ProfilePhotoException catch (e) {
       if (mounted) {
-        AppToast.show(
+        AppToast.error(
           context,
           e.failure == ProfilePhotoFailure.tooLarge
               ? AccountStrings.photoTooLarge
@@ -162,7 +163,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           onTap: _photo,
                         ),
                         FormFieldColumn(
-                          padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
                           children: [
                             LabeledTextField(
                               label: ProfileStrings.fullName,
@@ -177,7 +177,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                               label: ProfileStrings.bio,
                               value: _vm.bio,
                               onChanged: _vm.setBio,
-                              maxLength: 1000,
+                              maxLength: u.isFounder
+                                  ? Validators.maxFounderBio
+                                  : Validators.maxBio,
                               multiline: true,
                             ),
                             AppField(

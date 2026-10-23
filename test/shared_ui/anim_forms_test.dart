@@ -467,7 +467,6 @@ void main() {
       ctx,
       builder: (c) => VerifyEmailDialog(
         email: 'a@b.sa',
-        onResend: () {},
         onClose: () => Navigator.of(c).pop(),
       ),
     );

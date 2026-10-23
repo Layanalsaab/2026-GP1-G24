@@ -134,6 +134,8 @@ class FakeUserRepository implements UserRepository {
     String? linkedin,
     String? gain,
     String? valueOffered,
+    bool emailPublic = false,
+    bool phonePublic = false,
   }) async {
     if (createFails) throw const AuthException(AuthFailure.unknown);
     profiles[uid] = AppUser(
@@ -310,6 +312,8 @@ class FakeAuthRepository implements AuthRepository {
     String? gain,
     String? valueOffered,
     File? photo,
+    bool emailPublic = false,
+    bool phonePublic = false,
   }) async {
     signUpCalls++;
     lastSignUpPhoto = photo;

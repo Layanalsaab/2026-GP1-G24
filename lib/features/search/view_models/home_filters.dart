@@ -46,7 +46,7 @@ class HomeFilters {
   /// The options are the same lists the forms use, so every stored value
   /// can be found.
   static final _sectors = [for (final v in Sector.values) v.label];
-  static final _stages = [for (final v in StartupStage.values) v.label];
+  static final _stages = [for (final v in StartupStage.picks) v.label];
   static final _cities = List<String>.of(AppStrings.allCities);
   static const _raising = [
     'Under SAR 250K',
@@ -123,8 +123,7 @@ class HomeFilters {
           ], field: HomeFilterField.looking),
           HomeFilterGroup('Raising', _raising, field: HomeFilterField.raising),
           HomeFilterGroup('Commerce model', [
-            for (final v in BusinessModel.values)
-              if (v != BusinessModel.other) v.shortLabel,
+            for (final v in BusinessModel.picks) v.shortLabel,
           ], field: HomeFilterField.model),
           HomeFilterGroup('City', _cities, field: HomeFilterField.city),
           _sort,

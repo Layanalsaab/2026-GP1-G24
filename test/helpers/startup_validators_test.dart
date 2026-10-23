@@ -8,7 +8,6 @@ void main() {
 
   test('required text fields show the prototype copy', () {
     expect(StartupValidators.name(' '), ValidationStrings.startupName);
-    expect(StartupValidators.pitch(''), ValidationStrings.startupPitch);
     expect(
       StartupValidators.description(''),
       ValidationStrings.startupDescription,

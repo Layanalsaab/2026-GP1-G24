@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../../app_constants/app_strings.dart';
@@ -39,6 +41,49 @@ class VerifyEmailViewModel extends ChangeNotifier with SafeNotifier {
       email = TextEditingController(text: flow.email) {
     email.addListener(_edited);
     password.addListener(_edited);
+    _tick();
+    _startTimer();
+  }
+
+  /// The resend cooldown after a verification email was sent.
+  static const resendCooldown = Duration(seconds: 60);
+
+  Timer? _timer;
+
+  /// Seconds left before "Resend email" turns on (0 = available). Always
+  /// derived from [SignupFlow.nextResendAt], never counted down by hand, so
+  /// it is right after the app returns from the background.
+  int resendSeconds = 0;
+
+  /// The "Too many attempts" line under the resend row.
+  String? resendError;
+
+  void _tick() {
+    final at = flow.nextResendAt;
+    final left = at == null
+        ? 0
+        : (at.difference(DateTime.now()).inMilliseconds / 1000).ceil();
+    final next = left < 0 ? 0 : left;
+    if (next != resendSeconds) {
+      resendSeconds = next;
+      notifyListeners();
+    }
+    if (next == 0) {
+      _timer?.cancel();
+      _timer = null;
+    }
+  }
+
+  void _startTimer() {
+    _timer?.cancel();
+    if (resendSeconds <= 0) return;
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) => _tick());
+  }
+
+  /// Re-syncs after the app comes back to the foreground.
+  void refreshCountdown() {
+    _tick();
+    if (resendSeconds > 0 && _timer == null) _startTimer();
   }
 
   final SignupFlow flow;
@@ -134,20 +179,29 @@ class VerifyEmailViewModel extends ChangeNotifier with SafeNotifier {
   /// Sends a new link with the credentials kept in memory from step 1.
   Future<ResendOutcome> resend() async {
     if (isResending) return ResendOutcome.failed;
+    if (resendSeconds > 0) return ResendOutcome.failed;
     isResending = true;
     formError = null;
+    resendError = null;
     notifyListeners();
     try {
       final result = await _auth.resendVerification(flow.email, flow.password);
-      return result == ResendResult.sent
-          ? ResendOutcome.sent
-          : ResendOutcome.alreadyVerified;
+      if (result == ResendResult.sent) {
+        flow.nextResendAt = DateTime.now().add(resendCooldown);
+        _tick();
+        _startTimer();
+        return ResendOutcome.sent;
+      }
+      return ResendOutcome.alreadyVerified;
     } on AuthException catch (e) {
-      formError = switch (e.failure) {
-        AuthFailure.network => AppStrings.networkError,
-        AuthFailure.tooManyRequests => AppStrings.tooManyRequests,
-        _ => AppStrings.genericError,
-      };
+      if (e.failure == AuthFailure.tooManyRequests) {
+        resendError = AppStrings.resendTooMany;
+      } else {
+        formError = switch (e.failure) {
+          AuthFailure.network => AppStrings.networkError,
+          _ => AppStrings.genericError,
+        };
+      }
       return ResendOutcome.failed;
     } catch (_) {
       formError = AppStrings.genericError;
@@ -160,6 +214,7 @@ class VerifyEmailViewModel extends ChangeNotifier with SafeNotifier {
 
   @override
   void dispose() {
+    _timer?.cancel();
     email.removeListener(_edited);
     password.removeListener(_edited);
     email.dispose();

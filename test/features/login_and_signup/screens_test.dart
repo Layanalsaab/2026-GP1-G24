@@ -15,6 +15,7 @@ import 'package:startsa/models/app_user.dart';
 import 'package:startsa/models/auth_failure.dart';
 import 'package:startsa/shared_ui/widgets/forms/app_field.dart';
 import 'package:startsa/shared_ui/widgets/overlays/app_toast.dart';
+import 'package:startsa/shared_ui/widgets/overlays/multi_picker_sheet.dart';
 
 import '../../support/fakes.dart';
 
@@ -201,11 +202,246 @@ void main() {
     });
   });
 
+  group('founder sign-up redesign', () {
+    Future<void> openFounder(WidgetTester t) => _pump(
+      t,
+      SignupScreen(
+        role: AccountRole.founder,
+        flow: SignupFlow(role: AccountRole.founder),
+      ),
+    );
+
+    testWidgets('no log-in footer, a photo row and private pills', (t) async {
+      await openFounder(t);
+      expect(find.textContaining('Already have an account?'), findsNothing);
+      expect(find.text('Profile photo'), findsOneWidget);
+      expect(find.text('Upload photo'), findsOneWidget);
+      expect(find.text('Private'), findsNWidgets(2));
+      await t.tap(find.text('Private').first);
+      await t.pump(const Duration(milliseconds: 300));
+      expect(find.text('Public'), findsOneWidget);
+      expect(find.text('Private'), findsOneWidget);
+    });
+
+    testWidgets('the investor sign-up keeps its footer and round picker', (
+      t,
+    ) async {
+      await _pump(
+        t,
+        SignupScreen(
+          role: AccountRole.investor,
+          flow: SignupFlow(role: AccountRole.investor),
+        ),
+      );
+      expect(find.textContaining('Already have an account?'), findsOneWidget);
+      expect(find.text('Add profile photo'), findsOneWidget);
+      expect(find.text('Private'), findsNothing);
+    });
+
+    testWidgets('bio is required for founders', (t) async {
+      await openFounder(t);
+      await t.tap(find.text('Continue'));
+      await t.pump(const Duration(milliseconds: 500));
+      expect(find.text('Please write a short bio.'), findsOneWidget);
+      expect(find.text('Select at least one sector.'), findsOneWidget);
+      await t.pump(const Duration(seconds: 3));
+    });
+
+    testWidgets('sectors open a checklist sheet with search and Done', (
+      t,
+    ) async {
+      await openFounder(t);
+      await t.ensureVisible(find.text('Select sectors'));
+      await t.tap(find.text('Select sectors'));
+      await t.pump(const Duration(milliseconds: 100));
+      await t.pump(const Duration(milliseconds: 600));
+      expect(find.text('Search sectors'), findsOneWidget);
+      expect(find.text('Done'), findsOneWidget);
+      await t.tap(find.text('HealthTech'));
+      await t.pump(const Duration(milliseconds: 300));
+      await t.tap(find.text('Fintech'));
+      await t.pump(const Duration(milliseconds: 300));
+      await t.tap(find.text('Done'));
+      await t.pump(const Duration(milliseconds: 600));
+      expect(find.text('HealthTech, Fintech'), findsOneWidget);
+      expect(find.textContaining('2 selected'), findsOneWidget);
+      expect(t.takeException(), isNull);
+    });
+
+    testWidgets('Other needs a write-in; closing the sheet blank unticks it', (
+      t,
+    ) async {
+      await openFounder(t);
+      await t.ensureVisible(find.text('Select sectors'));
+      await t.tap(find.text('Select sectors'));
+      await t.pump(const Duration(milliseconds: 100));
+      await t.pump(const Duration(milliseconds: 600));
+      final other = find.text('Other');
+      await t.scrollUntilVisible(
+        other,
+        300,
+        scrollable: find.descendant(
+          of: find.descendant(
+            of: find.byType(MultiPickerSheet),
+            matching: find.byType(ListView),
+          ),
+          matching: find.byType(Scrollable),
+        ),
+      );
+      await t.tap(other);
+      await t.pump(const Duration(milliseconds: 300));
+      expect(
+        find.widgetWithText(TextField, 'Type your sector, e.g. SportsTech'),
+        findsOneWidget,
+      );
+      await t.tap(find.text('Done'));
+      await t.pump(const Duration(milliseconds: 300));
+      expect(
+        find.text('Please type your sector — it can’t be blank.'),
+        findsOneWidget,
+      );
+      // Tap outside: the sheet closes and Other is unticked again.
+      await t.tapAt(const Offset(200, 20));
+      await t.pump(const Duration(milliseconds: 100));
+      await t.pump(const Duration(milliseconds: 600));
+      expect(find.text('Select sectors'), findsOneWidget);
+      expect(find.textContaining('0 selected'), findsOneWidget);
+    });
+
+    testWidgets('a misspelled or unknown domain is simply not valid', (
+      t,
+    ) async {
+      await openFounder(t);
+      final email = find.widgetWithText(TextField, 'e.g. example@gmail.com');
+      for (final bad in [
+        'sara@gmial.com',
+        'sara@mycompany.sa',
+        'sara@gmail.co',
+      ]) {
+        await t.enterText(email, bad);
+        await t.pump();
+        expect(
+          find.text('Enter a valid email, like name@example.com'),
+          findsOneWidget,
+          reason: bad,
+        );
+        expect(find.textContaining('Did you mean'), findsNothing);
+        expect(find.textContaining('Make sure your email'), findsNothing);
+      }
+      await t.enterText(email, 'sara@student.ksu.edu.sa');
+      await t.pump();
+      expect(find.textContaining('Enter a valid email'), findsNothing);
+    });
+
+    testWidgets('leaving with something typed asks first', (t) async {
+      await openFounder(t);
+      await t.enterText(
+        find.widgetWithText(TextField, 'e.g. Mohammed Ahmed'),
+        'Sara Ali',
+      );
+      await t.pump();
+      await t.tap(find.bySemanticsLabel('Back').first);
+      await t.pump(const Duration(milliseconds: 500));
+      expect(find.text('Discard sign-up?'), findsOneWidget);
+      expect(
+        find.text(
+          'If you go back now, the details you entered will be deleted.',
+        ),
+        findsOneWidget,
+      );
+      // Keep editing leaves the data alone.
+      await t.tap(find.text('Keep editing'));
+      await t.pump(const Duration(milliseconds: 500));
+      expect(find.text('Discard sign-up?'), findsNothing);
+      expect(find.text('Sara Ali'), findsOneWidget);
+    });
+
+    testWidgets('Discard clears the form and goes back', (t) async {
+      SignupFlow.current = null;
+      addTearDown(() => SignupFlow.current = null);
+      await _pump(
+        t,
+        Builder(
+          builder: (context) => TextButton(
+            onPressed: () => SignupScreen.open(context, AccountRole.founder),
+            child: const Text('open form'),
+          ),
+        ),
+      );
+      Future<void> open() async {
+        await t.tap(find.text('open form'));
+        await t.pump(const Duration(milliseconds: 100));
+        await t.pump(const Duration(milliseconds: 900));
+      }
+
+      await open();
+      await t.enterText(
+        find.widgetWithText(TextField, 'e.g. Mohammed Ahmed'),
+        'Sara Ali',
+      );
+      await t.pump();
+      await t.tap(find.bySemanticsLabel('Back').first);
+      await t.pump(const Duration(milliseconds: 500));
+      await t.tap(find.text('Discard'));
+      await t.pump(const Duration(milliseconds: 100));
+      await t.pump(const Duration(milliseconds: 900));
+      expect(find.text('open form'), findsOneWidget);
+      // Opening it again shows an empty form.
+      await open();
+      expect(find.text('Sara Ali'), findsNothing);
+    });
+
+    testWidgets('an empty form goes back without a dialog', (t) async {
+      await openFounder(t);
+      await t.tap(find.bySemanticsLabel('Back').first);
+      await t.pump(const Duration(milliseconds: 500));
+      expect(find.text('Discard sign-up?'), findsNothing);
+    });
+  });
+
+  testWidgets('the verify step counts down 60 s before Resend email', (
+    t,
+  ) async {
+    final flow = SignupFlow(role: AccountRole.founder)
+      ..email = 'sara@gmail.com'
+      ..nextResendAt = DateTime.now().add(const Duration(seconds: 60));
+    await _pump(t, VerifyEmailScreen(flow: flow, showDialogOnOpen: false));
+    expect(find.textContaining('Resend in'), findsOneWidget);
+    expect(find.textContaining('1:00'), findsOneWidget);
+    expect(find.text('Resend email'), findsNothing);
+    // Forgot password sits in the password helper line.
+    expect(find.text('Forgot password?'), findsOneWidget);
+    expect(find.text('Email verified'), findsNothing);
+  });
+
+  testWidgets('at 0:00 the row becomes a tappable Resend email', (t) async {
+    final flow = SignupFlow(role: AccountRole.founder)
+      ..email = 'sara@gmail.com'
+      ..password = 'Sara@1234'
+      ..nextResendAt = DateTime.now().add(const Duration(seconds: 2));
+    await _pump(t, VerifyEmailScreen(flow: flow, showDialogOnOpen: false));
+    expect(find.textContaining('Resend in'), findsOneWidget);
+    // Real time passes (the countdown follows the clock); then a tick.
+    await t.runAsync(() => Future<void>.delayed(const Duration(seconds: 3)));
+    await t.pump(const Duration(seconds: 1));
+    await t.pump(const Duration(milliseconds: 400));
+    expect(find.textContaining('Resend in'), findsNothing);
+    expect(find.textContaining('Resend email'), findsOneWidget);
+    final auth = AuthRepository.instance as FakeAuthRepository;
+    await t.tap(find.textContaining('Resend email'));
+    await t.pump();
+    await t.pump(const Duration(milliseconds: 600));
+    expect(auth.resendCalls, 1);
+    // The countdown restarts, and no toast is shown.
+    expect(find.textContaining('1:00'), findsOneWidget);
+    expect(find.text('Verification email sent'), findsNothing);
+  });
+
   testWidgets('login: empty submit shows both errors', (t) async {
     await _pump(t, const LoginScreen());
     await t.tap(find.text('Log in').last);
     await t.pump(const Duration(milliseconds: 300));
-    expect(find.text('Please enter your email address.'), findsOneWidget);
+    expect(find.text('Enter a valid email'), findsOneWidget);
     expect(find.text('Enter your password'), findsNWidgets(2)); // hint + error
   });
 
@@ -214,7 +450,8 @@ void main() {
       ..email = 'sara@gmail.com';
     await _pump(t, VerifyEmailScreen(flow: flow));
     await t.pump(const Duration(milliseconds: 500));
-    expect(find.text('Resend verification email'), findsOneWidget);
+    // The dialog has one OK button; resending lives on the page itself.
+    expect(find.text('Resend verification email'), findsNothing);
     expect(find.text('sara@gmail.com'), findsWidgets);
     await t.tap(find.text('OK'));
     await t.pump(const Duration(milliseconds: 500));
@@ -235,7 +472,7 @@ void main() {
     await t.pump();
     await t.pump(const Duration(milliseconds: 600));
     expect(find.text('Email not verified yet'), findsOneWidget);
-    expect(find.text('Resend verification email'), findsOneWidget);
+    expect(find.text('Resend verification email'), findsNothing);
   });
 
   testWidgets('investor steps render and Next is gated', (t) async {

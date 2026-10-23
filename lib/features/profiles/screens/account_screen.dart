@@ -168,26 +168,31 @@ class _OwnProfileScreenState extends State<OwnProfileScreen> {
                           ],
                         ),
                       ),
-                    ProfileSection(
-                      title: ProfileStrings.contact,
-                      delay: stagger(),
-                      child: Column(
-                        children: [
-                          InfoRow(
-                            icon: AppIcons.mail,
-                            label: ProfileStrings.email,
-                            value: u.email,
-                          ),
-                          if (_vm.phoneLabel.isNotEmpty)
-                            InfoRow(
-                              icon: AppIcons.phone,
-                              label: ProfileStrings.phone,
-                              value: _vm.phoneLabel,
-                              showDivider: true,
-                            ),
-                        ],
+                    // The email and phone show only when the user made them
+                    // public (the Private / Public pill at sign-up).
+                    if (u.emailPublic ||
+                        (u.phonePublic && _vm.phoneLabel.isNotEmpty))
+                      ProfileSection(
+                        title: ProfileStrings.contact,
+                        delay: stagger(),
+                        child: Column(
+                          children: [
+                            if (u.emailPublic)
+                              InfoRow(
+                                icon: AppIcons.mail,
+                                label: ProfileStrings.email,
+                                value: u.email,
+                              ),
+                            if (u.phonePublic && _vm.phoneLabel.isNotEmpty)
+                              InfoRow(
+                                icon: AppIcons.phone,
+                                label: ProfileStrings.phone,
+                                value: _vm.phoneLabel,
+                                showDivider: u.emailPublic,
+                              ),
+                          ],
+                        ),
                       ),
-                    ),
                   ],
                 ),
               ],

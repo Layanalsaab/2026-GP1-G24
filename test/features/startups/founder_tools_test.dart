@@ -22,6 +22,7 @@ import 'package:startsa/features/startups/screens/startup_steps_screen.dart';
 import 'package:startsa/models/app_user.dart';
 import 'package:startsa/shared_ui/widgets/overlays/picker_sheet.dart';
 import 'package:startsa/features/startups/view_models/startup_steps_view_model.dart';
+import 'package:startsa/features/startups/widgets/startup_step_body.dart';
 import 'package:startsa/helpers/app_session.dart';
 import 'package:startsa/models/connection_request.dart';
 import 'package:startsa/models/startup.dart';
@@ -38,6 +39,9 @@ Widget _app(Widget home) => MaterialApp(
   home: home,
 );
 
+/// A field label (rich text, because of the red star).
+Finder _label(String text) => find.textContaining(text, findRichText: true);
+
 void _bigScreen(WidgetTester tester) {
   tester.view.physicalSize = const Size(1236, 2676);
   tester.view.devicePixelRatio = 3;
@@ -47,7 +51,6 @@ void _bigScreen(WidgetTester tester) {
 /// Fills every required answer of all four steps.
 void _fillAll(StartupStepsViewModel vm) {
   vm.name.text = 'Nakhla Pay';
-  vm.pitch.text = 'Card payments on a phone';
   vm.description.text = 'We help small shops accept card payments.';
   vm.selectSector('Fintech', null);
   vm.selectStage('Seed', null);
@@ -160,7 +163,12 @@ void main() {
       expect(vm.lookingFor, {LookingFor.funding});
       final saved = await vm.save();
       expect(saved, isNotNull);
-      expect(repo.startups.single.tagline, 'Card payments on a phone');
+      // The one-line pitch is gone: the brief description is the only text.
+      expect(repo.startups.single.tagline, isNull);
+      expect(
+        repo.startups.single.description,
+        'We help small shops accept card payments.',
+      );
       expect(repo.startups.single.fundingRequirement, 500000);
       expect(repo.startups.single.valuation, 0);
       expect(AppSession.instance.ownStartupIds, contains(saved!.id));
@@ -349,6 +357,48 @@ void main() {
       await tester.pump(const Duration(seconds: 4));
     });
 
+    testWidgets('Basics has one Brief description and ends with Visibility', (
+      tester,
+    ) async {
+      _bigScreen(tester);
+      await tester.pumpWidget(
+        _app(const StartupStepsScreen(mode: StartupStepsMode.add)),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('One-line pitch'), findsNothing);
+      expect(find.text('Description'), findsNothing);
+      expect(_label('Brief description'), findsOneWidget);
+      expect(find.text('0/1000'), findsOneWidget);
+      // Visibility is the last field of the step, under Website.
+      final website = tester.getTopLeft(_label('Website')).dy;
+      final visibility = tester.getTopLeft(_label('Visibility')).dy;
+      expect(visibility, greaterThan(website));
+      // Empty: the brief description asks to be filled in.
+      await tester.tap(find.text('Next'));
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(find.text('Please describe your startup.'), findsOneWidget);
+      await tester.pump(const Duration(seconds: 4));
+    });
+
+    testWidgets('Visibility is gone from the Funding & goals step', (
+      tester,
+    ) async {
+      _bigScreen(tester);
+      final vm = StartupStepsViewModel();
+      addTearDown(vm.dispose);
+      await tester.pumpWidget(
+        _app(
+          Scaffold(
+            body: SingleChildScrollView(
+              child: StartupStepBody(vm: vm, step: 3),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(_label('Visibility'), findsNothing);
+    });
+
     testWidgets('Onboarding numbering starts at STEP 3 OF 6', (tester) async {
       _bigScreen(tester);
       await tester.pumpWidget(
@@ -408,7 +458,7 @@ void main() {
       expect(vm.memberError(vm.memberName), isNull);
     });
 
-    for (final choice in ['Save as draft', 'Discard', 'Keep editing']) {
+    for (final choice in ['Discard', 'Keep editing']) {
       testWidgets('Leaving a half-filled new startup: $choice', (tester) async {
         SharedPreferences.setMockInitialValues({});
         StartupDraftRepository.instance = StartupDraftRepository();
@@ -441,21 +491,24 @@ void main() {
         await tester.pump();
         await tester.tap(find.bySemanticsLabel('Back').first);
         await tester.pumpAndSettle();
-        expect(find.text('Leave without finishing?'), findsOneWidget);
+        expect(find.text('Discard this startup?'), findsOneWidget);
+        expect(
+          find.text(
+            'If you go back now, the details you entered will be deleted.',
+          ),
+          findsOneWidget,
+        );
         await tester.tap(find.text(choice));
         await tester.pumpAndSettle();
         final stillOnForm = hint.evaluate().isNotEmpty;
         final draft = StartupDraftRepository.instance.current.value;
+        // Nothing is saved as a draft any more.
+        expect(draft, isNull);
         if (choice == 'Keep editing') {
           expect(stillOnForm, isTrue);
-          expect(draft, isNull);
         } else {
           expect(stillOnForm, isFalse, reason: '$choice must leave the form');
           expect(find.text('open form'), findsOneWidget);
-          expect(
-            draft?['name'],
-            choice == 'Save as draft' ? 'Nakhla Pay' : null,
-          );
         }
         await tester.pump(const Duration(seconds: 5));
       });

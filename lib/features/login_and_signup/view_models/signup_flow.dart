@@ -24,6 +24,11 @@ class SignupFlow {
   /// False when the account was created but the first email could not be sent.
   bool emailSent = true;
 
+  /// When the next verification email may be requested (the 60 s cooldown).
+  /// Kept here, as a point in time, so the countdown stays correct when the
+  /// Verify step is rebuilt or the app goes to the background.
+  DateTime? nextResendAt;
+
   /// True once step 1 created the Auth account in this flow.
   bool accountCreated = false;
 

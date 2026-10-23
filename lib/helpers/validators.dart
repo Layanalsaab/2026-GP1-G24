@@ -19,13 +19,19 @@ class Validators {
   static const maxPassword = 32;
   static const maxLinkedin = 120;
   static const maxBio = 1000;
+
+  /// Founder sign-up bio (required).
+  static const maxFounderBio = 2000;
   static const maxValueText = 1000;
   static const maxOther = 40;
   static const phoneLength = 9;
 
   static final _emailPattern = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]{2,}$');
-  static final _linkedinPattern = RegExp(
-    r'^(https?://)?([a-z]{2,3}\.)?linkedin\.com/(in|company)/[A-Za-z0-9\-_%.]+/?$',
+
+  /// Hosts that count as LinkedIn: linkedin.com with any subdomain (www,
+  /// sa, ar, mwlite...) and the lnkd.in short links.
+  static final _linkedinHost = RegExp(
+    r'^([a-z0-9\-]+\.)*linkedin\.com$',
     caseSensitive: false,
   );
 
@@ -64,6 +70,42 @@ class Validators {
     if (v.isEmpty) return ValidationStrings.emailRequired;
     if (!_emailPattern.hasMatch(v)) return ValidationStrings.emailInvalid;
     return null;
+  }
+
+  /// The email domains accepted at sign-up: the common providers. Anything
+  /// else must be a university address (see [_isUniversityDomain]).
+  static const _allowedDomains = {
+    'gmail.com',
+    'hotmail.com',
+    'outlook.com',
+    'live.com',
+    'yahoo.com',
+    'icloud.com',
+    'msn.com',
+    'me.com',
+    'aol.com',
+    'proton.me',
+    'protonmail.com',
+  };
+
+  /// University addresses: Saudi (`ksu.edu.sa`, `student.ksu.edu.sa`) and
+  /// other `.edu` / `.edu.xx` / `.ac.xx` domains with a real name before it.
+  static final _universityDomain = RegExp(
+    r'^([a-z0-9\-]+\.)+(edu|edu\.[a-z]{2}|ac\.[a-z]{2})$',
+  );
+
+  static bool _isUniversityDomain(String domain) =>
+      _universityDomain.hasMatch(domain);
+
+  /// True when [value] is a well-formed email on an accepted domain (a common
+  /// provider ending in its real extension, or a university address). Sign-up
+  /// uses this; log in only needs a well-formed email so existing accounts
+  /// are never locked out.
+  static bool isSignupEmail(String? value) {
+    final v = (value ?? '').trim().toLowerCase();
+    if (!_emailPattern.hasMatch(v)) return false;
+    final domain = v.substring(v.lastIndexOf('@') + 1);
+    return _allowedDomains.contains(domain) || _isUniversityDomain(domain);
   }
 
   /// Live (while typing) full-name message: shown as soon as something is
@@ -119,10 +161,36 @@ class Validators {
 
   // ------------------------------------------------------------- linkedin
 
-  /// Optional: empty is fine.
+  /// Optional: empty is fine. Accepts every LinkedIn profile format, English
+  /// or Arabic: with or without https:// and www., country subdomains
+  /// (sa., ar.), /in/NAME with Arabic letters or percent-encoded Arabic, a
+  /// trailing slash, query strings (?originalSubdomain=sa), mobile links
+  /// (linkedin.com/mwlite/in/...) and lnkd.in short links.
   static bool isLinkedin(String? value) {
     final v = (value ?? '').trim();
-    return v.isEmpty || _linkedinPattern.hasMatch(v);
+    if (v.isEmpty) return true;
+    if (RegExp(r'\s').hasMatch(v)) return false;
+    final withScheme =
+        RegExp(r'^[a-z][a-z0-9+.\-]*://', caseSensitive: false).hasMatch(v)
+        ? v
+        : 'https://$v';
+    final uri = Uri.tryParse(withScheme);
+    if (uri == null || !(uri.scheme == 'http' || uri.scheme == 'https')) {
+      return false;
+    }
+    final host = uri.host.toLowerCase();
+    if (host == 'lnkd.in' || host == 'www.lnkd.in') {
+      return uri.pathSegments.where((p) => p.isNotEmpty).isNotEmpty;
+    }
+    if (!_linkedinHost.hasMatch(host)) return false;
+    final segments = uri.pathSegments.where((p) => p.isNotEmpty).toList();
+    // mobile links: /mwlite/in/NAME
+    if (segments.isNotEmpty && segments.first.toLowerCase() == 'mwlite') {
+      segments.removeAt(0);
+    }
+    if (segments.length < 2) return false;
+    final kind = segments.first.toLowerCase();
+    return (kind == 'in' || kind == 'company') && segments[1].isNotEmpty;
   }
 
   static String? linkedin(String? value) =>

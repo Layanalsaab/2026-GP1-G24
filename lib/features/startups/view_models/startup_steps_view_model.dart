@@ -20,12 +20,10 @@ import 'startup_error_message.dart';
 /// Every field of the 4-step startup form that can show an error.
 enum StartupField {
   name,
-  pitch,
   description,
   sector,
   sectorOther,
   stage,
-  stageOther,
   model,
   modelOther,
   city,
@@ -92,14 +90,12 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
 
   Map<String, Object?> _state() => {
     'name': name.text,
-    'pitch': pitch.text,
     'description': description.text,
     'founded': founded.text,
     'website': website.text,
     'sector': sector?.value,
     'sectorOther': sectorOther.text,
     'stage': stage?.value,
-    'stageOther': stageOther.text,
     'model': model?.value,
     'modelOther': modelOther.text,
     'city': city?.value,
@@ -139,15 +135,18 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
   void loadDraft(Map<String, Object?> d) {
     String t(String k) => (d[k] as String?) ?? '';
     name.text = t('name');
-    pitch.text = t('pitch');
-    description.text = t('description');
+    // Older drafts kept a one-line pitch next to the description.
+    description.text = t('description').isNotEmpty
+        ? t('description')
+        : t('pitch');
     founded.text = t('founded');
     website.text = t('website');
     sector = Sector.fromValue(d['sector']);
     sectorOther.text = t('sectorOther');
-    stage = StartupStage.fromValue(d['stage']);
-    stageOther.text = t('stageOther');
-    model = BusinessModel.fromValue(d['model']);
+    final draftStage = StartupStage.fromValue(d['stage']);
+    stage = StartupStage.picks.contains(draftStage) ? draftStage : null;
+    final draftModel = BusinessModel.fromValue(d['model']);
+    model = BusinessModel.picks.contains(draftModel) ? draftModel : null;
     modelOther.text = t('modelOther');
     city = StartupLocation.fromValue(d['city']);
     problem.text = t('problem');
@@ -205,12 +204,10 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
 
   // ---- Step 1
   final name = TextEditingController();
-  final pitch = TextEditingController();
   final description = TextEditingController();
   final founded = TextEditingController();
   final website = TextEditingController();
   final sectorOther = TextEditingController();
-  final stageOther = TextEditingController();
   final modelOther = TextEditingController();
   Sector? sector;
   StartupStage? stage;
@@ -262,12 +259,10 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
 
   List<TextEditingController> get _controllers => [
     name,
-    pitch,
     description,
     founded,
     website,
     sectorOther,
-    stageOther,
     modelOther,
     problem,
     solution,
@@ -292,7 +287,6 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
   ];
 
   bool get isSectorOther => sector == Sector.other;
-  bool get isStageOther => stage == StartupStage.other;
   bool get isModelOther => model == BusinessModel.other;
   bool get isLookingForOther => lookingFor.contains(LookingFor.other);
 
@@ -308,8 +302,6 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
     switch (f) {
       case StartupField.name:
         return StartupValidators.name(name.text);
-      case StartupField.pitch:
-        return StartupValidators.pitch(pitch.text);
       case StartupField.description:
         return StartupValidators.description(description.text);
       case StartupField.sector:
@@ -326,10 +318,6 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
           stage,
           ValidationStrings.startupStage,
         );
-      case StartupField.stageOther:
-        return isStageOther && _blank(stageOther)
-            ? ValidationStrings.otherSelect(FounderToolsStrings.stageNoun)
-            : null;
       case StartupField.model:
         return StartupValidators.selected(
           model,
@@ -377,12 +365,10 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
   static const _stepFields = <List<StartupField>>[
     [
       StartupField.name,
-      StartupField.pitch,
       StartupField.description,
       StartupField.sector,
       StartupField.sectorOther,
       StartupField.stage,
-      StartupField.stageOther,
       StartupField.model,
       StartupField.modelOther,
       StartupField.city,
@@ -425,7 +411,7 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
     if (f == StartupField.founded && founded.text.trim().length == 4) {
       return raw;
     }
-    // The website shows its message as soon as something is typed.
+    // The website shows its message from the first character typed.
     if (f == StartupField.website && website.text.trim().isNotEmpty) {
       return raw;
     }
@@ -465,13 +451,12 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
     sectorOther.text = other ?? '';
   });
 
-  void selectStage(String label, String? other) => _touch(() {
-    stage = StartupStage.values.firstWhere((s) => s.label == label);
-    stageOther.text = other ?? '';
+  void selectStage(String label) => _touch(() {
+    stage = StartupStage.picks.firstWhere((s) => s.label == label);
   });
 
   void selectModel(String label, String? other) => _touch(() {
-    model = BusinessModel.values.firstWhere((m) => m.label == label);
+    model = BusinessModel.picks.firstWhere((m) => m.label == label);
     modelOther.text = other ?? '';
   });
 
@@ -671,12 +656,10 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
       id: initial?.id ?? '',
       founderId: initial?.founderId ?? '',
       name: name.text.trim(),
-      tagline: pitch.text.trim(),
       description: description.text.trim(),
       sector: sector!,
       sectorOther: isSectorOther ? sectorOther.text.trim() : null,
       stage: stage!,
-      stageOther: isStageOther ? stageOther.text.trim() : null,
       businessModel: model!,
       businessModelOther: isModelOther ? modelOther.text.trim() : null,
       location: city!,
@@ -723,15 +706,18 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
   void _fillFrom(Startup? s) {
     if (s == null) return;
     name.text = s.name;
-    pitch.text = s.tagline ?? '';
-    description.text = s.description;
+    // One brief description (older startups had a pitch and a description).
+    description.text = s.briefDescription;
     founded.text = s.foundedYear?.toString() ?? '';
     website.text = s.websiteUrl ?? '';
     sector = s.sector;
     sectorOther.text = s.sectorOther ?? '';
-    stage = s.stage;
-    stageOther.text = s.stageOther ?? '';
-    model = s.businessModel;
+    // A stage or commerce model that is no longer offered stays empty, so
+    // the founder picks a real one the next time.
+    stage = StartupStage.picks.contains(s.stage) ? s.stage : null;
+    model = BusinessModel.picks.contains(s.businessModel)
+        ? s.businessModel
+        : null;
     modelOther.text = s.businessModelOther ?? '';
     city = s.location;
     problem.text = s.problem;

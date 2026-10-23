@@ -12,6 +12,9 @@ class AppColors {
   static const ink = Color(0xFF1C1F1D);
   static const grey = Color(0xFF5B625D);
   static const moss600 = Color(0xFF2F5D3A);
+
+  /// Soft amber for non-blocking notes ("Make sure your email domain is correct.").
+  static const warning = Color(0xFF9A5B00);
   static const moss400 = Color(0xFF5E8A68);
   static const moss100 = Color(0xFFE6EFE7);
   static const moss50 = Color(0xFFF2F7F3);

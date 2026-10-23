@@ -6,8 +6,8 @@ class ValidationStrings {
 
   // Names, email, phone
   static const fullName = 'Enter your first and last name.';
-  static const emailRequired = 'Please enter your email address.';
-  static const emailInvalid = 'Enter a valid email address';
+  static const emailRequired = 'Enter a valid email';
+  static const emailInvalid = 'Enter a valid email, like name@example.com';
   static const emailLive = 'Enter a valid email, like name@example.com';
   static const phoneRequired = 'Please enter your phone number.';
   static const phoneInvalid = 'Enter a 9-digit Saudi number, like 5X XXX XXXX';
@@ -28,6 +28,7 @@ class ValidationStrings {
   // Selections
   static const city = 'Please select your city.';
   static const sectors = 'Select at least one sector.';
+  static const bioRequired = 'Please write a short bio.';
   static const chooseOne = 'Please choose one.';
   static const required = 'Required';
   static const selectAtLeastOneStage = 'Select at least one stage.';
@@ -48,7 +49,7 @@ class ValidationStrings {
 
   // Toasts used by forms
   static const fixFields = 'Please fix the highlighted fields';
-  static const fillRequired = 'Please fill in the required fields';
+  static const fillRequired = 'Please fix the highlighted fields';
   static const saveMemberFirst = 'Save or cancel the team member first';
 
   // "Other" write-ins (noun: "sector", "stage", "commerce model", ...)
@@ -69,16 +70,15 @@ class ValidationStrings {
 
   // ---- Add / Edit startup (docs/06 section 8) ----
   static const startupName = 'Please enter a startup name.';
-  static const startupPitch = 'Please write a one-line pitch.';
   static const startupDescription = 'Please describe your startup.';
   static const startupSector = 'Please select a sector.';
   static const startupStage = 'Please select a stage.';
   static const startupModel = 'Please select a commerce model.';
-  static const startupCity = 'Please select a city.';
+  static const startupCity = 'Please select your headquarters.';
   static const foundedRequired = 'Please enter the year you were founded.';
   static String foundedRange(int last) =>
       'Enter a year between 1900 and $last.';
-  static const websiteInvalid = 'Enter a valid web address, like example.com.';
+  static const websiteInvalid = 'Enter a valid website, like example.com';
   static const problem = 'Please describe the problem.';
   static const solution = 'Please describe your solution.';
   static const targetCustomers = 'Please describe your target customers.';

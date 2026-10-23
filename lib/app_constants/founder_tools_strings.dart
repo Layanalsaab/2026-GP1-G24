@@ -26,19 +26,19 @@ class FounderToolsStrings {
 
   // ---- Steps ----
   static const stepTitles = [
-    'Basics',
+    'Overview',
     'Problem & solution',
     'Market & team',
     'Funding & goals',
   ];
-  static const onboardingFirstTitle = 'Add your startup';
+  static const onboardingFirstTitle = 'Overview';
   static const next = 'Next';
   static const create = 'Create startup';
   static const saveChanges = 'Save changes';
   static String added(String name) => '$name was added';
   static const changesSaved = 'Changes saved';
   static String deleted(String name) => '$name was deleted';
-  static const fillRequired = 'Please fill in the required fields';
+  static const fillRequired = 'Please fix the highlighted fields';
   static const saveMemberFirst = 'Save or cancel the team member first';
   static const saveFailed = 'We couldn’t save your startup. Please try again.';
   static const logoTooLarge = 'That image is too large. Choose one under 2 MB.';
@@ -50,9 +50,7 @@ class FounderToolsStrings {
   static const changeLogo = 'Change logo';
   static const nameLabel = 'Startup name';
   static const nameHint = 'e.g. Rafeeq Health';
-  static const pitchLabel = 'One-line pitch';
-  static const pitchHint = 'e.g. Home nursing visits booked in minutes';
-  static const descriptionLabel = 'Description';
+  static const descriptionLabel = 'Brief description';
   static const descriptionHint = 'Describe your startup';
   static const sectorLabel = 'Sector';
   static const sectorHint = 'Select a sector';
@@ -68,15 +66,15 @@ class FounderToolsStrings {
   static const modelHint = 'Select a commerce model';
   static const modelTitle = 'Select commerce model';
   static const modelNoun = 'commerce model';
-  static const cityLabel = 'City';
+  static const cityLabel = 'Headquarters';
   static const cityHint = 'Select a city';
-  static const cityTitle = 'Select your city';
+  static const cityTitle = 'Select headquarters';
   static const citySearch = 'Search cities';
   static const cityNoResults = 'No cities found';
   static const foundedLabel = 'Founded year';
   static const foundedHint = 'e.g. 2024';
   static const websiteLabel = 'Website';
-  static const websiteHint = 'e.g. rafeeqhealth.sa';
+  static const websiteHint = 'e.g. example.com';
 
   // Step 2
   static const problemLabel = 'What problem are you solving?';
@@ -245,17 +243,14 @@ class FounderToolsStrings {
   };
 
   // ---- Leaving the form / drafts ----
-  static const leaveDraftTitle = 'Leave without finishing?';
-  static const leaveDraftMessage =
-      'You haven’t finished this startup. Save it as a draft to come back to it later, or discard what you’ve entered.';
-  static const saveDraft = 'Save as draft';
   static const discard = 'Discard';
   static const keepEditing = 'Keep editing';
-  static const leaveEditTitle = 'Discard your changes?';
-  static const leaveEditMessage =
-      'You have unsaved changes to this startup. If you leave now they will be lost.';
-  static const discardChanges = 'Discard changes';
-  static const draftSaved = 'Saved as draft';
+  static const discardStartupTitle = 'Discard this startup?';
+  static const discardStartupMessage =
+      'If you go back now, the details you entered will be deleted.';
+  static const discardEditTitle = 'Discard changes?';
+  static const discardEditMessage =
+      'If you go back now, your changes will be lost.';
   static const draftBadge = 'Draft';
   static const draftContinue = 'Continue editing';
   static const untitledStartup = 'Untitled startup';

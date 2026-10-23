@@ -66,14 +66,13 @@ class AppDialog extends StatelessWidget {
 
 /// "Verify your email" dialog content (docs 11c / 08): a Pop-ing mail icon in a
 /// 64 px gold circle, title 21/700, the explanation with the bold [email],
-/// the spam hint, a primary "Resend verification email" button and an "OK"
-/// ghost button. [needLogin] appends ", then log in"; [inSignup] appends ",
+/// the spam hint and one green full-width "OK" button (resending lives on the
+/// Verify step, with its 60 s countdown). [needLogin] appends ", then log in"; [inSignup] appends ",
 /// then come back here to continue".
 class VerifyEmailDialog extends StatelessWidget {
   const VerifyEmailDialog({
     super.key,
     required this.email,
-    required this.onResend,
     required this.onClose,
     this.needLogin = false,
     this.inSignup = false,
@@ -81,7 +80,6 @@ class VerifyEmailDialog extends StatelessWidget {
   });
 
   final String email;
-  final VoidCallback onResend;
   final VoidCallback onClose;
   final bool needLogin;
   final bool inSignup;
@@ -160,15 +158,61 @@ class VerifyEmailDialog extends StatelessWidget {
             style: AppText.sans(size: 13, color: AppColors.hint),
           ),
           const SizedBox(height: 20),
-          AppButton(label: 'Resend verification email', onPressed: onResend),
-          const SizedBox(height: 6),
-          AppButton(
-            label: 'OK',
-            onPressed: onClose,
-            variant: AppButtonVariant.ghost,
-          ),
+          AppButton(label: 'OK', onPressed: onClose),
         ],
       ),
     );
   }
+}
+
+/// The "leave this form?" confirmation: a centered dialog with a [title], the
+/// [message], a red full-width [discardLabel] button and a "Keep editing" text
+/// button under it. Completes with true only for Discard; "Keep editing" and
+/// a tap outside both complete with false (the form stays open).
+Future<bool> showDiscardDialog(
+  BuildContext context, {
+  required String title,
+  required String message,
+  String discardLabel = 'Discard',
+  String keepLabel = 'Keep editing',
+}) async {
+  FocusManager.instance.primaryFocus?.unfocus();
+  final result = await showAppDialog<bool>(
+    context,
+    builder: (ctx) => AppDialog(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Semantics(
+            header: true,
+            child: Text(
+              title,
+              textAlign: TextAlign.center,
+              style: AppText.sans(size: 21, weight: FontWeight.w700),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            message,
+            textAlign: TextAlign.center,
+            style: AppText.sans(size: 15, color: AppColors.grey, height: 22),
+          ),
+          const SizedBox(height: 22),
+          AppButton(
+            label: discardLabel,
+            variant: AppButtonVariant.danger,
+            onPressed: () => Navigator.of(ctx).pop(true),
+          ),
+          const SizedBox(height: 4),
+          AppButton(
+            label: keepLabel,
+            variant: AppButtonVariant.ghost,
+            onPressed: () => Navigator.of(ctx).pop(false),
+          ),
+        ],
+      ),
+    ),
+  );
+  return result ?? false;
 }

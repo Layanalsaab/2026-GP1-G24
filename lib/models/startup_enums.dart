@@ -89,6 +89,11 @@ enum StartupStage {
   final String value;
   final String label;
 
+  /// The stages a founder can pick (and investors can follow), in order.
+  /// [other] only exists so older startups still load: it is not offered, and
+  /// editing such a startup asks for a real stage.
+  static const picks = [preSeed, seed, seriesA, seriesB, seriesC];
+
   static const _legacy = {
     'idea': StartupStage.preSeed,
     'mvp': StartupStage.preSeed,
@@ -124,6 +129,11 @@ enum BusinessModel {
 
   /// Just the abbreviation, for cards and the profile ("B2C"; "Other").
   final String shortLabel;
+
+  /// The four commerce models that can be picked, in this order. The other
+  /// members only exist so older startups still load and show their saved
+  /// value; editing such a startup asks for one of these four.
+  static const picks = [b2b, b2c, b2g, other];
 
   static const _legacy = {'marketplace': BusinessModel.other};
 

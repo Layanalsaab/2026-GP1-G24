@@ -23,7 +23,8 @@ service cloud.firestore {
                                                  'bio', 'sectorsOfInterest',
                                                  'sectorsOther', 'linkedinUrl',
                                                  'gain', 'offer',
-                                                 'photoUrl'])
+                                                 'photoUrl',
+                                                 'emailPublic', 'phonePublic'])
         && validProfile(request.resource.data);
 
       allow update: if request.auth != null && request.auth.uid == uid
@@ -34,7 +35,7 @@ service cloud.firestore {
                        'sectorsOfInterest', 'sectorsOther',
                        'linkedinUrl', 'gain', 'offer',
                        'investorCriteria',
-                       'photoUrl',
+                       'photoUrl', 'emailPublic', 'phonePublic',
                        'preferredSectors', 'preferredStages',
                        'ticketSize', 'ticketSizeOther',
                        'investmentsCount', 'hasLedRound', 'roundsLed',
@@ -53,13 +54,13 @@ service cloud.firestore {
     }
 
     // Limits shared with the app (lib/helpers/validators.dart): name 2..50,
-    // bio <= 1000, email <= 100, phone = 9 digits starting with 5, texts
+    // bio <= 2000 (founders; investors 1000), email <= 100, phone = 9 digits starting with 5, texts
     // <= 1000.
     function validProfile(d) {
       return d.fullName is string
           && d.fullName.size() >= 2 && d.fullName.size() <= 50
           && d.email is string && d.email.size() <= 100
-          && (!('bio' in d) || (d.bio is string && d.bio.size() <= 1000))
+          && (!('bio' in d) || (d.bio is string && d.bio.size() <= 2000))
           && (!('phone' in d)
               || (d.phone is string && d.phone.matches('^5[0-9]{8}$')))
           && (!('city' in d) || d.city is string)

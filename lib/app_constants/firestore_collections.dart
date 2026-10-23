@@ -33,6 +33,10 @@ class UserFields {
   // Added when a user edits their account.
   static const bio = 'bio';
   static const phone = 'phone';
+
+  /// Whether the profile shows the email / phone (private when missing).
+  static const emailPublic = 'emailPublic';
+  static const phonePublic = 'phonePublic';
   static const sectorsOfInterest = 'sectorsOfInterest';
 
   // Profile photo: download URL of `users/{uid}/profile.jpg` in Storage.

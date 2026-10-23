@@ -7,8 +7,7 @@ class StartupValidators {
   StartupValidators._();
 
   static const nameMax = 40;
-  static const pitchMax = 120;
-  static const descriptionMax = 1500;
+  static const descriptionMax = 150;
   static const longTextMax = 1000;
   static const websiteMax = 100;
   static const firstFoundedYear = 1900;
@@ -16,9 +15,6 @@ class StartupValidators {
 
   static String? name(String v) =>
       v.trim().isEmpty ? ValidationStrings.startupName : null;
-
-  static String? pitch(String v) =>
-      v.trim().isEmpty ? ValidationStrings.startupPitch : null;
 
   static String? description(String v) =>
       v.trim().isEmpty ? ValidationStrings.startupDescription : null;
@@ -45,35 +41,27 @@ class StartupValidators {
   static bool isFoundedYear(String value, {DateTime? now}) =>
       foundedYear(value, now: now) == null;
 
-  /// Optional. Accepts addresses without a scheme ("example.com").
+  /// A real web address: optional http:// or https:// (no other scheme),
+  /// optional www., one or more domain parts (letters, numbers, inner
+  /// hyphens) each followed by a dot, a top-level domain of 2+ letters, then
+  /// an optional port and path. No spaces.
+  static final _website = RegExp(
+    r'^(https?:\/\/)?(www\.)?([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,24}(:[0-9]{2,5})?(\/\S*)?$',
+    caseSensitive: false,
+  );
+
+  /// Optional: empty is fine; anything typed must be a valid website.
   static String? websiteUrl(String value) {
     if (value.trim().isEmpty) return null;
-    return normalizeUrl(value) == null
-        ? ValidationStrings.websiteInvalid
-        : null;
+    return isWebsite(value) ? null : ValidationStrings.websiteInvalid;
   }
 
-  /// "example.com" -> "https://example.com". Null when it isn't a usable
-  /// http(s) address with a real domain (something.tld).
-  static String? normalizeUrl(String value) {
-    final text = value.trim();
-    if (text.isEmpty || text.contains(' ')) return null;
-    final withScheme = text.contains('://') ? text : 'https://$text';
-    final uri = Uri.tryParse(withScheme);
-    if (uri == null) return null;
-    if (uri.scheme != 'http' && uri.scheme != 'https') return null;
-    final labels = uri.host.split('.');
-    final looksLikeDomain =
-        labels.length >= 2 &&
-        labels.every(
-          (l) => RegExp(
-            r'^[\p{L}\p{N}](?:[\p{L}\p{N}-]*[\p{L}\p{N}])?$',
-            unicode: true,
-          ).hasMatch(l),
-        ) &&
-        RegExp(r'^[a-zA-Z]{2,}$').hasMatch(labels.last);
-    return looksLikeDomain ? uri.toString() : null;
-  }
+  static bool isWebsite(String value) => _website.hasMatch(value.trim());
+
+  /// The trimmed address as saved, or null when it is not a valid website.
+  /// (Opening it adds https:// when there is no scheme.)
+  static String? normalizeUrl(String value) =>
+      isWebsite(value) ? value.trim() : null;
 
   // ---- Step 2 ----
   static String? problem(String v) =>

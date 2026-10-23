@@ -48,6 +48,8 @@ class AuthRepository {
     String? gain,
     String? valueOffered,
     File? photo,
+    bool emailPublic = false,
+    bool phonePublic = false,
   }) async {
     final account = await _auth.createAccount(email, password);
 
@@ -65,6 +67,8 @@ class AuthRepository {
         linkedin: linkedin,
         gain: gain,
         valueOffered: valueOffered,
+        emailPublic: emailPublic,
+        phonePublic: phonePublic,
       );
     } catch (e) {
       debugPrint('Saving the profile failed, removing the new account: $e');

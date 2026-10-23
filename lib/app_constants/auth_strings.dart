@@ -42,6 +42,12 @@ class AuthStrings {
   static const continueLabel = 'Continue';
   static const haveAccount = 'Already have an account?';
 
+  // Leaving sign-up step 1
+  static const discardSignupTitle = 'Discard sign-up?';
+  static const discardSignupMessage =
+      'If you go back now, the details you entered will be deleted.';
+  static const discard = 'Discard';
+
   // Step headers
   static const createAccountTitle = 'Create your account';
   static const verifyTitle = 'Verify your email';
@@ -80,6 +86,16 @@ class AuthStrings {
   static const bio = 'Bio';
   static const bioPlaceholder = 'Tell others a little about yourself';
   static const addPhoto = 'Add profile photo';
+  static const profilePhoto = 'Profile photo';
+  static const uploadPhoto = 'Upload photo';
+  static const changePhoto = 'Change photo';
+  static const sectorsPlaceholder = 'Select sectors';
+  static const sectorsSheetTitle = 'Select sectors';
+  static const sectorsSearch = 'Search sectors';
+  static const sectorsNone = 'No sectors found';
+  static const sectorsOtherEmpty =
+      'Tell us your other sector — it can’t be blank.';
+  static const bioRequiredLabel = 'Bio';
   static const photoAdded = 'Photo added';
   static const photoRemoved = 'Photo removed';
 

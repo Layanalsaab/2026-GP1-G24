@@ -219,7 +219,7 @@ class LogoPickerRow extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Startup logo',
+                'Startup Logo',
                 style: AppText.sans(size: 15, weight: FontWeight.w500),
               ),
               const SizedBox(height: 2),
@@ -232,6 +232,93 @@ class LogoPickerRow extends StatelessWidget {
                   onTap: onTap,
                   child: Text(
                     hasLogo ? 'Change logo' : 'Upload logo',
+                    style: AppText.sans(
+                      size: 14,
+                      weight: FontWeight.w600,
+                      color: AppColors.moss600,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Founder sign-up profile photo row, the same design as the Add startup
+/// logo row (padding 20 16 0, gap 14): a 76 px square with radius 20 and a
+/// 1.5 dashed `#8C918D` border, white fill and a 26 px `#5B625D` camera, next
+/// to "Profile photo" (15/500) and the link "Upload photo" (14/600
+/// `#2F5D3A`). After a photo is picked the square shows it without a border
+/// and the link reads "Change photo". No toast.
+class ProfilePhotoRow extends StatelessWidget {
+  const ProfilePhotoRow({super.key, required this.onTap, this.image});
+
+  final VoidCallback? onTap;
+
+  /// The picked photo, or null while there is none.
+  final ImageProvider? image;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasPhoto = image != null;
+    final tile = hasPhoto
+        ? Pop(
+            child: Container(
+              width: 76,
+              height: 76,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(20),
+                image: DecorationImage(image: image!, fit: BoxFit.cover),
+              ),
+            ),
+          )
+        : CustomPaint(
+            painter: _DashedRRectPainter(),
+            child: SizedBox(
+              width: 76,
+              height: 76,
+              child: Center(
+                child: AppIcon.filled(
+                  AppIcons.camera,
+                  size: 26,
+                  color: AppColors.grey,
+                ),
+              ),
+            ),
+          );
+    final action = hasPhoto ? 'Change photo' : 'Upload photo';
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+      child: Row(
+        children: [
+          Semantics(
+            button: true,
+            label: action,
+            excludeSemantics: true,
+            child: Pressable(onTap: onTap, child: tile),
+          ),
+          const SizedBox(width: 14),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Profile Photo',
+                style: AppText.sans(size: 15, weight: FontWeight.w500),
+              ),
+              const SizedBox(height: 2),
+              Semantics(
+                button: true,
+                excludeSemantics: true,
+                label: action,
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: onTap,
+                  child: Text(
+                    action,
                     style: AppText.sans(
                       size: 14,
                       weight: FontWeight.w600,

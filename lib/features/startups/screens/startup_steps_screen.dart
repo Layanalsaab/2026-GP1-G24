@@ -6,10 +6,10 @@ import '../../../helpers/app_session.dart';
 import '../../../models/startup.dart';
 import '../../../navigation/app_router.dart';
 import '../../../navigation/main_screen.dart';
+import '../../../shared_ui/widgets/overlays/app_dialog.dart';
 import '../../login_and_signup/screens/verify_email_screen.dart';
 import '../view_models/startup_steps_view_model.dart';
 import '../widgets/founder_ui.dart';
-import '../widgets/leave_form_sheet.dart';
 import '../widgets/startup_step_body.dart';
 import 'my_startups_screen.dart';
 
@@ -123,34 +123,31 @@ class _StartupStepsScreenState extends State<StartupStepsScreen> {
     }
   }
 
-  /// Leaving the first step: nothing changed -> just go back; otherwise ask
-  /// whether to keep editing, discard, or (new startups) save a draft.
+  /// Leaving the first step: nothing entered or changed -> just go back;
+  /// otherwise a centered dialog asks (Discard / Keep editing).
   Future<void> _leave() async {
     if (!_vm.isDirty) {
       AppNav.back(context);
       return;
     }
-    FocusScope.of(context).unfocus();
-    final choice = await showLeaveFormSheet(context, canSaveDraft: !_edit);
-    if (!mounted) return;
-    switch (choice) {
-      case LeaveChoice.keepEditing:
-        return;
-      case LeaveChoice.discard:
-        // Discarding a form opened from a draft deletes that draft.
-        final uid = _uid;
-        if (_fromDraft && uid != null) {
-          await StartupDraftRepository.instance.clear(uid);
-        }
-        _exit();
-      case LeaveChoice.saveDraft:
-        final uid = _uid;
-        if (uid != null) {
-          await StartupDraftRepository.instance.save(uid, _vm.toDraft());
-        }
-        _exit();
-        AppToast.showGlobal(FounderToolsStrings.draftSaved);
+    final discard = await showDiscardDialog(
+      context,
+      title: _edit
+          ? FounderToolsStrings.discardEditTitle
+          : FounderToolsStrings.discardStartupTitle,
+      message: _edit
+          ? FounderToolsStrings.discardEditMessage
+          : FounderToolsStrings.discardStartupMessage,
+      discardLabel: FounderToolsStrings.discard,
+      keepLabel: FounderToolsStrings.keepEditing,
+    );
+    if (!mounted || !discard) return;
+    // Discarding a form opened from a draft deletes that draft.
+    final uid = _uid;
+    if (_fromDraft && uid != null) {
+      await StartupDraftRepository.instance.clear(uid);
     }
+    _exit();
   }
 
   /// Leaves the form. A plain pop, not `maybePop`: this screen's PopScope
@@ -178,9 +175,9 @@ class _StartupStepsScreenState extends State<StartupStepsScreen> {
       case StepAdvance.advanced:
         _scrollTop();
       case StepAdvance.incomplete:
-        AppToast.show(context, FounderToolsStrings.fillRequired);
+        AppToast.error(context, FounderToolsStrings.fillRequired);
       case StepAdvance.memberOpen:
-        AppToast.show(context, FounderToolsStrings.saveMemberFirst);
+        AppToast.error(context, FounderToolsStrings.saveMemberFirst);
       case StepAdvance.readyToSave:
         await _save();
     }
@@ -190,7 +187,7 @@ class _StartupStepsScreenState extends State<StartupStepsScreen> {
     final saved = await _vm.save();
     if (!mounted) return;
     if (saved == null) {
-      AppToast.show(context, _vm.saveError ?? FounderToolsStrings.saveFailed);
+      AppToast.error(context, _vm.saveError ?? FounderToolsStrings.saveFailed);
       return;
     }
     switch (widget.mode) {

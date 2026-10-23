@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../app_constants/auth_strings.dart';
+import '../../../app_constants/validation_strings.dart';
 import '../../../shared_ui/navigation/app_route.dart';
 import '../../../shared_ui/theme/app_colors.dart';
 import '../../../shared_ui/theme/app_text.dart';
@@ -50,8 +51,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       // The toast lives in the root overlay, so it survives the pop.
       AppToast.show(context, AuthStrings.resetLinkSent(sentTo));
       authBack(context);
-    } else if (_vm.formError != null) {
-      AppToast.show(context, _vm.formError!);
+    } else {
+      // A mistake in the field: say so (it also shows under the field).
+      AppToast.error(context, _vm.formError ?? ValidationStrings.fixFields);
     }
   }
 

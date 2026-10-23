@@ -255,7 +255,10 @@ class RoleHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return ArchHeaderShell(
       overlap: overlap,
-      padding: const EdgeInsets.fromLTRB(8, 6, 8, 110),
+      // The title sits between the back arrow and the gold arches: the
+      // arches are 130 px high at the bottom, so the bottom padding keeps
+      // them below the title.
+      padding: const EdgeInsets.fromLTRB(8, 6, 8, 130),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -263,7 +266,7 @@ class RoleHeader extends StatelessWidget {
           HeaderTitle(
             title,
             style: AppText.roleTitle,
-            margin: const EdgeInsets.fromLTRB(16, 44, 16, 0),
+            margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
           ),
         ],
       ),

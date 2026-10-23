@@ -342,33 +342,20 @@ void main() {
       lookingFor: const {LookingFor.funding},
     );
 
-    test('uses the legacy tagline when there is one', () {
+    test('is the brief description', () {
+      expect(withText(description: ' Short line ').summary, 'Short line');
+    });
+
+    test('line breaks collapse into one flowing text', () {
       expect(
-        withText(tagline: ' Short line ', description: 'Other text.').summary,
-        'Short line',
+        withText(description: 'First line.\n\nSecond   line.').summary,
+        'First line. Second line.',
       );
     });
 
-    test('otherwise the first sentence of the description', () {
-      expect(
-        withText(
-          description:
-              'Rafeeq Health connects families with nurses. Book in minutes.',
-        ).summary,
-        'Rafeeq Health connects families with nurses.',
-      );
-      expect(
-        withText(description: 'No full stop here').summary,
-        'No full stop here',
-      );
+    test('an older startup with only a pitch falls back to it', () {
+      expect(withText(tagline: ' Old pitch ').briefDescription, 'Old pitch');
       expect(withText().summary, '');
-    });
-
-    test('long sentences are cut at a word boundary with an ellipsis', () {
-      final summary = withText(description: 'word ' * 60).summary;
-      expect(summary.length, lessThanOrEqualTo(Startup.summaryMaxLength + 1));
-      expect(summary, endsWith('…'));
-      expect(summary, isNot(contains('wor…')));
     });
   });
 

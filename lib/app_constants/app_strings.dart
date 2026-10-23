@@ -16,6 +16,9 @@ class AppStrings {
   static const tooManyRequests =
       'Too many attempts. Please wait a moment and try again.';
 
+  static const resendTooMany =
+      'Too many attempts. Please wait a few minutes and try again.';
+
   // Field labels and hints
   static const fullNameLabel = 'Full name';
   static const fullNameHint = 'e.g. Mohammed Ahmed';

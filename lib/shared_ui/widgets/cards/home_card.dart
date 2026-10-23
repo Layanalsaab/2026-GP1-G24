@@ -38,6 +38,7 @@ class HomeCard extends StatelessWidget {
     this.matchReason,
     this.index = 0,
     this.animate = true,
+    this.bodyMaxLines = 3,
   });
 
   final String name;
@@ -65,6 +66,10 @@ class HomeCard extends StatelessWidget {
 
   /// Set false to skip the cardIn entrance.
   final bool animate;
+
+  /// Lines of [body] before the ellipsis (a startup's brief description
+  /// stops at 2).
+  final int bodyMaxLines;
 
   @override
   Widget build(BuildContext context) {
@@ -105,12 +110,12 @@ class HomeCard extends StatelessWidget {
                     const SizedBox(height: 12),
                     Padding(
                       padding: const EdgeInsets.only(right: 20),
-                      // A long description stops at 3 lines with "..."; the
-                      // profile (tap the card) shows all of it.
+                      // A long description stops at [bodyMaxLines] lines with
+                      // "..."; the profile (tap the card) shows all of it.
                       child: Text(
                         body,
                         style: AppText.cardBody,
-                        maxLines: 3,
+                        maxLines: bodyMaxLines,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),

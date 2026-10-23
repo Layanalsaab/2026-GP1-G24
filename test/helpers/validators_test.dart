@@ -69,6 +69,89 @@ void main() {
     });
   });
 
+  group('linkedin formats', () {
+    test('accepts every profile format, English or Arabic', () {
+      for (final link in [
+        'linkedin.com/in/name',
+        'www.linkedin.com/in/name',
+        'https://www.linkedin.com/in/name/',
+        'http://linkedin.com/in/name',
+        'sa.linkedin.com/in/name',
+        'https://ar.linkedin.com/in/name',
+        'linkedin.com/in/محمد-أحمد',
+        'https://www.linkedin.com/in/%D9%85%D8%AD%D9%85%D8%AF-%D8%A3%D8%AD%D9%85%D8%AF/',
+        'linkedin.com/in/name?originalSubdomain=sa',
+        'https://sa.linkedin.com/in/name/?originalSubdomain=sa',
+        'linkedin.com/mwlite/in/name',
+        'https://lnkd.in/abc123',
+        'lnkd.in/abc',
+      ]) {
+        expect(Validators.isLinkedin(link), isTrue, reason: link);
+      }
+    });
+
+    test('rejects anything that is not LinkedIn', () {
+      for (final link in [
+        'google.com/in/name',
+        'https://example.com',
+        'notlinkedin.com/in/name',
+        'linkedin.com.evil.com/in/name',
+        'linkedin.com',
+        'linkedin.com/in',
+        'just words',
+      ]) {
+        expect(Validators.isLinkedin(link), isFalse, reason: link);
+      }
+    });
+  });
+
+  group('email domains', () {
+    test('a malformed email is invalid', () {
+      expect(Validators.isEmail('name@gmail'), isFalse);
+      expect(Validators.email('name@gmail'), ValidationStrings.emailInvalid);
+      expect(
+        ValidationStrings.emailInvalid,
+        'Enter a valid email, like name@example.com',
+      );
+    });
+
+    test('sign-up accepts common providers and university addresses', () {
+      for (final mail in [
+        'a@gmail.com',
+        'a@hotmail.com',
+        'a@outlook.com',
+        'a@live.com',
+        'a@yahoo.com',
+        'a@icloud.com',
+        'a@msn.com',
+        'a@ksu.edu.sa',
+        'a@student.ksu.edu.sa',
+        'a@mit.edu',
+        'a@ox.ac.uk',
+      ]) {
+        expect(Validators.isSignupEmail(mail), isTrue, reason: mail);
+      }
+    });
+
+    test('sign-up rejects anything else, misspellings included', () {
+      for (final mail in [
+        'a@gmial.com',
+        'a@gmail.co',
+        'a@gmail.net',
+        'a@gmail',
+        'a@hotmial.com',
+        'a@yahooo.com',
+        'a@mycompany.sa',
+        'a@example.com',
+        'a@edu.sa',
+        'a@fake.edu.com',
+        'not an email',
+      ]) {
+        expect(Validators.isSignupEmail(mail), isFalse, reason: mail);
+      }
+    });
+  });
+
   group('password', () {
     test('five rules: length, upper, lower, number, special', () {
       final ok = Validators.passwordRules('Sara@1234');

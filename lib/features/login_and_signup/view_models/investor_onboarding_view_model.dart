@@ -29,7 +29,7 @@ class InvestorOnboardingViewModel extends ChangeNotifier with SafeNotifier {
     for (final s in Sector.values) s.label,
   ];
   static final List<String> modelOptions = [
-    for (final m in BusinessModel.values) m.label,
+    for (final m in BusinessModel.picks) m.label,
   ];
   static const List<String> stageOptions = InvestorCriteria.stageOptions;
 

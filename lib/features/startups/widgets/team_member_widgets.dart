@@ -219,21 +219,21 @@ class TeamMemberEditor extends StatelessWidget {
             FounderToolsStrings.memberNameHint,
             TeamMember.nameMax,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: FieldHelperRow.gapAfter),
           _field(
             FounderToolsStrings.memberRole,
             role,
             FounderToolsStrings.memberRoleHint,
             TeamMember.roleMax,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: FieldHelperRow.gapAfter),
           _field(
             FounderToolsStrings.memberSpec,
             specialization,
             FounderToolsStrings.memberSpecHint,
             TeamMember.specializationMax,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: FieldHelperRow.gapAfter),
           _field(
             FounderToolsStrings.memberYears,
             years,
@@ -241,7 +241,7 @@ class TeamMemberEditor extends StatelessWidget {
             TeamMember.yearsMaxDigits,
             digits: true,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: FieldHelperRow.gapAfter),
           _field(
             FounderToolsStrings.memberBio,
             bio,
@@ -249,7 +249,7 @@ class TeamMemberEditor extends StatelessWidget {
             TeamMember.bioMax,
             multiline: true,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 10),
           Row(
             children: [
               Expanded(

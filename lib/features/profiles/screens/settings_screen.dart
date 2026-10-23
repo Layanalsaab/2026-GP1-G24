@@ -59,7 +59,7 @@ class SettingsScreen extends StatelessWidget {
         // Firebase wants a fresh sign-in: ask for the password this once.
         deleted = await showDeleteAccountDialog(context, role: role) == true;
       } else {
-        AppToast.show(
+        AppToast.error(
           context,
           e.failure == AuthFailure.network
               ? AppStrings.networkError
@@ -68,7 +68,7 @@ class SettingsScreen extends StatelessWidget {
         return;
       }
     } catch (_) {
-      if (context.mounted) AppToast.show(context, AppStrings.genericError);
+      if (context.mounted) AppToast.error(context, AppStrings.genericError);
       return;
     }
     if (!deleted || !context.mounted) return;

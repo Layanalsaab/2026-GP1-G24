@@ -31,9 +31,9 @@ class InvestorInterestsScreen extends StatelessWidget {
       SignupFlow.current = null;
       AppRouter.openHome(context);
     } else if (!viewModel.step4Complete) {
-      AppToast.show(context, ValidationStrings.fillRequired);
+      AppToast.error(context, ValidationStrings.fillRequired);
     } else if (viewModel.formError != null) {
-      AppToast.show(context, viewModel.formError!);
+      AppToast.error(context, viewModel.formError!);
     }
   }
 
@@ -84,9 +84,6 @@ class InvestorInterestsScreen extends StatelessWidget {
                     selected: vm.stages,
                     onTap: vm.toggleStage,
                     error: vm.stagesError,
-                    otherController: vm.stagesOther,
-                    otherHint: AuthStrings.stageOtherHint,
-                    otherError: vm.stagesOtherError,
                   ),
                   ChipGroupField(
                     label: AuthStrings.investModels,

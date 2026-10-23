@@ -50,9 +50,12 @@ class Startup {
   final String founderId;
   final String name;
 
-  /// Legacy, optional. The form no longer asks for it, but older documents
-  /// may have one. Use [summary] wherever a short line is shown.
+  /// Legacy, optional. The form no longer asks for it (it was merged into the
+  /// brief description), but older documents may still have one.
   final String? tagline;
+
+  /// The brief description, stored in the `description` field. Required,
+  /// at most [descriptionMax] characters.
   final String description;
   final Sector sector;
   final StartupStage stage;
@@ -151,10 +154,9 @@ class Startup {
   /// Longest text in the Problem / solution / growth fields and team bios.
   static const longTextMax = 1000;
 
-  /// Longest description.
-  static const descriptionMax = 1500;
+  /// Longest brief description.
+  static const descriptionMax = 150;
   static const nameMax = 40;
-  static const pitchMax = 120;
   static const websiteMax = 100;
   static const firstFoundedYear = 1900;
 
@@ -170,31 +172,17 @@ class Startup {
 
   bool get seeksFunding => lookingFor.contains(LookingFor.funding);
 
-  /// Longest short line shown on a card, in characters.
-  static const summaryMaxLength = 100;
-
-  /// The short line for cards: the legacy [tagline] when there is one,
-  /// otherwise the first sentence of the description (cut at a word
-  /// boundary with "…" when it is longer than [summaryMaxLength]).
-  String get summary {
-    final line = (tagline ?? '').trim();
-    return line.isNotEmpty ? line : firstSentence(description);
+  /// The brief description. Startups saved before the form had a single
+  /// brief description may have only the old one-line pitch: it stands in
+  /// when the description is empty.
+  String get briefDescription {
+    final text = description.trim();
+    return text.isNotEmpty ? text : (tagline ?? '').trim();
   }
 
-  /// First sentence of [text], on one line and at most [summaryMaxLength].
-  static String firstSentence(String text) {
-    final flat = text.trim().replaceAll(RegExp(r'\s+'), ' ');
-    if (flat.isEmpty) return '';
-    final end = RegExp(r'[.!?؟]+(\s|$)').firstMatch(flat);
-    var sentence = end == null ? flat : flat.substring(0, end.end).trim();
-    if (sentence.length <= summaryMaxLength) return sentence;
-    sentence = sentence.substring(0, summaryMaxLength);
-    final lastSpace = sentence.lastIndexOf(' ');
-    if (lastSpace > summaryMaxLength ~/ 2) {
-      sentence = sentence.substring(0, lastSpace);
-    }
-    return '${sentence.replaceFirst(RegExp(r'[\s.,;:!?-]+$'), '')}…';
-  }
+  /// The text for cards and lists: the brief description on one flowing
+  /// text (line breaks collapsed). The widgets clamp it to 2 lines.
+  String get summary => briefDescription.replaceAll(RegExp(r'\s+'), ' ');
 
   /// Initials for the logo placeholder (Figma: "Rafeeq Health" -> "RH").
   String get initials => initialsOf(name);

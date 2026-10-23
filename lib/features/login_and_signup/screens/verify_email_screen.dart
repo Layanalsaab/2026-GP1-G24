@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
 
 import '../../../app_constants/auth_strings.dart';
+import '../../../app_constants/validation_strings.dart';
 import '../../../helpers/app_session.dart';
 import '../../../models/app_user.dart';
 import '../../../navigation/app_router.dart';
+import '../../../shared_ui/icons/app_icons.dart';
+import '../../../shared_ui/motion/motion.dart';
 import '../../../shared_ui/navigation/app_route.dart';
+import '../../../shared_ui/theme/app_colors.dart';
+import '../../../shared_ui/theme/app_text.dart';
 import '../../../shared_ui/widgets/buttons/app_button.dart';
 import '../../../shared_ui/widgets/forms/app_field.dart';
 import '../../../shared_ui/widgets/forms/app_text_field.dart';
@@ -62,28 +67,37 @@ class VerifyEmailScreen extends StatefulWidget {
   State<VerifyEmailScreen> createState() => _VerifyEmailScreenState();
 }
 
-class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
+class _VerifyEmailScreenState extends State<VerifyEmailScreen>
+    with WidgetsBindingObserver {
   late final VerifyEmailViewModel _vm = VerifyEmailViewModel(flow: widget.flow);
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     if (widget.showDialogOnOpen) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
         _showDialog();
         if (!widget.flow.emailSent) {
-          AppToast.show(context, _sendFailed);
+          AppToast.error(context, _sendFailed);
         }
       });
     }
   }
 
   static const _sendFailed =
-      'We couldn’t send the verification email. Tap “Resend verification email” to try again.';
+      'We couldn’t send the verification email. Tap “Resend email” to try again.';
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // The countdown is derived from an end time, so just re-sync it.
+    if (state == AppLifecycleState.resumed) _vm.refreshCountdown();
+  }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _vm.dispose();
     super.dispose();
   }
@@ -109,25 +123,24 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
         email: widget.flow.email,
         inSignup: true,
         notVerifiedYet: notVerified,
-        onResend: () {
-          Navigator.of(ctx).pop();
-          _resend(AuthStrings.verifyEmailSent);
-        },
         onClose: () => Navigator.of(ctx).pop(),
       ),
     );
   }
 
-  Future<void> _resend(String sentMessage) async {
+  /// Sends the email again. No toast when it works: the countdown restarting
+  /// is the feedback. "Too many attempts" shows under the resend row.
+  Future<void> _resend() async {
     final outcome = await _vm.resend();
     if (!mounted) return;
     switch (outcome) {
       case ResendOutcome.sent:
-        AppToast.show(context, sentMessage);
+        break;
       case ResendOutcome.alreadyVerified:
         AppToast.show(context, AuthStrings.alreadyVerified);
       case ResendOutcome.failed:
-        AppToast.show(context, _vm.formError ?? '');
+        final error = _vm.formError;
+        if (error != null) AppToast.error(context, error);
     }
   }
 
@@ -137,11 +150,12 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
     switch (result) {
       case VerifyResult.invalid:
       case VerifyResult.wrongPassword:
-        break; // The errors are already under the fields.
+        // The errors are under the fields; the pop-up says to fix them.
+        AppToast.error(context, ValidationStrings.fixFields);
       case VerifyResult.notVerified:
         _showDialog(notVerified: true);
       case VerifyResult.failed:
-        AppToast.show(context, _vm.formError ?? '');
+        AppToast.error(context, _vm.formError ?? '');
       case VerifyResult.verified:
         _onVerified(_vm.user!);
     }
@@ -149,7 +163,6 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
 
   void _onVerified(AppUser user) {
     AppSession.instance.signIn(user);
-    AppToast.show(context, AuthStrings.emailVerified);
     if (user.role == AccountRole.founder) {
       StartupStepsScreen.openOnboarding(context);
     } else {
@@ -181,40 +194,45 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                 onPressed: _continue,
                 loading: vm.isLoading,
               ),
-              link: FooterLink(
-                prefix: AuthStrings.verifyDidntGet,
-                linkLabel: AuthStrings.resendEmail,
-                onTap: () =>
-                    _resend(AuthStrings.verifyEmailSentTo(widget.flow.email)),
-              ),
             ),
             children: [
               AuthCard(
-                child: FormFieldColumn(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    LabeledTextField(
-                      label: AuthStrings.email,
-                      required: true,
-                      controller: vm.email,
-                      placeholder: AuthStrings.emailPlaceholder,
-                      keyboardType: TextInputType.emailAddress,
-                      valid: vm.emailValid,
-                      error: vm.emailError,
-                      autofillHints: const [AutofillHints.email],
+                    FormFieldColumn(
+                      children: [
+                        LabeledTextField(
+                          label: AuthStrings.email,
+                          required: true,
+                          controller: vm.email,
+                          placeholder: AuthStrings.emailPlaceholder,
+                          keyboardType: TextInputType.emailAddress,
+                          valid: vm.emailValid,
+                          error: vm.emailError,
+                          autofillHints: const [AutofillHints.email],
+                        ),
+                        LabeledTextField(
+                          label: AuthStrings.password,
+                          required: true,
+                          controller: vm.password,
+                          placeholder: AuthStrings.passwordPlaceholderLogin,
+                          password: true,
+                          error: vm.passwordError,
+                          linkLabel: AuthStrings.forgotLink,
+                          onLink: () => ForgotPasswordScreen.open(
+                            context,
+                            email: vm.email.text.trim(),
+                          ),
+                          autofillHints: const [AutofillHints.password],
+                        ),
+                      ],
                     ),
-                    LabeledTextField(
-                      label: AuthStrings.password,
-                      required: true,
-                      controller: vm.password,
-                      placeholder: AuthStrings.passwordPlaceholderLogin,
-                      password: true,
-                      error: vm.passwordError,
-                      linkLabel: AuthStrings.forgotLink,
-                      onLink: () => ForgotPasswordScreen.open(
-                        context,
-                        email: vm.email.text.trim(),
-                      ),
-                      autofillHints: const [AutofillHints.password],
+                    _ResendRow(
+                      seconds: vm.resendSeconds,
+                      error: vm.resendError,
+                      busy: vm.isResending,
+                      onResend: _resend,
                     ),
                   ],
                 ),
@@ -224,6 +242,133 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
           );
         },
       ),
+    );
+  }
+}
+
+/// "Didn’t get the email? Resend in 0:59" inside the white card, under the
+/// password field: a 1 px line, then the centered row (14 px, padding 14 top,
+/// 18 bottom). While the cooldown runs it is muted and not tappable; at 0:00
+/// it fades into a dark green semibold "Resend email".
+class _ResendRow extends StatelessWidget {
+  const _ResendRow({
+    required this.seconds,
+    required this.error,
+    required this.busy,
+    required this.onResend,
+  });
+
+  final int seconds;
+  final String? error;
+  final bool busy;
+  final VoidCallback onResend;
+
+  static String _clock(int s) =>
+      '${s ~/ 60}:${(s % 60).toString().padLeft(2, '0')}';
+
+  @override
+  Widget build(BuildContext context) {
+    final waiting = seconds > 0;
+    final base = AppText.sans(size: 14, height: 20, color: AppColors.hint);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const Divider(height: 1, thickness: 1, color: Color(0xFFEFECE6)),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 18),
+          child: Column(
+            children: [
+              AnimatedSwitcher(
+                duration: Motion.dur(
+                  context,
+                  const Duration(milliseconds: 200),
+                ),
+                child: waiting
+                    ? Semantics(
+                        key: const ValueKey('waiting'),
+                        label:
+                            '${AuthStrings.verifyDidntGet} Resend in ${_clock(seconds)}',
+                        excludeSemantics: true,
+                        child: Text.rich(
+                          textAlign: TextAlign.center,
+                          TextSpan(
+                            style: base,
+                            children: [
+                              TextSpan(
+                                text:
+                                    '${AuthStrings.verifyDidntGet} Resend in ',
+                              ),
+                              TextSpan(
+                                text: _clock(seconds),
+                                style: AppText.sans(
+                                  size: 14,
+                                  height: 20,
+                                  weight: FontWeight.w600,
+                                  color: AppColors.grey,
+                                  tabular: true,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
+                    : Semantics(
+                        key: const ValueKey('ready'),
+                        button: true,
+                        label: AuthStrings.resendEmail,
+                        excludeSemantics: true,
+                        child: GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: busy ? null : onResend,
+                          child: Text.rich(
+                            textAlign: TextAlign.center,
+                            TextSpan(
+                              style: AppText.sans(
+                                size: 14,
+                                height: 20,
+                                color: AppColors.grey,
+                              ),
+                              children: [
+                                TextSpan(
+                                  text: '${AuthStrings.verifyDidntGet} ',
+                                ),
+                                TextSpan(
+                                  text: AuthStrings.resendEmail,
+                                  style: AppText.sans(
+                                    size: 14,
+                                    height: 20,
+                                    weight: FontWeight.w600,
+                                    color: AppColors.moss600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+              ),
+              if (error != null) ...[
+                const SizedBox(height: 8),
+                Semantics(
+                  liveRegion: true,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      AppIcon.filled(
+                        AppIcons.error,
+                        size: 14,
+                        color: AppColors.error,
+                      ),
+                      const SizedBox(width: 4),
+                      Flexible(child: Text(error!, style: AppText.error)),
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

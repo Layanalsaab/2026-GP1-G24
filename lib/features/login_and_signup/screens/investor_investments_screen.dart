@@ -54,7 +54,7 @@ class _InvestorInvestmentsScreenState extends State<InvestorInvestmentsScreen> {
 
   void _next() {
     if (!_vm.tryStep3()) {
-      AppToast.show(context, ValidationStrings.fillRequired);
+      AppToast.error(context, ValidationStrings.fillRequired);
       return;
     }
     AppNav.push(

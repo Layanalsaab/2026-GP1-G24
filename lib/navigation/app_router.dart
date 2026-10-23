@@ -93,7 +93,7 @@ class AppRouter {
         await AuthRepository.instance.signOut();
       } catch (_) {
         if (context.mounted) {
-          AppToast.show(context, AppStrings.genericError);
+          AppToast.error(context, AppStrings.genericError);
         }
         return;
       }

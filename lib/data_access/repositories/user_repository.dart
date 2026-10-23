@@ -40,6 +40,8 @@ class UserRepository {
     String? linkedin,
     String? gain,
     String? valueOffered,
+    bool emailPublic = false,
+    bool phonePublic = false,
   }) async {
     final core = <String, Object?>{
       UserFields.role: role.value,
@@ -61,6 +63,9 @@ class UserRepository {
       if (gain != null && gain.trim().isNotEmpty) UserFields.gain: gain.trim(),
       if (valueOffered != null && valueOffered.trim().isNotEmpty)
         UserFields.valueOffered: valueOffered.trim(),
+      // Private is the default, so only a public choice is stored.
+      if (emailPublic) UserFields.emailPublic: true,
+      if (phonePublic) UserFields.phonePublic: true,
     };
     if (extra.isEmpty) {
       await _firestore.setDocument(FirestoreCollections.users, uid, core);

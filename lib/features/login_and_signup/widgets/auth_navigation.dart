@@ -12,3 +12,15 @@ void authBack(BuildContext context) {
     WelcomeScreen.open(context);
   }
 }
+
+/// Like [authBack], but a plain pop that the screen's own back guard
+/// (`PopScope`) cannot intercept. Use it after the user has already decided
+/// to leave (e.g. "Discard"), otherwise the guard would ask again.
+void authLeave(BuildContext context) {
+  final navigator = Navigator.of(context);
+  if (navigator.canPop()) {
+    navigator.pop();
+  } else {
+    WelcomeScreen.open(context);
+  }
+}

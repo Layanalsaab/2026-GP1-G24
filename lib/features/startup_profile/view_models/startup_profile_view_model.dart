@@ -79,8 +79,6 @@ class StartupProfileViewModel extends ChangeNotifier with SafeNotifier {
       '${ProfileStrings.kvFounded} ${startup.foundedYear}',
   ].join(' · ');
 
-  String get pitch => startup.summary;
-
   String get website => (startup.websiteUrl ?? '').trim();
 
   String? get raising {
