@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../app_constants/app_strings.dart';
@@ -50,6 +52,8 @@ class AppRouter {
     bool welcomeBack = false,
   }) async {
     AppSession.instance.signIn(user);
+    // The saved bookmarks load in the background (icons fill when ready).
+    unawaited(BookmarkRepository.instance.load(user.uid));
     var needsStartup = false;
     if (user.role == AccountRole.founder) {
       try {

@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import '../../models/app_user.dart';
 import '../../models/auth_failure.dart';
 import '../firebase_services/auth_service.dart';
+import 'bookmark_repository.dart';
 import 'startup_repository.dart';
 import 'user_repository.dart';
 
@@ -228,6 +229,13 @@ class AuthRepository {
     // A founder's startups go with the account, so none stay public.
     try {
       await StartupRepository.instance.deleteAllMine();
+    } catch (_) {
+      // Carry on: the account itself must still be removed.
+    }
+    // Saved bookmarks live under the user document and are not deleted
+    // with it, so they are removed first (while still signed in).
+    try {
+      await BookmarkRepository.instance.deleteAll(account.uid);
     } catch (_) {
       // Carry on: the account itself must still be removed.
     }
