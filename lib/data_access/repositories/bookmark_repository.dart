@@ -59,9 +59,7 @@ class BookmarkRepository {
         if (type == null || typeOf(k) == type) k,
     ];
     final old = DateTime.fromMillisecondsSinceEpoch(0);
-    list.sort(
-      (a, b) => (_savedAt[b] ?? old).compareTo(_savedAt[a] ?? old),
-    );
+    list.sort((a, b) => (_savedAt[b] ?? old).compareTo(_savedAt[a] ?? old));
     return list;
   }
 

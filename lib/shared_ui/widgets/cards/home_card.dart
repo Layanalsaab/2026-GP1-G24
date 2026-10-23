@@ -219,12 +219,7 @@ class _NameBlock extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(
-          name,
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-          style: AppText.cardName,
-        ),
+        _FitName(name),
         const SizedBox(height: 5),
         Row(
           children: [
@@ -254,6 +249,50 @@ class _NameBlock extends StatelessWidget {
           ],
         ),
       ],
+    );
+  }
+}
+
+/// The card name on ONE line. A long name shrinks its font (down to 72 %)
+/// instead of wrapping, so every card has the same height; only a name that
+/// is still too long at that size is cut with "...". The line keeps its 23 px
+/// height at any size.
+class _FitName extends StatelessWidget {
+  const _FitName(this.name);
+
+  final String name;
+
+  static const double _lineHeight = 23;
+  static const double _minScale = 0.72;
+
+  @override
+  Widget build(BuildContext context) {
+    final base = AppText.cardName;
+    final size = base.fontSize ?? 18;
+    return LayoutBuilder(
+      builder: (context, box) {
+        final painter = TextPainter(
+          text: TextSpan(text: name, style: base),
+          textDirection: TextDirection.ltr,
+          textScaler: MediaQuery.textScalerOf(context),
+          maxLines: 1,
+        )..layout();
+        final fits = !box.hasBoundedWidth || painter.width <= box.maxWidth;
+        final scale = fits
+            ? 1.0
+            : (box.maxWidth / painter.width).clamp(_minScale, 1.0);
+        final fontSize = size * scale;
+        return Text(
+          name,
+          maxLines: 1,
+          softWrap: false,
+          overflow: TextOverflow.ellipsis,
+          style: base.copyWith(
+            fontSize: fontSize,
+            height: _lineHeight / fontSize,
+          ),
+        );
+      },
     );
   }
 }

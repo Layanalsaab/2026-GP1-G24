@@ -672,7 +672,7 @@ void main() {
         home: Scaffold(
           body: Builder(
             builder: (c) => TextButton(
-              onPressed: () => AppToast.show(c, 'Hello'),
+              onPressed: () => AppToast.error(c, 'Hello'),
               child: const Text('go'),
             ),
           ),
@@ -691,7 +691,7 @@ void main() {
     await t.pump(const Duration(milliseconds: 300));
     expect(op('Hello'), 1);
     await t.pump(const Duration(milliseconds: 2000));
-    AppToast.show(t.element(find.text('go')), 'Second');
+    AppToast.error(t.element(find.text('go')), 'Second');
     await t.pump();
     expect(find.text('Hello'), findsNothing);
     expect(find.text('Second'), findsOneWidget);

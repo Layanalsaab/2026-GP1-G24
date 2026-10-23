@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../app_constants/home_strings.dart';
-import '../data_access/repositories/bookmark_repository.dart';
 import '../data_access/repositories/startup_repository.dart';
+import '../features/bookmarks/screens/bookmarks_screen.dart';
 import '../features/explore_startups/screens/explore_screen.dart';
 import '../features/login_and_signup/screens/choose_role_screen.dart';
 import '../features/profiles/screens/account_screen.dart';
@@ -15,6 +15,7 @@ import '../features/search/view_models/home_view_model.dart';
 import '../features/startups/screens/my_startups_screen.dart';
 import '../helpers/app_session.dart';
 import '../shared_ui/icons/app_icons.dart';
+import '../shared_ui/navigation/app_route.dart';
 import '../shared_ui/theme/app_colors.dart';
 import '../shared_ui/widgets/headers/home_header.dart';
 import '../shared_ui/widgets/nav/app_bottom_nav.dart';
@@ -132,7 +133,15 @@ class _MainScreenState extends State<MainScreen> {
         AppDrawerItem(
           label: HomeStrings.bookmarks,
           icon: AppIcons.menuBookmark,
-          badge: BookmarkRepository.instance.count,
+          // No number badge on this item.
+          onTap: () => BookmarksScreen.open(
+            context,
+            // "Explore" in the empty state goes to the Explore tab.
+            onExplore: () {
+              AppNav.back(context);
+              _vm.selectTab(HomeTab.explore);
+            },
+          ),
         ),
         if (founder)
           AppDrawerItem(label: HomeStrings.askGemini, icon: AppIcons.menuSpark),

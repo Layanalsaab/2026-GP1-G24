@@ -12,6 +12,21 @@ class FounderToolsStrings {
   static const addAction = 'Add';
   static String startupCount(int n) => n == 1 ? '1 startup' : '$n startups';
   static const manage = 'Manage';
+  static const view = 'View';
+  static const roleFounder = 'Founder';
+  static const roleMember = 'Team member';
+  static const allStartups = 'All startups';
+  static const filterStartupsTitle = 'Filter startups';
+  static const sortStartupsTitle = 'Sort startups';
+  static const visibilityGroup = 'VISIBILITY';
+  static const roleGroup = 'MY ROLE';
+  static const optionAll = 'All';
+  static const optionPublic = 'Public';
+  static const optionPrivate = 'Private';
+  static const done = 'Done';
+  static String filtersCount(int n) => '$n filters';
+  static const noMatchTitle = 'No startups match these filters.';
+  static const showAllStartups = 'Show all startups';
   static const emptyTitle = 'Add your first startup';
   static const emptyMessage =
       'Create a profile so investors and seekers can find you. It takes about 5 minutes.';

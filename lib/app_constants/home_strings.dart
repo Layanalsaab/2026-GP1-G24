@@ -57,6 +57,24 @@ class HomeStrings {
   static const investorRole = 'Investor';
   static const notificationCount = 4;
 
+  // Bookmarks screen
+  static const bookmarksTitle = 'Bookmarks';
+  static const filterByTypeTitle = 'Filter by type';
+  static const sortBookmarksTitle = 'Sort bookmarks';
+  static const allTypes = 'All types';
+  static const typeStartups = 'Startups';
+  static const typeInvestors = 'Investors';
+  static const typePrograms = 'Support Channels';
+  static const newestFirst = 'Newest first';
+  static const oldestFirst = 'Oldest first';
+  static const nameAZ = 'Name (A–Z)';
+  static const noBookmarksTitle = 'No bookmarks yet';
+  static const noBookmarksMessage =
+      'Tap the bookmark icon on any startup, investor or support channel to save it here.';
+  static const explore = 'Explore';
+  static String noSavedOfType(String plural) => 'No saved $plural yet.';
+  static const showAllBookmarks = 'Show all bookmarks';
+
   // Counts
   static String resultCount(int n) => '$n ${n == 1 ? 'result' : 'results'}';
   static String matchCount(int n) => '$n ${n == 1 ? 'match' : 'matches'}';

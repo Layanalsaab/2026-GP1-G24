@@ -4,15 +4,21 @@ import '../../../app_constants/founder_tools_strings.dart';
 import '../../../data_access/repositories/startup_draft_repository.dart';
 import '../../../helpers/app_session.dart';
 import '../../../models/startup.dart';
+import '../../../shared_ui/widgets/headers/list_screen_header.dart';
+import '../../../shared_ui/widgets/lists/filter_sort_pills.dart';
+import '../../startup_profile/screens/startup_profile_screen.dart';
 import '../view_models/my_startups_view_model.dart';
+import '../widgets/startup_filter_sheet.dart';
 import '../widgets/draft_card.dart';
 import '../widgets/founder_ui.dart';
 import '../widgets/my_startup_card.dart';
 import 'manage_startup_screen.dart';
 import 'startup_steps_screen.dart';
 
-/// My Startups (docs/05 D1): green header with an "Add" pill and the count,
-/// an overlapping list of startup cards, or the illustrated empty card.
+/// My Startups (docs/05 D1): the shared list banner (back, "Add" pill, title
+/// and logo, filter + sort pills; no count line) and the cards of the
+/// founder's startups plus the ones they joined as a team member, or the
+/// illustrated empty card.
 class MyStartupsScreen extends StatefulWidget {
   const MyStartupsScreen({super.key});
 
@@ -67,12 +73,27 @@ class _MyStartupsScreenState extends State<MyStartupsScreen> {
     if (mounted) _vm.load();
   }
 
+  /// Team-member cards open the public profile (view only, no editing).
+  void _view(Startup s) =>
+      StartupProfileScreen.open(context, startup: s, preview: false);
+
+  Future<void> _pickSort() async {
+    final r = await showPickerSheet(
+      context,
+      title: FounderToolsStrings.sortStartupsTitle,
+      options: [for (final s in StartupSort.values) s.label],
+      selected: _vm.sort.label,
+    );
+    if (r == null) return;
+    _vm.setSort(StartupSort.values.firstWhere((s) => s.label == r.value));
+  }
+
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
       listenable: Listenable.merge([_vm, _drafts.current]),
       builder: (context, _) {
-        final hasList = _vm.startups.isNotEmpty;
+        final hasList = _vm.entries.isNotEmpty;
         final draft = _drafts.current.value;
         final draftCard = draft == null
             ? null
@@ -81,81 +102,142 @@ class _MyStartupsScreenState extends State<MyStartupsScreen> {
                 onTap: () => _continueDraft(draft),
                 onDiscard: _discardDraft,
               );
+        final shown = _vm.visible;
         return Scaffold(
           backgroundColor: AppColors.cream,
           body: SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                AuthHeader(
+                ListScreenHeader(
                   title: FounderToolsStrings.myStartupsTitle,
-                  overlap: OverlapList.overlap,
                   onBack: () => AppNav.back(context),
-                  trailing: hasList || draft != null
+                  topTrailing: hasList || draft != null
                       ? GoldPillButton.add(onTap: _add)
                       : null,
-                  subtitle: hasList
-                      ? FounderToolsStrings.startupCount(_vm.startups.length)
+                  pills: hasList
+                      ? FilterSortPills(
+                          filterLabel: _vm.filterLabel,
+                          filterActive: _vm.filtered,
+                          sortLabel: _vm.sort.label,
+                          onFilter: () => showStartupFilterSheet(context, _vm),
+                          onSort: _pickSort,
+                        )
                       : null,
                 ),
-                if (_vm.isEmpty)
-                  OverlapList(
+                // The list starts right under the banner, at the same y as
+                // the Bookmarks list.
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 28),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      ?draftCard,
-                      IllustratedEmptyCard(
-                        illustration: const _EmptyIllustration(),
-                        title: FounderToolsStrings.emptyTitle,
-                        message: FounderToolsStrings.emptyMessage,
-                        actionLabel: FounderToolsStrings.emptyButton,
-                        onAction: _add,
-                      ),
-                    ],
-                  )
-                else if (_vm.error != null && !hasList)
-                  OverlapList(
-                    children: [
-                      EmptyState(
-                        title: FounderToolsStrings.loadFailed,
-                        message: '',
-                        actionLabel: FounderToolsStrings.retry,
-                        onAction: _vm.load,
-                      ),
-                    ],
-                  )
-                else if (_vm.isLoading && !hasList)
-                  const Padding(
-                    padding: EdgeInsets.only(top: 56),
-                    child: Center(
-                      child: SizedBox(
-                        width: 28,
-                        height: 28,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 3,
-                          color: AppColors.moss600,
+                      if (_vm.isEmpty) ...[
+                        if (draftCard != null) ...[
+                          draftCard,
+                          const SizedBox(height: 14),
+                        ],
+                        IllustratedEmptyCard(
+                          illustration: const _EmptyIllustration(),
+                          title: FounderToolsStrings.emptyTitle,
+                          message: FounderToolsStrings.emptyMessage,
+                          actionLabel: FounderToolsStrings.emptyButton,
+                          onAction: _add,
                         ),
-                      ),
-                    ),
-                  )
-                else
-                  OverlapList(
-                    animate: false,
-                    children: [
-                      ?draftCard,
-                      for (var i = 0; i < _vm.startups.length; i++)
-                        Rise.card(
-                          delay: Motion.stagger(context, i, stepMs: 50),
-                          child: MyStartupCard(
-                            startup: _vm.startups[i],
-                            onTap: () => _manage(_vm.startups[i]),
+                      ] else if (_vm.error != null && !hasList)
+                        EmptyState(
+                          title: FounderToolsStrings.loadFailed,
+                          message: '',
+                          actionLabel: FounderToolsStrings.retry,
+                          onAction: _vm.load,
+                        )
+                      else if (_vm.isLoading && !hasList)
+                        const Padding(
+                          padding: EdgeInsets.only(top: 48),
+                          child: Center(
+                            child: SizedBox(
+                              width: 28,
+                              height: 28,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 3,
+                                color: AppColors.moss600,
+                              ),
+                            ),
                           ),
-                        ),
+                        )
+                      else ...[
+                        if (draftCard != null) ...[
+                          draftCard,
+                          const SizedBox(height: 14),
+                        ],
+                        if (shown.isEmpty)
+                          _NoMatches(onShowAll: _vm.resetFilters)
+                        else
+                          for (var i = 0; i < shown.length; i++) ...[
+                            if (i > 0) const SizedBox(height: 14),
+                            Rise.card(
+                              key: ObjectKey(shown[i]),
+                              delay: Motion.stagger(context, i, stepMs: 50),
+                              child: MyStartupCard(
+                                startup: shown[i].startup,
+                                isFounder: shown[i].isFounder,
+                                onTap: shown[i].isFounder
+                                    ? () => _manage(shown[i].startup)
+                                    : () => _view(shown[i].startup),
+                              ),
+                            ),
+                          ],
+                      ],
                     ],
                   ),
+                ),
               ],
             ),
           ),
         );
       },
+    );
+  }
+}
+
+/// Filters with no results: a small card with "Show all startups".
+class _NoMatches extends StatelessWidget {
+  const _NoMatches({required this.onShowAll});
+
+  final VoidCallback onShowAll;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x140F2314),
+            offset: Offset(0, 1),
+            blurRadius: 2,
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Text(
+            FounderToolsStrings.noMatchTitle,
+            textAlign: TextAlign.center,
+            style: AppText.sans(size: 15, color: AppColors.grey, height: 22),
+          ),
+          const SizedBox(height: 4),
+          AppButton(
+            label: FounderToolsStrings.showAllStartups,
+            variant: AppButtonVariant.ghost,
+            expanded: false,
+            onPressed: onShowAll,
+          ),
+        ],
+      ),
     );
   }
 }

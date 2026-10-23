@@ -24,10 +24,19 @@ String startupNeedsLine(Startup s) {
 /// tagline, sector / stage / city pills, and a footer with the visibility
 /// pill, the needs line and "Manage ›". Tap opens Manage.
 class MyStartupCard extends StatelessWidget {
-  const MyStartupCard({super.key, required this.startup, required this.onTap});
+  const MyStartupCard({
+    super.key,
+    required this.startup,
+    required this.onTap,
+    this.isFounder = true,
+  });
 
   final Startup startup;
   final VoidCallback onTap;
+
+  /// True: the user owns it (gold "Founder" tag, "Manage ›"). False: a team
+  /// member (green "Team member" tag, "View ›", no editing).
+  final bool isFounder;
 
   @override
   Widget build(BuildContext context) {
@@ -35,7 +44,8 @@ class MyStartupCard extends StatelessWidget {
     final needs = startupNeedsLine(s);
     return Semantics(
       button: true,
-      label: '${s.name}, ${FounderToolsStrings.manage}',
+      label:
+          '${s.name}, ${isFounder ? FounderToolsStrings.roleFounder : FounderToolsStrings.roleMember}, ${isFounder ? FounderToolsStrings.manage : FounderToolsStrings.view}',
       excludeSemantics: true,
       child: HoverLiftCard(
         onTap: onTap,
@@ -57,15 +67,33 @@ class MyStartupCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        s.name,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppText.sans(
-                          size: 18,
-                          weight: FontWeight.w700,
-                          letterSpacing: -0.2,
-                        ),
+                      Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              s.name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppText.sans(
+                                size: 18,
+                                weight: FontWeight.w700,
+                                letterSpacing: -0.2,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          AppPill(
+                            label: isFounder
+                                ? FounderToolsStrings.roleFounder
+                                : FounderToolsStrings.roleMember,
+                            tone: isFounder
+                                ? AppPillTone.gold
+                                : AppPillTone.moss,
+                            height: 20,
+                            fontSize: 11,
+                            weight: FontWeight.w600,
+                          ),
+                        ],
                       ),
                       if (s.summary.isNotEmpty) ...[
                         const SizedBox(height: 2),
@@ -128,7 +156,9 @@ class MyStartupCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    FounderToolsStrings.manage,
+                    isFounder
+                        ? FounderToolsStrings.manage
+                        : FounderToolsStrings.view,
                     style: AppText.sans(
                       size: 15,
                       weight: FontWeight.w600,

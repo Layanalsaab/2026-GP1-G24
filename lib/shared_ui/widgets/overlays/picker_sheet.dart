@@ -180,7 +180,7 @@ class _PickerSheetState extends State<PickerSheet> {
                 padding: const EdgeInsets.fromLTRB(12, 4, 12, 12),
                 children: [
                   for (final o in all)
-                    _OptionRow(
+                    PickerOptionRow(
                       label: o,
                       selected: o == _selected,
                       onTap: () => _pick(o),
@@ -222,8 +222,10 @@ class _PickerSheetState extends State<PickerSheet> {
   }
 }
 
-class _OptionRow extends StatefulWidget {
-  const _OptionRow({
+/// One option row of a picker sheet: tint and a green check when selected.
+class PickerOptionRow extends StatefulWidget {
+  const PickerOptionRow({
+    super.key,
     required this.label,
     required this.selected,
     required this.onTap,
@@ -234,10 +236,10 @@ class _OptionRow extends StatefulWidget {
   final VoidCallback onTap;
 
   @override
-  State<_OptionRow> createState() => _OptionRowState();
+  State<PickerOptionRow> createState() => PickerOptionRowState();
 }
 
-class _OptionRowState extends State<_OptionRow> {
+class PickerOptionRowState extends State<PickerOptionRow> {
   bool _hover = false;
 
   String get label => widget.label;
