@@ -5,6 +5,8 @@ import 'package:startsa/data_access/mock_data/prototype_seed.dart';
 import 'package:startsa/data_access/repositories/startup_repository.dart';
 import 'package:startsa/features/bookmarks/screens/bookmarks_screen.dart';
 import 'package:startsa/features/startups/screens/my_startups_screen.dart';
+import 'package:startsa/models/home_item.dart';
+import 'package:startsa/models/list_entries.dart';
 import 'package:startsa/shared_ui/theme/app_theme.dart';
 import 'package:startsa/shared_ui/widgets/headers/list_screen_header.dart';
 import 'package:startsa/shared_ui/widgets/overlays/app_toast.dart';
@@ -24,6 +26,22 @@ Future<void> _pump(WidgetTester t, Widget home) async {
   await t.pump(const Duration(milliseconds: 800));
 }
 
+/// A few saved items for the screen (the screen itself has no sample list).
+final _saved = [
+  SavedBookmark(
+    item: HomeItem.fromStartup(PrototypeSeed.rafeeq),
+    savedAt: DateTime(2026, 10, 20),
+  ),
+  SavedBookmark(
+    item: HomeItem.fromInvestor(PrototypeSeed.sara),
+    savedAt: DateTime(2026, 10, 18),
+  ),
+  SavedBookmark(
+    item: HomeItem.fromProgram(PrototypeSeed.programs.first),
+    savedAt: DateTime(2026, 10, 15),
+  ),
+];
+
 /// Opens a bottom sheet from a pill and lets it finish sliding in.
 Future<void> _tapPill(WidgetTester t, String label) async {
   await t.tap(find.text(label));
@@ -39,7 +57,7 @@ void main() {
     testWidgets('shows the saved cards, the pills and no count line', (
       t,
     ) async {
-      await _pump(t, const BookmarksScreen());
+      await _pump(t, BookmarksScreen(items: _saved));
       expect(find.text('Bookmarks'), findsOneWidget);
       expect(find.text('All types'), findsOneWidget);
       expect(find.text('Newest first'), findsOneWidget);
@@ -48,7 +66,7 @@ void main() {
     });
 
     testWidgets('the type filter narrows the list and goes gold', (t) async {
-      await _pump(t, const BookmarksScreen());
+      await _pump(t, BookmarksScreen(items: _saved));
       await _tapPill(t, 'All types');
       expect(find.text('Filter by type'), findsOneWidget);
       for (final o in [
@@ -71,7 +89,7 @@ void main() {
     ) async {
       await _pump(
         t,
-        BookmarksScreen(items: [PrototypeSeed.sampleBookmarks.first]),
+        BookmarksScreen(items: [_saved.first]),
       );
       // Only a startup is saved: filter to investors.
       await _tapPill(t, 'All types');
@@ -135,7 +153,7 @@ void main() {
     });
 
     testWidgets('both banners have exactly the same height', (t) async {
-      await _pump(t, const BookmarksScreen());
+      await _pump(t, BookmarksScreen(items: _saved));
       final bookmarks = t.getSize(find.byType(ListScreenHeader)).height;
       await _pump(t, const MyStartupsScreen());
       final mine = t.getSize(find.byType(ListScreenHeader)).height;

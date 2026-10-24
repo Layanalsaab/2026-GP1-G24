@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../app_constants/home_strings.dart';
+import '../data_access/repositories/bookmark_repository.dart';
 import '../data_access/repositories/startup_repository.dart';
 import '../features/bookmarks/screens/bookmarks_screen.dart';
 import '../features/explore_startups/screens/explore_screen.dart';
@@ -134,14 +135,23 @@ class _MainScreenState extends State<MainScreen> {
           label: HomeStrings.bookmarks,
           icon: AppIcons.menuBookmark,
           // No number badge on this item.
-          onTap: () => BookmarksScreen.open(
-            context,
-            // "Explore" in the empty state goes to the Explore tab.
-            onExplore: () {
-              AppNav.back(context);
-              _vm.selectTab(HomeTab.explore);
-            },
-          ),
+          onTap: () async {
+            // The user's saved bookmarks (Firestore).
+            final items = await BookmarkRepository.instance.savedItems();
+            if (!mounted) return;
+            BookmarksScreen.open(
+              context,
+              items: items,
+              // Removing a card deletes the bookmark too.
+              onRemove: (b) =>
+                  BookmarkRepository.instance.remove(b.item.bookmarkKey),
+              // "Explore" in the empty state goes to the Explore tab.
+              onExplore: () {
+                AppNav.back(context);
+                _vm.selectTab(HomeTab.explore);
+              },
+            );
+          },
         ),
         if (founder)
           AppDrawerItem(label: HomeStrings.askGemini, icon: AppIcons.menuSpark),
