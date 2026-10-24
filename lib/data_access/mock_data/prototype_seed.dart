@@ -1,6 +1,5 @@
 import '../../models/connection_request.dart';
 import '../../models/expressed_interest.dart';
-import '../../models/home_item.dart';
 import '../../models/list_entries.dart';
 import '../../models/investor_profile.dart';
 import '../../models/program.dart';

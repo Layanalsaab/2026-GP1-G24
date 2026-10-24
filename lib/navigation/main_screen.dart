@@ -138,7 +138,7 @@ class _MainScreenState extends State<MainScreen> {
           onTap: () async {
             // The user's saved bookmarks (Firestore).
             final items = await BookmarkRepository.instance.savedItems();
-            if (!context.mounted) return;
+            if (!mounted) return;
             BookmarksScreen.open(
               context,
               items: items,
