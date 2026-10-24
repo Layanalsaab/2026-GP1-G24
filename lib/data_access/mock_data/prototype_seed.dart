@@ -786,36 +786,6 @@ class PrototypeSeed {
 
   // --------------------------------------------- list screens (interface)
 
-  /// MOCKUP DATA for the Bookmarks screen (interface only). Replace by the
-  /// user's real saved items when the backend is connected; nothing else in
-  /// the screen needs to change. The dates make "Newest first" visible.
-  static final List<SavedBookmark> sampleBookmarks = [
-    SavedBookmark(
-      item: HomeItem.fromStartup(rafeeq),
-      savedAt: DateTime(2026, 10, 20),
-    ),
-    SavedBookmark(
-      item: HomeItem.fromInvestor(sara),
-      savedAt: DateTime(2026, 10, 18),
-    ),
-    SavedBookmark(
-      item: HomeItem.fromProgram(programs.first),
-      savedAt: DateTime(2026, 10, 15),
-    ),
-    SavedBookmark(
-      item: HomeItem.fromStartup(daftar),
-      savedAt: DateTime(2026, 10, 12),
-    ),
-    SavedBookmark(
-      item: HomeItem.fromInvestor(omar),
-      savedAt: DateTime(2026, 10, 9),
-    ),
-    SavedBookmark(
-      item: HomeItem.fromProgram(programs[1]),
-      savedAt: DateTime(2026, 10, 5),
-    ),
-  ];
-
   /// MOCKUP DATA for My Startups (interface only): startups the user was
   /// added to as a team member (view only). The founder's own startups still
   /// come from the existing startup loading. Replace by the real memberships

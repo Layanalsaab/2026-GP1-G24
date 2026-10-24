@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../../../app_constants/home_strings.dart';
-import '../../../data_access/mock_data/prototype_seed.dart';
 import '../../../models/list_entries.dart';
 import '../../../navigation/open_item.dart';
 import '../../../shared_ui/icons/app_icons.dart';
@@ -22,15 +21,18 @@ import '../view_models/bookmarks_view_model.dart';
 /// Bookmarks (side menu): the startups, investors and support channels the
 /// user saved, with a type filter and a sort, using the same card as the Hub.
 ///
-/// INTERFACE ONLY. The list is passed in as [items]; by default it is the
-/// mockup list in `PrototypeSeed.sampleBookmarks`. To connect the real data,
-/// pass the user's saved items here (and [onRemove] to delete a bookmark);
-/// nothing else in this screen needs to change.
+/// The list is passed in as [items] (the user's bookmarks, loaded by
+/// `BookmarkRepository.savedItems`). [onRemove] deletes the bookmark.
 class BookmarksScreen extends StatefulWidget {
-  const BookmarksScreen({super.key, this.items, this.onRemove, this.onExplore});
+  const BookmarksScreen({
+    super.key,
+    required this.items,
+    this.onRemove,
+    this.onExplore,
+  });
 
-  /// The saved items. Null = the mockup list.
-  final List<SavedBookmark>? items;
+  /// The saved items.
+  final List<SavedBookmark> items;
 
   /// Called when a bookmark is removed from the list.
   final void Function(SavedBookmark removed)? onRemove;
@@ -41,7 +43,7 @@ class BookmarksScreen extends StatefulWidget {
   /// Opens the screen with the forward transition.
   static void open(
     BuildContext context, {
-    List<SavedBookmark>? items,
+    required List<SavedBookmark> items,
     void Function(SavedBookmark removed)? onRemove,
     VoidCallback? onExplore,
   }) => AppNav.push(
@@ -56,7 +58,7 @@ class BookmarksScreen extends StatefulWidget {
 
 class _BookmarksScreenState extends State<BookmarksScreen> {
   late final BookmarksViewModel _vm = BookmarksViewModel(
-    widget.items ?? PrototypeSeed.sampleBookmarks,
+    widget.items,
     onRemove: widget.onRemove,
   );
 

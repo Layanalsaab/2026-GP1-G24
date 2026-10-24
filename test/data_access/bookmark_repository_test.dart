@@ -1,6 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:startsa/data_access/firebase_services/firestore_service.dart';
+import 'package:startsa/data_access/mock_data/prototype_seed.dart';
 import 'package:startsa/data_access/repositories/bookmark_repository.dart';
+import 'package:startsa/data_access/repositories/discovery_repository.dart';
 import 'package:startsa/helpers/app_session.dart';
 import 'package:startsa/models/app_user.dart';
 
@@ -21,6 +23,15 @@ class _MemoryFirestore extends FirestoreService {
   @override
   Future<void> deleteDocument(String collection, String id) async =>
       store[collection]?.remove(id);
+
+  @override
+  Future<Map<String, dynamic>?> getDocument(
+    String collection,
+    String id,
+  ) async {
+    final data = store[collection]?[id];
+    return data == null ? null : Map<String, dynamic>.from(data);
+  }
 
   @override
   Future<List<FirestoreDocument>> listCollection(
@@ -111,6 +122,59 @@ void main() {
     repo.toggle('s-today'); // saved now, so it comes first
     expect(repo.newestFirst().first, 's-today');
     expect(repo.newestFirst(type: 'startup'), ['s-today', 's-old']);
+  });
+
+  test('savedItems: real cards, newest first, missing ones left out',
+      () async {
+    final startup = PrototypeSeed.startups.first;
+    final investor = PrototypeSeed.investors.first;
+    final program = PrototypeSeed.programs.first;
+    db.store[path] = {
+      's-${startup.id}': {'createdAt': DateTime(2026, 1, 1)},
+      'i-${investor.id}': {'createdAt': DateTime(2026, 5, 1)},
+      'p-${program.id}': {'createdAt': DateTime(2026, 9, 1)},
+      's-deleted-startup': {'createdAt': DateTime(2026, 10, 1)},
+    };
+    await repo.load('u1');
+
+    final items = await repo.savedItems(
+      discovery: DiscoveryRepository.sample(),
+    );
+    expect([for (final b in items) b.item.bookmarkKey], [
+      'p-${program.id}',
+      'i-${investor.id}',
+      's-${startup.id}',
+    ]);
+    expect(items.last.savedAt, DateTime(2026, 1, 1));
+  });
+
+  test('a bookmark whose item was deleted is removed', () async {
+    AppSession.instance.signIn(user);
+    db.store[path] = {
+      's-gone': {'createdAt': DateTime(2026, 1, 1)},
+      's-hidden': {'createdAt': DateTime(2026, 2, 1)},
+    };
+    // s-hidden still exists but is private; s-gone doesn't exist at all.
+    db.store['startups'] = {
+      'hidden': {'name': 'Hidden', 'isPublic': false},
+    };
+    await repo.load('u1');
+
+    final items = await repo.savedItems(
+      discovery: DiscoveryRepository(firestore: db),
+    );
+    await Future<void>.delayed(Duration.zero);
+    expect(items, isEmpty);
+    expect(repo.isBookmarked('s-gone'), isFalse);
+    expect(db.store[path]!.containsKey('s-gone'), isFalse);
+    expect(repo.isBookmarked('s-hidden'), isTrue);
+  });
+
+  test('remove only removes', () {
+    repo.toggle('s-barq');
+    repo.remove('s-barq');
+    repo.remove('s-barq');
+    expect(repo.isBookmarked('s-barq'), isFalse);
   });
 
   test('key helpers', () {

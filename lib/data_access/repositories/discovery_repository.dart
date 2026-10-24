@@ -199,6 +199,67 @@ class DiscoveryRepository {
     return sample && id == PrototypeSeed.layan.id ? PrototypeSeed.layan : null;
   }
 
+  /// The card for bookmark [key] (`s-<id>`, `i-<id>` or `p-<id>`).
+  ///
+  /// [item] is null when the card can't be shown. [deleted] is true only
+  /// when the startup / investor / program doesn't exist anymore; a private
+  /// startup or a failed read (offline) is not counted as deleted.
+  Future<({HomeItem? item, bool deleted})> itemForBookmark(String key) async {
+    final dash = key.indexOf('-');
+    if (dash < 0) return (item: null, deleted: true);
+    final id = key.substring(dash + 1);
+    switch (key.substring(0, dash)) {
+      case 's':
+        final loaded = startupById(id);
+        if (loaded != null) {
+          return (item: HomeItem.fromStartup(loaded), deleted: false);
+        }
+        final read = await _read(FirestoreCollections.startups, id);
+        final startup = Startup.fromMap(id, read.data);
+        return (
+          item: startup != null && startup.isPublic
+              ? HomeItem.fromStartup(startup)
+              : null,
+          deleted: read.missing,
+        );
+      case 'i':
+        final loaded = investorById(id);
+        if (loaded != null) {
+          return (item: HomeItem.fromInvestor(loaded), deleted: false);
+        }
+        final read = await _read(FirestoreCollections.investors, id);
+        final investor = InvestorProfile.fromMap(id, read.data);
+        return (
+          item: investor == null ? null : HomeItem.fromInvestor(investor),
+          deleted: read.missing,
+        );
+      case 'p':
+        final program = programById(id);
+        return (
+          item: program == null ? null : HomeItem.fromProgram(program),
+          deleted: program == null,
+        );
+    }
+    return (item: null, deleted: true);
+  }
+
+  /// Reads one document. [missing] is true only when Firestore says the
+  /// document doesn't exist (not when the read is refused or offline).
+  Future<({Map<String, dynamic>? data, bool missing})> _read(
+    String collection,
+    String id,
+  ) async {
+    final db = _firestore;
+    if (sample || db == null) return (data: null, missing: false);
+    try {
+      final data = await db.getDocument(collection, id);
+      return (data: data, missing: data == null);
+    } catch (e) {
+      debugPrint('Reading $collection/$id failed: $e');
+      return (data: null, missing: false);
+    }
+  }
+
   Program? programById(String id) {
     for (final p in PrototypeSeed.programs) {
       if (p.id == id) return p;

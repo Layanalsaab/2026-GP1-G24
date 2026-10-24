@@ -2,7 +2,9 @@ import 'package:flutter/foundation.dart';
 
 import '../../app_constants/firestore_collections.dart';
 import '../../helpers/app_session.dart';
+import '../../models/list_entries.dart';
 import '../firebase_services/firestore_service.dart';
+import 'discovery_repository.dart';
 
 /// The signed-in user's bookmarks (cards, startup / investor / program
 /// profiles). Guests never bookmark: screens hide the bookmark icon for them,
@@ -22,8 +24,7 @@ import '../firebase_services/firestore_service.dart';
 ///
 /// Bookmarks belong to the account, not to a startup.
 ///
-/// My Bookmarks shows startups, investors and programs together, newest
-/// first, with a filter by type: use [newestFirst] and [typeOf].
+/// My Bookmarks gets its cards from [savedItems].
 class BookmarkRepository {
   BookmarkRepository({FirestoreService? firestore})
     : _firestore = firestore ?? FirestoreService();
@@ -61,6 +62,39 @@ class BookmarkRepository {
     final old = DateTime.fromMillisecondsSinceEpoch(0);
     list.sort((a, b) => (_savedAt[b] ?? old).compareTo(_savedAt[a] ?? old));
     return list;
+  }
+
+  /// The user's bookmarks as cards for My Bookmarks, newest first.
+  ///
+  /// A bookmark whose startup / investor / program was deleted is removed
+  /// (also from Firestore). A startup that was made private is just not
+  /// shown, so it comes back if the founder makes it public again.
+  Future<List<SavedBookmark>> savedItems({
+    DiscoveryRepository? discovery,
+  }) async {
+    final source = discovery ?? DiscoveryRepository.instance;
+    final keys = newestFirst();
+    final found = await Future.wait([
+      for (final k in keys) source.itemForBookmark(k),
+    ]);
+    final never = DateTime.fromMillisecondsSinceEpoch(0);
+    final list = <SavedBookmark>[];
+    for (var i = 0; i < keys.length; i++) {
+      final item = found[i].item;
+      if (item != null) {
+        list.add(
+          SavedBookmark(item: item, savedAt: _savedAt[keys[i]] ?? never),
+        );
+      } else if (found[i].deleted) {
+        remove(keys[i]);
+      }
+    }
+    return list;
+  }
+
+  /// Removes [key] if it is bookmarked (remove button on My Bookmarks).
+  void remove(String key) {
+    if (isBookmarked(key)) toggle(key);
   }
 
   /// `users/{uid}/bookmarks`

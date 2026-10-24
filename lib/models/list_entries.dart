@@ -4,9 +4,7 @@ import 'startup.dart';
 /// One saved item on the Bookmarks screen: the card to show and when it was
 /// saved ("Newest first" / "Oldest first" sort by [savedAt]).
 ///
-/// INTERFACE ONLY: the screen is given a list of these. The sample list lives
-/// in `PrototypeSeed.sampleBookmarks`; the backend replaces it with the
-/// user's real saved items.
+/// Built from the user's saved bookmarks by `BookmarkRepository.savedItems`.
 class SavedBookmark {
   const SavedBookmark({required this.item, required this.savedAt});
 
