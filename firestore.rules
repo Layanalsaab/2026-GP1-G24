@@ -203,6 +203,72 @@ service cloud.firestore {
 
       allow delete: if request.auth != null
                     && resource.data.founderId == request.auth.uid;
+
+      // ------------------------------------------------ funding rounds
+      // startups/{startupId}/fundingRounds/{roundId}. Readable by everyone.
+      // Written by the founder or a co-founder, always in the
+      // same batch as the startup (StartupRepository), so the rules read the
+      // startup AS IT WILL BE after the batch (getAfter): an open round must
+      // be the startup's Funding ask with the same amount.
+      match /fundingRounds/{roundId} {
+        function startupNow() {
+          return get(/databases/$(database)/documents/startups/$(startupId)).data;
+        }
+        function startupAfter() {
+          return getAfter(/databases/$(database)/documents/startups/$(startupId)).data;
+        }
+        function canEdit(s) {
+          return request.auth != null
+              && (s.founderId == request.auth.uid
+                  || s.get('memberRoles', {}).get(request.auth.uid, '') == 'coFounder');
+        }
+
+        // Readable by everyone: funding history is public information (the
+        // dataset rounds come from public sources), and a round only says
+        // the type, amounts, dates and investor names.
+        allow read: if true;
+
+        allow create: if canEdit(startupAfter())
+                      && request.resource.data.isDataset == false
+                      && validRound(request.resource.data, startupAfter(), startupId);
+
+        allow update: if canEdit(startupAfter())
+                      && request.resource.data.isDataset == resource.data.isDataset
+                      && request.resource.data.startupId == resource.data.startupId
+                      && validRound(request.resource.data, startupAfter(), startupId);
+
+        // With the startup (only its founder can delete it).
+        allow delete: if request.auth != null
+                      && startupNow().founderId == request.auth.uid;
+      }
+    }
+
+    // A funding round document (lib/models/funding_round.dart). [s] is the
+    // startup after the write, [id] its document id.
+    function validRound(d, s, id) {
+      return d.keys().hasOnly(['startupId', 'number', 'status', 'stage',
+                               'stageOther', 'amount', 'raised', 'startDate',
+                               'endDate', 'investors', 'investorIds',
+                               'investorCount', 'wantsLeadInvestor',
+                               'amountEstimated', 'raisedEstimated',
+                               'isDataset', 'createdAt', 'updatedAt'])
+          && d.startupId == id
+          && d.number is int && d.number >= 1
+          && d.stage is string
+          && d.stage.matches('^(pre_seed|seed|series_a|series_b|series_c|other)$')
+          && d.amount is int && d.amount > 0
+          && d.raised is int && d.raised >= 0
+          && d.startDate is timestamp
+          && d.investors is list && d.investors.size() <= 50
+          && d.updatedAt == request.time
+          && (!('wantsLeadInvestor' in d) || d.wantsLeadInvestor == null
+              || d.wantsLeadInvestor is bool)
+          && ((d.status == 'active'
+                 && d.get('endDate', null) == null
+                 // The open round IS the startup's Funding ask.
+                 && 'funding' in s.lookingFor
+                 && s.get('fundingRequirement', null) == d.amount)
+              || (d.status == 'completed' && d.endDate is timestamp));
     }
 
     // Mirrors the app's validation (lib/helpers/startup_validators.dart and
@@ -242,7 +308,9 @@ service cloud.firestore {
         && d.stage is string && d.stage.matches('^(pre_seed|seed|series_a|series_b|series_c|other|idea|mvp|early_revenue|growth)$')
         && d.businessModel is string && d.businessModel.matches('^(b2g|b2b|b2b2c|d2c|b2c|c2c|b2e|c2b|g2c|g2g|other|marketplace)$')
         && d.location is string && d.location.matches('^(abha|al_ahsa|al_baha|al_jubail|al_kharj|al_khobar|al_qatif|arar|buraydah|dammam|dhahran|hafar_al_batin|hail|jazan|jeddah|khamis_mushait|makkah|madinah|najran|riyadh|sakaka|tabuk|taif|unaizah|yanbu|khobar|mecca|medina|other)$')
-        && d.lookingFor is list && d.lookingFor.size() >= 1
+        // May be empty: a startup whose only ask was Funding has none
+        // after its round closes ("Not raising right now").
+        && d.lookingFor is list
         && d.lookingFor.hasOnly(['funding', 'cofounder', 'talent',
                                  'partnership', 'support', 'mentorship', 'advisors',
                                  'marketing', 'tech_development', 'other',

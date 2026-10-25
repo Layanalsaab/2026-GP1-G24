@@ -464,7 +464,10 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
       case StartupField.raised:
         return StartupValidators.raisedInRound(raised.text, funding.text);
       case StartupField.lookingFor:
-        return StartupValidators.lookingFor(lookingFor);
+        // A new startup says what it needs. An existing one may need nothing
+        // right now (e.g. its funding round just closed and Funding was its
+        // only ask): it then shows "Not raising right now".
+        return isEditing ? null : StartupValidators.lookingFor(lookingFor);
       case StartupField.partnerTypes:
         return _typesError(
           partnerSel,

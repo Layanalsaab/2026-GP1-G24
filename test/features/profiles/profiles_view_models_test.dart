@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:startsa/data_access/mock_data/prototype_seed.dart';
+import 'package:startsa/data_access/repositories/funding_round_repository.dart';
 import 'package:startsa/features/profiles/view_models/account_view_model.dart';
 import 'package:startsa/features/profiles/view_models/edit_account_view_model.dart';
 import 'package:startsa/features/profiles/view_models/investor_profile_view_model.dart';
@@ -37,7 +38,10 @@ const _investor = AppUser(
 void main() {
   late AppSession session;
 
-  setUp(() => session = AppSession());
+  setUp(() {
+    session = AppSession();
+    FundingRoundRepository.instance = FundingRoundRepository.sample();
+  });
 
   group('StartupProfileViewModel roles', () {
     final startup = PrototypeSeed.rafeeq;

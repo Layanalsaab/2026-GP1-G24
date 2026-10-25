@@ -86,8 +86,14 @@ class _ManageStartupScreenState extends State<ManageStartupScreen> {
   late final InterestViewModel _interest = InterestViewModel(
     startupId: widget.startup.id,
   );
-  // INTERFACE ONLY: the rounds live in local state (sample data).
-  late final RoundsViewModel _rounds = RoundsViewModel(canManage: _canEdit);
+  // The startup's funding rounds. Adding / closing one saves the startup
+  // too (Funding ticked / unticked), so the header and Details follow.
+  late final RoundsViewModel _rounds = RoundsViewModel(
+    startup: widget.startup,
+    currentStartup: () => _vm.startup,
+    canManage: _canEdit,
+    onStartupSaved: (saved) => _vm.replace(saved),
+  );
   late final ActivityViewModel _activity = ActivityViewModel(
     startupId: widget.startup.id,
   );
@@ -130,7 +136,11 @@ class _ManageStartupScreenState extends State<ManageStartupScreen> {
       _vm.startup,
       section,
     );
-    if (saved != null && mounted) _vm.replace(saved);
+    if (saved != null && mounted) {
+      _vm.replace(saved);
+      // The Startup Ask may have opened, changed or closed the round.
+      _rounds.load(saved);
+    }
   }
 
   /// Valuation tile: the Finance and Growth editor, or (view only) the
@@ -159,6 +169,8 @@ class _ManageStartupScreenState extends State<ManageStartupScreen> {
       if (_vm.error != null) AppToast.error(context, _vm.error!);
       return;
     }
+    // A startup saved before rounds existed gets its open round now.
+    _rounds.load(_vm.startup);
     _toast(
       result ? FounderToolsStrings.nowPublic : FounderToolsStrings.nowPrivate,
     );

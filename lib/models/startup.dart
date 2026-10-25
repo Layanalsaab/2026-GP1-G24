@@ -386,7 +386,8 @@ class Startup {
   }
 
   /// A copy with the given fields replaced. [clearLogo] sets [logoUrl] to
-  /// null (copyWith can't express that otherwise).
+  /// null (copyWith can't express that otherwise). [clearFunding] empties the
+  /// funding answers (amount, lead investor, already raised): a closed round.
   Startup copyWith({
     String? id,
     String? founderId,
@@ -403,6 +404,7 @@ class Startup {
     int? fundingRequirement,
     String? logoUrl,
     bool clearLogo = false,
+    bool clearFunding = false,
     bool? isPublic,
     String? sectorOther,
     String? stageOther,
@@ -447,7 +449,9 @@ class Startup {
     websiteUrl: websiteUrl ?? this.websiteUrl,
     lookingFor: lookingFor ?? this.lookingFor,
     lookingForOther: lookingForOther ?? this.lookingForOther,
-    fundingRequirement: fundingRequirement ?? this.fundingRequirement,
+    fundingRequirement: clearFunding
+        ? null
+        : (fundingRequirement ?? this.fundingRequirement),
     isPublic: isPublic ?? this.isPublic,
     logoUrl: clearLogo ? null : (logoUrl ?? this.logoUrl),
     createdAt: createdAt,
@@ -466,11 +470,15 @@ class Startup {
     revenueYear2: revenueYear2 ?? this.revenueYear2,
     revenueYear3: revenueYear3 ?? this.revenueYear3,
     valuation: valuation ?? this.valuation,
-    wantsLeadInvestor: wantsLeadInvestor ?? this.wantsLeadInvestor,
+    wantsLeadInvestor: clearFunding
+        ? null
+        : (wantsLeadInvestor ?? this.wantsLeadInvestor),
     revenueThisYear: revenueThisYear ?? this.revenueThisYear,
     monthlyBurn: monthlyBurn ?? this.monthlyBurn,
     businessModelText: businessModelText ?? this.businessModelText,
-    raisedInRound: raisedInRound ?? this.raisedInRound,
+    raisedInRound: clearFunding
+        ? null
+        : (raisedInRound ?? this.raisedInRound),
     partnerTypes: partnerTypes ?? this.partnerTypes,
     supportTypes: supportTypes ?? this.supportTypes,
     memberRoles: memberRoles ?? this.memberRoles,

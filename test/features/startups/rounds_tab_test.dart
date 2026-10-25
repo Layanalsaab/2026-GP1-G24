@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:startsa/data_access/mock_data/prototype_seed.dart';
 import 'package:startsa/data_access/repositories/activity_repository.dart';
 import 'package:startsa/data_access/repositories/discovery_repository.dart';
+import 'package:startsa/data_access/repositories/funding_round_repository.dart';
 import 'package:startsa/data_access/repositories/interest_repository.dart';
 import 'package:startsa/data_access/repositories/request_repository.dart';
 import 'package:startsa/data_access/repositories/startup_repository.dart';
@@ -55,6 +56,7 @@ void main() {
     InterestRepository.instance = InterestRepository(sample: true);
     ActivityRepository.instance = ActivityRepository(sample: true);
     DiscoveryRepository.instance = DiscoveryRepository.sample();
+    FundingRoundRepository.instance = FundingRoundRepository.sample();
     AppSession.instance = AppSession();
   });
 
@@ -91,13 +93,13 @@ void main() {
       expect(r.percent, 110);
     });
 
-    test('Add round needs an amount and a lead-investor answer', () {
+    test('Add round needs an amount and a lead-investor answer', () async {
       final vm = RoundsViewModel(now: DateTime(2026, 10, 25));
       addTearDown(vm.dispose);
-      vm.closeOpenRound();
+      await vm.closeOpenRound();
       vm.openForm();
       expect(vm.formValid, isFalse);
-      expect(vm.addRound(), isFalse);
+      expect(await vm.addRound(), isFalse);
       expect(vm.amountError, 'Please enter the amount you’re raising.');
       expect(
         vm.raisedError,
@@ -119,7 +121,7 @@ void main() {
       );
       vm.raised.text = '2,000,000';
       vm.setLead(true);
-      expect(vm.addRound(), isTrue);
+      expect(await vm.addRound(), isTrue);
       expect(vm.openRound!.number, 3);
       expect(vm.openRound!.type, StartupStage.seriesA);
       expect(vm.openRound!.amount, 10000000);
@@ -152,7 +154,8 @@ void main() {
       expect(find.text('Seed'), findsOneWidget);
       expect(find.text('Aug 2026 – now'), findsOneWidget);
       expect(find.text('Jan – Jun 2026'), findsOneWidget);
-      expect(find.text('Ahmad Hassan'), findsOneWidget);
+      // The lead investor of the round says so.
+      expect(find.text('Ahmad Hassan · Lead'), findsOneWidget);
       expect(find.text('Layan Alsaab'), findsOneWidget);
     });
 

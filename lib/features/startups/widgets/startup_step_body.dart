@@ -680,7 +680,8 @@ class _Ask extends StatelessWidget {
       children: [
         AppField(
           label: FounderToolsStrings.lookingForLabel,
-          required: true,
+          // Required for a new startup only (see StartupField.lookingFor).
+          required: !vm.isEditing,
           sentenceCase: true,
           subLabel: 'Select all that apply',
           error: vm.errorOf(StartupField.lookingFor),

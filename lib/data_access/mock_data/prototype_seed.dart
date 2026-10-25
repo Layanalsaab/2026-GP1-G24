@@ -811,9 +811,9 @@ class PrototypeSeed {
 
   // --------------------------------------------- list screens (interface)
 
-  /// MOCKUP DATA for Manage -> Rounds (interface only): Round 2 (Seed) is open
-  /// and Round 1 (Pre-seed) is closed. The same sample shows for every
-  /// startup. Replace by the real rounds when the backend is connected.
+  /// MOCKUP DATA for the tests (FundingRoundRepository.sample()): Round 2
+  /// (Seed) is open and Round 1 (Pre-seed) is closed. The app loads the real
+  /// rounds from Firestore.
   static final List<FundingRound> sampleRounds = [
     FundingRound(
       number: 2,
@@ -821,7 +821,9 @@ class PrototypeSeed {
       amount: 500000,
       raised: 200000,
       start: DateTime(2026, 8, 1),
-      investors: [ahmad],
+      investors: [
+        RoundInvestor(name: ahmad.name, investorId: ahmad.id, isLead: true),
+      ],
     ),
     FundingRound(
       number: 1,
@@ -830,7 +832,7 @@ class PrototypeSeed {
       raised: 250000,
       start: DateTime(2026, 1, 1),
       end: DateTime(2026, 6, 30),
-      investors: [layan],
+      investors: [RoundInvestor(name: layan.name, investorId: layan.id)],
     ),
   ];
 }

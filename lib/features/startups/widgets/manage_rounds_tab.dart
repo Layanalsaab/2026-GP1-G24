@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../../../app_constants/founder_tools_strings.dart';
+import '../../../data_access/repositories/discovery_repository.dart';
 import '../../../helpers/formatters.dart';
 import '../../../models/funding_round.dart';
-import '../../../models/investor_profile.dart';
 import '../../../models/startup_enums.dart';
 import '../../../shared_ui/widgets/overlays/app_dialog.dart';
 import '../../profiles/screens/investor_profile_screen.dart';
@@ -11,7 +11,8 @@ import '../view_models/rounds_view_model.dart';
 import 'founder_ui.dart';
 import 'manage_card.dart';
 
-/// Manage startup -> Rounds (INTERFACE ONLY, sample data and local state).
+/// Manage startup -> Rounds: the startup's rounds from Firestore. Adding or
+/// closing a round is saved with the startup (see RoundsViewModel).
 ///
 /// Top row: "Funding rounds" with "All amounts in SAR", and on the right
 /// "Close round" (a round is open) or "Add round" (none is). Below, the
@@ -34,7 +35,11 @@ class ManageRoundsTab extends StatelessWidget {
       discardLabel: 'Close round',
       keepLabel: 'Cancel',
     );
-    if (close) vm.closeOpenRound();
+    if (!close) return;
+    final ok = await vm.closeOpenRound();
+    if (!ok && vm.error != null && context.mounted) {
+      AppToast.error(context, vm.error!);
+    }
   }
 
   @override
@@ -74,7 +79,7 @@ class ManageRoundsTab extends StatelessWidget {
                     ],
                   ),
                 ),
-                if (canManage && !vm.formOpen)
+                if (canManage && !vm.formOpen && vm.ready)
                   open != null
                       ? _PillButton(
                           label: 'Close round',
@@ -93,7 +98,20 @@ class ManageRoundsTab extends StatelessWidget {
               _AddRoundForm(vm: vm),
               const SizedBox(height: 14),
             ],
-            RoundsTable(rounds: vm.rounds),
+            RoundsTable(
+              rounds: vm.rounds,
+              emptyText: vm.isLoading
+                  ? 'Loading rounds…'
+                  : vm.loadFailed
+                  ? 'Couldn’t load the rounds. Check your connection.'
+                  : 'No rounds yet.',
+            ),
+            if (vm.loadFailed) ...[
+              const SizedBox(height: 10),
+              Center(
+                child: _PillButton(label: 'Try again', onTap: vm.load),
+              ),
+            ],
           ],
         );
       },
@@ -288,7 +306,7 @@ class _RoundRow extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  r.type.label,
+                  r.typeLabel,
                   style: AppText.sans(
                     size: 13,
                     height: 18,
@@ -359,7 +377,8 @@ class _RoundRow extends StatelessWidget {
             ),
           ),
           const SizedBox(width: _gap),
-          // Investors: one name per line, or "None yet".
+          // Investors: one name per line (long names wrap), the first
+          // three then "+N more", or "None yet".
           Expanded(
             flex: _flex[3],
             child: Column(
@@ -377,7 +396,7 @@ class _RoundRow extends StatelessWidget {
                     ),
                   )
                 else
-                  for (final i in r.investors) _InvestorLink(investor: i),
+                  _InvestorList(investors: r.investors),
               ],
             ),
           ),
@@ -450,39 +469,127 @@ class _RaisedBar extends StatelessWidget {
   }
 }
 
-/// An investor's name: 14 px semibold moss green, no underline; opens their
-/// profile.
+/// An investor of a round: with a profile, the name in 14 px semibold moss
+/// green (no underline) that opens it; without one, plain grey text. The
+/// lead investor gets "· Lead" in gold.
 class _InvestorLink extends StatelessWidget {
   const _InvestorLink({required this.investor});
 
-  final InvestorProfile investor;
+  final RoundInvestor investor;
+
+  Future<void> _open(BuildContext context) async {
+    final profile = await DiscoveryRepository.instance.loadInvestor(
+      investor.investorId!,
+    );
+    if (!context.mounted) return;
+    if (profile == null) {
+      AppToast.error(context, 'This investor’s profile isn’t available.');
+      return;
+    }
+    InvestorProfileScreen.open(context, profile);
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      label: investor.name,
-      excludeSemantics: true,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: () => InvestorProfileScreen.open(context, investor),
-        child: SizedBox(
-          height: _RoundRow.line,
-          child: Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              investor.name,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: AppText.sans(
-                size: 14,
-                weight: FontWeight.w600,
-                color: AppColors.moss600,
-              ).copyWith(decoration: TextDecoration.none),
-            ),
+    final linked = investor.hasProfile;
+    // At least one table line high (the first lines of the cells stay on
+    // one line); a long name wraps instead of being cut.
+    final line = ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: _RoundRow.line),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 1),
+        child: Text.rich(
+          TextSpan(
+            text: investor.name,
+            style: AppText.sans(
+              size: 14,
+              height: 20,
+              weight: linked ? FontWeight.w600 : FontWeight.w400,
+              color: linked ? AppColors.moss600 : AppColors.grey,
+            ).copyWith(decoration: TextDecoration.none),
+            children: [
+              if (investor.isLead)
+                TextSpan(
+                  text: ' · Lead',
+                  style: AppText.sans(
+                    size: 12.5,
+                    weight: FontWeight.w600,
+                    color: AppColors.tagGoldText,
+                  ),
+                ),
+            ],
           ),
         ),
       ),
+    );
+    final label = investor.isLead
+        ? '${investor.name}, lead investor'
+        : investor.name;
+    if (!linked) {
+      return Semantics(label: label, excludeSemantics: true, child: line);
+    }
+    return Semantics(
+      button: true,
+      label: label,
+      excludeSemantics: true,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => _open(context),
+        child: line,
+      ),
+    );
+  }
+}
+
+/// The investors of a round: the first [shown] names, then "+N more" that
+/// opens the full list ("Show less" closes it).
+class _InvestorList extends StatefulWidget {
+  const _InvestorList({required this.investors});
+
+  final List<RoundInvestor> investors;
+
+  static const shown = 3;
+
+  @override
+  State<_InvestorList> createState() => _InvestorListState();
+}
+
+class _InvestorListState extends State<_InvestorList> {
+  bool _all = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final all = widget.investors;
+    final extra = all.length - _InvestorList.shown;
+    final visible = _all || extra <= 0
+        ? all
+        : all.take(_InvestorList.shown).toList();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (final i in visible) _InvestorLink(investor: i),
+        if (extra > 0)
+          Semantics(
+            button: true,
+            label: _all ? 'Show fewer investors' : 'Show $extra more investors',
+            excludeSemantics: true,
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () => setState(() => _all = !_all),
+              child: Padding(
+                padding: const EdgeInsets.only(top: 2),
+                child: Text(
+                  _all ? 'Show less' : '+$extra more',
+                  style: AppText.sans(
+                    size: 13,
+                    weight: FontWeight.w600,
+                    color: AppColors.moss600,
+                  ),
+                ),
+              ),
+            ),
+          ),
+      ],
     );
   }
 }
@@ -599,7 +706,12 @@ class _AddRoundForm extends StatelessWidget {
                       ? AppButtonVariant.primary
                       : AppButtonVariant.off,
                   size: AppButtonSize.small,
-                  onPressed: vm.addRound,
+                  onPressed: () async {
+                    final ok = await vm.addRound();
+                    if (!ok && vm.error != null && context.mounted) {
+                      AppToast.error(context, vm.error!);
+                    }
+                  },
                 ),
               ),
             ],
