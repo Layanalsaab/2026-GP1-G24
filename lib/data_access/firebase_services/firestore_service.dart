@@ -8,6 +8,24 @@ import '../../models/auth_failure.dart';
 /// One document read from Firestore: its id and its (plain Dart) data.
 typedef FirestoreDocument = ({String id, Map<String, dynamic> data});
 
+enum FirestoreWriteKind { set, update, delete }
+
+/// One write of [FirestoreService.commit].
+class FirestoreWrite {
+  const FirestoreWrite.set(this.collection, this.id, this.data)
+    : kind = FirestoreWriteKind.set;
+  const FirestoreWrite.update(this.collection, this.id, this.data)
+    : kind = FirestoreWriteKind.update;
+  const FirestoreWrite.delete(this.collection, this.id)
+    : kind = FirestoreWriteKind.delete,
+      data = const {};
+
+  final FirestoreWriteKind kind;
+  final String collection;
+  final String id;
+  final Map<String, Object?> data;
+}
+
 /// Cloud Firestore. The only code that talks to `FirebaseFirestore`.
 class FirestoreService {
   /// Firestore never reports an error when the database doesn't exist or the
@@ -47,6 +65,25 @@ class FirestoreService {
   /// Deletes the document. Deleting a document that doesn't exist is not an error.
   Future<void> deleteDocument(String collection, String id) =>
       _guard(() => _db.collection(collection).doc(id).delete());
+
+  /// Saves every write of [writes] together: either all of them are saved
+  /// or none is (a Firestore batched write). Used where two documents must
+  /// never disagree, e.g. a startup and its open funding round.
+  Future<void> commit(List<FirestoreWrite> writes) => _guard(() {
+    final batch = _db.batch();
+    for (final w in writes) {
+      final ref = _db.collection(w.collection).doc(w.id);
+      switch (w.kind) {
+        case FirestoreWriteKind.set:
+          batch.set(ref, w.data);
+        case FirestoreWriteKind.update:
+          batch.update(ref, w.data);
+        case FirestoreWriteKind.delete:
+          batch.delete(ref);
+      }
+    }
+    return batch.commit();
+  });
 
   /// Returns the document's data, or null when it doesn't exist.
   Future<Map<String, dynamic>?> getDocument(String collection, String id) =>

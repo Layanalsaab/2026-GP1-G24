@@ -69,9 +69,8 @@ class ManageStartupViewModel extends ChangeNotifier with SafeNotifier {
     try {
       await _repository.delete(startup);
       // Nothing of it is left behind: its requests and interest messages go
-      // too. (Its rounds live in the screen's local state and leave with it;
-      // other people's bookmarks and the team memberships belong to the
-      // backend.)
+      // too. (Its funding rounds are deleted by the repository; other
+      // people's bookmarks and the team memberships belong to the backend.)
       RequestRepository.instance.removeForStartup(startup.id);
       InterestRepository.instance.removeForStartup(startup.id);
       AppSession.instance.setOwnStartupIds([

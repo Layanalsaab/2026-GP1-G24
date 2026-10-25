@@ -5,6 +5,7 @@ import 'package:startsa/data_access/mock_data/prototype_seed.dart';
 import 'package:startsa/data_access/repositories/activity_repository.dart';
 import 'package:startsa/data_access/repositories/bookmark_repository.dart';
 import 'package:startsa/data_access/repositories/discovery_repository.dart';
+import 'package:startsa/data_access/repositories/funding_round_repository.dart';
 import 'package:startsa/data_access/repositories/interaction_repository.dart';
 import 'package:startsa/data_access/repositories/interest_repository.dart';
 import 'package:startsa/data_access/repositories/request_repository.dart';
@@ -74,6 +75,7 @@ void main() {
     InterestRepository.instance = InterestRepository(sample: true);
     ActivityRepository.instance = ActivityRepository(sample: true);
     DiscoveryRepository.instance = DiscoveryRepository.sample();
+    FundingRoundRepository.instance = FundingRoundRepository.sample();
     BookmarkRepository.instance = BookmarkRepository();
     AppSession.instance = AppSession();
   });
@@ -93,7 +95,7 @@ void main() {
 
     test(
       'a team member cannot add or close rounds (checked in the action)',
-      () {
+      () async {
         final vm = RoundsViewModel(
           canManage: false,
           now: DateTime(2026, 10, 25),
@@ -101,9 +103,9 @@ void main() {
         addTearDown(vm.dispose);
         vm.openForm();
         expect(vm.formOpen, isFalse);
-        vm.closeOpenRound();
+        expect(await vm.closeOpenRound(), isFalse);
         expect(vm.openRound, isNotNull);
-        expect(vm.addRound(), isFalse);
+        expect(await vm.addRound(), isFalse);
       },
     );
 

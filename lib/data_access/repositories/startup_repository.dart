@@ -8,6 +8,7 @@ import '../../models/startup.dart';
 import '../firebase_services/auth_service.dart';
 import '../firebase_services/firestore_service.dart';
 import '../firebase_services/storage_service.dart';
+import 'funding_round_repository.dart';
 
 /// Reads and writes the `startups` collection and the startups' logos in
 /// Storage. Screens and view models never touch Firebase directly.
@@ -18,9 +19,11 @@ class StartupRepository {
     AuthService? auth,
     FirestoreService? firestore,
     StorageService? storage,
+    FundingRoundRepository? rounds,
   }) : _auth = auth ?? AuthService(),
        _firestore = firestore ?? FirestoreService(),
-       _storage = storage ?? StorageService();
+       _storage = storage ?? StorageService(),
+       _roundsOverride = rounds;
 
   /// The app-wide instance. Tests replace it with a fake.
   static StartupRepository instance = StartupRepository();
@@ -28,6 +31,11 @@ class StartupRepository {
   final AuthService _auth;
   final FirestoreService _firestore;
   final StorageService _storage;
+  final FundingRoundRepository? _roundsOverride;
+
+  /// Read when used, so a test can replace FundingRoundRepository.instance.
+  FundingRoundRepository get _rounds =>
+      _roundsOverride ?? FundingRoundRepository.instance;
 
   static const _collection = FirestoreCollections.startups;
 
@@ -121,7 +129,8 @@ class StartupRepository {
   }
 
   /// Saves a new startup and returns it as stored. [startup.id] and
-  /// [startup.founderId] are ignored: both are assigned here.
+  /// [startup.founderId] are ignored: both are assigned here. With Funding
+  /// ticked, its Round 1 is opened in the same write.
   Future<Startup> create(Startup startup, {File? logo}) async {
     final founderId = _founderId;
     final id = _firestore.newDocumentId(_collection);
@@ -135,11 +144,21 @@ class StartupRepository {
       logoUrl: logoUrl,
     );
     try {
-      await _firestore.setDocument(_collection, id, {
+      // Funding ticked: Round 1 opens in the same write.
+      final roundWrites = await _rounds.writesFor(id, toSave, isNew: true);
+      final startupData = {
         ...toSave.toMap(),
         StartupFields.createdAt: _firestore.serverTimestamp(),
         StartupFields.updatedAt: _firestore.serverTimestamp(),
-      });
+      };
+      if (roundWrites.isEmpty) {
+        await _firestore.setDocument(_collection, id, startupData);
+      } else {
+        await _firestore.commit([
+          FirestoreWrite.set(_collection, id, startupData),
+          ...roundWrites,
+        ]);
+      }
     } catch (_) {
       // Don't leave an orphan logo behind when the document wasn't saved.
       if (logoUrl != null) await _deleteLogoQuietly(logoUrl);
@@ -152,6 +171,9 @@ class StartupRepository {
   ///
   /// Pass [newLogo] to replace the logo, or [removeLogo] to clear it. The old
   /// logo file is deleted only after the document points at the new one.
+  ///
+  /// The funding rounds follow the Funding answers in the same write: Funding
+  /// ticked opens a round (or updates the open one), unticked closes it.
   Future<Startup> update(
     Startup startup, {
     File? newLogo,
@@ -169,10 +191,21 @@ class StartupRepository {
       updated = startup.copyWith(clearLogo: true);
     }
 
-    await _firestore.updateDocument(_collection, startup.id, {
+    // The open round follows the Funding answers (opened, updated or
+    // closed), in the same write as the startup.
+    final roundWrites = await _rounds.writesFor(startup.id, updated);
+    final startupData = {
       ...updated.toMap(),
       StartupFields.updatedAt: _firestore.serverTimestamp(),
-    });
+    };
+    if (roundWrites.isEmpty) {
+      await _firestore.updateDocument(_collection, startup.id, startupData);
+    } else {
+      await _firestore.commit([
+        FirestoreWrite.update(_collection, startup.id, startupData),
+        ...roundWrites,
+      ]);
+    }
 
     final logoChanged = oldLogoUrl != null && oldLogoUrl != updated.logoUrl;
     if (logoChanged) await _deleteLogoQuietly(oldLogoUrl);
@@ -188,7 +221,7 @@ class StartupRepository {
     }
   }
 
-  /// Deletes the startup and its logo. Every membership goes with it (the
+  /// Deletes the startup, its funding rounds and its logo. Every membership goes with it (the
   /// members are stored inside the startup document), so it disappears from
   /// every team member's My Startups. Other people's bookmarks of it are
   /// dropped the next time they open Bookmarks (the bookmark repository
@@ -198,6 +231,10 @@ class StartupRepository {
     // Logo first: if that fails we stop, and the startup is still intact for
     // the founder to retry. (A missing logo file counts as deleted.)
     if (logoUrl != null) await _storage.deleteByUrl(logoUrl);
+    // Its funding rounds first: Firestore doesn't delete a subcollection
+    // with its document, and the rules read the startup to allow it.
+    final roundDeletes = await _rounds.deletesFor(startup.id);
+    if (roundDeletes.isNotEmpty) await _firestore.commit(roundDeletes);
     await _firestore.deleteDocument(_collection, startup.id);
   }
 

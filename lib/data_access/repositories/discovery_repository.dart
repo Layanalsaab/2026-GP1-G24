@@ -199,6 +199,15 @@ class DiscoveryRepository {
     return sample && id == PrototypeSeed.layan.id ? PrototypeSeed.layan : null;
   }
 
+  /// An investor's profile by id: the loaded one, else read from
+  /// `investors/{id}`. Null when it doesn't exist or can't be read.
+  Future<InvestorProfile?> loadInvestor(String id) async {
+    final loaded = investorById(id);
+    if (loaded != null) return loaded;
+    final read = await _read(FirestoreCollections.investors, id);
+    return InvestorProfile.fromMap(id, read.data);
+  }
+
   /// The card for bookmark [key] (`s-<id>`, `i-<id>` or `p-<id>`).
   ///
   /// [item] is null when the card can't be shown. [deleted] is true only

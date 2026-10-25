@@ -144,6 +144,37 @@ class StartupFields {
   static const memberRoles = 'memberRoles';
 }
 
+/// Fields of a `startups/{startupId}/fundingRounds/{roundId}` document (the
+/// same names as the imported dataset and firestore.rules).
+class FundingRoundFields {
+  FundingRoundFields._();
+
+  /// The subcollection of a startup that holds its rounds.
+  static String collectionOf(String startupId) =>
+      '${FirestoreCollections.startups}/$startupId/fundingRounds';
+
+  static const startupId = 'startupId';
+  static const number = 'number';
+  static const status = 'status';
+  static const stage = 'stage';
+  static const stageOther = 'stageOther';
+  static const amount = 'amount';
+  static const raised = 'raised';
+  static const startDate = 'startDate';
+  static const endDate = 'endDate';
+  static const investors = 'investors';
+  static const investorIds = 'investorIds';
+  static const investorCount = 'investorCount';
+  static const wantsLeadInvestor = 'wantsLeadInvestor';
+  static const isDataset = 'isDataset';
+  static const createdAt = 'createdAt';
+  static const updatedAt = 'updatedAt';
+
+  /// [status] values.
+  static const active = 'active';
+  static const completed = 'completed';
+}
+
 /// Fields of a `requests/{id}` document (investor -> startup).
 class RequestFields {
   RequestFields._();

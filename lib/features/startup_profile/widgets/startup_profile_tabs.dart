@@ -330,10 +330,10 @@ class StartupProfilePane extends StatelessWidget {
             style: AppText.sans(size: 13, color: const Color(0xFF8C918D)),
           ),
           const SizedBox(height: 12),
-          // The same table as Manage, read only (sample rounds).
+          // The same table as Manage, read only (the startup's real rounds).
           RoundsTable(
             rounds: viewModel.roundsNewestFirst,
-            emptyText: 'No funding rounds yet.',
+            emptyText: viewModel.roundsEmptyText,
             centerEmpty: true,
           ),
         ],

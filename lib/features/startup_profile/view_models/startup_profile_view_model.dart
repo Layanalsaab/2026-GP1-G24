@@ -2,11 +2,11 @@ import 'package:flutter/foundation.dart';
 
 import '../../../app_constants/profile_strings.dart';
 import '../../../data_access/repositories/discovery_repository.dart';
+import '../../../data_access/repositories/funding_round_repository.dart';
 import '../../../data_access/repositories/request_repository.dart';
 import '../../../helpers/app_session.dart';
 import '../../../helpers/formatters.dart';
 import '../../../helpers/safe_notifier.dart';
-import '../../../data_access/mock_data/prototype_seed.dart';
 import '../../../models/funding_round.dart';
 import '../../../models/investor_profile.dart';
 import '../../../models/startup.dart';
@@ -25,15 +25,47 @@ class StartupProfileViewModel extends ChangeNotifier with SafeNotifier {
     bool preview = false,
     AppSession? session,
     DiscoveryRepository? discovery,
+    FundingRoundRepository? roundsRepository,
     List<FundingRound>? rounds,
-  }) : rounds = rounds ?? PrototypeSeed.sampleRounds,
+  }) : rounds = rounds ?? const [],
        _session = session ?? AppSession.instance,
        _discovery = discovery ?? DiscoveryRepository.instance,
-       _forcedPreview = preview;
+       _roundsOverride = roundsRepository,
+       _forcedPreview = preview {
+    if (rounds == null) loadRounds();
+  }
 
-  /// The funding rounds shown on the Funding tab and in the Raising tile.
-  /// INTERFACE ONLY: the sample rounds (replace with the real ones).
-  final List<FundingRound> rounds;
+  /// The funding rounds shown on the Funding tab and in the Raising tile,
+  /// loaded from Firestore (or the ones passed in).
+  List<FundingRound> rounds;
+
+  final FundingRoundRepository? _roundsOverride;
+
+  bool isLoadingRounds = false;
+  bool roundsFailed = false;
+
+  Future<void> loadRounds() async {
+    isLoadingRounds = true;
+    roundsFailed = false;
+    notifyListeners();
+    try {
+      rounds = await (_roundsOverride ?? FundingRoundRepository.instance)
+          .roundsOf(startup.id);
+    } catch (e) {
+      roundsFailed = true;
+      debugPrint('Loading the funding rounds failed: $e');
+    } finally {
+      isLoadingRounds = false;
+      notifyListeners();
+    }
+  }
+
+  /// The text of the rounds table while it has no rows.
+  String get roundsEmptyText => isLoadingRounds
+      ? 'Loading funding rounds…'
+      : roundsFailed
+      ? 'Couldn’t load the funding rounds.'
+      : 'No funding rounds yet.';
 
   /// The open round (newest first), or null.
   FundingRound? get openRound {
@@ -60,7 +92,7 @@ class StartupProfileViewModel extends ChangeNotifier with SafeNotifier {
     if (open != null) {
       final base = startup.raisedInRound ?? open.raised;
       return CurrentRound(
-        type: open.type.label,
+        type: open.typeLabel,
         goal: open.amount,
         raised: base > accepted ? base : accepted,
         wantsLead: open.wantsLeadInvestor ?? startup.wantsLeadInvestor,
