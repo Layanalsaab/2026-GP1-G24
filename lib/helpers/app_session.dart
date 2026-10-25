@@ -26,6 +26,7 @@ class AppSession extends ChangeNotifier {
   AppUser? _user;
   bool _guest = false;
   Set<String> _ownStartupIds = const {};
+  Set<String> _memberStartupIds = const {};
 
   /// The signed-in account; null for a guest or when signed out.
   AppUser? get user => _user;
@@ -49,6 +50,17 @@ class AppSession extends ChangeNotifier {
   /// Ids of the founder's own startups, so Hub and Explore never list them.
   Set<String> get ownStartupIds => _ownStartupIds;
 
+  /// Ids of the startups the user belongs to as a co-founder or team member.
+  Set<String> get memberStartupIds => _memberStartupIds;
+
+  /// Every startup the user belongs to (founder, co-founder, team member):
+  /// none of them is listed in the user's Hub or For You (Trending still
+  /// shows them, and they are always reachable from My Startups).
+  Set<String> get belongingStartupIds => {
+    ..._ownStartupIds,
+    ..._memberStartupIds,
+  };
+
   void signIn(AppUser user) {
     _user = user;
     _guest = false;
@@ -59,6 +71,7 @@ class AppSession extends ChangeNotifier {
     _user = null;
     _guest = true;
     _ownStartupIds = const {};
+    _memberStartupIds = const {};
     notifyListeners();
   }
 
@@ -74,10 +87,16 @@ class AppSession extends ChangeNotifier {
     notifyListeners();
   }
 
+  void setMemberStartupIds(Iterable<String> ids) {
+    _memberStartupIds = Set.unmodifiable(ids);
+    notifyListeners();
+  }
+
   void signOut() {
     _user = null;
     _guest = false;
     _ownStartupIds = const {};
+    _memberStartupIds = const {};
     notifyListeners();
   }
 

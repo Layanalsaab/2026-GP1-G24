@@ -83,14 +83,12 @@ void main() {
         'Overview',
         'Business',
         'Team',
-        'Financials',
+        'Funding',
       ]);
       vm.selectTab(3);
       expect(vm.tab, 3);
-      expect(
-        vm.infoLine,
-        startsWith('HealthTech · Pre-seed · Riyadh · Founded '),
-      );
+      // One sub-line under the name (the founded year is in the Overview).
+      expect(vm.infoLine, 'HealthTech · Pre-seed · Riyadh');
       expect(vm.raising, 'SAR 500K');
       expect(vm.lookingFor, ['Funding', 'Talent']);
       final cells = vm.financials.map((c) => c.$1).toList();
@@ -154,6 +152,77 @@ void main() {
       await vm.reload();
       expect(vm.startups, hasLength(1));
       expect(session.ownStartupIds, {PrototypeSeed.rafeeq.id});
+    });
+  });
+
+  group('Part 8: contact visibility and carry-over', () {
+    AccountViewModel vmFor(AppUser u) => AccountViewModel(
+      user: u,
+      userRepository: FakeUserRepository(),
+      startupRepository: FakeStartupRepository(),
+      session: session,
+    );
+
+    test('others see only what is public; I always see both', () {
+      final both = _founder.copyWith(emailPublic: true, phonePublic: true);
+      final onlyPhone = _founder.copyWith(
+        emailPublic: false,
+        phonePublic: true,
+      );
+      final none = _founder.copyWith(emailPublic: false, phonePublic: false);
+      expect(vmFor(both).contactRows(isOwner: false), hasLength(2));
+      expect(
+        vmFor(onlyPhone).contactRows(isOwner: false).single.kind,
+        ContactKind.phone,
+      );
+      expect(vmFor(none).contactRows(isOwner: false), isEmpty);
+      expect(vmFor(none).contactRows(), hasLength(2));
+    });
+
+    test('profile lists founded and member startups with roles', () async {
+      final startups = FakeStartupRepository()
+        ..startups.add(PrototypeSeed.rafeeq);
+      final vm = AccountViewModel(
+        user: _founder,
+        userRepository: FakeUserRepository(),
+        startupRepository: startups,
+        session: session,
+      );
+      await vm.reload();
+      expect(vm.startupEntries.first.isFounder, isTrue);
+      expect(vm.startupEntries.length, greaterThan(1));
+    });
+
+    test(
+      'a founder bio is required and the visibility flags are saved',
+      () async {
+        final users = FakeUserRepository();
+        final vm = EditAccountViewModel(user: _founder, userRepository: users);
+        vm.setBio('  ');
+        expect(await vm.submit(), isNull);
+        expect(vm.bioError, 'Please write a short bio.');
+        vm.setBio('Hello');
+        vm.setEmailPublic(true);
+        vm.setPhonePublic(false);
+        final saved = await vm.submit();
+        expect(saved!.emailPublic, isTrue);
+        expect(saved.phonePublic, isFalse);
+      },
+    );
+
+    test('changing my name updates my team cards', () async {
+      final users = FakeUserRepository();
+      final startups = FakeStartupRepository();
+      final vm = EditAccountViewModel(
+        user: _founder,
+        userRepository: users,
+        startupRepository: startups,
+      );
+      vm.setFullName('Shahad Alabdulkarim Jr');
+      await vm.submit();
+      expect(startups.renames, [
+        ('u1', 'Shahad Alabdulkarim', 'Shahad Alabdulkarim Jr'),
+      ]);
     });
   });
 

@@ -3,22 +3,23 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../../../app_constants/profile_strings.dart';
+import '../../../helpers/share_link.dart';
 import '../../../data_access/repositories/bookmark_repository.dart';
 import '../../../shared_ui/icons/app_icons.dart';
 import '../../../shared_ui/motion/motion.dart';
 import '../../../shared_ui/theme/app_colors.dart';
 import '../../../shared_ui/theme/app_text.dart';
 import '../../../shared_ui/widgets/buttons/app_button.dart';
-import '../../../shared_ui/widgets/overlays/app_toast.dart';
 
 /// Side effects shared by the startup, investor and program profiles: the
 /// bookmark, share and request / interest toggles with their exact toasts.
 class ProfileActions {
   ProfileActions._();
 
-  /// Share: the prototype only shows the toast.
-  static void share(BuildContext context) =>
-      AppToast.show(context, ProfileStrings.linkCopied);
+  /// Share: copies the link of the item behind [key] (`s-<id>`, `i-<id>`,
+  /// `p-<id>`) and says "Link copied".
+  static void share(BuildContext context, String key) =>
+      ShareLink.copyKey(context, key);
 
   /// Toggles the bookmark under [key] (`s-<id>`, `i-<id>`, `p-<id>`).
   static void toggleBookmark(BuildContext context, String key) {
@@ -210,21 +211,45 @@ class ProfileHead extends StatelessWidget {
             ),
           ),
           if (tags.isNotEmpty) ...[
-            const SizedBox(height: 14),
-            Text(
-              tagsLabel.toUpperCase(),
-              style: AppText.sans(
-                size: 11.5,
-                weight: FontWeight.w600,
-                color: AppColors.hint,
-                letterSpacing: 0.4,
-              ),
-            ),
+            // The sectors as plain text under the city line: a small target
+            // icon and "Interested in HealthTech, Fintech" (sectors bolder).
             const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [for (final t in tags) _SectorChip(t)],
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Padding(
+                  padding: EdgeInsets.only(top: 3),
+                  child: AppIcon.filled(
+                    AppIcons.target,
+                    size: 15,
+                    color: Color(0xFF8C918D),
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Flexible(
+                  child: Text.rich(
+                    TextSpan(
+                      text: '$tagsLabel ',
+                      style: AppText.sans(
+                        size: 14,
+                        height: 21,
+                        color: const Color(0xFF6B726C),
+                      ),
+                      children: [
+                        TextSpan(
+                          text: tags.join(', '),
+                          style: AppText.sans(
+                            size: 14,
+                            height: 21,
+                            weight: FontWeight.w600,
+                            color: AppColors.ink,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
           if ((linkedin ?? '').trim().isNotEmpty) ...[
@@ -235,35 +260,6 @@ class ProfileHead extends StatelessWidget {
       ),
     );
   }
-}
-
-class _SectorChip extends StatelessWidget {
-  const _SectorChip(this.label);
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) => Container(
-    height: 30,
-    padding: const EdgeInsets.symmetric(horizontal: 12),
-    decoration: BoxDecoration(
-      color: AppColors.mossChip,
-      borderRadius: BorderRadius.circular(999),
-    ),
-    // widthFactor: 1 keeps the chip as wide as its text (an aligned
-    // Container would stretch across the whole row).
-    child: Center(
-      widthFactor: 1,
-      child: Text(
-        label,
-        style: AppText.sans(
-          size: 12.5,
-          weight: FontWeight.w600,
-          color: AppColors.moss600,
-        ),
-      ),
-    ),
-  );
 }
 
 class _LinkedInPill extends StatelessWidget {

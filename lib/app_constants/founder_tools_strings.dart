@@ -14,7 +14,9 @@ class FounderToolsStrings {
   static const manage = 'Manage';
   static const view = 'View';
   static const roleFounder = 'Founder';
+  static const roleCoFounder = 'Co-founder';
   static const roleMember = 'Team member';
+  static const notRaising = 'Not raising right now';
   static const allStartups = 'All startups';
   static const filterStartupsTitle = 'Filter startups';
   static const sortStartupsTitle = 'Sort startups';
@@ -51,6 +53,8 @@ class FounderToolsStrings {
   static const next = 'Next';
   static const create = 'Create startup';
   static const saveChanges = 'Save changes';
+  static const save = 'Save';
+  static const editSectionLabel = 'Edit startup';
   static String added(String name) => '$name was added';
   static const changesSaved = 'Changes saved';
   static String deleted(String name) => '$name was deleted';
@@ -154,6 +158,9 @@ class FounderToolsStrings {
   static const required = 'Required';
 
   // ---- Manage startup ----
+  static const tabDashboard = 'Dashboard';
+  static const tabDetails = 'Details';
+  static const tabRounds = 'Rounds';
   static const tabOverview = 'Overview';
   static const tabRequests = 'Requests';
   static const tabInterest = 'Interest';
@@ -167,6 +174,12 @@ class FounderToolsStrings {
   static const bookmarks = 'Bookmarks';
   static const requests = 'Requests';
   static const associatedTitle = 'Associated investors';
+  static const raisingLabel = 'Raising';
+  static const valuationTile = 'Valuation';
+  static const notRaisingValue = 'Not raising';
+  static const noOpenRound = 'No open round';
+  static const valuationCurrent = 'Current';
+  static const associatedEmptyMember = 'No associated investors yet.';
   static const associatedEmpty =
       'Investors whose requests you accept appear here and on your profile.';
   static const shownOnProfile = 'Shown on profile';
@@ -194,10 +207,18 @@ class FounderToolsStrings {
   static const replyLabel = 'Reply';
   static const publicProfile = 'Public profile';
   static const publicProfileOn = 'Visible in Hub, Explore and Matches';
-  static const publicProfileOff = 'Only you can see this startup';
+  static const publicProfileOff = 'Only your team can see this startup';
   static const nowPublic = 'Startup is now public';
   static const nowPrivate = 'Startup is now private';
   static const deleteStartup = 'Delete startup';
+  static const leaveStartup = 'Leave startup';
+  static const leaveCoFounderText =
+      'You’ll stop being a co-founder of this startup';
+  static const leaveMemberText = 'You’ll be removed from this startup’s team';
+  static String leaveTitle(String name) => 'Leave $name?';
+  static const leaveMessage =
+      'You won’t be able to see or manage this startup any more. The founder can add you again.';
+  static String leftToast(String name) => 'You left $name';
   static const deleteStartupText = 'Removes the startup and all its requests';
   static String deleteTitle(String name) => 'Delete $name?';
   static const deleteMessage =

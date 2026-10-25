@@ -7,6 +7,7 @@ class TeamMember {
     required this.specialization,
     required this.yearsExperience,
     required this.bio,
+    this.uid,
   });
 
   static const nameMax = 50;
@@ -24,6 +25,20 @@ class TeamMember {
   final String specialization;
   final int yearsExperience;
   final String bio;
+
+  /// The account this person is, once it is linked. A linked member shows
+  /// the account's CURRENT name (it follows Edit profile); an unlinked one
+  /// shows the typed text.
+  final String? uid;
+
+  TeamMember copyWith({String? name, String? uid}) => TeamMember(
+    name: name ?? this.name,
+    role: role,
+    specialization: specialization,
+    yearsExperience: yearsExperience,
+    bio: bio,
+    uid: uid ?? this.uid,
+  );
 
   /// "CTO · 10 yrs · Mobile and cloud" (the sub-line on a team row).
   String get meta => '$role · $yearsExperience yrs · $specialization';
@@ -48,6 +63,7 @@ class TeamMember {
     'specialization': specialization,
     'yearsOfExperience': yearsExperience,
     'shortBio': bio,
+    if (uid != null) 'uid': uid,
   };
 
   static TeamMember? fromMap(Object? raw) {
@@ -64,6 +80,7 @@ class TeamMember {
               ?.toInt() ??
           0,
       bio: ((raw['shortBio'] ?? raw['bio']) as String?) ?? '',
+      uid: raw['uid'] as String?,
     );
   }
 

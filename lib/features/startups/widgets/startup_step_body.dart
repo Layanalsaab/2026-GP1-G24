@@ -3,8 +3,10 @@ import 'package:flutter/services.dart';
 
 import '../../../app_constants/founder_tools_strings.dart';
 import '../../../helpers/startup_validators.dart';
+import '../../../helpers/app_session.dart';
 import '../../../models/startup.dart';
 import '../../../models/startup_enums.dart';
+import '../../../models/team_member.dart';
 import '../view_models/startup_steps_view_model.dart';
 import 'founder_ui.dart';
 import 'team_member_widgets.dart';
@@ -13,10 +15,19 @@ import 'team_member_widgets.dart';
 /// (docs/05 D2, docs/06 section 8). Reads and writes [vm]; rebuilds with it.
 /// [step] is 0-based.
 class StartupStepBody extends StatelessWidget {
-  const StartupStepBody({super.key, required this.vm, required this.step});
+  const StartupStepBody({
+    super.key,
+    required this.vm,
+    required this.step,
+    this.section,
+  });
 
   final StartupStepsViewModel vm;
   final int step;
+
+  /// Editing one Details section: on the Funding & goals step only that
+  /// half is shown (3 Finance and Growth, 4 Startup Ask). Null = all of it.
+  final int? section;
 
   @override
   Widget build(BuildContext context) {
@@ -26,7 +37,7 @@ class StartupStepBody extends StatelessWidget {
         0 => _Basics(vm: vm),
         1 => _ProblemSolution(vm: vm),
         2 => _TargetMarket(vm: vm),
-        3 => _Funding(vm: vm),
+        3 => _Funding(vm: vm, section: section),
         _ => _Team(vm: vm),
       },
     );
@@ -365,91 +376,103 @@ class _TargetMarket extends StatelessWidget {
 
 // ----------------------------------------------------------------- step 4
 
+/// Funding & goals. It holds two halves that the Details tab edits one at a
+/// time: Finance and Growth (growth plan, capital, expected revenue,
+/// valuation) and Startup Ask (lead investor, funding amount, what the
+/// startup looks for). In the normal form both are shown, one after the
+/// other; when editing one Details [section] only that half is.
 class _Funding extends StatelessWidget {
-  const _Funding({required this.vm});
+  const _Funding({required this.vm, this.section});
 
   final StartupStepsViewModel vm;
+  final int? section;
 
   @override
   Widget build(BuildContext context) {
+    final finance = <Widget>[
+      _text(
+        vm,
+        label: FounderToolsStrings.growthLabel,
+        controller: vm.growth,
+        hint: FounderToolsStrings.growthHint,
+        max: Startup.longTextMax,
+        field: StartupField.growth,
+        multiline: true,
+      ),
+      _money(
+        vm,
+        label: FounderToolsStrings.capitalLabel,
+        controller: vm.capital,
+        field: StartupField.capital,
+      ),
+      AppField(
+        label: FounderToolsStrings.revenueLabel,
+        required: true,
+        hint: FounderToolsStrings.revenueHint,
+        error: vm.errorOf(StartupField.revenue),
+        child: TrioField(
+          entries: [
+            TrioEntry(
+              label: 'Year 1',
+              controller: vm.rev1,
+              hasError: vm.hasError(StartupField.revenue),
+            ),
+            TrioEntry(
+              label: 'Year 2',
+              controller: vm.rev2,
+              hasError: vm.hasError(StartupField.revenue),
+            ),
+            TrioEntry(
+              label: 'Year 3',
+              controller: vm.rev3,
+              hasError: vm.hasError(StartupField.revenue),
+            ),
+          ],
+        ),
+      ),
+      _money(
+        vm,
+        label: FounderToolsStrings.valuationLabel,
+        controller: vm.valuation,
+        field: StartupField.valuation,
+      ),
+    ];
+    final ask = <Widget>[
+      ChipGroupField(
+        label: FounderToolsStrings.leadLabel,
+        required: true,
+        info: FounderToolsStrings.leadInfo,
+        options: const [FounderToolsStrings.yes, FounderToolsStrings.no],
+        selected: [
+          if (vm.wantsLead != null)
+            vm.wantsLead! ? FounderToolsStrings.yes : FounderToolsStrings.no,
+        ],
+        onTap: (label) => vm.setLead(label == FounderToolsStrings.yes),
+        error: vm.errorOf(StartupField.lead),
+      ),
+      _money(
+        vm,
+        label: FounderToolsStrings.fundingLabel,
+        controller: vm.funding,
+        field: StartupField.funding,
+      ),
+      ChipGroupField(
+        label: FounderToolsStrings.lookingForLabel,
+        required: true,
+        multi: true,
+        options: [for (final l in LookingFor.values) l.label],
+        selected: [for (final l in vm.lookingFor) l.label],
+        onTap: vm.toggleLookingFor,
+        error: vm.errorOf(StartupField.lookingFor),
+        otherController: vm.lookingForOther,
+        otherHint: FounderToolsStrings.lookingForOtherHint,
+        otherError: vm.errorOf(StartupField.lookingForOther),
+      ),
+    ];
     return FormFieldColumn(
       children: [
-        _text(
-          vm,
-          label: FounderToolsStrings.growthLabel,
-          controller: vm.growth,
-          hint: FounderToolsStrings.growthHint,
-          max: Startup.longTextMax,
-          field: StartupField.growth,
-          multiline: true,
-        ),
-        _money(
-          vm,
-          label: FounderToolsStrings.capitalLabel,
-          controller: vm.capital,
-          field: StartupField.capital,
-        ),
-        AppField(
-          label: FounderToolsStrings.revenueLabel,
-          required: true,
-          hint: FounderToolsStrings.revenueHint,
-          error: vm.errorOf(StartupField.revenue),
-          child: TrioField(
-            entries: [
-              TrioEntry(
-                label: 'Year 1',
-                controller: vm.rev1,
-                hasError: vm.hasError(StartupField.revenue),
-              ),
-              TrioEntry(
-                label: 'Year 2',
-                controller: vm.rev2,
-                hasError: vm.hasError(StartupField.revenue),
-              ),
-              TrioEntry(
-                label: 'Year 3',
-                controller: vm.rev3,
-                hasError: vm.hasError(StartupField.revenue),
-              ),
-            ],
-          ),
-        ),
-        _money(
-          vm,
-          label: FounderToolsStrings.valuationLabel,
-          controller: vm.valuation,
-          field: StartupField.valuation,
-        ),
-        ChipGroupField(
-          label: FounderToolsStrings.leadLabel,
-          required: true,
-          info: FounderToolsStrings.leadInfo,
-          options: const [FounderToolsStrings.yes, FounderToolsStrings.no],
-          selected: [
-            if (vm.wantsLead != null)
-              vm.wantsLead! ? FounderToolsStrings.yes : FounderToolsStrings.no,
-          ],
-          onTap: (label) => vm.setLead(label == FounderToolsStrings.yes),
-          error: vm.errorOf(StartupField.lead),
-        ),
-        _money(
-          vm,
-          label: FounderToolsStrings.fundingLabel,
-          controller: vm.funding,
-          field: StartupField.funding,
-        ),
-        ChipGroupField(
-          label: FounderToolsStrings.lookingForLabel,
-          required: true,
-          multi: true,
-          options: [for (final l in LookingFor.values) l.label],
-          selected: [for (final l in vm.lookingFor) l.label],
-          onTap: vm.toggleLookingFor,
-          error: vm.errorOf(StartupField.lookingFor),
-          otherController: vm.lookingForOther,
-          otherHint: FounderToolsStrings.lookingForOtherHint,
-          otherError: vm.errorOf(StartupField.lookingForOther),
-        ),
+        if (section == null || section == 3) ...finance,
+        if (section == null || section == 4) ...ask,
       ],
     );
   }
@@ -476,26 +499,19 @@ class _Team extends StatelessWidget {
             children: [
               for (var i = 0; i < vm.team.length; i++) ...[
                 if (i > 0) const SizedBox(height: 10),
-                TeamMemberRow(
-                  member: vm.team[i],
-                  onEdit: () => vm.openMemberEditor(i),
-                ),
+                // The editor opens inside the member's own card.
+                if (vm.editorOpen && vm.editingIndex == i)
+                  _editor(vm, nameLocked: _isMe(vm.team[i]))
+                else
+                  TeamMemberRow(
+                    member: vm.team[i],
+                    onEdit: () => vm.openMemberEditor(i),
+                  ),
               ],
               if (vm.team.isNotEmpty) const SizedBox(height: 14),
-              if (vm.editorOpen)
-                TeamMemberEditor(
-                  editing: vm.editingIndex != null,
-                  name: vm.memberName,
-                  role: vm.memberRole,
-                  specialization: vm.memberSpec,
-                  years: vm.memberYears,
-                  bio: vm.memberBio,
-                  complete: vm.memberComplete,
-                  errorOf: vm.memberError,
-                  onCancel: vm.cancelMemberEditor,
-                  onSave: vm.saveMember,
-                  onRemove: vm.removeMember,
-                )
+              // "Add team member" opens its editor at the bottom.
+              if (vm.editorOpen && vm.editingIndex == null)
+                _editor(vm)
               else
                 AddMemberButton(onTap: () => vm.openMemberEditor()),
             ],
@@ -505,3 +521,28 @@ class _Team extends StatelessWidget {
     );
   }
 }
+
+/// The signed-in user's own team row (matched by their account name).
+bool _isMe(TeamMember m) {
+  final user = AppSession.instance.user;
+  if (user == null) return false;
+  if (m.uid != null) return m.uid == user.uid;
+  final me = user.fullName.trim().toLowerCase();
+  return me.isNotEmpty && m.name.trim().toLowerCase() == me;
+}
+
+Widget _editor(StartupStepsViewModel vm, {bool nameLocked = false}) =>
+    TeamMemberEditor(
+      editing: vm.editingIndex != null,
+      nameLocked: nameLocked,
+      name: vm.memberName,
+      role: vm.memberRole,
+      specialization: vm.memberSpec,
+      years: vm.memberYears,
+      bio: vm.memberBio,
+      complete: vm.memberComplete,
+      errorOf: vm.memberError,
+      onCancel: vm.cancelMemberEditor,
+      onSave: vm.saveMember,
+      onRemove: vm.removeMember,
+    );

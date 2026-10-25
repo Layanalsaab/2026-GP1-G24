@@ -9,9 +9,17 @@ import '../view_models/interest_view_model.dart';
 /// listing the people who expressed interest. The round reply button marks the
 /// person as seen and calls [onToast] with "Messaging opens in the full app".
 class InterestTab extends StatelessWidget {
-  const InterestTab({super.key, required this.vm, required this.onToast});
+  const InterestTab({
+    super.key,
+    required this.vm,
+    required this.onToast,
+    this.canAct = true,
+  });
 
   final InterestViewModel vm;
+
+  /// False hides the reply button (a team member only reads).
+  final bool canAct;
   final void Function(String message) onToast;
 
   @override
@@ -83,8 +91,8 @@ class InterestTab extends StatelessWidget {
                                   tone: i.isEven
                                       ? TileTone.moss
                                       : TileTone.gold,
-                                  size: 38,
-                                  fontSize: 13,
+                                  size: 42,
+                                  fontSize: 14,
                                   round: true,
                                 ),
                                 const SizedBox(width: 12),
@@ -99,7 +107,7 @@ class InterestTab extends StatelessWidget {
                                             child: Text(
                                               items[i].name,
                                               style: AppText.sans(
-                                                size: 15,
+                                                size: 16.5,
                                                 weight: FontWeight.w600,
                                               ),
                                             ),
@@ -126,8 +134,8 @@ class InterestTab extends StatelessWidget {
                                           items[i].whenLabel,
                                         ),
                                         style: AppText.sans(
-                                          size: 12.5,
-                                          height: 17,
+                                          size: 14,
+                                          height: 20,
                                           color: AppColors.grey,
                                         ),
                                       ),
@@ -135,22 +143,24 @@ class InterestTab extends StatelessWidget {
                                       Text(
                                         items[i].message,
                                         style: AppText.sans(
-                                          size: 13.5,
-                                          height: 19,
+                                          size: 16,
+                                          height: 24,
                                           color: AppColors.paragraph,
                                         ),
                                       ),
                                     ],
                                   ),
                                 ),
-                                const SizedBox(width: 12),
-                                Semantics(
-                                  button: true,
-                                  label:
-                                      '${FounderToolsStrings.replyLabel} ${items[i].name}',
-                                  excludeSemantics: true,
-                                  child: const InterestReplyButton(),
-                                ),
+                                if (canAct) ...[
+                                  const SizedBox(width: 12),
+                                  Semantics(
+                                    button: true,
+                                    label:
+                                        '${FounderToolsStrings.replyLabel} ${items[i].name}',
+                                    excludeSemantics: true,
+                                    child: const InterestReplyButton(),
+                                  ),
+                                ],
                               ],
                             ),
                           ),

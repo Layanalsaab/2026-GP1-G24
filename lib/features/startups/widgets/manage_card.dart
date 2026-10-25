@@ -4,12 +4,12 @@ import 'founder_ui.dart';
 import 'hover_lift_card.dart';
 
 /// The white card of the Manage startup panes (prototype `.mcard`): radius 20,
-/// padding 16, hairline border and the soft card shadow.
+/// padding 18, hairline border and the soft card shadow.
 class ManageCard extends StatelessWidget {
   const ManageCard({
     super.key,
     required this.child,
-    this.padding = const EdgeInsets.all(16),
+    this.padding = const EdgeInsets.all(18),
     this.onTap,
   });
 

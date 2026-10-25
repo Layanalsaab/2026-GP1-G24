@@ -90,9 +90,14 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
   /// Founder's own startups (hidden from the lists; the "Matches for" menu).
   List<Startup> get ownStartups => _own;
 
-  void setOwnStartups(List<Startup> startups) {
+  /// [alsoHide]: the startups the founder belongs to as a co-founder or team
+  /// member (hidden from Hub and For You like their own).
+  void setOwnStartups(
+    List<Startup> startups, {
+    Set<String> alsoHide = const {},
+  }) {
     _own = startups;
-    _ownIds = {for (final s in startups) s.id};
+    _ownIds = {for (final s in startups) s.id, ...alsoHide};
     if (matchFor >= startups.length) matchFor = 0;
     notifyListeners();
   }

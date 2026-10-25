@@ -301,7 +301,25 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(find.text('Rafeeq Health'), findsOneWidget);
-      expect(find.text('Edit startup'), findsOneWidget);
+      // Header: role label above the name, six tabs, eye + share icons.
+      expect(find.text('FOUNDER'), findsOneWidget);
+      for (final tab in [
+        'Dashboard',
+        'Details',
+        'Rounds',
+        'Requests',
+        'Interest',
+        'Settings',
+      ]) {
+        expect(find.text(tab), findsWidgets, reason: tab);
+      }
+      expect(find.bySemanticsLabel('Preview profile'), findsOneWidget);
+      expect(find.bySemanticsLabel('Share'), findsOneWidget);
+      // Dashboard: the two tiles, the calculator and the investors card.
+      expect(find.text('Raising'), findsOneWidget);
+      expect(find.text('Valuation'), findsOneWidget);
+      expect(find.text('Valuation calculator'), findsOneWidget);
+      expect(find.text('Associated investors'), findsOneWidget);
       expect(find.text('128'), findsOneWidget);
       expect(find.text('Ahmad Hassan'), findsOneWidget);
 
@@ -310,12 +328,14 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('14'), findsOneWidget);
 
-      await tester.tap(
-        find.descendant(
-          of: find.byType(HeaderTabBar),
-          matching: find.text('Requests'),
-        ),
+      // The tab bar scrolls sideways: bring the tab into view, then tap it.
+      Finder tab(String label) => find.descendant(
+        of: find.byType(ScrollableHeaderTabBar),
+        matching: find.text(label),
       );
+      await tester.ensureVisible(tab('Requests'));
+      await tester.pumpAndSettle();
+      await tester.tap(tab('Requests'));
       await tester.pumpAndSettle();
       expect(find.text('Pending · 1'), findsOneWidget);
       expect(find.text('SAR 300,000 for 15%'), findsOneWidget);
@@ -326,17 +346,34 @@ void main() {
       await tester.pump(const Duration(seconds: 3));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Interest'));
+      await tester.ensureVisible(tab('Interest'));
+      await tester.pumpAndSettle();
+      await tester.tap(tab('Interest'));
       await tester.pumpAndSettle();
       expect(find.text('New · 2'), findsOneWidget);
       expect(find.text('Noura Alharbi'), findsOneWidget);
 
-      await tester.tap(find.text('Settings'));
+      await tester.ensureVisible(tab('Settings'));
+      await tester.pumpAndSettle();
+      await tester.tap(tab('Settings'));
       await tester.pumpAndSettle();
       expect(find.text('Public profile'), findsOneWidget);
       await tester.tap(find.text('Delete startup'));
       await tester.pumpAndSettle();
       expect(find.text('Delete Rafeeq Health?'), findsOneWidget);
+    });
+
+    testWidgets('the share icon copies the link and says so', (tester) async {
+      _bigScreen(tester);
+      await tester.pumpWidget(
+        _app(ManageStartupScreen(startup: PrototypeSeed.rafeeq)),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.bySemanticsLabel('Share'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(find.text('Link copied'), findsOneWidget);
+      await tester.pump(const Duration(seconds: 4));
     });
 
     testWidgets('Add startup step 1 at 360 px: off button shows errors', (

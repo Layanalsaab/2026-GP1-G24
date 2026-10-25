@@ -7,7 +7,9 @@ import '../../../data_access/repositories/startup_repository.dart';
 import '../../../data_access/repositories/user_repository.dart';
 import '../../../helpers/app_session.dart';
 import '../../../helpers/safe_notifier.dart';
+import '../../../data_access/mock_data/prototype_seed.dart';
 import '../../../models/app_user.dart';
+import '../../../models/list_entries.dart';
 import '../../../models/startup.dart';
 
 /// Logic of the own profile (docs/05 C4): the profile on screen, kept fresh
@@ -34,6 +36,22 @@ class AccountViewModel extends ChangeNotifier with SafeNotifier {
 
   /// The founder's startups (empty until loaded).
   List<Startup> startups = const [];
+
+  /// The startups the founder belongs to as a co-founder or team member.
+  /// The real ones are read from Firestore; the sample ones (interface only)
+  /// are added until the invites exist.
+  List<MyStartupEntry> memberEntries = const [];
+
+  /// Every startup of the founder's profile, each with their role in it.
+  List<MyStartupEntry> get startupEntries => [
+    for (final s in startups)
+      MyStartupEntry(
+        startup: s,
+        role: StartupRole.founder,
+        addedAt: s.createdAt ?? DateTime.now(),
+      ),
+    ...memberEntries,
+  ];
 
   /// Counts edits shown with [updateUser], so a reload that started earlier
   /// can't replace them with older data.
@@ -78,6 +96,24 @@ class AccountViewModel extends ChangeNotifier with SafeNotifier {
 
   String get linkedin => (_user.linkedin ?? '').trim();
 
+  /// The Contact section: the email and the phone, each with whether it is
+  /// public. On the user's OWN profile both are listed (a phone only when one
+  /// is saved) with their pills; anybody else sees only the ones set to
+  /// Public, and no Contact section at all when both are private.
+  List<ContactRow> contactRows({bool isOwner = true}) {
+    final rows = [
+      ContactRow(ContactKind.email, _user.email, _user.emailPublic),
+      if (phoneLabel.isNotEmpty)
+        ContactRow(ContactKind.phone, phoneLabel, _user.phonePublic),
+    ];
+    return isOwner
+        ? rows
+        : [
+            for (final r in rows)
+              if (r.isPublic) r,
+          ];
+  }
+
   /// The sample startups an investor is associated with (none for real
   /// accounts until associations are stored in Firestore).
   List<Startup> get associations => _user.isInvestor
@@ -104,10 +140,36 @@ class AccountViewModel extends ChangeNotifier with SafeNotifier {
     try {
       startups = await _startups.fetchMyStartups();
       _session.setOwnStartupIds(startups.map((s) => s.id));
+      memberEntries = await _loadMemberEntries();
       notifyListeners();
     } catch (_) {
       // Keep the list as it is.
     }
+  }
+
+  Future<List<MyStartupEntry>> _loadMemberEntries() async {
+    final entries = <MyStartupEntry>[];
+    try {
+      for (final s in await _startups.fetchMemberStartups()) {
+        entries.add(
+          MyStartupEntry(
+            startup: s,
+            role: StartupRole.of(s, _user.uid) ?? StartupRole.member,
+            addedAt: s.updatedAt ?? s.createdAt ?? DateTime.now(),
+          ),
+        );
+      }
+    } catch (_) {
+      // Memberships are an extra: the founder's own startups still show.
+    }
+    // INTERFACE ONLY: the sample memberships, until the invites exist.
+    entries.addAll(PrototypeSeed.sampleTeamStartups);
+    return entries;
+  }
+
+  /// Re-reads the startups list (after Manage or Edit profile closed).
+  Future<void> refreshStartups() async {
+    if (_user.isFounder) await _loadStartups();
   }
 
   /// Shows the details saved on Edit profile.
@@ -117,4 +179,16 @@ class AccountViewModel extends ChangeNotifier with SafeNotifier {
     _session.updateUser(updated);
     notifyListeners();
   }
+}
+
+enum ContactKind { email, phone }
+
+/// One line of the Contact section: what it is, its value and whether the
+/// owner made it public.
+class ContactRow {
+  const ContactRow(this.kind, this.value, this.isPublic);
+
+  final ContactKind kind;
+  final String value;
+  final bool isPublic;
 }

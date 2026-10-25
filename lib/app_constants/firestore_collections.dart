@@ -124,6 +124,13 @@ class StartupFields {
   static const revenueYear3 = 'expectedRevenueYear3';
   static const valuation = 'valuation';
   static const wantsLeadInvestor = 'wantsLeadInvestor';
+
+  /// The people of the startup other than the founder. Kept INSIDE the
+  /// startup document: `memberIds` (for queries) and `memberRoles` (uid ->
+  /// 'coFounder' or 'member'). Deleting the startup deletes every membership
+  /// with it, and "Leave startup" removes only the user's own entry.
+  static const memberIds = 'memberIds';
+  static const memberRoles = 'memberRoles';
 }
 
 /// Fields of a `requests/{id}` document (investor -> startup).

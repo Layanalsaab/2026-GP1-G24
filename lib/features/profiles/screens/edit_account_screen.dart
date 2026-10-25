@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 
 import '../../../app_constants/account_strings.dart';
 import '../../../app_constants/app_strings.dart';
+import '../../../app_constants/auth_strings.dart';
 import '../../../app_constants/profile_strings.dart';
 import '../../../data_access/device_services/profile_photo_picker_service.dart';
 import '../../../helpers/app_session.dart';
@@ -19,7 +20,10 @@ import '../../../shared_ui/widgets/buttons/app_button.dart';
 import '../../../shared_ui/widgets/chips/chip_group.dart';
 import '../../../shared_ui/widgets/forms/app_field.dart';
 import '../../../shared_ui/widgets/forms/app_text_field.dart';
+import '../../../shared_ui/widgets/forms/photo_pickers.dart';
 import '../../../shared_ui/widgets/forms/select_field.dart';
+import '../../../shared_ui/widgets/forms/visibility_pill.dart';
+import '../../../shared_ui/widgets/overlays/multi_picker_sheet.dart';
 import '../../../shared_ui/widgets/headers/header_buttons.dart';
 import '../../../shared_ui/widgets/lists/press_surface.dart';
 import '../../../shared_ui/widgets/overlays/app_bottom_sheet.dart';
@@ -61,7 +65,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     if (!mounted) return;
     if (updated != null) {
       AppSession.instance.updateUser(updated);
-      AppToast.show(context, ProfileStrings.profileSaved);
+      AppToast.confirm(context, ProfileStrings.profileSaved);
       AppNav.back(context, updated);
     } else if (_vm.formError != null) {
       AppToast.error(context, _vm.formError!);
@@ -80,6 +84,165 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       noResultsText: ProfileStrings.noCities,
     );
     if (result != null) _vm.setCity(result.value);
+  }
+
+  /// The sectors shown in the sheet (kept in step with the view model).
+  late final Set<String> _sectorSet = {
+    ..._vm.sectors,
+    if (_vm.otherSelected) EditAccountViewModel.otherLabel,
+  };
+
+  Future<void> _pickSectors() async {
+    FocusScope.of(context).unfocus();
+    await showMultiPickerSheet(
+      context,
+      title: AuthStrings.sectorsSheetTitle,
+      options: EditAccountViewModel.sectorOptions,
+      selected: _sectorSet,
+      onToggle: (label) {
+        if (!_sectorSet.remove(label)) _sectorSet.add(label);
+        _vm.toggleSector(label);
+      },
+      searchHint: AuthStrings.sectorsSearch,
+      noResultsText: AuthStrings.sectorsNone,
+      otherLabel: EditAccountViewModel.otherLabel,
+      otherNoun: AuthStrings.nounSector,
+      otherHint: AuthStrings.sectorOtherHint,
+      otherText: _vm.otherSector,
+      onOtherChanged: _vm.setOtherSector,
+      onUndoOther: () {
+        _sectorSet.remove(EditAccountViewModel.otherLabel);
+        _vm.toggleSector(EditAccountViewModel.otherLabel);
+      },
+    );
+  }
+
+  /// The picked sectors in list order, "Other" shown as what was typed.
+  String _sectorsText() {
+    final other = _vm.otherSector.trim();
+    return [
+      for (final o in EditAccountViewModel.sectorOptions)
+        if (_sectorSet.contains(o))
+          if (o != EditAccountViewModel.otherLabel)
+            o
+          else if (other.isNotEmpty)
+            other,
+    ].join(', ');
+  }
+
+  /// The founder's form: the same fields, order, labels and limits as
+  /// "Create your account" (no password fields).
+  Widget _founderForm(AppUser u) {
+    ImageProvider? image;
+    if (_vm.hasPhoto) {
+      if (_vm.newPhoto != null) {
+        image = FileImage(_vm.newPhoto!);
+      } else if ((u.photoUrl ?? '').isNotEmpty) {
+        image = NetworkImage(u.photoUrl!);
+      }
+    }
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 24, 16, 32),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          ProfilePhotoRow(onTap: _photo, image: image),
+          FormFieldColumn(
+            children: [
+              LabeledTextField(
+                label: AuthStrings.fullName,
+                required: true,
+                value: _vm.fullName,
+                onChanged: _vm.setFullName,
+                placeholder: AuthStrings.fullNamePlaceholder,
+                maxLength: Validators.maxFullName,
+                error: _vm.fullNameError,
+                textCapitalization: TextCapitalization.words,
+              ),
+              LabeledTextField(
+                label: AuthStrings.email,
+                required: true,
+                value: u.email,
+                enabled: false,
+                maxLength: Validators.maxEmail,
+                keyboardType: TextInputType.emailAddress,
+                labelTrailing: VisibilityPill(
+                  isPublic: _vm.emailPublic,
+                  onChanged: _vm.setEmailPublic,
+                  fieldName: 'email',
+                ),
+              ),
+              LabeledTextField(
+                label: AuthStrings.phone,
+                required: true,
+                value: _vm.phone,
+                onChanged: _vm.setPhone,
+                placeholder: AuthStrings.phonePlaceholder,
+                prefix: AuthStrings.phonePrefix,
+                maxLength: Validators.phoneLength,
+                keyboardType: TextInputType.phone,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                error: _vm.phoneError,
+                labelTrailing: VisibilityPill(
+                  isPublic: _vm.phonePublic,
+                  onChanged: _vm.setPhonePublic,
+                  fieldName: 'phone',
+                ),
+              ),
+              LabeledTextField(
+                label: AuthStrings.linkedin,
+                value: _vm.linkedin,
+                onChanged: _vm.setLinkedin,
+                placeholder: AuthStrings.linkedinPlaceholder,
+                maxLength: Validators.maxLinkedin,
+                keyboardType: TextInputType.url,
+                valid:
+                    _vm.linkedin.trim().isNotEmpty &&
+                    _vm.linkedinError == null &&
+                    _vm.linkedin.contains('linkedin'),
+                error: _vm.linkedinError,
+              ),
+              AppField(
+                label: AuthStrings.city,
+                required: true,
+                error: _vm.cityError,
+                child: SelectField(
+                  placeholder: AuthStrings.cityPlaceholder,
+                  value: _vm.city,
+                  semanticLabel: AuthStrings.city,
+                  hasError: _vm.cityError != null,
+                  onTap: _pickCity,
+                ),
+              ),
+              AppField(
+                label: AuthStrings.sectorsQuestion,
+                required: true,
+                subLabel:
+                    'Select all that apply · ${_sectorSet.length} selected',
+                error: _vm.sectorsError ?? _vm.otherError,
+                child: SelectField(
+                  placeholder: AuthStrings.sectorsPlaceholder,
+                  value: _sectorsText(),
+                  semanticLabel: AuthStrings.sectorsQuestion,
+                  hasError: _vm.sectorsError != null || _vm.otherError != null,
+                  onTap: _pickSectors,
+                ),
+              ),
+              LabeledTextField(
+                label: AuthStrings.bio,
+                required: true,
+                value: _vm.bio,
+                onChanged: _vm.setBio,
+                placeholder: AuthStrings.bioPlaceholder,
+                maxLength: Validators.maxFounderBio,
+                multiline: true,
+                error: _vm.bioError,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _photo() async {
@@ -152,129 +315,133 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   child: SingleChildScrollView(
                     keyboardDismissBehavior:
                         ScrollViewKeyboardDismissBehavior.onDrag,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        _PhotoHeader(
-                          initials: _initials(),
-                          photoUrl: u.photoUrl,
-                          file: _vm.newPhoto,
-                          showPhoto: _vm.hasPhoto,
-                          onTap: _photo,
-                        ),
-                        FormFieldColumn(
-                          children: [
-                            LabeledTextField(
-                              label: ProfileStrings.fullName,
-                              required: true,
-                              value: _vm.fullName,
-                              onChanged: _vm.setFullName,
-                              maxLength: 50,
-                              error: _vm.fullNameError,
-                              textCapitalization: TextCapitalization.words,
-                            ),
-                            LabeledTextField(
-                              label: ProfileStrings.bio,
-                              value: _vm.bio,
-                              onChanged: _vm.setBio,
-                              maxLength: u.isFounder
-                                  ? Validators.maxFounderBio
-                                  : Validators.maxBio,
-                              multiline: true,
-                            ),
-                            AppField(
-                              label: ProfileStrings.city,
-                              required: true,
-                              error: _vm.cityError,
-                              child: SelectField(
-                                placeholder: ProfileStrings.cityPlaceholder,
-                                value: _vm.city,
-                                hasError: _vm.cityError != null,
-                                semanticLabel: ProfileStrings.city,
-                                onTap: _pickCity,
+                    child: u.isFounder
+                        ? _founderForm(u)
+                        : Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              _PhotoHeader(
+                                initials: _initials(),
+                                photoUrl: u.photoUrl,
+                                file: _vm.newPhoto,
+                                showPhoto: _vm.hasPhoto,
+                                onTap: _photo,
                               ),
-                            ),
-                            ChipGroupField(
-                              label: ProfileStrings.sectorsOfInterest,
-                              required: true,
-                              options: EditAccountViewModel.sectorOptions,
-                              selected: [
-                                ..._vm.sectors,
-                                if (_vm.otherSelected)
-                                  EditAccountViewModel.otherLabel,
-                              ],
-                              onTap: _vm.toggleSector,
-                              error: _vm.sectorsError,
-                              otherValue: _vm.otherSector,
-                              onOtherChanged: _vm.setOtherSector,
-                              otherHint: ProfileStrings.otherSectorHint,
-                              otherError: _vm.otherError,
-                            ),
-                            if (u.isInvestor) ...[
-                              LabeledTextField(
-                                label: ProfileStrings.valueLabel,
-                                required: true,
-                                value: _vm.valueOffered,
-                                onChanged: _vm.setValueOffered,
-                                maxLength: 1000,
-                                multiline: true,
-                                info: ProfileStrings.valueTip,
-                                infoOpen: _infoOpen == 'value',
-                                onInfoToggle: () => _toggleInfo('value'),
-                                error: _vm.valueError,
-                              ),
-                              LabeledTextField(
-                                label: ProfileStrings.gainLabel,
-                                required: true,
-                                value: _vm.gain,
-                                onChanged: _vm.setGain,
-                                maxLength: 1000,
-                                multiline: true,
-                                placeholder: ProfileStrings.gainHint,
-                                info: ProfileStrings.gainTip,
-                                infoOpen: _infoOpen == 'gain',
-                                onInfoToggle: () => _toggleInfo('gain'),
-                                error: _vm.gainError,
+                              FormFieldColumn(
+                                children: [
+                                  LabeledTextField(
+                                    label: ProfileStrings.fullName,
+                                    required: true,
+                                    value: _vm.fullName,
+                                    onChanged: _vm.setFullName,
+                                    maxLength: 50,
+                                    error: _vm.fullNameError,
+                                    textCapitalization:
+                                        TextCapitalization.words,
+                                  ),
+                                  LabeledTextField(
+                                    label: ProfileStrings.bio,
+                                    value: _vm.bio,
+                                    onChanged: _vm.setBio,
+                                    maxLength: u.isFounder
+                                        ? Validators.maxFounderBio
+                                        : Validators.maxBio,
+                                    multiline: true,
+                                  ),
+                                  AppField(
+                                    label: ProfileStrings.city,
+                                    required: true,
+                                    error: _vm.cityError,
+                                    child: SelectField(
+                                      placeholder:
+                                          ProfileStrings.cityPlaceholder,
+                                      value: _vm.city,
+                                      hasError: _vm.cityError != null,
+                                      semanticLabel: ProfileStrings.city,
+                                      onTap: _pickCity,
+                                    ),
+                                  ),
+                                  ChipGroupField(
+                                    label: ProfileStrings.sectorsOfInterest,
+                                    required: true,
+                                    options: EditAccountViewModel.sectorOptions,
+                                    selected: [
+                                      ..._vm.sectors,
+                                      if (_vm.otherSelected)
+                                        EditAccountViewModel.otherLabel,
+                                    ],
+                                    onTap: _vm.toggleSector,
+                                    error: _vm.sectorsError,
+                                    otherValue: _vm.otherSector,
+                                    onOtherChanged: _vm.setOtherSector,
+                                    otherHint: ProfileStrings.otherSectorHint,
+                                    otherError: _vm.otherError,
+                                  ),
+                                  if (u.isInvestor) ...[
+                                    LabeledTextField(
+                                      label: ProfileStrings.valueLabel,
+                                      required: true,
+                                      value: _vm.valueOffered,
+                                      onChanged: _vm.setValueOffered,
+                                      maxLength: 1000,
+                                      multiline: true,
+                                      info: ProfileStrings.valueTip,
+                                      infoOpen: _infoOpen == 'value',
+                                      onInfoToggle: () => _toggleInfo('value'),
+                                      error: _vm.valueError,
+                                    ),
+                                    LabeledTextField(
+                                      label: ProfileStrings.gainLabel,
+                                      required: true,
+                                      value: _vm.gain,
+                                      onChanged: _vm.setGain,
+                                      maxLength: 1000,
+                                      multiline: true,
+                                      placeholder: ProfileStrings.gainHint,
+                                      info: ProfileStrings.gainTip,
+                                      infoOpen: _infoOpen == 'gain',
+                                      onInfoToggle: () => _toggleInfo('gain'),
+                                      error: _vm.gainError,
+                                    ),
+                                  ],
+                                  LabeledTextField(
+                                    label: ProfileStrings.emailLabel,
+                                    required: true,
+                                    value: u.email,
+                                    enabled: false,
+                                    maxLength: 100,
+                                    keyboardType: TextInputType.emailAddress,
+                                  ),
+                                  LabeledTextField(
+                                    label: ProfileStrings.phoneLabel,
+                                    required: true,
+                                    value: _vm.phone,
+                                    onChanged: _vm.setPhone,
+                                    prefix: AppStrings.phoneCountryCode,
+                                    maxLength: 9,
+                                    keyboardType: TextInputType.phone,
+                                    inputFormatters: [
+                                      FilteringTextInputFormatter.digitsOnly,
+                                    ],
+                                    error: _vm.phoneError,
+                                  ),
+                                  LabeledTextField(
+                                    label: ProfileStrings.linkedinLabel,
+                                    value: _vm.linkedin,
+                                    onChanged: _vm.setLinkedin,
+                                    maxLength: 120,
+                                    placeholder: ProfileStrings.linkedinHint,
+                                    keyboardType: TextInputType.url,
+                                    valid:
+                                        _vm.linkedin.trim().isNotEmpty &&
+                                        _vm.linkedinError == null &&
+                                        _vm.linkedin.contains('linkedin'),
+                                    error: _vm.linkedinError,
+                                  ),
+                                ],
                               ),
                             ],
-                            LabeledTextField(
-                              label: ProfileStrings.emailLabel,
-                              required: true,
-                              value: u.email,
-                              enabled: false,
-                              maxLength: 100,
-                              keyboardType: TextInputType.emailAddress,
-                            ),
-                            LabeledTextField(
-                              label: ProfileStrings.phoneLabel,
-                              required: true,
-                              value: _vm.phone,
-                              onChanged: _vm.setPhone,
-                              prefix: AppStrings.phoneCountryCode,
-                              maxLength: 9,
-                              keyboardType: TextInputType.phone,
-                              inputFormatters: [
-                                FilteringTextInputFormatter.digitsOnly,
-                              ],
-                              error: _vm.phoneError,
-                            ),
-                            LabeledTextField(
-                              label: ProfileStrings.linkedinLabel,
-                              value: _vm.linkedin,
-                              onChanged: _vm.setLinkedin,
-                              maxLength: 120,
-                              placeholder: ProfileStrings.linkedinHint,
-                              keyboardType: TextInputType.url,
-                              valid:
-                                  _vm.linkedin.trim().isNotEmpty &&
-                                  _vm.linkedinError == null &&
-                                  _vm.linkedin.contains('linkedin'),
-                              error: _vm.linkedinError,
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
+                          ),
                   ),
                 ),
               ],

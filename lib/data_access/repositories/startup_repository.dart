@@ -54,6 +54,66 @@ class StartupRepository {
     return startups;
   }
 
+  /// The startups the signed-in user belongs to as a co-founder or team
+  /// member (not the ones they founded), most recently edited first. The
+  /// membership lives in each startup document (`memberIds`), so a deleted
+  /// startup simply stops being returned.
+  Future<List<Startup>> fetchMemberStartups() async {
+    final uid = _founderId;
+    final docs = await _firestore.queryWhereArrayContains(
+      _collection,
+      StartupFields.memberIds,
+      uid,
+    );
+    final startups = [
+      for (final doc in docs) ?Startup.fromMap(doc.id, doc.data),
+    ];
+    startups.sort((a, b) => _editedAt(b).compareTo(_editedAt(a)));
+    return startups;
+  }
+
+  /// "Leave startup": removes ONLY the signed-in user's own membership (their
+  /// uid from `memberIds` and `memberRoles`). The security rules allow a
+  /// member to change nothing else.
+  Future<void> leave(Startup startup) async {
+    final uid = _founderId;
+    await _firestore.updateDocument(_collection, startup.id, {
+      StartupFields.memberIds: _firestore.arrayRemove([uid]),
+      '${StartupFields.memberRoles}.$uid': _firestore.deleteField(),
+    });
+  }
+
+  /// "My name carries over": after [uid] changed their name on Edit profile,
+  /// every team card of theirs in the startups they founded shows the new
+  /// one. A member is theirs when it is linked to [uid], or (not linked yet)
+  /// when it carried their old name; it is linked from then on.
+  Future<void> syncMemberName({
+    required String uid,
+    required String oldName,
+    required String newName,
+  }) async {
+    final old = oldName.trim().toLowerCase();
+    for (final startup in await fetchMyStartups()) {
+      var changed = false;
+      final team = [
+        for (final m in startup.team)
+          if (m.uid == uid ||
+              (m.uid == null && m.name.trim().toLowerCase() == old))
+            () {
+              changed = changed || m.name != newName || m.uid != uid;
+              return m.copyWith(name: newName, uid: uid);
+            }()
+          else
+            m,
+      ];
+      if (!changed) continue;
+      await _firestore.updateDocument(_collection, startup.id, {
+        StartupFields.team: [for (final m in team) m.toMap()],
+        StartupFields.updatedAt: _firestore.serverTimestamp(),
+      });
+    }
+  }
+
   /// Saves a new startup and returns it as stored. [startup.id] and
   /// [startup.founderId] are ignored: both are assigned here.
   Future<Startup> create(Startup startup, {File? logo}) async {
@@ -91,7 +151,8 @@ class StartupRepository {
     File? newLogo,
     bool removeLogo = false,
   }) async {
-    final founderId = _founderId;
+    // Logos live under the founder's folder, whoever (co-founder) uploads.
+    final founderId = startup.founderId;
     final oldLogoUrl = startup.logoUrl;
     var updated = startup;
     if (newLogo != null) {
@@ -121,7 +182,11 @@ class StartupRepository {
     }
   }
 
-  /// Deletes the startup and its logo.
+  /// Deletes the startup and its logo. Every membership goes with it (the
+  /// members are stored inside the startup document), so it disappears from
+  /// every team member's My Startups. Other people's bookmarks of it are
+  /// dropped the next time they open Bookmarks (the bookmark repository
+  /// removes a bookmark whose startup no longer exists).
   Future<void> delete(Startup startup) async {
     final logoUrl = startup.logoUrl;
     // Logo first: if that fails we stop, and the startup is still intact for

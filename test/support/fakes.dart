@@ -210,6 +210,8 @@ class FakeUserRepository implements UserRepository {
     String? linkedin,
     String? gain,
     String? valueOffered,
+    bool? emailPublic,
+    bool? phonePublic,
   }) async {
     profileUpdates++;
     if (updateFails != null) throw AuthException(updateFails!);
@@ -439,6 +441,33 @@ class FakeStartupRepository implements StartupRepository {
     );
     startups.add(saved);
     return saved;
+  }
+
+  /// Startups the signed-in user belongs to (co-founder / team member).
+  final List<Startup> memberOf = [];
+
+  /// Startups the user left (to check Leave removes only their membership).
+  final List<String> left = [];
+
+  /// The renames sent after a name change (uid, old, new).
+  final List<(String, String, String)> renames = [];
+
+  @override
+  Future<void> syncMemberName({
+    required String uid,
+    required String oldName,
+    required String newName,
+  }) async {
+    renames.add((uid, oldName, newName));
+  }
+
+  @override
+  Future<List<Startup>> fetchMemberStartups() async => List.of(memberOf);
+
+  @override
+  Future<void> leave(Startup startup) async {
+    left.add(startup.id);
+    memberOf.removeWhere((s) => s.id == startup.id);
   }
 
   @override

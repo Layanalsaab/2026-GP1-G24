@@ -5,6 +5,8 @@ import '../../../data_access/repositories/discovery_repository.dart';
 import '../../../helpers/app_session.dart';
 import '../../../helpers/formatters.dart';
 import '../../../helpers/safe_notifier.dart';
+import '../../../data_access/mock_data/prototype_seed.dart';
+import '../../../models/funding_round.dart';
 import '../../../models/investor_profile.dart';
 import '../../../models/startup.dart';
 
@@ -22,11 +24,30 @@ class StartupProfileViewModel extends ChangeNotifier with SafeNotifier {
     bool preview = false,
     AppSession? session,
     DiscoveryRepository? discovery,
-  }) : _session = session ?? AppSession.instance,
+    List<FundingRound>? rounds,
+  }) : rounds = rounds ?? PrototypeSeed.sampleRounds,
+       _session = session ?? AppSession.instance,
        _discovery = discovery ?? DiscoveryRepository.instance,
        _forcedPreview = preview;
 
-  /// Tab order: Overview, Business, Team, Financials.
+  /// The funding rounds shown on the Funding tab and in the Raising tile.
+  /// INTERFACE ONLY: the sample rounds (replace with the real ones).
+  final List<FundingRound> rounds;
+
+  /// The open round (newest first), or null.
+  FundingRound? get openRound {
+    final sorted = [...rounds]..sort((a, b) => b.number.compareTo(a.number));
+    for (final r in sorted) {
+      if (r.isOpen) return r;
+    }
+    return null;
+  }
+
+  /// Rounds, newest first.
+  List<FundingRound> get roundsNewestFirst =>
+      [...rounds]..sort((a, b) => b.number.compareTo(a.number));
+
+  /// Tab order: Overview, Business, Team, Funding.
   static const tabLabels = [
     ProfileStrings.tabOverview,
     ProfileStrings.tabBusiness,
@@ -69,15 +90,17 @@ class StartupProfileViewModel extends ChangeNotifier with SafeNotifier {
   bool ctaDone = false;
 
   // ---- Header ----
-  /// "HealthTech · Pre-seed · Riyadh · Founded 2024": the founded year is a key
-  /// fact, so it sits in the header and not in the financials.
+  /// "HealthTech · Pre-seed · Riyadh": the one sub-line under the name.
   String get infoLine => [
     startup.sectorLabel,
     startup.stageLabel,
     startup.location.label,
-    if (startup.foundedYear != null)
-      '${ProfileStrings.kvFounded} ${startup.foundedYear}',
   ].join(' · ');
+
+  /// The preview bar sentence (a private startup says only the team sees it).
+  String get previewText => startup.isPublic
+      ? ProfileStrings.previewBar
+      : ProfileStrings.previewBarPrivate;
 
   String get website => (startup.websiteUrl ?? '').trim();
 

@@ -2,22 +2,30 @@ import 'package:flutter/material.dart';
 
 import '../../../app_constants/founder_tools_strings.dart';
 import '../../../helpers/formatters.dart';
+import '../../../models/list_entries.dart';
 import '../../../models/startup.dart';
 import '../../../models/startup_enums.dart';
 import 'founder_ui.dart';
 import 'hover_lift_card.dart';
+import 'role_tag.dart';
 
-/// The card line under the Public / Private pill: "Raising SAR 500,000" when
-/// the startup looks for funding and has an amount, else "Looking for
-/// partnership" (the first thing it looks for).
+/// The status line at the bottom left (gold):
+/// * an open funding round -> "Raising SAR 500,000";
+/// * no open round but looking for other things -> "Looking for partnership,
+///   mentorship" (lower case, never "funding");
+/// * nothing selected -> "Not raising right now".
 String startupNeedsLine(Startup s) {
   final amount = s.fundingRequirement;
   if (s.seeksFunding && amount != null && amount > 0) {
     return FounderToolsStrings.raising(Formatters.sar(amount));
   }
-  if (s.lookingFor.isEmpty) return '';
-  final first = LookingFor.values.firstWhere((l) => s.lookingFor.contains(l));
-  return FounderToolsStrings.lookingForLine(s.lookingForLabelOf(first));
+  final others = [
+    for (final l in LookingFor.values)
+      if (l != LookingFor.funding && s.lookingFor.contains(l))
+        s.lookingForLabelOf(l).toLowerCase(),
+  ];
+  if (others.isEmpty) return FounderToolsStrings.notRaising;
+  return FounderToolsStrings.lookingForLine(others.join(', '));
 }
 
 /// A My Startups list card (prototype `.scard`): gold tile 48, name 18/700,
@@ -28,15 +36,15 @@ class MyStartupCard extends StatelessWidget {
     super.key,
     required this.startup,
     required this.onTap,
-    this.isFounder = true,
+    this.role = StartupRole.founder,
   });
 
   final Startup startup;
   final VoidCallback onTap;
 
-  /// True: the user owns it (gold "Founder" tag, "Manage ›"). False: a team
-  /// member (green "Team member" tag, "View ›", no editing).
-  final bool isFounder;
+  /// The user's role: Founder and Co-founder show "Manage ›", a Team member
+  /// shows "View ›" (view-only Manage).
+  final StartupRole role;
 
   @override
   Widget build(BuildContext context) {
@@ -45,7 +53,7 @@ class MyStartupCard extends StatelessWidget {
     return Semantics(
       button: true,
       label:
-          '${s.name}, ${isFounder ? FounderToolsStrings.roleFounder : FounderToolsStrings.roleMember}, ${isFounder ? FounderToolsStrings.manage : FounderToolsStrings.view}',
+          '${s.name}, ${RoleTag.labelOf(role)}, ${role.canManage ? FounderToolsStrings.manage : FounderToolsStrings.view}',
       excludeSemantics: true,
       child: HoverLiftCard(
         onTap: onTap,
@@ -82,17 +90,7 @@ class MyStartupCard extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(width: 8),
-                          AppPill(
-                            label: isFounder
-                                ? FounderToolsStrings.roleFounder
-                                : FounderToolsStrings.roleMember,
-                            tone: isFounder
-                                ? AppPillTone.gold
-                                : AppPillTone.moss,
-                            height: 20,
-                            fontSize: 11,
-                            weight: FontWeight.w600,
-                          ),
+                          RoleTag(role),
                         ],
                       ),
                       if (s.summary.isNotEmpty) ...[
@@ -156,7 +154,7 @@ class MyStartupCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    isFounder
+                    role.canManage
                         ? FounderToolsStrings.manage
                         : FounderToolsStrings.view,
                     style: AppText.sans(

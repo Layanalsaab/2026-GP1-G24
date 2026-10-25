@@ -49,6 +49,13 @@ class AppToast {
     _present(Overlay.maybeOf(context, rootOverlay: true), message);
   }
 
+  /// A confirmation that is wanted on purpose ("Link copied" after the share
+  /// icon). Every other confirmation stays off ([show]); only the places that
+  /// call this one show a pop-up.
+  static void confirm(BuildContext context, String message) {
+    _present(Overlay.maybeOf(context, rootOverlay: true), message);
+  }
+
   /// [error] without a BuildContext.
   static void errorGlobal(String message) {
     _present(navigatorKey.currentState?.overlay, message);

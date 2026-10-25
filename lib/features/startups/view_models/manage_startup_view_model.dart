@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 
 import '../../../app_constants/founder_tools_strings.dart';
+import '../../../data_access/repositories/interest_repository.dart';
+import '../../../data_access/repositories/request_repository.dart';
 import '../../../data_access/repositories/startup_repository.dart';
 import '../../../helpers/app_session.dart';
 import '../../../helpers/safe_notifier.dart';
@@ -17,7 +19,7 @@ class ManageStartupViewModel extends ChangeNotifier with SafeNotifier {
   /// The startup as last saved.
   Startup startup;
 
-  /// 0 Overview, 1 Requests, 2 Interest, 3 Settings.
+  /// 0 Dashboard, 1 Details, 2 Rounds, 3 Requests, 4 Interest, 5 Settings.
   int tab = 0;
 
   bool isDeleting = false;
@@ -66,6 +68,12 @@ class ManageStartupViewModel extends ChangeNotifier with SafeNotifier {
     notifyListeners();
     try {
       await _repository.delete(startup);
+      // Nothing of it is left behind: its requests and interest messages go
+      // too. (Its rounds live in the screen's local state and leave with it;
+      // other people's bookmarks and the team memberships belong to the
+      // backend.)
+      RequestRepository.instance.removeForStartup(startup.id);
+      InterestRepository.instance.removeForStartup(startup.id);
       AppSession.instance.setOwnStartupIds([
         for (final id in AppSession.instance.ownStartupIds)
           if (id != startup.id) id,

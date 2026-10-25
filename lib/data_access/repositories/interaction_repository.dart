@@ -56,8 +56,11 @@ class InteractionRepository {
   }
 
   /// The top startups for [range] (the sample order for every range).
-  List<HomeItem> trendingStartups(TrendingRange range) =>
-      _rank([for (final s in _d.allStartups) HomeItem.fromStartup(s)]);
+  List<HomeItem> trendingStartups(TrendingRange range) => _rank([
+    // A private startup is never trending (only its team can see it).
+    for (final s in _d.allStartups)
+      if (s.isPublic) HomeItem.fromStartup(s),
+  ]);
 
   /// The top investors for [range].
   List<HomeItem> trendingInvestors(TrendingRange range) =>

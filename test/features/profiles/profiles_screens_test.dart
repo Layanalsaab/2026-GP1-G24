@@ -14,6 +14,7 @@ import 'package:startsa/features/startup_profile/screens/startup_profile_screen.
 import 'package:startsa/helpers/app_session.dart';
 import 'package:startsa/models/app_user.dart';
 import 'package:startsa/shared_ui/theme/app_theme.dart';
+import 'package:startsa/shared_ui/widgets/headers/tabbed_header.dart';
 
 import '../../support/fakes.dart';
 
@@ -80,13 +81,18 @@ void main() {
         expect(find.text('About'), findsOneWidget);
         expect(find.text('Send investment request'), findsOneWidget);
 
-        for (final tab in ['Business', 'Team', 'Financials', 'Overview']) {
-          await t.tap(find.text(tab));
+        // The four tabs (a "Funding" row also exists inside the Overview).
+        Finder tab(String label) => find.descendant(
+          of: find.byType(ScrollableHeaderTabBar),
+          matching: find.text(label),
+        );
+        for (final name in ['Business', 'Team', 'Funding', 'Overview']) {
+          await t.tap(tab(name));
           await t.pump(const Duration(milliseconds: 500));
         }
-        await t.tap(find.text('Financials'));
+        await t.tap(tab('Funding'));
         await t.pump(const Duration(milliseconds: 500));
-        expect(find.text('Funding and financials'), findsOneWidget);
+        expect(find.text('Funding rounds'), findsOneWidget);
         expect(find.text('Expected revenue'), findsOneWidget);
 
         await t.tap(find.text('Send investment request'));
@@ -105,7 +111,10 @@ void main() {
           size: size,
         );
         expect(find.text('Layan Alsaab'), findsOneWidget);
-        expect(find.text('INVESTS IN'), findsOneWidget);
+        expect(
+          find.textContaining('Invests in', findRichText: true),
+          findsOneWidget,
+        );
         expect(find.text('Investment focus'), findsOneWidget);
         expect(find.text('Send investment request'), findsOneWidget);
       });

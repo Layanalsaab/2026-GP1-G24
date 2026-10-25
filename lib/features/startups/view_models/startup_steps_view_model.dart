@@ -71,11 +71,13 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
     UserRepository? users,
     LogoPickerService? logoPicker,
     DateTime? now,
+    this.onlySection,
   }) : _repository = repository ?? StartupRepository.instance,
        _users = users ?? UserRepository.instance,
        _logoPickerOverride = logoPicker,
        _now = now ?? DateTime.now() {
     _fillFrom(initial);
+    if (onlyStep != null) step = onlyStep!;
     _baseline = _signature();
     for (final c in _controllers) {
       c.addListener(notifyListeners);
@@ -182,6 +184,20 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
   }
 
   final Startup? initial;
+
+  /// Editing ONE section of a saved startup (Manage -> Details -> Edit): the
+  /// section number is its position in the Details tab (0 Overview, 1 Startup
+  /// Description, 2 Target Market, 3 Finance and Growth, 4 Startup Ask, 5
+  /// Startup Team). Only that section's fields are shown, with a "Save"
+  /// button instead of Next. Null = the normal form. The onboarding steps
+  /// themselves are not changed by this.
+  final int? onlySection;
+  bool get isSectionEdit => onlySection != null;
+
+  /// The form step that holds each Details section (Finance and Growth and
+  /// Startup Ask are two halves of the "Funding & goals" step).
+  static const sectionSteps = [0, 1, 2, 3, 3, 4];
+  int? get onlyStep => onlySection == null ? null : sectionSteps[onlySection!];
   final StartupRepository _repository;
   final UserRepository _users;
   final LogoPickerService? _logoPickerOverride;
@@ -387,6 +403,7 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
     [StartupField.problem, StartupField.solution, StartupField.advantage],
     // Target Market: who the customers are and how big the market is.
     [StartupField.customers, StartupField.marketSize],
+    // Funding & goals.
     [
       StartupField.growth,
       StartupField.capital,
@@ -441,13 +458,35 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
   /// Every required answer of [s] (0-based) is given.
   bool stepComplete(int s) {
     if (s == teamStep && editorOpen) return false;
-    for (final f in _stepFields[s]) {
+    // Editing one section checks only that section's fields.
+    final fields = isSectionEdit && s == onlyStep
+        ? _sectionFields(onlySection!)
+        : _stepFields[s];
+    for (final f in fields) {
       if (_rawError(f) != null) return false;
     }
     return true;
   }
 
   bool get currentComplete => stepComplete(step);
+
+  /// The fields of Details section [section] (see [sectionSteps]).
+  static List<StartupField> _sectionFields(int section) => switch (section) {
+    3 => const [
+      StartupField.growth,
+      StartupField.capital,
+      StartupField.revenue,
+      StartupField.valuation,
+    ],
+    4 => const [
+      StartupField.lead,
+      StartupField.funding,
+      StartupField.lookingFor,
+      StartupField.lookingForOther,
+    ],
+    5 => const [],
+    _ => _stepFields[section],
+  };
 
   // --------------------------------------------------------------- changes
 
@@ -514,7 +553,7 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
 
   /// Goes back one step; false when already on the first step.
   bool previous() {
-    if (step == 0) return false;
+    if (step == 0 || isSectionEdit) return false;
     step--;
     notifyListeners();
     return true;
@@ -529,7 +568,7 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
           ? StepAdvance.memberOpen
           : StepAdvance.incomplete;
     }
-    if (step < stepCount - 1) {
+    if (!isSectionEdit && step < stepCount - 1) {
       step++;
       if (step > furthestStep) furthestStep = step;
       notifyListeners();
@@ -670,12 +709,12 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
       founderId: initial?.founderId ?? '',
       name: name.text.trim(),
       description: description.text.trim(),
-      sector: sector!,
+      sector: sector ?? initial!.sector,
       sectorOther: isSectorOther ? sectorOther.text.trim() : null,
-      stage: stage!,
-      businessModel: model!,
+      stage: stage ?? initial!.stage,
+      businessModel: model ?? initial!.businessModel,
       businessModelOther: isModelOther ? modelOther.text.trim() : null,
-      location: city!,
+      location: city ?? initial!.location,
       foundedYear: int.tryParse(founded.text.trim()),
       websiteUrl: websiteText.isEmpty
           ? null
@@ -702,6 +741,8 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
       revenueYear3: StartupValidators.money(rev3.text),
       valuation: StartupValidators.money(valuation.text),
       wantsLeadInvestor: wantsLead,
+      // Editing a startup keeps its co-founders and team members.
+      memberRoles: initial?.memberRoles ?? const {},
     );
   }
 

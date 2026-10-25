@@ -145,8 +145,10 @@ class _ProgramDetailsScreenState extends State<ProgramDetailsScreen> {
                                       icon: AppIcons.share,
                                       iconSize: 22,
                                       semanticLabel: 'Share',
-                                      onTap: () =>
-                                          ProfileActions.share(context),
+                                      onTap: () => ProfileActions.share(
+                                        context,
+                                        _vm.key,
+                                      ),
                                     ),
                                   ],
                                 ),

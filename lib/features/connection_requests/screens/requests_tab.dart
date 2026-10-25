@@ -15,9 +15,13 @@ class RequestsTab extends StatelessWidget {
     required this.vm,
     required this.onCheck,
     required this.onToast,
+    this.canAct = true,
   });
 
   final RequestsViewModel vm;
+
+  /// False hides Accept / Decline (a team member only reads).
+  final bool canAct;
   final void Function(ConnectionRequest request) onCheck;
   final void Function(String message) onToast;
 
@@ -57,8 +61,8 @@ class RequestsTab extends StatelessWidget {
                 child: Text(
                   FounderToolsStrings.requestsEmpty(vm.filter.value),
                   style: AppText.sans(
-                    size: 14,
-                    height: 20,
+                    size: 16,
+                    height: 24,
                     color: AppColors.grey,
                   ),
                 ),
@@ -68,12 +72,15 @@ class RequestsTab extends StatelessWidget {
                 if (i > 0) const SizedBox(height: 12),
                 _RequestCard(
                   row: rows[i],
+                  canAct: canAct,
                   onCheck: () => onCheck(rows[i].request),
                   onAccept: () {
+                    if (!canAct) return;
                     final name = vm.accept(rows[i]);
                     onToast(FounderToolsStrings.acceptedToast(name));
                   },
                   onDecline: () {
+                    if (!canAct) return;
                     vm.decline(rows[i]);
                     onToast(FounderToolsStrings.declinedToast);
                   },
@@ -92,8 +99,10 @@ class _RequestCard extends StatelessWidget {
     required this.onCheck,
     required this.onAccept,
     required this.onDecline,
+    required this.canAct,
   });
 
+  final bool canAct;
   final RequestRow row;
   final VoidCallback onCheck;
   final VoidCallback onAccept;
@@ -111,8 +120,8 @@ class _RequestCard extends StatelessWidget {
               TileAvatar(
                 initials: row.initials,
                 tone: TileTone.gold,
-                size: 38,
-                fontSize: 13,
+                size: 42,
+                fontSize: 14,
                 round: true,
               ),
               const SizedBox(width: 12),
@@ -122,13 +131,13 @@ class _RequestCard extends StatelessWidget {
                   children: [
                     Text(
                       row.name,
-                      style: AppText.sans(size: 15, weight: FontWeight.w600),
+                      style: AppText.sans(size: 16.5, weight: FontWeight.w600),
                     ),
                     Text(
                       row.sub,
                       style: AppText.sans(
-                        size: 12.5,
-                        height: 17,
+                        size: 14,
+                        height: 20,
                         color: AppColors.grey,
                       ),
                     ),
@@ -141,8 +150,8 @@ class _RequestCard extends StatelessWidget {
           Text(
             '“${r.message}”',
             style: AppText.sans(
-              size: 14,
-              height: 20,
+              size: 16,
+              height: 24,
               color: AppColors.paragraph,
             ),
           ),
@@ -158,12 +167,12 @@ class _RequestCard extends StatelessWidget {
               children: [
                 Text(
                   FounderToolsStrings.offer,
-                  style: AppText.sans(size: 12, color: AppColors.grey),
+                  style: AppText.sans(size: 14, color: AppColors.grey),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   r.offerLabel,
-                  style: AppText.sans(size: 16, weight: FontWeight.w700),
+                  style: AppText.sans(size: 17, weight: FontWeight.w700),
                 ),
                 const SizedBox(height: 6),
                 Semantics(
@@ -185,7 +194,7 @@ class _RequestCard extends StatelessWidget {
                         Text(
                           FounderToolsStrings.checkInCalculator,
                           style: AppText.sans(
-                            size: 13,
+                            size: 14,
                             weight: FontWeight.w600,
                             color: AppColors.moss600,
                           ),
@@ -197,8 +206,10 @@ class _RequestCard extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 12),
+          if (r.status != RequestStatus.pending || canAct)
+            const SizedBox(height: 12),
           switch (r.status) {
+            RequestStatus.pending when !canAct => const SizedBox.shrink(),
             RequestStatus.pending => Row(
               children: [
                 Expanded(

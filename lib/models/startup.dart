@@ -44,6 +44,7 @@ class Startup {
     this.revenueYear3,
     this.valuation,
     this.wantsLeadInvestor,
+    this.memberRoles = const {},
   });
 
   final String id;
@@ -111,6 +112,15 @@ class Startup {
     return isOther && text.isNotEmpty ? text : null;
   }
 
+  /// A Firestore map of uid -> role as a plain map (anything else is ignored).
+  static Map<String, String> _roles(Object? raw) => raw is Map
+      ? {
+          for (final e in raw.entries)
+            if (e.key is String && e.value is String)
+              e.key as String: e.value as String,
+        }
+      : const {};
+
   static String? _otherFromMap(Object? raw) {
     if (raw is! String) return null;
     final text = raw.trim();
@@ -150,6 +160,13 @@ class Startup {
 
   /// "Are you looking for a lead investor?" (Yes / No). Null until answered.
   final bool? wantsLeadInvestor;
+
+  /// Co-founders and team members by uid: `'coFounder'` or `'member'`. The
+  /// founder is [founderId], never in this map.
+  final Map<String, String> memberRoles;
+
+  /// The uids in [memberRoles] (what "My startups" queries on).
+  List<String> get memberIds => memberRoles.keys.toList();
 
   /// Longest text in the Problem / solution / growth fields and team bios.
   static const longTextMax = 1000;
@@ -255,6 +272,8 @@ class Startup {
     StartupFields.revenueYear3: revenueYear3,
     StartupFields.valuation: valuation,
     StartupFields.wantsLeadInvestor: wantsLeadInvestor,
+    StartupFields.memberIds: memberIds,
+    StartupFields.memberRoles: memberRoles,
   };
 
   /// Returns null when a required field is missing or holds an unknown value,
@@ -321,6 +340,7 @@ class Startup {
       revenueYear3: (data[StartupFields.revenueYear3] as num?)?.toInt(),
       valuation: (data[StartupFields.valuation] as num?)?.toInt(),
       wantsLeadInvestor: data[StartupFields.wantsLeadInvestor] as bool?,
+      memberRoles: _roles(data[StartupFields.memberRoles]),
     );
   }
 
@@ -362,6 +382,7 @@ class Startup {
     int? revenueYear3,
     int? valuation,
     bool? wantsLeadInvestor,
+    Map<String, String>? memberRoles,
   }) => Startup(
     id: id ?? this.id,
     founderId: founderId ?? this.founderId,
@@ -399,5 +420,6 @@ class Startup {
     revenueYear3: revenueYear3 ?? this.revenueYear3,
     valuation: valuation ?? this.valuation,
     wantsLeadInvestor: wantsLeadInvestor ?? this.wantsLeadInvestor,
+    memberRoles: memberRoles ?? this.memberRoles,
   );
 }

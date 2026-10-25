@@ -124,8 +124,7 @@ void main() {
     expect(repo.newestFirst(type: 'startup'), ['s-today', 's-old']);
   });
 
-  test('savedItems: real cards, newest first, missing ones left out',
-      () async {
+  test('savedItems: real cards, newest first, missing ones left out', () async {
     final startup = PrototypeSeed.startups.first;
     final investor = PrototypeSeed.investors.first;
     final program = PrototypeSeed.programs.first;
@@ -140,11 +139,10 @@ void main() {
     final items = await repo.savedItems(
       discovery: DiscoveryRepository.sample(),
     );
-    expect([for (final b in items) b.item.bookmarkKey], [
-      'p-${program.id}',
-      'i-${investor.id}',
-      's-${startup.id}',
-    ]);
+    expect(
+      [for (final b in items) b.item.bookmarkKey],
+      ['p-${program.id}', 'i-${investor.id}', 's-${startup.id}'],
+    );
     expect(items.last.savedAt, DateTime(2026, 1, 1));
   });
 

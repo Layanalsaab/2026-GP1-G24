@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../app_constants/home_strings.dart';
+import '../../../helpers/share_link.dart';
 import '../../../models/list_entries.dart';
 import '../../../navigation/open_item.dart';
 import '../../../shared_ui/icons/app_icons.dart';
@@ -180,7 +181,7 @@ class _BookmarkCard extends StatelessWidget {
       index: index,
       bookmarked: true,
       onTap: () => openHomeItem(context, item),
-      onShare: () => AppToast.show(context, HomeStrings.linkCopied),
+      onShare: () => ShareLink.copyKey(context, item.bookmarkKey),
       onBookmark: onRemove,
     );
   }

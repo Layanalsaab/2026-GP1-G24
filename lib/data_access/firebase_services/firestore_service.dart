@@ -20,6 +20,12 @@ class FirestoreService {
   /// A value Firestore replaces with the server's time when writing.
   Object serverTimestamp() => FieldValue.serverTimestamp();
 
+  /// A value that removes [values] from an array field when written.
+  Object arrayRemove(List<Object> values) => FieldValue.arrayRemove(values);
+
+  /// A value that deletes the field when written.
+  Object deleteField() => FieldValue.delete();
+
   /// A new, unused document id. Generated on the device (no network call), so
   /// files can be uploaded under the id before the document is written.
   String newDocumentId(String collection) =>
@@ -59,6 +65,21 @@ class FirestoreService {
     int? limit,
   }) => _guard(() async {
     var query = _db.collection(collection).where(field, isEqualTo: value);
+    if (limit != null) query = query.limit(limit);
+    final snapshot = await query.get(const GetOptions(source: Source.server));
+    return [
+      for (final doc in snapshot.docs) (id: doc.id, data: _toPlain(doc.data())),
+    ];
+  });
+
+  /// Every document in [collection] whose array [field] contains [value].
+  Future<List<FirestoreDocument>> queryWhereArrayContains(
+    String collection,
+    String field,
+    Object value, {
+    int? limit,
+  }) => _guard(() async {
+    var query = _db.collection(collection).where(field, arrayContains: value);
     if (limit != null) query = query.limit(limit);
     final snapshot = await query.get(const GetOptions(source: Source.server));
     return [

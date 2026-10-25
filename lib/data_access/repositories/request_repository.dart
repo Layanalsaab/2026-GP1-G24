@@ -60,6 +60,15 @@ class RequestRepository {
     _inboxVersion.value++;
   }
 
+  /// Deleting a startup removes every request it received.
+  void removeForStartup(String startupId) {
+    _inbox = [
+      for (final r in _inbox)
+        if (r.startupId != startupId) r,
+    ];
+    _inboxVersion.value++;
+  }
+
   bool hasSent(String key) => _outgoing.value.contains(key);
 
   /// Sends the request, or withdraws it when it was already sent. Returns

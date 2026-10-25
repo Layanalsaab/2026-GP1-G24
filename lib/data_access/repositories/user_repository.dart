@@ -191,6 +191,8 @@ class UserRepository {
     String? linkedin,
     String? gain,
     String? valueOffered,
+    bool? emailPublic,
+    bool? phonePublic,
   }) async {
     try {
       await _firestore.updateDocument(FirestoreCollections.users, uid, {
@@ -203,6 +205,8 @@ class UserRepository {
         UserFields.linkedin: linkedin,
         UserFields.gain: gain,
         UserFields.valueOffered: valueOffered,
+        UserFields.emailPublic: ?emailPublic,
+        UserFields.phonePublic: ?phonePublic,
       });
       await _refreshPublishedInvestor(uid);
     } on AuthException catch (e) {

@@ -8,8 +8,10 @@ class ProfileStrings {
   static const tabOverview = 'Overview';
   static const tabBusiness = 'Business';
   static const tabTeam = 'Team';
-  static const tabFinancials = 'Financials';
+  static const tabFinancials = 'Funding';
   static const previewBar = 'Preview · This is how others see your startup';
+  static const previewBarPrivate =
+      'Preview · Private, only your team can see it';
   static const closePreview = 'Close preview';
   static const about = 'About';
   static const lookingFor = 'Looking for';
@@ -66,12 +68,14 @@ class ProfileStrings {
 
   // ---- Own profile ----
   static const editProfile = 'Edit profile';
-  static const myStartups = 'My startups';
+  static const myStartups = 'Startups';
   static const addStartup = '+ Add';
   static const noStartups = 'No startups yet.';
   static const contact = 'Contact';
   static const email = 'Email';
   static const phone = 'Phone';
+  static const contactPublic = 'Public';
+  static const contactOnlyYou = 'Only you';
 
   // ---- Edit profile ----
   static const save = 'Save';

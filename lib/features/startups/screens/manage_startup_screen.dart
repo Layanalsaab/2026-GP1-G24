@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 
 import '../../../app_constants/founder_tools_strings.dart';
+import '../../../helpers/share_link.dart';
+import '../../../models/list_entries.dart';
+import '../../../helpers/app_session.dart';
 import '../../../models/connection_request.dart';
+import '../../../shared_ui/widgets/overlays/app_dialog.dart';
 import '../../../models/startup.dart';
 import '../../../navigation/main_screen.dart';
 import '../../connection_requests/screens/interest_tab.dart';
@@ -12,30 +16,58 @@ import '../../engagement_analytics/view_models/activity_view_model.dart';
 import '../../fundraising_calculator/screens/valuation_calculator_screen.dart';
 import '../../startup_profile/screens/startup_profile_screen.dart';
 import '../view_models/manage_startup_view_model.dart';
+import '../view_models/rounds_view_model.dart';
 import '../widgets/founder_ui.dart';
-import '../widgets/manage_overview_tab.dart';
+import '../widgets/manage_dashboard_tab.dart';
+import '../widgets/manage_details_tab.dart';
+import '../widgets/manage_rounds_tab.dart';
+import '../widgets/role_tag.dart';
+import '../widgets/view_only_banner.dart';
 import '../widgets/manage_settings_tab.dart';
 import 'my_startups_screen.dart';
 import 'startup_steps_screen.dart';
 
-/// Manage startup (docs/05 D3): tabbed green header (Overview, Requests,
-/// Interest, Settings) and the pane of the selected tab.
+/// Manage startup (docs/05 D3): tabbed green header (Dashboard, Details,
+/// Rounds, Requests, Interest, Settings; the tab bar scrolls sideways) and the
+/// pane of the selected tab. [role] is the user's role in this startup.
 class ManageStartupScreen extends StatefulWidget {
-  const ManageStartupScreen({super.key, required this.startup});
+  const ManageStartupScreen({
+    super.key,
+    required this.startup,
+    this.role,
+    this.onLeave,
+  });
 
   final Startup startup;
 
+  /// Called after the user leaves this startup (it then disappears from their
+  /// My Startups). INTERFACE ONLY: the real leaving is done by the backend.
+  final VoidCallback? onLeave;
+
+  /// The user's role in this startup (shown above the name). Null reads it
+  /// from the startup itself (founder / `memberRoles`), the founder when
+  /// nothing matches.
+  final StartupRole? role;
+
   /// Opens Manage for [startup] (forward transition).
-  static void open(BuildContext context, Startup startup) =>
-      push(context, startup);
+  static void open(
+    BuildContext context,
+    Startup startup, {
+    StartupRole? role,
+    VoidCallback? onLeave,
+  }) => push(context, startup, role: role, onLeave: onLeave);
 
   /// Like [open] but completes when the screen is closed.
-  static Future<void> push(BuildContext context, Startup startup) =>
-      AppNav.push(
-        context,
-        ManageStartupScreen(startup: startup),
-        greenHeader: true,
-      );
+  static Future<void> push(
+    BuildContext context,
+    Startup startup, {
+    StartupRole? role,
+    VoidCallback? onLeave,
+  }) => AppNav.push(
+    context,
+    ManageStartupScreen(startup: startup, role: role, onLeave: onLeave),
+    greenHeader: true,
+  );
 
   @override
   State<ManageStartupScreen> createState() => _ManageStartupScreenState();
@@ -51,6 +83,8 @@ class _ManageStartupScreenState extends State<ManageStartupScreen> {
   late final InterestViewModel _interest = InterestViewModel(
     startupId: widget.startup.id,
   );
+  // INTERFACE ONLY: the rounds live in local state (sample data).
+  late final RoundsViewModel _rounds = RoundsViewModel(canManage: _canEdit);
   late final ActivityViewModel _activity = ActivityViewModel(
     startupId: widget.startup.id,
   );
@@ -58,6 +92,7 @@ class _ManageStartupScreenState extends State<ManageStartupScreen> {
   @override
   void dispose() {
     _vm.dispose();
+    _rounds.dispose();
     _requests.dispose();
     _interest.dispose();
     _activity.dispose();
@@ -66,9 +101,45 @@ class _ManageStartupScreenState extends State<ManageStartupScreen> {
 
   void _toast(String message) => AppToast.show(context, message);
 
-  Future<void> _edit() async {
-    final saved = await StartupStepsScreen.pushEdit(context, _vm.startup);
+  /// Share icon: copies the startup's link.
+  void _share() => ShareLink.copy(context, ShareLink.startup(_vm.startup.id));
+
+  /// The open section of the Details tab (0-based, like the form's steps).
+  int? _openSection;
+
+  /// The user's role here: the one passed in, else read from the startup.
+  late final StartupRole _role =
+      widget.role ??
+      StartupRole.of(widget.startup, AppSession.instance.user?.uid) ??
+      StartupRole.founder;
+
+  bool get _canEdit => _role.canManage;
+
+  void _toggleSection(int i) =>
+      setState(() => _openSection = _openSection == i ? null : i);
+
+  /// Edit pill: opens ONLY that section of the form, filled in. Saving goes
+  /// back here and updates the Details tab.
+  Future<void> _editSection(int section) async {
+    if (!_canEdit) return;
+    final saved = await StartupStepsScreen.pushEditSection(
+      context,
+      _vm.startup,
+      section,
+    );
     if (saved != null && mounted) _vm.replace(saved);
+  }
+
+  /// Valuation tile: the Finance and Growth editor, or (view only) the
+  /// Details tab with that section open.
+  void _openValuation() {
+    const finance = 3;
+    if (_canEdit) {
+      _editSection(finance);
+    } else {
+      setState(() => _openSection = finance);
+      _vm.selectTab(1);
+    }
   }
 
   void _preview() =>
@@ -78,6 +149,7 @@ class _ManageStartupScreenState extends State<ManageStartupScreen> {
       ValuationCalculatorScreen.open(context, startup: _vm.startup);
 
   Future<void> _setPublic(bool value) async {
+    if (!_role.canManage) return;
     final result = await _vm.setPublic(value);
     if (!mounted) return;
     if (result == null) {
@@ -90,6 +162,8 @@ class _ManageStartupScreenState extends State<ManageStartupScreen> {
   }
 
   Future<void> _delete() async {
+    // The founder and the co-founders can delete (checked again here).
+    if (!_role.canManage) return;
     final name = _vm.startup.name;
     final confirmed = await showConfirmSheet(
       context,
@@ -104,25 +178,57 @@ class _ManageStartupScreenState extends State<ManageStartupScreen> {
       AppToast.error(context, _vm.error ?? FounderToolsStrings.deleteFailed);
       return;
     }
-    _toast(FounderToolsStrings.deleted(name));
+    AppToast.confirm(context, FounderToolsStrings.deleted(name));
     AppNav.resetStack(context, [MainScreen(), const MyStartupsScreen()]);
+  }
+
+  /// Leave startup (co-founder and team member): confirms, removes the user
+  /// from the team (interface only: [ManageStartupScreen.onLeave]) and goes
+  /// back to My Startups.
+  Future<void> _leave() async {
+    if (_role == StartupRole.founder) return;
+    final name = _vm.startup.name;
+    final leave = await showDiscardDialog(
+      context,
+      title: FounderToolsStrings.leaveTitle(name),
+      message: FounderToolsStrings.leaveMessage,
+      discardLabel: FounderToolsStrings.leaveStartup,
+      keepLabel: 'Cancel',
+    );
+    if (!leave || !mounted) return;
+    widget.onLeave?.call();
+    AppToast.confirm(context, FounderToolsStrings.leftToast(name));
+    AppNav.back(context);
   }
 
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
-      listenable: Listenable.merge([_vm, _requests, _interest]),
+      listenable: Listenable.merge([_vm, _requests, _interest, _rounds]),
       builder: (context, _) {
         final s = _vm.startup;
         final pane = switch (_vm.tab) {
-          0 => ManageOverviewTab(
-            startupId: s.id,
+          0 => ManageDashboardTab(
+            startup: s,
+            openRound: _rounds.openRound,
             activity: _activity,
-            onEdit: _edit,
-            onPreview: _preview,
+            onRaising: () => _vm.selectTab(2),
+            onValuation: _openValuation,
             onCalculator: _calculator,
+            emptyInvestorsText: _role == StartupRole.member
+                ? FounderToolsStrings.associatedEmptyMember
+                : FounderToolsStrings.associatedEmpty,
           ),
-          1 => RequestsTab(
+          1 => ManageDetailsTab(
+            startup: s,
+            openIndex: _openSection,
+            onToggle: _toggleSection,
+            canEdit: _canEdit,
+            onEdit: _editSection,
+            myRole: _role,
+          ),
+          2 => ManageRoundsTab(vm: _rounds, canManage: _canEdit),
+          3 => RequestsTab(
             vm: _requests,
             onCheck: (r) => ValuationCalculatorScreen.open(
               context,
@@ -131,12 +237,15 @@ class _ManageStartupScreenState extends State<ManageStartupScreen> {
               equityPercent: r.equityPercent,
             ),
             onToast: _toast,
+            canAct: _canEdit,
           ),
-          2 => InterestTab(vm: _interest, onToast: _toast),
+          4 => InterestTab(vm: _interest, onToast: _toast, canAct: _canEdit),
           _ => ManageSettingsTab(
+            role: _role,
             isPublic: s.isPublic,
             onVisibilityChanged: _setPublic,
             onDelete: _delete,
+            onLeave: _leave,
           ),
         };
         return Scaffold(
@@ -145,6 +254,7 @@ class _ManageStartupScreenState extends State<ManageStartupScreen> {
             children: [
               TabbedHeader(
                 title: s.name,
+                eyebrow: RoleTag.labelOf(_role),
                 avatar: HeaderAvatarTile(initials: s.initials),
                 subline: Row(
                   children: [
@@ -152,16 +262,29 @@ class _ManageStartupScreenState extends State<ManageStartupScreen> {
                     const SizedBox(width: 6),
                     Flexible(
                       child: Text(
-                        '${s.isPublic ? FounderToolsStrings.publicPill : FounderToolsStrings.privatePill} · ${s.sectorLabel} · ${s.stageLabel} · ${s.location.label}${s.foundedYear == null ? '' : ' · Founded ${s.foundedYear}'}',
-                        maxLines: 2,
+                        '${s.isPublic ? FounderToolsStrings.publicPill : FounderToolsStrings.privatePill} · ${s.sectorLabel} · ${s.stageLabel}',
+                        maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: AppText.onGreenMeta,
                       ),
                     ),
                   ],
                 ),
+                // Eye (preview), share, then the logo. No settings gear.
+                actions: [
+                  GlassIconButton(
+                    icon: AppIcons.eye,
+                    semanticLabel: 'Preview profile',
+                    onTap: _preview,
+                  ),
+                  GlassIconButton.share(onTap: _share),
+                  const HeaderLogo(),
+                ],
+                scrollableTabs: true,
                 tabs: [
-                  const HeaderTab(FounderToolsStrings.tabOverview),
+                  const HeaderTab(FounderToolsStrings.tabDashboard),
+                  const HeaderTab(FounderToolsStrings.tabDetails),
+                  const HeaderTab(FounderToolsStrings.tabRounds),
                   HeaderTab(
                     FounderToolsStrings.tabRequests,
                     badge: _requests.count(RequestStatus.pending),
@@ -179,7 +302,15 @@ class _ManageStartupScreenState extends State<ManageStartupScreen> {
               Expanded(
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
-                  child: TabPaneSlide(index: _vm.tab, child: pane),
+                  // A team member sees the same tabs, read only, with the
+                  // "View only" notice at the top of every one.
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      if (_role == StartupRole.member) const ViewOnlyBanner(),
+                      TabPaneSlide(index: _vm.tab, child: pane),
+                    ],
+                  ),
                 ),
               ),
             ],

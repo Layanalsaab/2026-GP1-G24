@@ -10,6 +10,7 @@ import '../../../shared_ui/widgets/overlays/app_dialog.dart';
 import '../../login_and_signup/screens/verify_email_screen.dart';
 import '../view_models/startup_steps_view_model.dart';
 import '../widgets/founder_ui.dart';
+import '../widgets/manage_details_tab.dart';
 import '../widgets/startup_step_body.dart';
 import 'my_startups_screen.dart';
 
@@ -36,6 +37,7 @@ class StartupStepsScreen extends StatefulWidget {
     required this.mode,
     this.startup,
     this.draft,
+    this.onlySection,
   }) : assert(mode != StartupStepsMode.edit || startup != null);
 
   final StartupStepsMode mode;
@@ -45,6 +47,11 @@ class StartupStepsScreen extends StatefulWidget {
 
   /// The startup being edited ([StartupStepsMode.edit] only).
   final Startup? startup;
+
+  /// Edit just this Details section (0-based: Overview, Startup Description,
+  /// Target Market, Finance and Growth, Startup Ask, Startup Team) of a saved
+  /// startup: no progress bar, a "Save" button, Back asks before discarding.
+  final int? onlySection;
 
   /// Founder onboarding: replaces the whole stack (forward transition).
   static void openOnboarding(BuildContext context) {
@@ -79,6 +86,23 @@ class StartupStepsScreen extends StatefulWidget {
         greenHeader: true,
       );
 
+  /// Manage -> Details -> Edit pill: opens ONE section ([section], 0-based)
+  /// of [startup], pre-filled. Completes with the saved startup, or null when
+  /// the user backed out.
+  static Future<Startup?> pushEditSection(
+    BuildContext context,
+    Startup startup,
+    int section,
+  ) => AppNav.push<Startup>(
+    context,
+    StartupStepsScreen(
+      mode: StartupStepsMode.edit,
+      startup: startup,
+      onlySection: section,
+    ),
+    greenHeader: true,
+  );
+
   @override
   State<StartupStepsScreen> createState() => _StartupStepsScreenState();
 }
@@ -86,12 +110,14 @@ class StartupStepsScreen extends StatefulWidget {
 class _StartupStepsScreenState extends State<StartupStepsScreen> {
   late final StartupStepsViewModel _vm = StartupStepsViewModel(
     initial: widget.startup,
+    onlySection: widget.onlySection,
   );
   late final bool _fromDraft = widget.draft != null;
   final ScrollController _scroll = ScrollController();
 
   bool get _onboarding => widget.mode == StartupStepsMode.onboarding;
   bool get _edit => widget.mode == StartupStepsMode.edit;
+  bool get _section => widget.onlySection != null;
 
   @override
   void initState() {
@@ -114,7 +140,9 @@ class _StartupStepsScreenState extends State<StartupStepsScreen> {
   }
 
   void _back() {
-    if (_vm.previous()) {
+    if (_section) {
+      _leave();
+    } else if (_vm.previous()) {
       _scrollTop();
     } else if (_onboarding) {
       // Step 3 of 6: Back returns to the Verify step (the stack was reset).
@@ -159,11 +187,14 @@ class _StartupStepsScreenState extends State<StartupStepsScreen> {
     Navigator.of(context).pop();
   }
 
-  String _title(int step) => _onboarding && step == 0
+  String _title(int step) => _section
+      ? ManageDetailsTab.titles[widget.onlySection!]
+      : _onboarding && step == 0
       ? FounderToolsStrings.onboardingFirstTitle
       : FounderToolsStrings.stepTitles[step];
 
   String get _buttonLabel {
+    if (_section) return FounderToolsStrings.save;
     if (_vm.step < StartupStepsViewModel.stepCount - 1) {
       return FounderToolsStrings.next;
     }
@@ -205,7 +236,8 @@ class _StartupStepsScreenState extends State<StartupStepsScreen> {
         AppToast.show(context, FounderToolsStrings.added(saved.name));
         AppNav.resetStack(context, [MainScreen(), const MyStartupsScreen()]);
       case StartupStepsMode.edit:
-        AppToast.show(context, FounderToolsStrings.changesSaved);
+        // "Changes saved" pop-up (a confirmation that is wanted on purpose).
+        AppToast.confirm(context, FounderToolsStrings.changesSaved);
         // A plain pop: maybePop would hit this screen's own back guard (it
         // blocks leaving while there are unsaved changes) and step back to
         // the previous step instead of leaving.
@@ -223,7 +255,9 @@ class _StartupStepsScreenState extends State<StartupStepsScreen> {
         final total = offset + StartupStepsViewModel.stepCount;
         return PopScope(
           // The first step can only be left through the unsaved-changes check.
-          canPop: step == 0 && (_onboarding || !_vm.isDirty),
+          canPop: _section
+              ? !_vm.isDirty
+              : step == 0 && (_onboarding || !_vm.isDirty),
           onPopInvokedWithResult: (didPop, _) {
             if (!didPop) _back();
           },
@@ -234,6 +268,8 @@ class _StartupStepsScreenState extends State<StartupStepsScreen> {
               total: total,
               title: _title(step),
               edit: _edit,
+              label: _section ? FounderToolsStrings.editSectionLabel : null,
+              showProgress: !_section,
               onBack: _back,
             ),
             footer: FormFooter(
@@ -254,6 +290,7 @@ class _StartupStepsScreenState extends State<StartupStepsScreen> {
                     key: ValueKey(step),
                     vm: _vm,
                     step: step,
+                    section: widget.onlySection,
                   ),
                 ),
               ),

@@ -1,5 +1,6 @@
 import '../../models/connection_request.dart';
 import '../../models/expressed_interest.dart';
+import '../../models/funding_round.dart';
 import '../../models/list_entries.dart';
 import '../../models/investor_profile.dart';
 import '../../models/program.dart';
@@ -785,20 +786,44 @@ class PrototypeSeed {
 
   // --------------------------------------------- list screens (interface)
 
-  /// MOCKUP DATA for My Startups (interface only): startups the user was
-  /// added to as a team member (view only). The founder's own startups still
+  /// MOCKUP DATA for My Startups (interface only): one startup where the
+  /// user is a co-founder (Naql) and one where they are a team member
+  /// (Mizan Learn). The founder's own startups still
   /// come from the existing startup loading. Replace by the real memberships
   /// when the backend is connected.
   static final List<MyStartupEntry> sampleTeamStartups = [
     MyStartupEntry(
       startup: naql,
-      isFounder: false,
+      role: StartupRole.coFounder,
       addedAt: DateTime(2026, 10, 14),
     ),
     MyStartupEntry(
       startup: mizan,
-      isFounder: false,
+      role: StartupRole.member,
       addedAt: DateTime(2026, 9, 2),
+    ),
+  ];
+
+  /// MOCKUP DATA for Manage -> Rounds (interface only): Round 2 (Seed) is open
+  /// and Round 1 (Pre-seed) is closed. The same sample shows for every
+  /// startup. Replace by the real rounds when the backend is connected.
+  static final List<FundingRound> sampleRounds = [
+    FundingRound(
+      number: 2,
+      type: StartupStage.seed,
+      amount: 500000,
+      raised: 200000,
+      start: DateTime(2026, 8, 1),
+      investors: [ahmad],
+    ),
+    FundingRound(
+      number: 1,
+      type: StartupStage.preSeed,
+      amount: 250000,
+      raised: 250000,
+      start: DateTime(2026, 1, 1),
+      end: DateTime(2026, 6, 30),
+      investors: [layan],
     ),
   ];
 }

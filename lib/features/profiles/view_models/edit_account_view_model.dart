@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import '../../../app_constants/account_strings.dart';
 import '../../../app_constants/app_strings.dart';
 import '../../../app_constants/validation_strings.dart';
+import '../../../data_access/repositories/startup_repository.dart';
 import '../../../data_access/repositories/user_repository.dart';
 import '../../../helpers/safe_notifier.dart';
 import '../../../helpers/validators.dart';
@@ -19,15 +20,21 @@ import '../../../models/startup_enums.dart';
 /// needs re-authentication and a new verification email), so it is not part
 /// of the form values.
 class EditAccountViewModel extends ChangeNotifier with SafeNotifier {
-  EditAccountViewModel({required this.user, UserRepository? userRepository})
-    : _users = userRepository ?? UserRepository.instance,
-      fullName = user.fullName,
-      bio = user.bio,
-      phone = Validators.phoneDigits(user.phone),
-      linkedin = user.linkedin ?? '',
-      valueOffered = user.valueOffered,
-      gain = user.gain,
-      city = user.city {
+  EditAccountViewModel({
+    required this.user,
+    UserRepository? userRepository,
+    StartupRepository? startupRepository,
+  }) : _users = userRepository ?? UserRepository.instance,
+       _startups = startupRepository ?? StartupRepository.instance,
+       emailPublic = user.emailPublic,
+       phonePublic = user.phonePublic,
+       fullName = user.fullName,
+       bio = user.bio,
+       phone = Validators.phoneDigits(user.phone),
+       linkedin = user.linkedin ?? '',
+       valueOffered = user.valueOffered,
+       gain = user.gain,
+       city = user.city {
     final chips = <String>[];
     var typed = (user.sectorsOther ?? '').trim();
     var other = false;
@@ -56,6 +63,11 @@ class EditAccountViewModel extends ChangeNotifier with SafeNotifier {
   /// The profile as it was when the screen opened.
   final AppUser user;
   final UserRepository _users;
+  final StartupRepository _startups;
+
+  /// Who sees the email / phone (the Private / Public pills).
+  bool emailPublic;
+  bool phonePublic;
 
   String fullName;
   String bio;
@@ -103,6 +115,11 @@ class EditAccountViewModel extends ChangeNotifier with SafeNotifier {
       attempted && otherSelected && otherSector.trim().isEmpty
       ? ValidationStrings.otherChips('sector')
       : null;
+
+  /// A founder's bio is required (the investor's stays optional).
+  String? get bioError => attempted && user.isFounder
+      ? Validators.requiredText(bio, ValidationStrings.bioRequired)
+      : null;
   String? get linkedinError => Validators.linkedinLive(linkedin);
   String? get valueError => attempted && user.isInvestor
       ? Validators.requiredText(valueOffered, ValidationStrings.bringRequired)
@@ -118,6 +135,7 @@ class EditAccountViewModel extends ChangeNotifier with SafeNotifier {
       Validators.sectors(_chosen) == null &&
       !(otherSelected && otherSector.trim().isEmpty) &&
       Validators.linkedin(linkedin) == null &&
+      (!user.isFounder || bio.trim().isNotEmpty) &&
       (!user.isInvestor ||
           (valueOffered.trim().isNotEmpty && gain.trim().isNotEmpty));
 
@@ -129,6 +147,8 @@ class EditAccountViewModel extends ChangeNotifier with SafeNotifier {
   void setGain(String v) => _set(() => gain = v);
   void setOtherSector(String v) => _set(() => otherSector = v);
   void setCity(String v) => _set(() => city = v);
+  void setEmailPublic(bool v) => _set(() => emailPublic = v);
+  void setPhonePublic(bool v) => _set(() => phonePublic = v);
 
   /// Chips: toggles [label]; "Other" opens / closes the write-in.
   void toggleSector(String label) => _set(() {
@@ -191,7 +211,21 @@ class EditAccountViewModel extends ChangeNotifier with SafeNotifier {
         linkedin: link,
         gain: user.isInvestor ? hope : null,
         valueOffered: user.isInvestor ? bring : null,
+        emailPublic: user.isFounder ? emailPublic : null,
+        phonePublic: user.isFounder ? phonePublic : null,
       );
+      if (user.isFounder && name != user.fullName.trim()) {
+        // My name carries over to every team card of mine.
+        try {
+          await _startups.syncMemberName(
+            uid: user.uid,
+            oldName: user.fullName,
+            newName: name,
+          );
+        } catch (_) {
+          // The profile is saved; the cards catch up on the next change.
+        }
+      }
       var photoUrl = user.photoUrl;
       var photoRemoved = false;
       final picked = newPhoto;
@@ -224,6 +258,8 @@ class EditAccountViewModel extends ChangeNotifier with SafeNotifier {
         valueOffered: user.isInvestor ? bring : null,
         photoUrl: photoUrl,
         clearPhoto: photoRemoved,
+        emailPublic: user.isFounder ? emailPublic : null,
+        phonePublic: user.isFounder ? phonePublic : null,
       );
     } on AuthException catch (e) {
       formError = e.failure == AuthFailure.network

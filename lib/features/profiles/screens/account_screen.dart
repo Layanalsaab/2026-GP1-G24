@@ -5,6 +5,9 @@ import 'package:flutter/material.dart';
 import '../../../app_constants/profile_strings.dart';
 import '../../../helpers/app_session.dart';
 import '../../../models/app_user.dart';
+import '../../../models/list_entries.dart';
+import '../../../shared_ui/theme/app_text.dart';
+import '../../startups/widgets/role_tag.dart';
 import '../../../shared_ui/icons/app_icons.dart';
 import '../../../shared_ui/navigation/app_route.dart';
 import '../../../shared_ui/theme/app_colors.dart';
@@ -58,7 +61,16 @@ class _OwnProfileScreenState extends State<OwnProfileScreen> {
       context,
       EditProfileScreen(user: _vm.user),
     );
-    if (updated != null) _vm.updateUser(updated);
+    // The session holds the saved profile even if no result came back.
+    final latest = updated ?? AppSession.instance.user;
+    if (latest != null) _vm.updateUser(latest);
+    // A new name also changes my team cards, so read the startups again.
+    await _vm.refreshStartups();
+  }
+
+  Future<void> _openStartup(MyStartupEntry entry) async {
+    await ManageStartupScreen.push(context, entry.startup, role: entry.role);
+    if (mounted) await _vm.refreshStartups();
   }
 
   @override
@@ -120,26 +132,23 @@ class _OwnProfileScreenState extends State<OwnProfileScreen> {
                         actionLabel: ProfileStrings.addStartup,
                         onAction: () => StartupStepsScreen.openAdd(context),
                         delay: stagger(),
-                        child: _vm.startups.isEmpty
+                        child: _vm.startupEntries.isEmpty
                             ? const ProfileText(
                                 ProfileStrings.noStartups,
                                 muted: true,
                               )
                             : Column(
                                 children: [
-                                  for (var i = 0; i < _vm.startups.length; i++)
-                                    ListRow(
+                                  for (
+                                    var i = 0;
+                                    i < _vm.startupEntries.length;
+                                    i++
+                                  )
+                                    _StartupRow(
+                                      entry: _vm.startupEntries[i],
                                       showDivider: i > 0,
-                                      leading: HueAvatar(
-                                        name: _vm.startups[i].name,
-                                        size: 44,
-                                      ),
-                                      title: _vm.startups[i].name,
-                                      subtitle: _vm.startups[i].summary,
-                                      onTap: () => ManageStartupScreen.open(
-                                        context,
-                                        _vm.startups[i],
-                                      ),
+                                      onTap: () =>
+                                          _openStartup(_vm.startupEntries[i]),
                                     ),
                                 ],
                               ),
@@ -168,27 +177,25 @@ class _OwnProfileScreenState extends State<OwnProfileScreen> {
                           ],
                         ),
                       ),
-                    // The email and phone show only when the user made them
-                    // public (the Private / Public pill at sign-up).
-                    if (u.emailPublic ||
-                        (u.phonePublic && _vm.phoneLabel.isNotEmpty))
+                    // On my own profile both are listed, each with a pill that
+                    // says who sees it (Public or Only you).
+                    if (_vm.contactRows().isNotEmpty)
                       ProfileSection(
                         title: ProfileStrings.contact,
                         delay: stagger(),
                         child: Column(
                           children: [
-                            if (u.emailPublic)
+                            for (final (i, row) in _vm.contactRows().indexed)
                               InfoRow(
-                                icon: AppIcons.mail,
-                                label: ProfileStrings.email,
-                                value: u.email,
-                              ),
-                            if (u.phonePublic && _vm.phoneLabel.isNotEmpty)
-                              InfoRow(
-                                icon: AppIcons.phone,
-                                label: ProfileStrings.phone,
-                                value: _vm.phoneLabel,
-                                showDivider: u.emailPublic,
+                                icon: row.kind == ContactKind.email
+                                    ? AppIcons.mail
+                                    : AppIcons.phone,
+                                label: row.kind == ContactKind.email
+                                    ? ProfileStrings.email
+                                    : ProfileStrings.phone,
+                                value: row.value,
+                                showDivider: i > 0,
+                                trailing: _ContactPill(isPublic: row.isPublic),
                               ),
                           ],
                         ),
@@ -200,6 +207,120 @@ class _OwnProfileScreenState extends State<OwnProfileScreen> {
           ),
         );
       },
+    );
+  }
+}
+
+/// One startup of the profile: logo, name with the role tag, the brief
+/// description (two lines) and a chevron. Tapping opens Manage (view only for
+/// a team member).
+class _StartupRow extends StatelessWidget {
+  const _StartupRow({
+    required this.entry,
+    required this.showDivider,
+    required this.onTap,
+  });
+
+  final MyStartupEntry entry;
+  final bool showDivider;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final startup = entry.startup;
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          border: showDivider
+              ? const Border(top: BorderSide(color: AppColors.border))
+              : null,
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            HueAvatar(name: startup.name, size: 44),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          startup.name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppText.sans(
+                            size: 15,
+                            weight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      RoleTag(entry.role),
+                    ],
+                  ),
+                  if (startup.summary.trim().isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      startup.summary.trim(),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppText.sans(
+                        size: 13,
+                        height: 19,
+                        color: const Color(0xFF6B726C),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            const Padding(
+              padding: EdgeInsets.only(top: 12),
+              child: AppIcon.outline(
+                AppIcons.rowChevron,
+                size: 18,
+                stroke: 2,
+                color: AppColors.hint,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// The small "Public" / "Only you" pill at the end of a Contact row:
+/// height 22, 12 px semibold; Public in moss, Only you in grey.
+class _ContactPill extends StatelessWidget {
+  const _ContactPill({required this.isPublic});
+
+  final bool isPublic;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = isPublic ? AppColors.moss600 : AppColors.grey;
+    return Container(
+      height: 22,
+      padding: const EdgeInsets.symmetric(horizontal: 9),
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: isPublic ? const Color(0xFFEEF4EF) : AppColors.surface,
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(
+          color: isPublic ? const Color(0xFFCFE0D3) : const Color(0xFFE4E1DA),
+        ),
+      ),
+      child: Text(
+        isPublic ? ProfileStrings.contactPublic : ProfileStrings.contactOnlyYou,
+        style: AppText.sans(size: 12, weight: FontWeight.w600, color: color),
+      ),
     );
   }
 }

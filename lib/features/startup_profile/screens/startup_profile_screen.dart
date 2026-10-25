@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../../app_constants/profile_strings.dart';
 import '../../../data_access/repositories/bookmark_repository.dart';
 import '../../../data_access/repositories/interest_repository.dart';
 import '../../../data_access/repositories/request_repository.dart';
@@ -16,9 +15,10 @@ import '../../profiles/widgets/profile_widgets.dart';
 import '../view_models/startup_profile_view_model.dart';
 import '../widgets/startup_profile_tabs.dart';
 
-/// Startup profile (docs/05 C1, screenshots 30 to 30f, 27d): tabbed green
-/// header (Overview, Business, Team, Financials), the pinned request /
-/// interest bar, and the founder's preview mode.
+/// The startup page (docs/05 C1): the Manage-style green header (back, bookmark
+/// and share, logo tile, name, one sub-line) with four equal tabs (Overview,
+/// Business, Team, Funding), the pinned request / interest bar for investors
+/// and guests, and the preview mode ("Preview · ..." bar, close icon).
 class StartupProfileScreen extends StatefulWidget {
   const StartupProfileScreen({
     super.key,
@@ -75,11 +75,22 @@ class _StartupProfileScreenState extends State<StartupProfileScreen> {
             : requests.value.contains(_vm.key);
         final preview = _vm.isPreview;
         final s = widget.startup;
+        // Same header style as Manage: back (or close in preview), the logo
+        // tile, the name, ONE sub-line, and four equal tabs. No description
+        // and no stat strip here: they live in the Overview tab.
         final header = TabbedHeader(
           title: s.name,
+          avatar: HeaderAvatarTile(initials: s.initials),
+          subline: Text(
+            _vm.infoLine,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: AppText.onGreenMeta,
+          ),
           tabs: [
             for (final t in StartupProfileViewModel.tabLabels) HeaderTab(t),
           ],
+          equalTabs: true,
           selectedIndex: _vm.tab,
           onTabChanged: _vm.selectTab,
           onBack: () => AppNav.back(context),
@@ -91,53 +102,16 @@ class _StartupProfileScreenState extends State<StartupProfileScreen> {
                 onTap: () => ProfileActions.toggleBookmark(context, _vm.key),
               ),
             if (_vm.showShare)
-              GlassIconButton.share(onTap: () => ProfileActions.share(context)),
+              GlassIconButton.share(
+                onTap: () => ProfileActions.share(context, _vm.key),
+              ),
           ],
-          avatar: HeaderAvatarTile(initials: s.initials),
-          // The brief description is shown once, in About.
-          infoLine: _vm.infoLine,
-          metaLeft: _vm.website.isEmpty
-              ? null
-              : Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const AppIcon.filled(
-                      AppIcons.link,
-                      size: 15,
-                      color: AppColors.onGreenMuted,
-                    ),
-                    const SizedBox(width: 6),
-                    Flexible(
-                      child: Text(
-                        _vm.website,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-          metaRight: _vm.raising == null
-              ? null
-              : Text.rich(
-                  TextSpan(
-                    text: '${ProfileStrings.raising} ',
-                    children: [
-                      TextSpan(
-                        text: _vm.raising,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.goldLight,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
         );
         return Scaffold(
           backgroundColor: AppColors.cream,
           body: Column(
             children: [
-              if (preview) const _PreviewBar(),
+              if (preview) _PreviewBar(_vm.previewText),
               Expanded(
                 child: SingleChildScrollView(
                   child: Column(
@@ -181,7 +155,9 @@ class _StartupProfileScreenState extends State<StartupProfileScreen> {
 /// The gold "Preview" bar above the header (prototype `.pvbar`): eye icon and
 /// the preview sentence, 13/600 green on `#F7EDD5`.
 class _PreviewBar extends StatelessWidget {
-  const _PreviewBar();
+  const _PreviewBar(this.text);
+
+  final String text;
 
   @override
   Widget build(BuildContext context) {
@@ -200,7 +176,7 @@ class _PreviewBar extends StatelessWidget {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              ProfileStrings.previewBar,
+              text,
               style: AppText.sans(
                 size: 13,
                 weight: FontWeight.w600,

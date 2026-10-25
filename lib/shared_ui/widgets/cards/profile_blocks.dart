@@ -186,7 +186,11 @@ class InfoRow extends StatelessWidget {
     required this.value,
     this.icon,
     this.showDivider = false,
+    this.trailing,
   });
+
+  /// At the right end of the row (the Public / Only you pill).
+  final Widget? trailing;
 
   final String label;
   final String value;
@@ -226,6 +230,7 @@ class InfoRow extends StatelessWidget {
               ],
             ),
           ),
+          if (trailing != null) ...[const SizedBox(width: 8), trailing!],
         ],
       ),
     );

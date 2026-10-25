@@ -20,9 +20,10 @@ void main() {
     test('has 30 startups and 30 investors for Trending', () {
       expect(PrototypeSeed.startups.length, 30);
       expect(PrototypeSeed.investors.length, 30);
+      // A private startup (Daftar in the sample) is never trending.
       expect(
         InteractionRepository().trendingStartups(TrendingRange.week).length,
-        30,
+        29,
       );
     });
 

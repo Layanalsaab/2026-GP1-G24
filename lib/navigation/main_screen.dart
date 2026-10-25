@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../app_constants/home_strings.dart';
 import '../data_access/repositories/bookmark_repository.dart';
+import '../data_access/mock_data/prototype_seed.dart';
 import '../data_access/repositories/startup_repository.dart';
 import '../features/bookmarks/screens/bookmarks_screen.dart';
 import '../features/explore_startups/screens/explore_screen.dart';
@@ -50,7 +51,7 @@ class _MainScreenState extends State<MainScreen> {
     _vm = HomeViewModel(
       role: _session.role,
       user: _session.user,
-      ownStartupIds: _session.ownStartupIds,
+      ownStartupIds: _session.belongingStartupIds,
     );
     _session.addListener(_onSession);
     if (_session.isFounder) _loadOwnStartups();
@@ -71,7 +72,22 @@ class _MainScreenState extends State<MainScreen> {
       final mine = await StartupRepository.instance.fetchMyStartups();
       if (!mounted) return;
       _session.setOwnStartupIds([for (final s in mine) s.id]);
-      _vm.setOwnStartups(mine);
+      // The startups they belong to (co-founder / team member) are hidden
+      // from Hub and For You too.
+      final member = <String>{
+        for (final e in PrototypeSeed.sampleTeamStartups) e.startup.id,
+      };
+      try {
+        for (final s
+            in await StartupRepository.instance.fetchMemberStartups()) {
+          member.add(s.id);
+        }
+      } catch (_) {
+        // Memberships are an extra; the founder's own are still hidden.
+      }
+      if (!mounted) return;
+      _session.setMemberStartupIds(member);
+      _vm.setOwnStartups(mine, alsoHide: member);
     } catch (_) {
       // Offline: the lists simply do not hide anything.
     }

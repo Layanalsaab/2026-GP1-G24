@@ -75,8 +75,11 @@ void main() {
         expect(find.text('Shahad Alabdulkarim'), findsOneWidget);
         expect(find.text('Edit profile'), findsOneWidget);
         expect(find.text('+966 55 123 4567'), findsOneWidget);
-        expect(find.text('shahad@gmail.com'), findsNothing);
-        expect(find.text('My startups'), findsOneWidget);
+        // On my own profile both contact lines show, with who sees them.
+        expect(find.text('shahad@gmail.com'), findsOneWidget);
+        expect(find.text('Only you'), findsOneWidget);
+        expect(find.text('Public'), findsOneWidget);
+        expect(find.text('Startups'), findsOneWidget);
 
         await _pump(t, const SettingsScreen(), size: size);
         expect(find.text('Dark mode'), findsOneWidget);

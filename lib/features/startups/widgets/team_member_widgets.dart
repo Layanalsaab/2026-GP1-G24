@@ -140,7 +140,12 @@ class TeamMemberEditor extends StatelessWidget {
     required this.onCancel,
     required this.onSave,
     required this.onRemove,
+    this.nameLocked = false,
   });
+
+  /// The signed-in user's own row: the name comes from their account, so it
+  /// is shown grey with a lock and cannot be changed here.
+  final bool nameLocked;
 
   /// True when editing an existing member (changes title and buttons).
   final bool editing;
@@ -166,9 +171,21 @@ class TeamMemberEditor extends StatelessWidget {
     int max, {
     bool multiline = false,
     bool digits = false,
+    bool locked = false,
   }) => LabeledTextField(
     label: label,
     required: true,
+    enabled: !locked,
+    labelTrailing: locked
+        ? const Padding(
+            padding: EdgeInsets.only(top: 4),
+            child: AppIcon.filled(
+              AppIcons.lock,
+              size: 14,
+              color: AppColors.hint,
+            ),
+          )
+        : null,
     controller: c,
     placeholder: hint,
     maxLength: max,
@@ -218,6 +235,7 @@ class TeamMemberEditor extends StatelessWidget {
             name,
             FounderToolsStrings.memberNameHint,
             TeamMember.nameMax,
+            locked: nameLocked,
           ),
           const SizedBox(height: FieldHelperRow.gapAfter),
           _field(

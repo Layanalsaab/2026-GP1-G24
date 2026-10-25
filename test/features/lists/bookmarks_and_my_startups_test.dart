@@ -87,10 +87,7 @@ void main() {
     testWidgets('removing the last card of a type shows the small card', (
       t,
     ) async {
-      await _pump(
-        t,
-        BookmarksScreen(items: [_saved.first]),
-      );
+      await _pump(t, BookmarksScreen(items: [_saved.first]));
       // Only a startup is saved: filter to investors.
       await _tapPill(t, 'All types');
       await t.tap(find.text('Investors').last);
@@ -128,6 +125,25 @@ void main() {
       );
       expect(find.text('Team member'), findsWidgets);
       expect(find.text('View'), findsWidgets);
+      // A co-founder gets the blue tag and the full "Manage" action.
+      expect(find.text('Co-founder'), findsOneWidget);
+      expect(find.text('Manage'), findsOneWidget);
+    });
+
+    testWidgets('the role filter has four options', (t) async {
+      await _pump(t, const MyStartupsScreen());
+      await _tapPill(t, 'All startups');
+      for (final o in ['All', 'Founder', 'Co-founder', 'Team member']) {
+        expect(find.text(o), findsWidgets, reason: o);
+      }
+      await t.tap(find.text('Co-founder').last);
+      await t.pump(const Duration(milliseconds: 300));
+      await t.tap(find.text('Done'));
+      await t.pump(const Duration(milliseconds: 100));
+      await t.pump(const Duration(milliseconds: 600));
+      // Only the co-founder startup is left.
+      expect(find.text('Naql'), findsOneWidget);
+      expect(find.text('Mizan Learn'), findsNothing);
     });
 
     testWidgets('the filter sheet applies at once and stays open', (t) async {

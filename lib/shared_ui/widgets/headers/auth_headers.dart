@@ -182,7 +182,11 @@ class StepHeader extends StatelessWidget {
     this.edit = false,
     this.label,
     this.overlap = 44,
+    this.showProgress = true,
   });
+
+  /// False hides the progress bar (editing one section).
+  final bool showProgress;
 
   /// Current step, 1-based (also the number of gold segments).
   final int step;
@@ -210,15 +214,16 @@ class StepHeader extends StatelessWidget {
     final text = (label ?? labelFor(step, total, edit: edit)).toUpperCase();
     return ArchHeaderShell(
       overlap: overlap,
-      padding: const EdgeInsets.fromLTRB(8, 6, 8, 64),
+      padding: EdgeInsets.fromLTRB(8, 6, 8, showProgress ? 64 : 52),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           HeaderTopRow(onBack: onBack),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
-            child: StepProgressBar(total: total, current: step),
-          ),
+          if (showProgress)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+              child: StepProgressBar(total: total, current: step),
+            ),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
             child: Text(

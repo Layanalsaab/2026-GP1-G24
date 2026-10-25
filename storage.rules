@@ -24,18 +24,25 @@ service firebase.storage {
         return request.auth != null && request.auth.uid == founderId;
       }
 
+      // Co-founders can do everything the founder can.
+      function isCoFounder() {
+        return request.auth != null
+            && firestore.get(/databases/(default)/documents/startups/$(startupId))
+                 .data.get('memberRoles', {}).get(request.auth.uid, '') == 'coFounder';
+      }
+
       // The founder can always read; everyone else only while the startup
       // is public. (Needs the Storage -> Firestore rules permission, which the
       // Firebase CLI offers to grant on the first deploy.)
-      allow read: if isFounder()
+      allow read: if isFounder() || isCoFounder()
                   || firestore.get(/databases/(default)/documents/startups/$(startupId)).data.isPublic == true;
 
       // Images only, at most 2 MB (same limit as LogoPickerService.maxBytes).
-      allow create, update: if isFounder()
+      allow create, update: if (isFounder() || isCoFounder())
                             && request.resource.size <= 2 * 1024 * 1024
                             && request.resource.contentType.matches('image/.*');
 
-      allow delete: if isFounder();
+      allow delete: if isFounder() || isCoFounder();
     }
   }
 }

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../app_constants/home_strings.dart';
 import '../../../data_access/repositories/bookmark_repository.dart';
 import '../../../helpers/app_session.dart';
+import '../../../helpers/share_link.dart';
 import '../../../models/home_item.dart';
 import '../../../navigation/open_item.dart';
 import '../../../shared_ui/icons/app_icons.dart';
@@ -12,7 +13,6 @@ import '../../../shared_ui/theme/app_text.dart';
 import '../../../shared_ui/widgets/cards/avatars.dart';
 import '../../../shared_ui/widgets/cards/home_card.dart';
 import '../../../shared_ui/widgets/lists/empty_state.dart';
-import '../../../shared_ui/widgets/overlays/app_toast.dart';
 import '../view_models/home_view_model.dart';
 
 /// One entry of a [HomeColumn]: the [child] plus the CSS-style margins the
@@ -110,7 +110,7 @@ class HomeItemCard extends StatelessWidget {
           matchPercent: showMatch ? item.matchPercent : null,
           matchReason: showMatch ? item.matchReason : null,
           onTap: () => openHomeItem(context, item),
-          onShare: () => AppToast.show(context, HomeStrings.linkCopied),
+          onShare: () => ShareLink.copyKey(context, item.bookmarkKey),
           onBookmark: canBookmark
               ? () => BookmarkRepository.instance.toggle(item.bookmarkKey)
               : null,

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../../app_constants/founder_tools_strings.dart';
@@ -7,7 +9,6 @@ import '../../../models/list_entries.dart';
 import '../../../models/startup.dart';
 import '../../../shared_ui/widgets/headers/list_screen_header.dart';
 import '../../../shared_ui/widgets/lists/filter_sort_pills.dart';
-import '../../startup_profile/screens/startup_profile_screen.dart';
 import '../view_models/my_startups_view_model.dart';
 import '../widgets/startup_filter_sheet.dart';
 import '../widgets/draft_card.dart';
@@ -75,14 +76,15 @@ class _MyStartupsScreenState extends State<MyStartupsScreen> {
     if (mounted) AppToast.show(context, FounderToolsStrings.draftDiscarded);
   }
 
-  Future<void> _manage(Startup s) async {
-    await ManageStartupScreen.push(context, s);
+  Future<void> _manage(Startup s, StartupRole role) async {
+    await ManageStartupScreen.push(
+      context,
+      s,
+      role: role,
+      onLeave: () => unawaited(_vm.leave(s.id)),
+    );
     if (mounted) _vm.load();
   }
-
-  /// Team-member cards open the public profile (view only, no editing).
-  void _view(Startup s) =>
-      StartupProfileScreen.open(context, startup: s, preview: false);
 
   Future<void> _pickSort() async {
     final r = await showPickerSheet(
@@ -187,10 +189,11 @@ class _MyStartupsScreenState extends State<MyStartupsScreen> {
                               delay: Motion.stagger(context, i, stepMs: 50),
                               child: MyStartupCard(
                                 startup: shown[i].startup,
-                                isFounder: shown[i].isFounder,
-                                onTap: shown[i].isFounder
-                                    ? () => _manage(shown[i].startup)
-                                    : () => _view(shown[i].startup),
+                                role: shown[i].role,
+                                // Founder, co-founder and team member all open
+                                // Manage (a team member's is view-only).
+                                onTap: () =>
+                                    _manage(shown[i].startup, shown[i].role),
                               ),
                             ),
                           ],

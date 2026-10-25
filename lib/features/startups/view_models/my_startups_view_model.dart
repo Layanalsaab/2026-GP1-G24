@@ -22,6 +22,7 @@ enum VisibilityFilter {
 enum RoleFilter {
   all(FounderToolsStrings.optionAll),
   founder(FounderToolsStrings.roleFounder),
+  coFounder(FounderToolsStrings.roleCoFounder),
   member(FounderToolsStrings.roleMember);
 
   const RoleFilter(this.label);
@@ -50,12 +51,52 @@ class MyStartupsViewModel extends ChangeNotifier with SafeNotifier {
     StartupRepository? repository,
     List<MyStartupEntry>? teamStartups,
   }) : _repository = repository ?? StartupRepository.instance,
-       teamStartups = teamStartups ?? PrototypeSeed.sampleTeamStartups;
+       teamStartups = [...(teamStartups ?? PrototypeSeed.sampleTeamStartups)];
 
   final StartupRepository _repository;
 
   /// Startups the user was added to as a team member (view only).
   final List<MyStartupEntry> teamStartups;
+
+  /// The user left [startupId] (co-founder / team member): it disappears from
+  /// the list. A real startup also drops the user's membership in Firestore
+  /// (only their own entry). The sample startups (ids starting `mock-`) stay
+  /// local.
+  Future<void> leave(String startupId) async {
+    final entry = [
+      ...teamStartups,
+      ...memberStartups,
+    ].where((e) => e.startup.id == startupId).firstOrNull;
+    teamStartups.removeWhere((e) => e.startup.id == startupId);
+    memberStartups = [
+      for (final e in memberStartups)
+        if (e.startup.id != startupId) e,
+    ];
+    _publishMemberIds();
+    notifyListeners();
+    if (entry != null && !PrototypeSeed.isSampleStartup(startupId)) {
+      try {
+        await _repository.leave(entry.startup);
+      } catch (_) {
+        // Put it back: the membership was not removed.
+        memberStartups = [...memberStartups, entry];
+        error = FounderToolsStrings.saveFailed;
+        notifyListeners();
+      }
+    }
+  }
+
+  /// Tells the session which startups the user belongs to as a member, so
+  /// Hub and For You do not list them.
+  void _publishMemberIds() {
+    AppSession.instance.setMemberStartupIds({
+      for (final e in [...memberStartups, ...teamStartups]) e.startup.id,
+    });
+  }
+
+  /// The startups the user belongs to for real (co-founder / team member),
+  /// read from Firestore.
+  List<MyStartupEntry> memberStartups = const [];
 
   /// The founder's own startups (as loaded).
   List<Startup> startups = const [];
@@ -75,9 +116,10 @@ class MyStartupsViewModel extends ChangeNotifier with SafeNotifier {
     for (final s in startups)
       MyStartupEntry(
         startup: s,
-        isFounder: true,
+        role: StartupRole.founder,
         addedAt: s.createdAt ?? DateTime.now(),
       ),
+    ...memberStartups,
     ...teamStartups,
   ];
 
@@ -133,9 +175,11 @@ class MyStartupsViewModel extends ChangeNotifier with SafeNotifier {
       case RoleFilter.all:
         return true;
       case RoleFilter.founder:
-        return e.isFounder;
+        return e.role == StartupRole.founder;
+      case RoleFilter.coFounder:
+        return e.role == StartupRole.coFounder;
       case RoleFilter.member:
-        return !e.isFounder;
+        return e.role == StartupRole.member;
     }
   }
 
@@ -160,6 +204,26 @@ class MyStartupsViewModel extends ChangeNotifier with SafeNotifier {
     notifyListeners();
   }
 
+  Future<void> _loadMemberStartups() async {
+    final uid = AppSession.instance.user?.uid;
+    try {
+      final joined = await _repository.fetchMemberStartups();
+      memberStartups = [
+        for (final s in joined)
+          MyStartupEntry(
+            startup: s,
+            role: s.memberRoles[uid] == 'coFounder'
+                ? StartupRole.coFounder
+                : StartupRole.member,
+            addedAt: s.updatedAt ?? s.createdAt ?? DateTime.now(),
+          ),
+      ];
+    } catch (_) {
+      // Memberships are an extra: the founder's own list still shows.
+      memberStartups = const [];
+    }
+  }
+
   /// Loads (or reloads) the list. Never throws.
   Future<void> load() async {
     error = null;
@@ -167,7 +231,9 @@ class MyStartupsViewModel extends ChangeNotifier with SafeNotifier {
     notifyListeners();
     try {
       startups = await _repository.fetchMyStartups();
+      await _loadMemberStartups();
       AppSession.instance.setOwnStartupIds([for (final s in startups) s.id]);
+      _publishMemberIds();
     } catch (_) {
       error = FounderToolsStrings.loadFailed;
     } finally {

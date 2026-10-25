@@ -141,12 +141,15 @@ service cloud.firestore {
 
     // ------------------------------------------------------------- startups
     // - Anyone, signed in or not, can read a startup where isPublic == true.
-    // - A private startup can be read only by its founder.
+    // - A private startup can be read only by its founder and its members
+    //   (co-founders and team members, listed in `memberIds`).
     // - A founder can create, update and delete only their own startups.
+    // - A member can change ONE thing: remove themself (Leave startup).
     match /startups/{startupId} {
       allow read: if resource.data.isPublic == true
                   || (request.auth != null
-                      && resource.data.founderId == request.auth.uid);
+                      && (resource.data.founderId == request.auth.uid
+                          || request.auth.uid in resource.data.get('memberIds', [])));
 
       allow create: if request.auth != null
                     && request.resource.data.founderId == request.auth.uid
@@ -162,8 +165,29 @@ service cloud.firestore {
                     && request.resource.data.updatedAt == request.time
                     && validStartup(request.resource.data);
 
+      // A co-founder can do everything the founder can (edit, members,
+      // visibility); only the owner and the creation time stay fixed.
+      allow update: if request.auth != null
+                    && resource.data.get('memberRoles', {}).get(request.auth.uid, '') == 'coFounder'
+                    && request.resource.data.founderId == resource.data.founderId
+                    && request.resource.data.createdAt == resource.data.createdAt
+                    && request.resource.data.updatedAt == request.time
+                    && validStartup(request.resource.data);
+
+      // Leave startup: a member removes only their own uid from memberIds
+      // and their own entry from memberRoles; nothing else may change.
+      allow update: if request.auth != null
+                    && request.auth.uid in resource.data.get('memberIds', [])
+                    && request.resource.data.diff(resource.data).affectedKeys()
+                         .hasOnly(['memberIds', 'memberRoles'])
+                    && !(request.auth.uid in request.resource.data.memberIds)
+                    && request.resource.data.memberIds.toSet()
+                         == resource.data.memberIds.toSet()
+                              .difference([request.auth.uid].toSet());
+
       allow delete: if request.auth != null
-                    && resource.data.founderId == request.auth.uid;
+                    && (resource.data.founderId == request.auth.uid
+                        || resource.data.get('memberRoles', {}).get(request.auth.uid, '') == 'coFounder');
     }
 
     // Mirrors the app's validation (lib/helpers/startup_validators.dart and
@@ -187,7 +211,7 @@ service cloud.firestore {
                              'expectedGrowth', 'currentAvailableCapital',
                              'expectedRevenueYear1', 'expectedRevenueYear2',
                              'expectedRevenueYear3', 'valuation',
-                             'wantsLeadInvestor'])
+                             'wantsLeadInvestor', 'memberIds', 'memberRoles'])
         && d.name is string && d.name.size() >= 1 && d.name.size() <= 40
         // The one-line pitch: at most 120.
         && optionalString(d, 'oneLinePitch', 120)
@@ -254,6 +278,9 @@ service cloud.firestore {
         && (!('wantsLeadInvestor' in d) || d.wantsLeadInvestor == null
             || d.wantsLeadInvestor is bool)
         && validFunding(d)
+        && (!('memberIds' in d)
+            || (d.memberIds is list && d.memberIds.size() <= 50))
+        && (!('memberRoles' in d) || d.memberRoles is map)
         && d.isPublic is bool;
     }
 

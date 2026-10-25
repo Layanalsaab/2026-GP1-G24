@@ -50,6 +50,15 @@ class InterestRepository {
     _inboxVersion.value++;
   }
 
+  /// Deleting a startup removes every interest message it received.
+  void removeForStartup(String startupId) {
+    _inbox = [
+      for (final i in _inbox)
+        if (i.startupId != startupId) i,
+    ];
+    _inboxVersion.value++;
+  }
+
   bool hasSent(String key) => _sent.value.contains(key);
 
   /// Sends the interest, or withdraws it. Returns true when it is now sent.
