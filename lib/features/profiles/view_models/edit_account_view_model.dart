@@ -11,6 +11,8 @@ import '../../../helpers/safe_notifier.dart';
 import '../../../helpers/validators.dart';
 import '../../../models/app_user.dart';
 import '../../../models/auth_failure.dart';
+import '../../../models/investor_criteria.dart';
+import '../../login_and_signup/view_models/investor_onboarding_view_model.dart';
 import '../../../models/startup_enums.dart';
 
 /// Logic of Edit profile (docs/05 C5, docs/06 section 7): holds the form
@@ -35,6 +37,15 @@ class EditAccountViewModel extends ChangeNotifier with SafeNotifier {
        valueOffered = user.valueOffered,
        gain = user.gain,
        city = user.city {
+    if (user.isInvestor) {
+      // Every sign-up answer, however the investor got here (fresh sign-up,
+      // log in, straight from the profile): a missing set reads as empty.
+      criteria = InvestorOnboardingViewModel(
+        user: user,
+        userRepository: _users,
+        initial: user.investorCriteria ?? const InvestorCriteria(),
+      )..addListener(_onCriteriaChanged);
+    }
     final chips = <String>[];
     var typed = (user.sectorsOther ?? '').trim();
     var other = false;
@@ -59,6 +70,21 @@ class EditAccountViewModel extends ChangeNotifier with SafeNotifier {
     for (final s in Sector.values) s.label,
   ];
   static const otherLabel = 'Other';
+
+  /// The investor's background and interests (null for founders).
+  InvestorOnboardingViewModel? criteria;
+
+  /// A save that gets no answer (no connection) fails after this long
+  /// instead of keeping the screen busy forever.
+  static const _saveLimit = Duration(seconds: 20);
+
+  /// True once anything was changed (the discard dialog asks only then).
+  bool dirty = false;
+
+  void _onCriteriaChanged() {
+    dirty = true;
+    notifyListeners();
+  }
 
   /// The profile as it was when the screen opened.
   final AppUser user;
@@ -116,8 +142,8 @@ class EditAccountViewModel extends ChangeNotifier with SafeNotifier {
       ? ValidationStrings.otherSelect('sector')
       : null;
 
-  /// A founder's bio is required (the investor's stays optional).
-  String? get bioError => attempted && user.isFounder
+  /// The bio is required for founders and investors.
+  String? get bioError => attempted
       ? Validators.requiredText(bio, ValidationStrings.bioRequired)
       : null;
   String? get linkedinError => Validators.linkedinLive(linkedin);
@@ -132,12 +158,17 @@ class EditAccountViewModel extends ChangeNotifier with SafeNotifier {
       Validators.fullName(fullName) == null &&
       Validators.phoneEdit(phone) == null &&
       Validators.city(city) == null &&
-      Validators.sectors(_chosen) == null &&
-      !(otherSelected && otherSector.trim().isEmpty) &&
+      (user.isInvestor ||
+          (Validators.sectors(_chosen) == null &&
+              !(otherSelected && otherSector.trim().isEmpty))) &&
       Validators.linkedin(linkedin) == null &&
       (!user.isFounder || bio.trim().isNotEmpty) &&
       (!user.isInvestor ||
-          (valueOffered.trim().isNotEmpty && gain.trim().isNotEmpty));
+          (bio.trim().isNotEmpty &&
+              valueOffered.trim().isNotEmpty &&
+              gain.trim().isNotEmpty &&
+              criteria!.step3Complete &&
+              criteria!.step4Complete));
 
   void setFullName(String v) => _set(() => fullName = v);
   void setBio(String v) => _set(() => bio = v);
@@ -175,6 +206,7 @@ class EditAccountViewModel extends ChangeNotifier with SafeNotifier {
   void _set(VoidCallback change) {
     if (isLoading) return;
     change();
+    dirty = true;
     formError = null;
     notifyListeners();
   }
@@ -186,6 +218,8 @@ class EditAccountViewModel extends ChangeNotifier with SafeNotifier {
     if (isLoading) return null;
     attempted = true;
     formError = null;
+    final c = criteria;
+    if (c != null) c.validateAll();
     if (!isValid) {
       notifyListeners();
       return null;
@@ -194,26 +228,29 @@ class EditAccountViewModel extends ChangeNotifier with SafeNotifier {
     notifyListeners();
     final name = fullName.trim();
     final about = bio.trim();
-    final chosen = _chosen;
+    final built = criteria?.buildCriteria(lookFor: gain);
+    final chosen = built != null ? [...built.sectors] : _chosen;
     final typed = otherSelected ? otherSector.trim() : null;
     final link = linkedin.trim();
     final bring = valueOffered.trim();
     final hope = gain.trim();
     try {
-      await _users.updateProfile(
-        uid: user.uid,
-        fullName: name,
-        bio: about,
-        phone: phone,
-        sectorsOfInterest: chosen,
-        city: city,
-        sectorsOther: typed,
-        linkedin: link,
-        gain: user.isInvestor ? hope : null,
-        valueOffered: user.isInvestor ? bring : null,
-        emailPublic: user.isFounder ? emailPublic : null,
-        phonePublic: user.isFounder ? phonePublic : null,
-      );
+      await _users
+          .updateProfile(
+            uid: user.uid,
+            fullName: name,
+            bio: about,
+            phone: phone,
+            sectorsOfInterest: chosen,
+            city: city,
+            sectorsOther: typed,
+            linkedin: link,
+            gain: user.isInvestor ? hope : null,
+            valueOffered: user.isInvestor ? bring : null,
+            emailPublic: emailPublic,
+            phonePublic: phonePublic,
+          )
+          .timeout(_saveLimit);
       if (user.isFounder && name != user.fullName.trim()) {
         // My name carries over to every team card of mine.
         try {
@@ -225,6 +262,11 @@ class EditAccountViewModel extends ChangeNotifier with SafeNotifier {
         } catch (_) {
           // The profile is saved; the cards catch up on the next change.
         }
+      }
+      if (built != null) {
+        await _users
+            .saveInvestorOnboarding(uid: user.uid, criteria: built)
+            .timeout(_saveLimit);
       }
       var photoUrl = user.photoUrl;
       var photoRemoved = false;
@@ -246,6 +288,8 @@ class EditAccountViewModel extends ChangeNotifier with SafeNotifier {
           return null;
         }
       }
+      // Saved: nothing is left to discard.
+      dirty = false;
       return user.copyWith(
         fullName: name,
         bio: about,
@@ -258,8 +302,9 @@ class EditAccountViewModel extends ChangeNotifier with SafeNotifier {
         valueOffered: user.isInvestor ? bring : null,
         photoUrl: photoUrl,
         clearPhoto: photoRemoved,
-        emailPublic: user.isFounder ? emailPublic : null,
-        phonePublic: user.isFounder ? phonePublic : null,
+        investorCriteria: built,
+        emailPublic: emailPublic,
+        phonePublic: phonePublic,
       );
     } on AuthException catch (e) {
       formError = e.failure == AuthFailure.network
@@ -272,5 +317,12 @@ class EditAccountViewModel extends ChangeNotifier with SafeNotifier {
       notifyListeners();
     }
     return null;
+  }
+
+  @override
+  void dispose() {
+    criteria?.removeListener(_onCriteriaChanged);
+    criteria?.dispose();
+    super.dispose();
   }
 }

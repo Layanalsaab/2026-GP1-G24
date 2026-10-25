@@ -115,7 +115,7 @@ void main() {
           find.textContaining('Invests in', findRichText: true),
           findsOneWidget,
         );
-        expect(find.text('Investment focus'), findsOneWidget);
+        expect(find.text('Investment Background'), findsOneWidget);
         expect(find.text('Send investment request'), findsOneWidget);
       });
 

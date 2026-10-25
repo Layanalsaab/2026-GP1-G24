@@ -36,7 +36,7 @@ class SignupFlow {
   /// The step-1 form, kept so Back from the Verify step keeps its answers.
   SignupViewModel? form;
 
-  /// "STEP n OF total": 6 for a founder, 4 for an investor.
+  /// "STEP n OF total": 7 for a founder, 4 for an investor.
   int get totalSteps => role == AccountRole.founder
       ? 2 + FounderToolsStrings.stepTitles.length
       : 4;

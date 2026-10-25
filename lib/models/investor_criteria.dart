@@ -6,6 +6,7 @@ import '../app_constants/firestore_collections.dart';
 /// (docs/08 §4).
 class InvestorCriteria {
   const InvestorCriteria({
+    this.yearsInvesting,
     this.dealsCount,
     this.hasLedRound,
     this.roundsLed,
@@ -24,7 +25,14 @@ class InvestorCriteria {
   });
 
   // ---- Fixed answer lists (exact copy) ----
-  static const dealsOptions = ['0', '1–5', '6–15', '16+'];
+  static const yearsOptions = [
+    'Less than 1 year',
+    '1–3 years',
+    '4–6 years',
+    '7–9 years',
+    '10+ years',
+  ];
+  static const dealsOptions = ['0', '1–3', '4–6', '7–9', '10+'];
   static const roundsLedOptions = ['1–2', '3–5', '6+'];
   static const coInvestOptions = ['Preferably', 'Possibly', 'Never'];
   static const ticketOptions = [
@@ -48,6 +56,25 @@ class InvestorCriteria {
 
   /// "0", "1–5", "6–15" or "16+": how many startups they invested in.
   final String? dealsCount;
+
+  /// "Less than 1 year" ... "10+ years" (one of [yearsOptions]).
+  final String? yearsInvesting;
+
+  /// "SAR 500K – 1M" (K for thousands, M for millions): the round size per
+  /// startup; empty when it was not asked (no startups invested in yet).
+  String get roundSizeLabel {
+    String short(int n) {
+      String trim(double v) =>
+          v == v.roundToDouble() ? v.round().toString() : v.toStringAsFixed(1);
+      if (n >= 1000000) return '${trim(n / 1000000)}M';
+      if (n >= 1000) return '${trim(n / 1000)}K';
+      return '$n';
+    }
+
+    if (roundMin == null || roundMax == null) return '';
+    return 'SAR ${short(roundMin!)} – ${short(roundMax!)}';
+  }
+
   final bool? hasLedRound;
 
   /// Only when [hasLedRound] is true. Optional.
@@ -73,6 +100,20 @@ class InvestorCriteria {
   final List<String> commerceModels;
   final String? commerceModelsOther;
   final String lookFor;
+
+  /// "B2B, B2C": the commerce models with their short names; the typed text
+  /// replaces "Other".
+  String get commerceModelsShort {
+    final other = (commerceModelsOther ?? '').trim();
+    final shown = [
+      for (final m in commerceModels)
+        if (m == 'Other')
+          if (other.isNotEmpty) other else 'Other'
+        else
+          RegExp(r'\(([^)]+)\)$').firstMatch(m)?.group(1) ?? m,
+    ];
+    return shown.join(', ');
+  }
 
   /// "SAR 100K – 500K", or the typed text for "Other".
   String? get ticketLabel {
@@ -104,6 +145,7 @@ class InvestorCriteria {
   /// typed "Other" texts).
   Map<String, Object?> toFields() => {
     UserFields.investmentsCount: dealsCount,
+    UserFields.yearsInvesting: yearsInvesting,
     UserFields.hasLedRound: hasLedRound,
     UserFields.roundsLed: hasLedRound == true ? roundsLed : null,
     UserFields.coInvest: coInvest,
@@ -129,6 +171,7 @@ class InvestorCriteria {
   static InvestorCriteria? fromFields(Map<String, dynamic> d) {
     final hasAny = [
       UserFields.investmentsCount,
+      UserFields.yearsInvesting,
       UserFields.hasLedRound,
       UserFields.coInvest,
       UserFields.ticketSize,
@@ -140,6 +183,7 @@ class InvestorCriteria {
     if (!hasAny) return null;
     return InvestorCriteria(
       dealsCount: d[UserFields.investmentsCount] as String?,
+      yearsInvesting: d[UserFields.yearsInvesting] as String?,
       hasLedRound: d[UserFields.hasLedRound] as bool?,
       roundsLed: d[UserFields.roundsLed] as String?,
       coInvest: d[UserFields.coInvest] as String?,
@@ -162,6 +206,7 @@ class InvestorCriteria {
   /// still load).
   Map<String, Object?> toMap() => {
     'dealsCount': dealsCount,
+    'yearsInvesting': yearsInvesting,
     'hasLedRound': hasLedRound,
     'roundsLed': hasLedRound == true ? roundsLed : null,
     'coInvest': coInvest,
@@ -187,6 +232,7 @@ class InvestorCriteria {
     if (raw is! Map) return null;
     return InvestorCriteria(
       dealsCount: raw['dealsCount'] as String?,
+      yearsInvesting: raw['yearsInvesting'] as String?,
       hasLedRound: raw['hasLedRound'] as bool?,
       roundsLed: raw['roundsLed'] as String?,
       coInvest: raw['coInvest'] as String?,
@@ -205,6 +251,7 @@ class InvestorCriteria {
   }
 
   InvestorCriteria copyWith({
+    String? yearsInvesting,
     String? dealsCount,
     bool? hasLedRound,
     String? roundsLed,
@@ -221,6 +268,7 @@ class InvestorCriteria {
     String? commerceModelsOther,
     String? lookFor,
   }) => InvestorCriteria(
+    yearsInvesting: yearsInvesting ?? this.yearsInvesting,
     dealsCount: dealsCount ?? this.dealsCount,
     hasLedRound: hasLedRound ?? this.hasLedRound,
     roundsLed: roundsLed ?? this.roundsLed,

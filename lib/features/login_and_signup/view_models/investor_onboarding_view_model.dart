@@ -3,25 +3,132 @@ import 'package:flutter/material.dart';
 import '../../../app_constants/app_strings.dart';
 import '../../../app_constants/validation_strings.dart';
 import '../../../data_access/repositories/user_repository.dart';
+import '../../../helpers/investor_draft_store.dart';
 import '../../../helpers/safe_notifier.dart';
 import '../../../helpers/validators.dart';
 import '../../../models/app_user.dart';
 import '../../../models/auth_failure.dart';
 import '../../../models/investor_criteria.dart';
 import '../../../models/startup_enums.dart';
+import '../../../shared_ui/widgets/forms/money_field.dart';
 
-/// The investor's two question steps after verifying their email (docs/05
-/// A10-A11, docs/06 sections 3-4): "Your investments" and "Your interests".
-/// One view model serves both screens so Back keeps every answer.
+/// A Minimum / Maximum pair of SAR boxes with its rules (used by the round
+/// size on step 3 and by the ticket amount on step 5): the minimum is at
+/// least SAR 1,000 and never above the maximum. One message at a time:
+/// min above max and min under 1,000 show as soon as they are typed, the
+/// empty ones after Next.
+class MoneyRange {
+  MoneyRange();
+
+  static const minimum = 1000;
+
+  final min = TextEditingController();
+  final max = TextEditingController();
+
+  static int? _money(String text) =>
+      int.tryParse(text.replaceAll(RegExp(r'[^0-9]'), ''));
+
+  int? get minAmount => _money(min.text);
+  int? get maxAmount => _money(max.text);
+
+  void setValues(int? lo, int? hi) {
+    min.text = lo == null ? '' : ThousandsFormatter.format(lo);
+    max.text = hi == null ? '' : ThousandsFormatter.format(hi);
+  }
+
+  bool get rangeBad {
+    final lo = minAmount ?? 0;
+    final hi = maxAmount ?? 0;
+    return lo > 0 && hi > 0 && lo > hi;
+  }
+
+  bool get _minLow => minAmount != null && minAmount! < minimum;
+
+  String? error({required bool tried}) {
+    if (rangeBad) return ValidationStrings.roundRange;
+    if (_minLow) return ValidationStrings.roundMinLow;
+    if (!tried) return null;
+    if (minAmount == null) return ValidationStrings.roundMinEmpty;
+    if (maxAmount == null) return ValidationStrings.roundMaxEmpty;
+    return null;
+  }
+
+  bool minHasError({required bool tried}) {
+    final e = error(tried: tried);
+    return e != null && e != ValidationStrings.roundMaxEmpty;
+  }
+
+  bool maxHasError({required bool tried}) {
+    final e = error(tried: tried);
+    return e == ValidationStrings.roundRange ||
+        e == ValidationStrings.roundMaxEmpty;
+  }
+
+  bool get valid =>
+      minAmount != null && maxAmount != null && !_minLow && !rangeBad;
+
+  List<TextEditingController> get controllers => [min, max];
+}
+
+/// The investor's question steps after verifying their email: step 3
+/// "Investment Background" and step 4 "Investment Interests". One view model
+/// serves both screens (and Edit
+/// profile) so Back keeps every answer. Nothing is pre-selected.
 class InvestorOnboardingViewModel extends ChangeNotifier with SafeNotifier {
+  /// [initial] pre-fills every answer (Edit profile, or an investor who comes
+  /// back to finish; null reads as "nothing answered yet", never a crash).
   InvestorOnboardingViewModel({
     required this.user,
     UserRepository? userRepository,
-  }) : _users = userRepository ?? UserRepository.instance {
+    InvestorCriteria? initial,
+    this.keepDraft = false,
+    InvestorDraftStore? draftStore,
+  }) : _users = userRepository ?? UserRepository.instance,
+       _draftStore = draftStore ?? InvestorDraftStore.instance,
+       _initial = initial {
+    if (initial != null) _load(initial);
+    if (keepDraft) addListener(_saveDraft);
     for (final c in _controllers) {
       c.addListener(notifyListeners);
     }
   }
+
+  void _load(InvestorCriteria c) {
+    years = yearsOptions.contains(c.yearsInvesting) ? c.yearsInvesting : null;
+    deals = dealsOptions.contains(c.dealsCount) ? c.dealsCount : null;
+    hasLedRound = c.hasLedRound;
+    roundSize.setValues(c.roundMin, c.roundMax);
+    sectors.addAll(c.sectors.where(sectorOptions.contains));
+    sectorsOther.text = c.sectorsOther ?? '';
+    stages.addAll(c.stages.where(stageOptions.contains));
+    stagesOther.text = c.stagesOther ?? '';
+    models.addAll(c.commerceModels.where(modelOptions.contains));
+    modelsOther.text = c.commerceModelsOther ?? '';
+  }
+
+  final InvestorCriteria? _initial;
+  final InvestorDraftStore _draftStore;
+
+  /// True on the sign-up steps: every change is kept on the phone so the
+  /// investor can leave and come back (see [InvestorDraftStore]).
+  final bool keepDraft;
+
+  /// Fills the answers saved on the phone, if any (before the first frame
+  /// of the step the investor lands on).
+  Future<void> restoreDraft() async {
+    final saved = await _draftStore.load(user.uid);
+    if (saved != null) {
+      _load(saved);
+      notifyListeners();
+    }
+  }
+
+  void _saveDraft() {
+    _draftStore.save(user.uid, buildCriteria());
+  }
+
+  static const yearsOptions = InvestorCriteria.yearsOptions;
+  static const dealsOptions = InvestorCriteria.dealsOptions;
 
   static const otherLabel = 'Other';
 
@@ -38,14 +145,10 @@ class InvestorOnboardingViewModel extends ChangeNotifier with SafeNotifier {
   final UserRepository _users;
 
   // ---- Step 3 ----
+  String? years;
   String? deals;
   bool? hasLedRound;
-  String? roundsLed;
-  String? coInvest;
-  String? ticketBand;
-  final ticketOther = TextEditingController();
-  final roundMin = TextEditingController();
-  final roundMax = TextEditingController();
+  final roundSize = MoneyRange();
   bool step3Tried = false;
 
   // ---- Step 4 ----
@@ -61,9 +164,7 @@ class InvestorOnboardingViewModel extends ChangeNotifier with SafeNotifier {
   String? formError;
 
   late final List<TextEditingController> _controllers = [
-    ticketOther,
-    roundMin,
-    roundMax,
+    ...roundSize.controllers,
     sectorsOther,
     stagesOther,
     modelsOther,
@@ -71,52 +172,32 @@ class InvestorOnboardingViewModel extends ChangeNotifier with SafeNotifier {
 
   // ------------------------------------------------------------ step 3
 
-  static int? _money(String text) =>
-      int.tryParse(text.replaceAll(RegExp(r'[^0-9]'), ''));
+  /// The size question is asked only after a range other than "0".
+  bool get showRoundSize => deals != null && deals != '0';
 
-  int? get minAmount => _money(roundMin.text);
-  int? get maxAmount => _money(roundMax.text);
+  String? get roundSizeError =>
+      showRoundSize ? roundSize.error(tried: step3Tried) : null;
+  bool get minHasError =>
+      showRoundSize && roundSize.minHasError(tried: step3Tried);
+  bool get maxHasError =>
+      showRoundSize && roundSize.maxHasError(tried: step3Tried);
 
-  /// "The minimum can’t be more than the maximum." (live; blocks Next).
-  bool get rangeBad {
-    final lo = minAmount ?? 0;
-    final hi = maxAmount ?? 0;
-    return lo > 0 && hi > 0 && lo > hi;
-  }
-
-  String? get rangeError => rangeBad ? ValidationStrings.roundRange : null;
-
-  String? _chooseOne(bool tried, bool missing) =>
-      tried && missing ? ValidationStrings.chooseOne : null;
-
-  String? get dealsError => _chooseOne(step3Tried, deals == null);
-  String? get ledError => _chooseOne(step3Tried, hasLedRound == null);
-  String? get coInvestError => _chooseOne(step3Tried, coInvest == null);
-  String? get ticketError => _chooseOne(step3Tried, ticketBand == null);
-
-  String? get ticketOtherError =>
-      step3Tried &&
-          ticketBand == otherLabel &&
-          !Validators.isOtherText(ticketOther.text)
-      ? ValidationStrings.otherChips('amount')
-      : null;
+  String? get yearsError =>
+      step3Tried && years == null ? ValidationStrings.selectOne : null;
+  String? get dealsError =>
+      step3Tried && deals == null ? ValidationStrings.selectOne : null;
+  String? get ledError =>
+      step3Tried && hasLedRound == null ? ValidationStrings.chooseOne : null;
 
   bool get step3Complete =>
+      years != null &&
       deals != null &&
       hasLedRound != null &&
-      coInvest != null &&
-      ticketBand != null &&
-      (ticketBand != otherLabel || Validators.isOtherText(ticketOther.text)) &&
-      !rangeBad;
+      (!showRoundSize || roundSize.valid);
 
+  void pickYears(String v) => _set(() => years = v);
   void pickDeals(String v) => _set(() => deals = v);
-  void pickLed(String v) => _set(() {
-    hasLedRound = v == 'Yes';
-    if (!hasLedRound!) roundsLed = null;
-  });
-  void pickRoundsLed(String v) => _set(() => roundsLed = v);
-  void pickCoInvest(String v) => _set(() => coInvest = v);
-  void pickTicket(String v) => _set(() => ticketBand = v);
+  void pickLed(String v) => _set(() => hasLedRound = v == 'Yes');
 
   /// Tapping Next on step 3: true when the user may continue.
   bool tryStep3() {
@@ -138,20 +219,32 @@ class InvestorOnboardingViewModel extends ChangeNotifier with SafeNotifier {
       : null;
 
   String? _otherError(
-    Set<String> chosen,
+    bool tried,
+    bool picked,
     TextEditingController text,
     String noun,
-  ) =>
-      step4Tried &&
-          chosen.contains(otherLabel) &&
-          !Validators.isOtherText(text.text)
-      ? ValidationStrings.otherChips(noun)
+  ) => tried && picked && !Validators.isOtherText(text.text)
+      ? 'Tell us your other $noun — it can’t be blank.'
       : null;
 
-  String? get sectorsOtherError => _otherError(sectors, sectorsOther, 'sector');
-  String? get stagesOtherError => _otherError(stages, stagesOther, 'stage');
-  String? get modelsOtherError =>
-      _otherError(models, modelsOther, 'commerce model');
+  String? get sectorsOtherError => _otherError(
+    step4Tried,
+    sectors.contains(otherLabel),
+    sectorsOther,
+    'sector',
+  );
+  String? get stagesOtherError => _otherError(
+    step4Tried,
+    stages.contains(otherLabel),
+    stagesOther,
+    'stage',
+  );
+  String? get modelsOtherError => _otherError(
+    step4Tried,
+    models.contains(otherLabel),
+    modelsOther,
+    'commerce model',
+  );
 
   bool _groupOk(Set<String> chosen, TextEditingController text) =>
       chosen.isNotEmpty &&
@@ -169,6 +262,14 @@ class InvestorOnboardingViewModel extends ChangeNotifier with SafeNotifier {
   void _toggle(Set<String> set, String v) =>
       _set(() => set.contains(v) ? set.remove(v) : set.add(v));
 
+  /// Tapping Next on step 4: true when the user may continue.
+  bool tryStep4() {
+    if (step4Complete) return true;
+    step4Tried = true;
+    notifyListeners();
+    return false;
+  }
+
   void _set(VoidCallback change) {
     change();
     notifyListeners();
@@ -176,21 +277,22 @@ class InvestorOnboardingViewModel extends ChangeNotifier with SafeNotifier {
 
   // ------------------------------------------------------------ finish
 
-  /// The answers as stored in `users/{uid}.investorCriteria`.
-  InvestorCriteria buildCriteria() {
+  /// The answers as stored in `users/{uid}` (see [InvestorCriteria.toFields]).
+  InvestorCriteria buildCriteria({String? lookFor}) {
     List<String> ordered(Set<String> chosen, List<String> options) => [
       for (final o in options)
         if (chosen.contains(o)) o,
     ];
     return InvestorCriteria(
+      yearsInvesting: years,
       dealsCount: deals,
       hasLedRound: hasLedRound,
-      roundsLed: hasLedRound == true ? roundsLed : null,
-      coInvest: coInvest,
-      ticketBand: ticketBand,
-      ticketOther: ticketBand == otherLabel ? ticketOther.text.trim() : null,
-      roundMin: minAmount,
-      roundMax: maxAmount,
+      roundsLed: _initial?.roundsLed,
+      coInvest: _initial?.coInvest,
+      ticketBand: _initial?.ticketBand,
+      ticketOther: _initial?.ticketOther,
+      roundMin: showRoundSize ? roundSize.minAmount : null,
+      roundMax: showRoundSize ? roundSize.maxAmount : null,
       sectors: ordered(sectors, sectorOptions),
       sectorsOther: sectors.contains(otherLabel)
           ? sectorsOther.text.trim()
@@ -201,13 +303,22 @@ class InvestorOnboardingViewModel extends ChangeNotifier with SafeNotifier {
       commerceModelsOther: models.contains(otherLabel)
           ? modelsOther.text.trim()
           : null,
-      // Asked once, at sign-up ("What do you hope to gain from startups?").
-      lookFor: user.gain.trim(),
+      lookFor: (lookFor ?? user.gain).trim(),
     );
   }
 
-  /// Tapping Finish: validates, saves the criteria and marks onboarding done.
-  /// Returns the updated profile, or null (see [step4Complete], [formError]).
+  /// Edit profile: shows every error of the three question groups; true when
+  /// all of it is valid.
+  bool validateAll() {
+    step3Tried = true;
+    step4Tried = true;
+    notifyListeners();
+    return step3Complete && step4Complete;
+  }
+
+  /// Tapping Finish (step 4): validates, saves every answer and marks
+  /// onboarding done. Returns the updated profile, or null (see
+  /// [step4Complete], [formError]).
   Future<AppUser?> finish() async {
     if (isSaving) return null;
     formError = null;
@@ -221,6 +332,7 @@ class InvestorOnboardingViewModel extends ChangeNotifier with SafeNotifier {
     notifyListeners();
     try {
       await _users.saveInvestorOnboarding(uid: user.uid, criteria: criteria);
+      await _draftStore.clear(user.uid);
       return user.copyWith(
         onboardingCompleted: true,
         investorCriteria: criteria,

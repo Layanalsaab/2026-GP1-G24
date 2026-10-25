@@ -94,7 +94,11 @@ class HomeItemCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final canBookmark = AppSession.instance.canBookmark;
+    // Guests never bookmark, and an investor can't bookmark their own profile.
+    final session = AppSession.instance;
+    final canBookmark =
+        session.canBookmark &&
+        !(item.kind == HomeItemKind.investor && item.id == session.user?.uid);
     return ValueListenableBuilder<Set<String>>(
       valueListenable: BookmarkRepository.instance.keys,
       builder: (context, keys, _) => RepaintBoundary(

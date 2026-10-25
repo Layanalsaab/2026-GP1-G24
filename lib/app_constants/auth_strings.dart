@@ -51,8 +51,8 @@ class AuthStrings {
   // Step headers
   static const createAccountTitle = 'Create your account';
   static const verifyTitle = 'Verify your email';
-  static const investmentsTitle = 'Your investments';
-  static const interestsTitle = 'Your interests';
+  static const investmentsTitle = 'Investment Background';
+  static const interestsTitle = 'Investment Interests';
 
   // Sign-up fields
   static const fullName = 'Full name';
@@ -75,14 +75,14 @@ class AuthStrings {
   static const citiesNone = 'No cities found';
   static const sectorsQuestion = 'Which sectors are you interested in?';
   static const sectorOtherHint = 'Type your sector, e.g. SportsTech';
-  static const valueQuestion = 'What value can you bring to startups?';
-  static const valuePlaceholder = 'Describe the value you can bring';
+  static const valueQuestion = 'What can you offer startups?';
+  static const valuePlaceholder = 'Describe what you can offer';
   static const valueTip =
-      'For example: connections with venture capital firms, experience in real estate, mentoring founders, industry partnerships.';
-  static const gainQuestion = 'What do you hope to gain from startups?';
-  static const gainPlaceholder = 'Describe what you hope to gain';
+      'For example: funding, mentoring, industry connections, introductions to partners.';
+  static const gainQuestion = 'What are you looking for in startups?';
+  static const gainPlaceholder = 'Describe what you are looking for';
   static const gainTip =
-      'For example: strong returns, early access to new tech, growing your portfolio in a sector, long-term partnerships with founders.';
+      'For example: a strong team, early traction, a growing market, long-term partnerships.';
   static const bio = 'Bio';
   static const bioPlaceholder = 'Tell others a little about yourself';
   static const addPhoto = 'Add profile photo';
@@ -113,7 +113,14 @@ class AuthStrings {
   static const passwordPlaceholderLogin = 'Enter your password';
 
   // Investor step 3
-  static const dealsQuestion = 'How many startups have you invested in?';
+  static const dealsQuestion = 'How many startups have you invested in so far?';
+  static const dealsPlaceholder = 'Select a range';
+  static const yearsQuestion = 'How many years have you been investing?';
+  static const yearsSheetTitle = 'Years of investing';
+  static const dealsSheetTitle = 'Startups invested in';
+  static const roundSizeQuestion =
+      'How much do you usually invest in one startup?';
+  static const fillRequiredFields = 'Please fill in the required fields';
   static const ledQuestion = 'Have you ever led an investment round?';
   static const ledTip =
       'Leading means you set the terms and bring other investors in.';
@@ -131,10 +138,14 @@ class AuthStrings {
   static const finish = 'Finish';
 
   // Investor step 4
-  static const investSectors = 'Which sectors do you want to invest in?';
-  static const investStages = 'Which startup stages do you invest in?';
+  static const investSectors = 'Which sectors are you interested in?';
+  static const investStages = 'Which stages do you invest in?';
+  static const stagesPlaceholder = 'Select stages';
+  static const stagesSheetTitle = 'Select stages';
+  static const modelsPlaceholder = 'Select commerce models';
+  static const modelsSheetTitle = 'Select commerce models';
   static const stageOtherHint = 'Type your stage';
-  static const investModels = 'Which commerce models interest you?';
+  static const investModels = 'Which commerce models do you invest in?';
   static const modelOtherHint = 'Type your commerce model';
 
   // Log in

@@ -1,3 +1,5 @@
+import 'investor_criteria.dart';
+
 /// An investor as shown to founders: in lists and on their profile page
 /// (Figma "V2 · 10 / 12 / 15").
 class InvestorProfile {
@@ -19,6 +21,15 @@ class InvestorProfile {
     this.hopeToGain,
     this.joinedLabel,
     this.createdAt,
+    this.email,
+    this.phone,
+    this.emailPublic = false,
+    this.phonePublic = false,
+    this.yearsInvesting,
+    this.startupsInvested,
+    this.roundSize,
+    this.ledRound,
+    this.commerceModels = const [],
   });
 
   final String id;
@@ -61,6 +72,42 @@ class InvestorProfile {
   /// When the document was created (orders the "New on Start.sa" rail).
   final DateTime? createdAt;
 
+  /// e.g. "4–6 years".
+  final String? yearsInvesting;
+
+  /// "0", "1–3", ... "10+".
+  final String? startupsInvested;
+
+  /// Investment size per funding round, e.g. "SAR 500K – 1M".
+  final String? roundSize;
+  final bool? ledRound;
+
+  /// Contact details, only set for what the investor made Public (their
+  /// email / phone are never listed otherwise).
+  final String? email;
+  final String? phone;
+  final bool emailPublic;
+  final bool phonePublic;
+
+  /// Short names ("B2B").
+  final List<String> commerceModels;
+
+  /// "SAR 500K – 1M" from two amounts (K thousands, M millions); one amount
+  /// gives "SAR 500K"; none gives "".
+  static String amountLabel(int? min, int? max) {
+    String short(int n) {
+      String trim(double v) =>
+          v == v.roundToDouble() ? v.round().toString() : v.toStringAsFixed(1);
+      if (n >= 1000000) return '${trim(n / 1000000)}M';
+      if (n >= 1000) return '${trim(n / 1000)}K';
+      return '$n';
+    }
+
+    if (min == null && max == null) return '';
+    if (min == null || max == null) return 'SAR ${short(min ?? max!)}';
+    return 'SAR ${short(min)} – ${short(max)}';
+  }
+
   static List<String> _strings(Object? v) =>
       v is List ? v.whereType<String>().toList() : const [];
 
@@ -77,6 +124,9 @@ class InvestorProfile {
     if (name == null) return null;
     final city = _text(d['city']) ?? '';
     final bio = _text(d['bio']);
+    final c = InvestorCriteria.fromFields(d);
+    final deals = c?.dealsCount;
+    final shortModels = c?.commerceModelsShort ?? '';
     return InvestorProfile(
       id: id,
       name: name,
@@ -84,7 +134,9 @@ class InvestorProfile {
       city: city,
       sectors: _strings(d['preferredSectors']),
       stages: _strings(d['preferredStages']),
-      ticketRange: _text(d['ticketSize']) ?? '',
+      ticketRange: (c?.roundSizeLabel ?? '').isNotEmpty
+          ? c!.roundSizeLabel
+          : (_text(d['ticketSize']) ?? ''),
       locations: city.isEmpty ? const [] : [city],
       about: bio,
       bio: bio,
@@ -92,6 +144,19 @@ class InvestorProfile {
       valueOffered: _text(d['offer']),
       hopeToGain: _text(d['lookingFor']),
       createdAt: d['createdAt'] is DateTime ? d['createdAt'] as DateTime : null,
+      emailPublic: d['emailPublic'] == true,
+      phonePublic: d['phonePublic'] == true,
+      email: d['emailPublic'] == true ? _text(d['email']) : null,
+      phone: d['phonePublic'] == true ? _text(d['phone']) : null,
+      yearsInvesting: c?.yearsInvesting,
+      startupsInvested: deals,
+      roundSize: deals == '0'
+          ? null
+          : [c?.roundMin, c?.roundMax].every((v) => v == null)
+          ? null
+          : amountLabel(c?.roundMin, c?.roundMax),
+      ledRound: c?.hasLedRound,
+      commerceModels: shortModels.isEmpty ? const [] : shortModels.split(', '),
     );
   }
 
@@ -133,5 +198,14 @@ class InvestorProfile {
     hopeToGain: hopeToGain,
     joinedLabel: joinedLabel,
     createdAt: createdAt,
+    email: email,
+    phone: phone,
+    emailPublic: emailPublic,
+    phonePublic: phonePublic,
+    yearsInvesting: yearsInvesting,
+    startupsInvested: startupsInvested,
+    roundSize: roundSize,
+    ledRound: ledRound,
+    commerceModels: commerceModels,
   );
 }

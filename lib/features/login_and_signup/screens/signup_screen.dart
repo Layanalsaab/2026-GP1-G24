@@ -3,11 +3,11 @@ import 'package:flutter/material.dart';
 import '../../../app_constants/app_strings.dart';
 import '../../../app_constants/auth_strings.dart';
 import '../../../app_constants/validation_strings.dart';
+import '../../../helpers/emoji_filter.dart';
 import '../../../helpers/validators.dart';
 import '../../../models/app_user.dart';
 import '../../../shared_ui/navigation/app_route.dart';
 import '../../../shared_ui/widgets/buttons/app_button.dart';
-import '../../../shared_ui/widgets/cards/avatars.dart';
 import '../../../shared_ui/widgets/forms/app_field.dart';
 import '../../../shared_ui/widgets/forms/app_text_field.dart';
 import '../../../shared_ui/widgets/forms/form_page.dart';
@@ -25,7 +25,6 @@ import '../view_models/signup_flow.dart';
 import '../view_models/signup_view_model.dart';
 import '../widgets/auth_navigation.dart';
 import '../widgets/phone_formatter.dart';
-import 'login_screen.dart';
 import 'verify_email_screen.dart';
 
 /// Sign-up step 1, "Create your account" (docs/05 A7), for [role]. Founders
@@ -78,15 +77,7 @@ class _SignupScreenState extends State<SignupScreen> {
     super.dispose();
   }
 
-  /// Investor sign-up (unchanged): the round picker adds / removes the photo.
-  Future<void> _togglePhoto() async {
-    final message = await _vm.togglePhoto();
-    if (!mounted || message == null) return;
-    AppToast.error(context, message);
-  }
-
-  /// Founder sign-up: picks (or changes) the photo. Only an error shows a
-  /// toast.
+  /// Picks (or changes) the photo. Only an error shows a toast.
   Future<void> _pickPhoto() async {
     final message = await _vm.pickPhoto();
     if (!mounted || message == null) return;
@@ -112,10 +103,10 @@ class _SignupScreenState extends State<SignupScreen> {
     );
   }
 
-  /// Back arrow / system back. A founder who typed or picked anything is
-  /// asked first; Discard clears the form.
+  /// Back arrow / system back. Anyone who typed or picked anything is asked
+  /// first; Discard clears the form.
   Future<void> _back() async {
-    if (_vm.isFounder && _vm.hasInput) {
+    if (_vm.hasInput) {
       final discard = await showDiscardDialog(
         context,
         title: AuthStrings.discardSignupTitle,
@@ -179,9 +170,9 @@ class _SignupScreenState extends State<SignupScreen> {
         final vm = _vm;
         final founder = vm.isFounder;
         return PopScope(
-          // A founder with anything typed or picked is asked before leaving
-          // (also for the system back button).
-          canPop: !(founder && vm.hasInput),
+          // Anything typed or picked is asked about before leaving (also for
+          // the system back button).
+          canPop: !vm.hasInput,
           onPopInvokedWithResult: (didPop, _) {
             if (!didPop) _back();
           },
@@ -198,33 +189,17 @@ class _SignupScreenState extends State<SignupScreen> {
                 onPressed: _submit,
                 loading: vm.isLoading,
               ),
-              // The founder sign-up has no "Already have an account?" line.
-              link: founder
-                  ? null
-                  : FooterLink(
-                      prefix: AuthStrings.haveAccount,
-                      linkLabel: AuthStrings.logIn,
-                      onTap: () => LoginScreen.open(context),
-                    ),
+              // The sign-up has no "Already have an account?" line.
             ),
             children: [
               AuthCard(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    if (founder)
-                      ProfilePhotoRow(
-                        onTap: _pickPhoto,
-                        image: vm.photo == null ? null : FileImage(vm.photo!),
-                      )
-                    else
-                      PhotoPickerPlaceholder(
-                        onTap: _togglePhoto,
-                        hasPhoto: vm.photo != null,
-                        initials: appInitials(vm.name.text),
-                        image: vm.photo == null ? null : FileImage(vm.photo!),
-                        label: AuthStrings.addPhoto,
-                      ),
+                    ProfilePhotoRow(
+                      onTap: _pickPhoto,
+                      image: vm.photo == null ? null : FileImage(vm.photo!),
+                    ),
                     FormFieldColumn(
                       children: [
                         LabeledTextField(
@@ -236,18 +211,25 @@ class _SignupScreenState extends State<SignupScreen> {
                           valid: vm.nameValid,
                           error: vm.nameError,
                           textCapitalization: TextCapitalization.words,
+                          inputFormatters: founder
+                              ? null
+                              : const [NoEmojiFormatter()],
                           autofillHints: const [AutofillHints.name],
                         ),
-                        if (founder)
-                          LabeledTextField(
-                            label: AuthStrings.bio,
-                            required: founder,
-                            controller: vm.bio,
-                            placeholder: AuthStrings.bioPlaceholder,
-                            maxLength: vm.bioMax,
-                            multiline: true,
-                            error: vm.bioError,
-                          ),
+                        // The bio sits right under the full name for both roles
+                        // and is required (the investor's has no emoji).
+                        LabeledTextField(
+                          label: AuthStrings.bio,
+                          required: true,
+                          controller: vm.bio,
+                          placeholder: AuthStrings.bioPlaceholder,
+                          maxLength: vm.bioMax,
+                          multiline: true,
+                          inputFormatters: founder
+                              ? null
+                              : const [NoEmojiFormatter()],
+                          error: vm.bioError,
+                        ),
                         LabeledTextField(
                           label: AuthStrings.email,
                           required: true,
@@ -257,25 +239,21 @@ class _SignupScreenState extends State<SignupScreen> {
                           keyboardType: TextInputType.emailAddress,
                           valid: vm.emailValid,
                           error: vm.emailError,
-                          labelTrailing: founder
-                              ? VisibilityPill(
-                                  isPublic: vm.emailPublic,
-                                  onChanged: vm.setEmailPublic,
-                                  fieldName: 'email',
-                                )
-                              : null,
+                          labelTrailing: VisibilityPill(
+                            isPublic: vm.emailPublic,
+                            onChanged: vm.setEmailPublic,
+                            fieldName: 'email',
+                          ),
                           autofillHints: const [AutofillHints.email],
                         ),
                         AppField(
                           label: AuthStrings.phone,
                           required: true,
-                          labelTrailing: founder
-                              ? VisibilityPill(
-                                  isPublic: vm.phonePublic,
-                                  onChanged: vm.setPhonePublic,
-                                  fieldName: 'phone',
-                                )
-                              : null,
+                          labelTrailing: VisibilityPill(
+                            isPublic: vm.phonePublic,
+                            onChanged: vm.setPhonePublic,
+                            fieldName: 'phone',
+                          ),
                           error: vm.phoneError,
                           child: AppTextField(
                             controller: vm.phone,
@@ -300,6 +278,9 @@ class _SignupScreenState extends State<SignupScreen> {
                           placeholder: AuthStrings.linkedinPlaceholder,
                           maxLength: Validators.maxLinkedin,
                           keyboardType: TextInputType.url,
+                          inputFormatters: founder
+                              ? null
+                              : const [NoEmojiFormatter()],
                           valid: vm.linkedinValid,
                           error: vm.linkedinError,
                         ),
@@ -362,6 +343,7 @@ class _SignupScreenState extends State<SignupScreen> {
                             maxLength: Validators.maxValueText,
                             multiline: true,
                             info: AuthStrings.valueTip,
+                            inputFormatters: const [NoEmojiFormatter()],
                             error: vm.valueError,
                           ),
                           LabeledTextField(
@@ -372,19 +354,10 @@ class _SignupScreenState extends State<SignupScreen> {
                             maxLength: Validators.maxValueText,
                             multiline: true,
                             info: AuthStrings.gainTip,
+                            inputFormatters: const [NoEmojiFormatter()],
                             error: vm.gainError,
                           ),
                         ],
-                        if (!founder)
-                          LabeledTextField(
-                            label: AuthStrings.bio,
-                            required: false,
-                            controller: vm.bio,
-                            placeholder: AuthStrings.bioPlaceholder,
-                            maxLength: vm.bioMax,
-                            multiline: true,
-                            error: vm.bioError,
-                          ),
                       ],
                     ),
                   ],

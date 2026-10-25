@@ -1,23 +1,21 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../app_constants/account_strings.dart';
 import '../../../app_constants/app_strings.dart';
 import '../../../app_constants/auth_strings.dart';
+import '../../../app_constants/founder_tools_strings.dart';
 import '../../../app_constants/profile_strings.dart';
 import '../../../data_access/device_services/profile_photo_picker_service.dart';
 import '../../../helpers/app_session.dart';
+import '../../../helpers/emoji_filter.dart';
 import '../../../helpers/validators.dart';
 import '../../../models/app_user.dart';
 import '../../../shared_ui/icons/app_icons.dart';
-import '../../../shared_ui/motion/motion.dart';
 import '../../../shared_ui/navigation/app_route.dart';
 import '../../../shared_ui/theme/app_colors.dart';
 import '../../../shared_ui/theme/app_text.dart';
 import '../../../shared_ui/widgets/buttons/app_button.dart';
-import '../../../shared_ui/widgets/chips/chip_group.dart';
 import '../../../shared_ui/widgets/forms/app_field.dart';
 import '../../../shared_ui/widgets/forms/app_text_field.dart';
 import '../../../shared_ui/widgets/forms/photo_pickers.dart';
@@ -27,8 +25,10 @@ import '../../../shared_ui/widgets/overlays/multi_picker_sheet.dart';
 import '../../../shared_ui/widgets/headers/header_buttons.dart';
 import '../../../shared_ui/widgets/lists/press_surface.dart';
 import '../../../shared_ui/widgets/overlays/app_bottom_sheet.dart';
+import '../../../shared_ui/widgets/overlays/app_dialog.dart';
 import '../../../shared_ui/widgets/overlays/app_toast.dart';
 import '../../../shared_ui/widgets/overlays/picker_sheet.dart';
+import '../../login_and_signup/widgets/investor_fields.dart';
 import '../../login_and_signup/widgets/phone_formatter.dart';
 import '../view_models/edit_account_view_model.dart';
 
@@ -60,14 +60,176 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     super.dispose();
   }
 
+  /// Close / system back. An investor with unsaved changes is asked first.
+  Future<void> _leave() async {
+    // While a save is still running the screen can always be left.
+    if (_vm.isLoading || !(widget.user.isInvestor && _vm.dirty)) {
+      AppNav.back(context);
+      return;
+    }
+    final discard = await showDiscardDialog(
+      context,
+      title: FounderToolsStrings.discardEditTitle,
+      message: FounderToolsStrings.discardEditMessage,
+      discardLabel: FounderToolsStrings.discard,
+      keepLabel: FounderToolsStrings.keepEditing,
+    );
+    if (!mounted || !discard) return;
+    // pop() directly: the guard below would otherwise ask again.
+    Navigator.of(context).pop();
+  }
+
+  /// The investor's form: the same fields, order, labels and limits as
+  /// "Create your account" and the two question steps (no password fields),
+  /// all pre-filled. Same layout as the founder's form.
+  Widget _investorForm(AppUser u) {
+    final c = _vm.criteria!;
+    ImageProvider? image;
+    if (_vm.hasPhoto) {
+      if (_vm.newPhoto != null) {
+        image = FileImage(_vm.newPhoto!);
+      } else if ((u.photoUrl ?? '').isNotEmpty) {
+        image = NetworkImage(u.photoUrl!);
+      }
+    }
+    const noEmoji = [NoEmojiFormatter()];
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 24, 16, 32),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          ProfilePhotoRow(onTap: _photo, image: image),
+          FormFieldColumn(
+            children: [
+              LabeledTextField(
+                label: AuthStrings.fullName,
+                required: true,
+                value: _vm.fullName,
+                onChanged: _vm.setFullName,
+                placeholder: AuthStrings.fullNamePlaceholder,
+                maxLength: Validators.maxFullName,
+                error: _vm.fullNameError,
+                textCapitalization: TextCapitalization.words,
+                inputFormatters: noEmoji,
+              ),
+              LabeledTextField(
+                label: AuthStrings.bio,
+                required: true,
+                value: _vm.bio,
+                onChanged: _vm.setBio,
+                placeholder: AuthStrings.bioPlaceholder,
+                maxLength: Validators.maxFounderBio,
+                multiline: true,
+                inputFormatters: noEmoji,
+                error: _vm.bioError,
+              ),
+              LabeledTextField(
+                label: AuthStrings.email,
+                required: true,
+                value: u.email,
+                enabled: false,
+                maxLength: Validators.maxEmail,
+                keyboardType: TextInputType.emailAddress,
+                labelTrailing: VisibilityPill(
+                  isPublic: _vm.emailPublic,
+                  onChanged: _vm.setEmailPublic,
+                  fieldName: 'email',
+                ),
+              ),
+              LabeledTextField(
+                label: AuthStrings.phone,
+                required: true,
+                value: _vm.phone,
+                onChanged: _vm.setPhone,
+                placeholder: AuthStrings.phonePlaceholder,
+                prefix: AuthStrings.phonePrefix,
+                maxLength: Validators.phoneLength,
+                keyboardType: TextInputType.phone,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                error: _vm.phoneError,
+                labelTrailing: VisibilityPill(
+                  isPublic: _vm.phonePublic,
+                  onChanged: _vm.setPhonePublic,
+                  fieldName: 'phone',
+                ),
+              ),
+              LabeledTextField(
+                label: AuthStrings.linkedin,
+                value: _vm.linkedin,
+                onChanged: _vm.setLinkedin,
+                placeholder: AuthStrings.linkedinPlaceholder,
+                maxLength: Validators.maxLinkedin,
+                keyboardType: TextInputType.url,
+                inputFormatters: noEmoji,
+                valid:
+                    _vm.linkedin.trim().isNotEmpty &&
+                    _vm.linkedinError == null &&
+                    _vm.linkedin.contains('linkedin'),
+                error: _vm.linkedinError,
+              ),
+              AppField(
+                label: AuthStrings.city,
+                required: true,
+                error: _vm.cityError,
+                child: SelectField(
+                  placeholder: AuthStrings.cityPlaceholder,
+                  value: _vm.city,
+                  semanticLabel: AuthStrings.city,
+                  hasError: _vm.cityError != null,
+                  onTap: _pickCity,
+                ),
+              ),
+              LabeledTextField(
+                label: AuthStrings.valueQuestion,
+                required: true,
+                value: _vm.valueOffered,
+                onChanged: _vm.setValueOffered,
+                maxLength: Validators.maxValueText,
+                multiline: true,
+                placeholder: AuthStrings.valuePlaceholder,
+                inputFormatters: noEmoji,
+                info: AuthStrings.valueTip,
+                infoOpen: _infoOpen == 'value',
+                onInfoToggle: () => _toggleInfo('value'),
+                error: _vm.valueError,
+              ),
+              LabeledTextField(
+                label: AuthStrings.gainQuestion,
+                required: true,
+                value: _vm.gain,
+                onChanged: _vm.setGain,
+                maxLength: Validators.maxValueText,
+                multiline: true,
+                placeholder: AuthStrings.gainPlaceholder,
+                inputFormatters: noEmoji,
+                info: AuthStrings.gainTip,
+                infoOpen: _infoOpen == 'gain',
+                onInfoToggle: () => _toggleInfo('gain'),
+                error: _vm.gainError,
+              ),
+              ...InvestorFields.background(context, c),
+              ...InvestorFields.interests(context, c),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _save() async {
     FocusScope.of(context).unfocus();
     final updated = await _vm.submit();
     if (!mounted) return;
     if (updated != null) {
       AppSession.instance.updateUser(updated);
-      AppToast.confirm(context, ProfileStrings.profileSaved);
-      AppNav.back(context, updated);
+      AppToast.confirm(
+        context,
+        widget.user.isInvestor
+            ? ProfileStrings.changesSaved
+            : ProfileStrings.profileSaved,
+      );
+      // pop() directly: the unsaved-changes guard must not hold the screen.
+      Navigator.of(context).pop(updated);
     } else if (_vm.formError != null) {
       AppToast.error(context, _vm.formError!);
     } else {
@@ -313,148 +475,26 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         final u = widget.user;
         final loading = _vm.isLoading;
         return PopScope(
-          canPop: !loading,
+          canPop: !(u.isInvestor && _vm.dirty),
+          onPopInvokedWithResult: (didPop, _) {
+            if (!didPop) _leave();
+          },
           child: Scaffold(
             backgroundColor: AppColors.cream,
             resizeToAvoidBottomInset: true,
             body: Column(
               children: [
                 _TopBar(
-                  onClose: () => AppNav.back(context),
+                  onClose: _leave,
                   onSave: _save,
                   loading: loading,
+                  looksOff: u.isInvestor && !_vm.isValid,
                 ),
                 Expanded(
                   child: SingleChildScrollView(
                     keyboardDismissBehavior:
                         ScrollViewKeyboardDismissBehavior.onDrag,
-                    child: u.isFounder
-                        ? _founderForm(u)
-                        : Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              _PhotoHeader(
-                                initials: _initials(),
-                                photoUrl: u.photoUrl,
-                                file: _vm.newPhoto,
-                                showPhoto: _vm.hasPhoto,
-                                onTap: _photo,
-                              ),
-                              FormFieldColumn(
-                                children: [
-                                  LabeledTextField(
-                                    label: ProfileStrings.fullName,
-                                    required: true,
-                                    value: _vm.fullName,
-                                    onChanged: _vm.setFullName,
-                                    maxLength: 50,
-                                    error: _vm.fullNameError,
-                                    textCapitalization:
-                                        TextCapitalization.words,
-                                  ),
-                                  LabeledTextField(
-                                    label: ProfileStrings.bio,
-                                    value: _vm.bio,
-                                    onChanged: _vm.setBio,
-                                    maxLength: u.isFounder
-                                        ? Validators.maxFounderBio
-                                        : Validators.maxBio,
-                                    multiline: true,
-                                  ),
-                                  AppField(
-                                    label: ProfileStrings.city,
-                                    required: true,
-                                    error: _vm.cityError,
-                                    child: SelectField(
-                                      placeholder:
-                                          ProfileStrings.cityPlaceholder,
-                                      value: _vm.city,
-                                      hasError: _vm.cityError != null,
-                                      semanticLabel: ProfileStrings.city,
-                                      onTap: _pickCity,
-                                    ),
-                                  ),
-                                  ChipGroupField(
-                                    label: ProfileStrings.sectorsOfInterest,
-                                    required: true,
-                                    options: EditAccountViewModel.sectorOptions,
-                                    selected: [
-                                      ..._vm.sectors,
-                                      if (_vm.otherSelected)
-                                        EditAccountViewModel.otherLabel,
-                                    ],
-                                    onTap: _vm.toggleSector,
-                                    error: _vm.sectorsError,
-                                    otherValue: _vm.otherSector,
-                                    onOtherChanged: _vm.setOtherSector,
-                                    otherHint: ProfileStrings.otherSectorHint,
-                                    otherError: _vm.otherError,
-                                  ),
-                                  if (u.isInvestor) ...[
-                                    LabeledTextField(
-                                      label: ProfileStrings.valueLabel,
-                                      required: true,
-                                      value: _vm.valueOffered,
-                                      onChanged: _vm.setValueOffered,
-                                      maxLength: 1000,
-                                      multiline: true,
-                                      info: ProfileStrings.valueTip,
-                                      infoOpen: _infoOpen == 'value',
-                                      onInfoToggle: () => _toggleInfo('value'),
-                                      error: _vm.valueError,
-                                    ),
-                                    LabeledTextField(
-                                      label: ProfileStrings.gainLabel,
-                                      required: true,
-                                      value: _vm.gain,
-                                      onChanged: _vm.setGain,
-                                      maxLength: 1000,
-                                      multiline: true,
-                                      placeholder: ProfileStrings.gainHint,
-                                      info: ProfileStrings.gainTip,
-                                      infoOpen: _infoOpen == 'gain',
-                                      onInfoToggle: () => _toggleInfo('gain'),
-                                      error: _vm.gainError,
-                                    ),
-                                  ],
-                                  LabeledTextField(
-                                    label: ProfileStrings.emailLabel,
-                                    required: true,
-                                    value: u.email,
-                                    enabled: false,
-                                    maxLength: 100,
-                                    keyboardType: TextInputType.emailAddress,
-                                  ),
-                                  LabeledTextField(
-                                    label: ProfileStrings.phoneLabel,
-                                    required: true,
-                                    value: _vm.phone,
-                                    onChanged: _vm.setPhone,
-                                    prefix: AppStrings.phoneCountryCode,
-                                    maxLength: 9,
-                                    keyboardType: TextInputType.phone,
-                                    inputFormatters: [
-                                      FilteringTextInputFormatter.digitsOnly,
-                                    ],
-                                    error: _vm.phoneError,
-                                  ),
-                                  LabeledTextField(
-                                    label: ProfileStrings.linkedinLabel,
-                                    value: _vm.linkedin,
-                                    onChanged: _vm.setLinkedin,
-                                    maxLength: 120,
-                                    placeholder: ProfileStrings.linkedinHint,
-                                    keyboardType: TextInputType.url,
-                                    valid:
-                                        _vm.linkedin.trim().isNotEmpty &&
-                                        _vm.linkedinError == null &&
-                                        _vm.linkedin.contains('linkedin'),
-                                    error: _vm.linkedinError,
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
+                    child: u.isFounder ? _founderForm(u) : _investorForm(u),
                   ),
                 ),
               ],
@@ -463,22 +503,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         );
       },
     );
-  }
-
-  String _initials() {
-    final words = _vm.fullName
-        .trim()
-        .split(RegExp(r'\s+'))
-        .where((w) => w.isNotEmpty)
-        .toList();
-    if (words.isEmpty) return widget.user.initials;
-    final a = words.first.characters.first;
-    final b = words.length > 1
-        ? words.last.characters.first
-        : (words.first.characters.length > 1
-              ? words.first.characters.elementAt(1)
-              : '');
-    return (a + b).toUpperCase();
   }
 }
 
@@ -489,11 +513,15 @@ class _TopBar extends StatelessWidget {
     required this.onClose,
     required this.onSave,
     required this.loading,
+    this.looksOff = false,
   });
 
   final VoidCallback onClose;
   final VoidCallback onSave;
   final bool loading;
+
+  /// Grey until the form is valid; still tappable (tapping shows the errors).
+  final bool looksOff;
 
   @override
   Widget build(BuildContext context) {
@@ -516,7 +544,7 @@ class _TopBar extends StatelessWidget {
             AppIconButton(
               icon: AppIcons.close,
               semanticLabel: 'Close',
-              onTap: loading ? null : onClose,
+              onTap: onClose,
             ),
             Flexible(
               child: Semantics(
@@ -533,6 +561,9 @@ class _TopBar extends StatelessWidget {
               height: 38,
               child: AppButton(
                 label: ProfileStrings.save,
+                variant: looksOff
+                    ? AppButtonVariant.off
+                    : AppButtonVariant.primary,
                 expanded: false,
                 size: AppButtonSize.small,
                 loading: loading,
@@ -544,152 +575,6 @@ class _TopBar extends StatelessWidget {
       ),
     );
   }
-}
-
-/// The 170 px green photo header: gradient with four gold circles, a cream
-/// strip at the bottom and the 92 px avatar with the camera overlay.
-class _PhotoHeader extends StatelessWidget {
-  const _PhotoHeader({
-    required this.initials,
-    required this.photoUrl,
-    required this.file,
-    required this.showPhoto,
-    required this.onTap,
-  });
-
-  final String initials;
-  final String? photoUrl;
-  final File? file;
-  final bool showPhoto;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    ImageProvider? image;
-    if (showPhoto) {
-      if (file != null) {
-        image = FileImage(file!);
-      } else if ((photoUrl ?? '').isNotEmpty) {
-        image = NetworkImage(photoUrl!);
-      }
-    }
-    return SizedBox(
-      height: 170,
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          Positioned.fill(
-            child: ExcludeSemantics(
-              child: ClipRect(
-                child: DecoratedBox(
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [AppColors.green, AppColors.moss600],
-                    ),
-                  ),
-                  child: CustomPaint(painter: _CirclesPainter()),
-                ),
-              ),
-            ),
-          ),
-          const Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            height: 40,
-            child: ColoredBox(color: AppColors.cream),
-          ),
-          Positioned(
-            left: 16,
-            bottom: 0,
-            child: Semantics(
-              button: true,
-              label: ProfileStrings.changePhoto,
-              excludeSemantics: true,
-              child: Pressable(
-                onTap: onTap,
-                child: Container(
-                  width: 92,
-                  height: 92,
-                  alignment: Alignment.center,
-                  clipBehavior: Clip.antiAlias,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: AppColors.moss600,
-                    border: Border.all(color: AppColors.cream, width: 4),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: Color(0x801F3F27),
-                        blurRadius: 20,
-                        spreadRadius: -8,
-                        offset: Offset(0, 8),
-                      ),
-                    ],
-                    image: image == null
-                        ? null
-                        : DecorationImage(image: image, fit: BoxFit.cover),
-                  ),
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      if (image == null)
-                        Text(
-                          initials,
-                          style: AppText.sans(
-                            size: 30,
-                            weight: FontWeight.w600,
-                            color: AppColors.white,
-                          ),
-                        ),
-                      Positioned.fill(
-                        child: ColoredBox(
-                          color: const Color(0x991F3F27),
-                          child: const Center(
-                            child: AppIcon.filled(
-                              AppIcons.camera,
-                              size: 26,
-                              color: AppColors.white,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _CirclesPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final s = size.width / 390;
-    for (final (r, a) in const [
-      (60.0, .25),
-      (100.0, .18),
-      (140.0, .12),
-      (180.0, .08),
-    ]) {
-      canvas.drawCircle(
-        Offset(330 * s, 60 * s),
-        r * s,
-        Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 1
-          ..color = AppColors.gold.withValues(alpha: a),
-      );
-    }
-  }
-
-  @override
-  bool shouldRepaint(_CirclesPainter old) => false;
 }
 
 class _SheetOption extends StatelessWidget {

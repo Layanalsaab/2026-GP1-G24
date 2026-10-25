@@ -49,12 +49,25 @@ class ProfileStrings {
   // ---- Investor profile ----
   static const investsIn = 'Invests in';
   static const interestedIn = 'Interested in';
-  static const canBring = 'What I can bring to startups';
-  static const hopeToGain = 'What I hope to gain';
-  static const investmentFocus = 'Investment focus';
+  static const investmentSize = 'Investment Size';
+  static const perFundingRound = 'Per funding round';
+  static const offerTitle = 'What I can offer startups';
+  static const lookingForTitle = 'What I’m looking for in startups';
+  static const background = 'Investment Background';
+  static const yearsOfInvesting = 'Years of investing';
+  static const startupsInvested = 'Startups Invested';
+  static const roundSize = 'Round Size';
+  static const ledARound = 'Led a round';
+  static const yes = 'Yes';
+  static const no = 'No';
+  static const interests = 'Investment Interests';
+  static const sectors = 'Sectors';
   static const stages = 'Stages';
-  static const ticketSize = 'Ticket size';
-  static const associations = 'Investment associations';
+  static const commerceModels = 'Commerce Models';
+  static const privateTag = 'Private';
+  static const publicTag = 'Public';
+  static const notAdded = 'Not added';
+  static const associations = 'Investment Associations';
   static const linkedin = 'LinkedIn';
   static String associationCount(int n) =>
       n == 1 ? '1 Association' : '$n Associations';
@@ -85,14 +98,14 @@ class ProfileStrings {
   static const city = 'City';
   static const cityPlaceholder = 'Select your city';
   static const sectorsOfInterest = 'Sectors of interest';
-  static const valueLabel = 'What value can you bring to startups?';
+  static const valueLabel = 'What can you offer startups?';
+  static const valuePlaceholder = 'Describe what you can offer';
   static const valueTip =
-      'For example: connections with venture capital firms, experience in real estate, mentoring founders, industry partnerships.';
-  static const gainLabel = 'What do you hope to gain from startups?';
-  static const gainHint =
-      'For example: financial returns, early access to new technology, or a long-term role with founders';
+      'For example: funding, mentoring, industry connections, introductions to partners.';
+  static const gainLabel = 'What are you looking for in startups?';
+  static const gainHint = 'Describe what you are looking for';
   static const gainTip =
-      'For example: strong returns, early access to new tech, growing your portfolio in a sector, long-term partnerships with founders.';
+      'For example: a strong team, early traction, a growing market, long-term partnerships.';
   static const emailLabel = 'Email address';
   static const phoneLabel = 'Phone number';
   static const linkedinLabel = 'LinkedIn profile';
@@ -121,6 +134,7 @@ class ProfileStrings {
   static const addedToBookmarks = 'Added to bookmarks';
   static const removedFromBookmarks = 'Removed from bookmarks';
   static const profileSaved = 'Profile saved';
+  static const changesSaved = 'Changes saved';
   static const fixFields = 'Please fix the highlighted fields';
   static const darkOn = 'Dark mode on';
   static const darkOff = 'Dark mode off';

@@ -57,7 +57,7 @@ void main() {
       await t.pump(const Duration(milliseconds: 800));
       expect(find.text('STEP 1 OF 4'), findsOneWidget);
       expect(
-        find.textContaining('Hope to Gain', findRichText: true),
+        find.textContaining('looking for in startups', findRichText: true),
         findsWidgets,
       );
       expect(t.takeException(), isNull);
@@ -84,7 +84,7 @@ void main() {
     });
   }
 
-  testWidgets('investor sign-up asks the value and the gain questions', (
+  testWidgets('investor sign-up asks what you offer and what you look for', (
     t,
   ) async {
     await _pump(
@@ -94,28 +94,28 @@ void main() {
         flow: SignupFlow(role: AccountRole.investor),
       ),
     );
-    final value = find.widgetWithText(
-      TextField,
-      'Describe the value you can bring',
-    );
+    final value = find.widgetWithText(TextField, 'Describe what you can offer');
     final gain = find.widgetWithText(
       TextField,
-      'Describe what you hope to gain',
+      'Describe what you are looking for',
     );
     await t.ensureVisible(value);
     expect(value, findsOneWidget);
     expect(gain, findsOneWidget);
     expect(
-      find.textContaining('What Value Can You Bring', findRichText: true),
+      find.textContaining('What can you offer startups?', findRichText: true),
       findsOneWidget,
     );
     expect(
-      find.textContaining('Hope to Gain', findRichText: true),
-      findsWidgets,
+      find.textContaining(
+        'What are you looking for in startups?',
+        findRichText: true,
+      ),
+      findsOneWidget,
     );
     // The "i" button opens the example.
     final tip =
-        'For example: connections with venture capital firms, experience in real estate, mentoring founders, industry partnerships.';
+        'For example: funding, mentoring, industry connections, introductions to partners.';
     expect(find.text(tip), findsNothing);
     await t.ensureVisible(find.byType(InfoButton).first);
     await t.tap(find.byType(InfoButton).first);
@@ -125,7 +125,11 @@ void main() {
     await t.tap(find.text('Continue'));
     await t.pump(const Duration(milliseconds: 500));
     expect(
-      find.text('Tell founders what you can bring — it can’t be blank.'),
+      find.text('Tell founders what you can offer — it can’t be blank.'),
+      findsOneWidget,
+    );
+    expect(
+      find.text('Tell founders what you are looking for — it can’t be blank.'),
       findsOneWidget,
     );
     await t.pump(const Duration(seconds: 3));
@@ -223,20 +227,21 @@ void main() {
       expect(find.text('Private'), findsOneWidget);
     });
 
-    testWidgets('the investor sign-up keeps its footer and round picker', (
-      t,
-    ) async {
-      await _pump(
-        t,
-        SignupScreen(
-          role: AccountRole.investor,
-          flow: SignupFlow(role: AccountRole.investor),
-        ),
-      );
-      expect(find.textContaining('Already have an account?'), findsOneWidget);
-      expect(find.text('Add profile photo'), findsOneWidget);
-      expect(find.text('Private'), findsNothing);
-    });
+    testWidgets(
+      'the investor sign-up matches the founder: no footer, photo row, pills',
+      (t) async {
+        await _pump(
+          t,
+          SignupScreen(
+            role: AccountRole.investor,
+            flow: SignupFlow(role: AccountRole.investor),
+          ),
+        );
+        expect(find.textContaining('Already have an account?'), findsNothing);
+        expect(find.text('Profile Photo'), findsOneWidget);
+        expect(find.text('Private'), findsNWidgets(2));
+      },
+    );
 
     testWidgets('bio is required for founders', (t) async {
       await openFounder(t);
@@ -481,11 +486,27 @@ void main() {
   testWidgets('investor steps render and Next is gated', (t) async {
     await _pump(t, const InvestorInvestmentsScreen(user: _investor), w: 360);
     expect(find.text('STEP 3 OF 4'), findsOneWidget);
-    await t.tap(find.text('1–5'));
-    await t.pump(const Duration(milliseconds: 200));
+    expect(find.text('Investment Background'), findsOneWidget);
+    expect(find.text('Minimum'), findsNothing);
+    await t.tap(find.text('Select a range').last);
+    await t.pumpAndSettle();
+    for (final o in ['0', '1–3', '4–6', '7–9', '10+']) {
+      expect(find.text(o), findsOneWidget);
+    }
+    await t.tap(find.text('1–3'));
+    await t.pumpAndSettle();
+    await t.pumpAndSettle();
+    expect(find.text('Minimum'), findsOneWidget);
+    expect(find.text('Maximum'), findsOneWidget);
     await t.tap(find.text('Next'));
     await t.pump(const Duration(milliseconds: 300));
-    expect(find.text('Please choose one.'), findsWidgets);
+    expect(find.text('Enter the minimum amount.'), findsOneWidget);
+    expect(find.text('Please choose one.'), findsOneWidget);
+    await t.tap(find.text('1–3'));
+    await t.pumpAndSettle();
+    await t.tap(find.text('0').last);
+    await t.pumpAndSettle();
+    expect(find.text('Minimum'), findsNothing);
     expect(t.takeException(), isNull);
     await t.pump(const Duration(seconds: 3));
 
@@ -496,6 +517,8 @@ void main() {
     await t.tap(find.text('Finish'));
     await t.pump(const Duration(milliseconds: 300));
     expect(find.text('Select at least one sector.'), findsOneWidget);
+    expect(find.text('Select at least one stage.'), findsOneWidget);
+    expect(find.text('Select at least one commerce model.'), findsOneWidget);
     expect(t.takeException(), isNull);
     await t.pump(const Duration(seconds: 3));
   });
