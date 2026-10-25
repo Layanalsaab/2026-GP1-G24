@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../../../app_constants/auth_strings.dart';
-import '../../../app_constants/validation_strings.dart';
 import '../../../helpers/app_session.dart';
 import '../../../navigation/app_router.dart';
 import '../../../shared_ui/widgets/buttons/app_button.dart';
-import '../../../shared_ui/widgets/chips/chip_group.dart';
 import '../../../shared_ui/widgets/forms/app_field.dart';
 import '../../../shared_ui/widgets/forms/form_page.dart';
 import '../../../shared_ui/widgets/headers/auth_headers.dart';
@@ -13,11 +11,11 @@ import '../../../shared_ui/widgets/headers/overlap_layout.dart';
 import '../../../shared_ui/widgets/overlays/app_toast.dart';
 import '../view_models/investor_onboarding_view_model.dart';
 import '../view_models/signup_flow.dart';
+import '../widgets/investor_fields.dart';
 import '../widgets/auth_navigation.dart';
 
-/// Investor step 4 of 4, "Your interests" (docs/05 A11). Finish saves the
-/// answers and opens the Hub (no toast). Shares [viewModel] with step 3,
-/// which owns it.
+/// /// Investor step 4 of 4, "Investment Interests". Finish saves every answer,
+/// clears the pending-onboarding state and opens the Hub.
 class InvestorInterestsScreen extends StatelessWidget {
   const InvestorInterestsScreen({super.key, required this.viewModel});
 
@@ -31,7 +29,7 @@ class InvestorInterestsScreen extends StatelessWidget {
       SignupFlow.current = null;
       AppRouter.openHome(context);
     } else if (!viewModel.step4Complete) {
-      AppToast.error(context, ValidationStrings.fillRequired);
+      AppToast.error(context, AuthStrings.fillRequiredFields);
     } else if (viewModel.formError != null) {
       AppToast.error(context, viewModel.formError!);
     }
@@ -63,41 +61,7 @@ class InvestorInterestsScreen extends StatelessWidget {
           children: [
             AuthCard(
               child: FormFieldColumn(
-                children: [
-                  ChipGroupField(
-                    label: AuthStrings.investSectors,
-                    required: true,
-                    multi: true,
-                    options: InvestorOnboardingViewModel.sectorOptions,
-                    selected: vm.sectors,
-                    onTap: vm.toggleSector,
-                    error: vm.sectorsError,
-                    otherController: vm.sectorsOther,
-                    otherHint: AuthStrings.sectorOtherHint,
-                    otherError: vm.sectorsOtherError,
-                  ),
-                  ChipGroupField(
-                    label: AuthStrings.investStages,
-                    required: true,
-                    multi: true,
-                    options: InvestorOnboardingViewModel.stageOptions,
-                    selected: vm.stages,
-                    onTap: vm.toggleStage,
-                    error: vm.stagesError,
-                  ),
-                  ChipGroupField(
-                    label: AuthStrings.investModels,
-                    required: true,
-                    multi: true,
-                    options: InvestorOnboardingViewModel.modelOptions,
-                    selected: vm.models,
-                    onTap: vm.toggleModel,
-                    error: vm.modelsError,
-                    otherController: vm.modelsOther,
-                    otherHint: AuthStrings.modelOtherHint,
-                    otherError: vm.modelsOtherError,
-                  ),
-                ],
+                children: [...InvestorFields.interests(context, vm)],
               ),
             ),
             const SizedBox(height: 24),

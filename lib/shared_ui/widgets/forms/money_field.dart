@@ -151,10 +151,14 @@ class TrioField extends StatelessWidget {
     super.key,
     required this.entries,
     this.layout = TrioLayout.row,
+    this.dense = true,
   });
 
   final List<TrioEntry> entries;
   final TrioLayout layout;
+
+  /// 46 px boxes (default); false gives full 50 px boxes.
+  final bool dense;
 
   @override
   Widget build(BuildContext context) {
@@ -212,7 +216,7 @@ class TrioField extends StatelessWidget {
     value: e.value,
     onChanged: e.onChanged,
     prefix: prefix,
-    dense: true,
+    dense: dense,
     hasError: e.hasError,
     semanticLabel: e.label,
   );

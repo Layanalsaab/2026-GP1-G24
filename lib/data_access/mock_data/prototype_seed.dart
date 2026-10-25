@@ -483,24 +483,47 @@ class PrototypeSeed {
     String? linkedin,
     String? give,
     String? gain,
-  }) => InvestorProfile(
-    id: id,
-    name: name,
-    title: title,
-    city: city,
-    sectors: sectors,
-    stages: stages,
-    ticketRange: ticket,
-    locations: [city],
-    about: about,
-    bio: bio,
-    matchPercent: match,
-    matchReason: reason,
-    linkedin: linkedin,
-    valueOffered: give,
-    hopeToGain: gain,
-    joinedLabel: joined[id],
-  );
+    String? years,
+    String? deals,
+    bool? led,
+    List<String>? models,
+  }) {
+    // Sample ticket details so no card looks empty; varied per investor.
+    final seed = id.codeUnits.fold<int>(0, (a, b) => a + b);
+    const yearsList = ['1–3 years', '4–6 years', '7–9 years', '10+ years'];
+    const dealsList = ['1–3', '4–6', '7–9', '10+'];
+    const modelSets = [
+      ['B2B'],
+      ['B2C'],
+      ['B2B', 'B2C'],
+      ['B2B', 'B2G'],
+    ];
+    final m = models ?? modelSets[seed % modelSets.length];
+    final d = deals ?? dealsList[seed % dealsList.length];
+    return InvestorProfile(
+      id: id,
+      name: name,
+      title: title,
+      city: city,
+      sectors: sectors,
+      stages: stages,
+      ticketRange: ticket,
+      locations: [city],
+      about: about,
+      bio: bio,
+      matchPercent: match,
+      matchReason: reason,
+      linkedin: linkedin,
+      valueOffered: give,
+      hopeToGain: gain,
+      joinedLabel: joined[id],
+      yearsInvesting: years ?? yearsList[seed % yearsList.length],
+      startupsInvested: d,
+      roundSize: d == '0' ? null : ticket,
+      ledRound: led ?? seed.isEven,
+      commerceModels: m,
+    );
+  }
 
   static final ahmad = _investor(
     id: 'ahmad',

@@ -37,10 +37,14 @@ class ValidationStrings {
 
   // Investor
   static const gainRequired =
-      'Tell founders what you hope to gain — it can’t be blank.';
+      'Tell founders what you are looking for — it can’t be blank.';
   static const bringRequired =
-      'Tell founders what you can bring — it can’t be blank.';
+      'Tell founders what you can offer — it can’t be blank.';
   static const roundRange = 'The minimum can’t be more than the maximum.';
+  static const roundMinEmpty = 'Enter the minimum amount.';
+  static const roundMinLow = 'The minimum must be at least SAR 1,000.';
+  static const roundMaxEmpty = 'Enter the maximum amount.';
+  static const selectOne = 'Please select one.';
 
   // Verify email step
   static const verifyWrongEmail = 'This isn’t the email you signed up with.';

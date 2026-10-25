@@ -18,6 +18,7 @@ import '../../startup_profile/screens/startup_profile_screen.dart';
 import '../../startups/screens/manage_startup_screen.dart';
 import '../../startups/screens/startup_steps_screen.dart';
 import '../view_models/account_view_model.dart';
+import '../widgets/investor_profile_body.dart';
 import '../widgets/profile_widgets.dart';
 import 'edit_account_screen.dart';
 
@@ -106,102 +107,105 @@ class _OwnProfileScreenState extends State<OwnProfileScreen> {
                   linkedin: _vm.linkedin,
                   onLinkedin: () => openExternalLink(_vm.linkedin),
                 ),
-                ProfileSections(
-                  children: [
-                    if (about.isNotEmpty)
-                      ProfileSection(
-                        title: ProfileStrings.about,
-                        delay: stagger(),
-                        child: ProfileText(about),
-                      ),
-                    if (u.isInvestor && u.valueOffered.trim().isNotEmpty)
-                      ProfileSection(
-                        title: ProfileStrings.canBring,
-                        delay: stagger(),
-                        child: ProfileText(u.valueOffered.trim()),
-                      ),
-                    if (u.isInvestor && u.gain.trim().isNotEmpty)
-                      ProfileSection(
-                        title: ProfileStrings.hopeToGain,
-                        delay: stagger(),
-                        child: ProfileText(u.gain.trim()),
-                      ),
-                    if (_vm.isFounder)
-                      ProfileSection(
-                        title: ProfileStrings.myStartups,
-                        actionLabel: ProfileStrings.addStartup,
-                        onAction: () => StartupStepsScreen.openAdd(context),
-                        delay: stagger(),
-                        child: _vm.startupEntries.isEmpty
-                            ? const ProfileText(
-                                ProfileStrings.noStartups,
-                                muted: true,
-                              )
-                            : Column(
-                                children: [
-                                  for (
-                                    var i = 0;
-                                    i < _vm.startupEntries.length;
-                                    i++
-                                  )
-                                    _StartupRow(
-                                      entry: _vm.startupEntries[i],
-                                      showDivider: i > 0,
-                                      onTap: () =>
-                                          _openStartup(_vm.startupEntries[i]),
-                                    ),
-                                ],
-                              ),
-                      ),
-                    if (_vm.associations.isNotEmpty)
-                      ProfileSection(
-                        title: ProfileStrings.associations,
-                        delay: stagger(),
-                        child: Column(
-                          children: [
-                            for (var i = 0; i < _vm.associations.length; i++)
-                              ListRow(
-                                showDivider: i > 0,
-                                leading: HueAvatar(
-                                  name: _vm.associations[i].name,
-                                  size: 44,
-                                ),
-                                title: _vm.associations[i].name,
-                                subtitle:
-                                    '${_vm.associations[i].sectorLabel} · ${_vm.associations[i].location.label}',
-                                onTap: () => StartupProfileScreen.open(
-                                  context,
-                                  startup: _vm.associations[i],
-                                ),
-                              ),
-                          ],
+                if (u.isInvestor)
+                  InvestorProfileBody(
+                    data: InvestorProfileData.fromUser(u),
+                    associations: _vm.associations,
+                    contact: InvestorContactData(
+                      email: u.email,
+                      emailPublic: u.emailPublic,
+                      phone: _vm.phoneLabel,
+                      phonePublic: u.phonePublic,
+                      linkedin: u.linkedin ?? '',
+                    ),
+                  )
+                else
+                  ProfileSections(
+                    children: [
+                      if (about.isNotEmpty)
+                        ProfileSection(
+                          title: ProfileStrings.about,
+                          delay: stagger(),
+                          child: ProfileText(about),
                         ),
-                      ),
-                    // On my own profile both are listed, each with a pill that
-                    // says who sees it (Public or Only you).
-                    if (_vm.contactRows().isNotEmpty)
-                      ProfileSection(
-                        title: ProfileStrings.contact,
-                        delay: stagger(),
-                        child: Column(
-                          children: [
-                            for (final (i, row) in _vm.contactRows().indexed)
-                              InfoRow(
-                                icon: row.kind == ContactKind.email
-                                    ? AppIcons.mail
-                                    : AppIcons.phone,
-                                label: row.kind == ContactKind.email
-                                    ? ProfileStrings.email
-                                    : ProfileStrings.phone,
-                                value: row.value,
-                                showDivider: i > 0,
-                                trailing: _ContactPill(isPublic: row.isPublic),
-                              ),
-                          ],
+                      if (_vm.isFounder)
+                        ProfileSection(
+                          title: ProfileStrings.myStartups,
+                          actionLabel: ProfileStrings.addStartup,
+                          onAction: () => StartupStepsScreen.openAdd(context),
+                          delay: stagger(),
+                          child: _vm.startupEntries.isEmpty
+                              ? const ProfileText(
+                                  ProfileStrings.noStartups,
+                                  muted: true,
+                                )
+                              : Column(
+                                  children: [
+                                    for (
+                                      var i = 0;
+                                      i < _vm.startupEntries.length;
+                                      i++
+                                    )
+                                      _StartupRow(
+                                        entry: _vm.startupEntries[i],
+                                        showDivider: i > 0,
+                                        onTap: () =>
+                                            _openStartup(_vm.startupEntries[i]),
+                                      ),
+                                  ],
+                                ),
                         ),
-                      ),
-                  ],
-                ),
+                      if (_vm.associations.isNotEmpty)
+                        ProfileSection(
+                          title: ProfileStrings.associations,
+                          delay: stagger(),
+                          child: Column(
+                            children: [
+                              for (var i = 0; i < _vm.associations.length; i++)
+                                ListRow(
+                                  showDivider: i > 0,
+                                  leading: HueAvatar(
+                                    name: _vm.associations[i].name,
+                                    size: 44,
+                                  ),
+                                  title: _vm.associations[i].name,
+                                  subtitle:
+                                      '${_vm.associations[i].sectorLabel} · ${_vm.associations[i].location.label}',
+                                  onTap: () => StartupProfileScreen.open(
+                                    context,
+                                    startup: _vm.associations[i],
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      // On my own profile both are listed, each with a pill that
+                      // says who sees it (Public or Only you).
+                      if (_vm.contactRows().isNotEmpty)
+                        ProfileSection(
+                          title: ProfileStrings.contact,
+                          delay: stagger(),
+                          child: Column(
+                            children: [
+                              for (final (i, row) in _vm.contactRows().indexed)
+                                InfoRow(
+                                  icon: row.kind == ContactKind.email
+                                      ? AppIcons.mail
+                                      : AppIcons.phone,
+                                  label: row.kind == ContactKind.email
+                                      ? ProfileStrings.email
+                                      : ProfileStrings.phone,
+                                  value: row.value,
+                                  showDivider: i > 0,
+                                  trailing: _ContactPill(
+                                    isPublic: row.isPublic,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                    ],
+                  ),
               ],
             ),
           ),

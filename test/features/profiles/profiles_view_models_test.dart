@@ -246,10 +246,39 @@ void main() {
       expect(vm.fullNameError, 'Enter your first and last name.');
       expect(
         vm.gainError,
-        'Tell founders what you hope to gain — it can’t be blank.',
+        'Tell founders what you are looking for — it can’t be blank.',
       );
       expect(users.profileUpdates, 0);
     });
+
+    test(
+      'an investor with no saved answers still opens, then saves all',
+      () async {
+        final users = FakeUserRepository();
+        final vm = EditAccountViewModel(user: _investor, userRepository: users);
+        final c = vm.criteria!;
+        expect(c.deals, isNull);
+        expect(c.sectors, isEmpty);
+        vm.setBio('A short bio.');
+        expect(await vm.submit(), isNull, reason: 'answers are still missing');
+        expect(c.dealsError, isNotNull);
+        c.pickYears('1–3 years');
+        c.pickDeals('0');
+        c.pickLed('No');
+        c.toggleSector('HealthTech');
+        c.toggleStage('Seed');
+        c.toggleModel('Business-to-Business (B2B)');
+        vm.setEmailPublic(true);
+        final saved = await vm.submit();
+        expect(saved, isNotNull);
+        expect(saved!.emailPublic, isTrue);
+        expect(saved.investorCriteria!.dealsCount, '0');
+        expect(saved.investorCriteria!.roundMin, isNull);
+        expect(saved.investorCriteria!.stages, ['Seed']);
+        expect(saved.investorCriteria!.lookFor, 'Early access.');
+        expect(users.onboardingSaves, 1);
+      },
+    );
 
     test('saves and returns the updated user', () async {
       final users = FakeUserRepository();

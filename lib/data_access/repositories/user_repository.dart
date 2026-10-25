@@ -127,9 +127,10 @@ class UserRepository {
     await _publishInvestor(uid);
   }
 
-  /// Copies the public part of an investor's profile (never the email or
-  /// phone) to `investors/{uid}`, with the same field names. Founders are not
-  /// listed. A failure here never blocks the account.
+  /// Copies the public part of an investor's profile to `investors/{uid}`,
+  /// with the same field names. The email and phone go along only when the
+  /// investor made them Public. Founders are not listed. A failure here never
+  /// blocks the account.
   Future<void> _publishInvestor(String uid) async {
     try {
       final d = await _firestore.getDocument(FirestoreCollections.users, uid);
@@ -144,6 +145,18 @@ class UserRepository {
         UserFields.preferredStages: keep(UserFields.preferredStages),
         UserFields.ticketSize: keep(UserFields.ticketSize),
         UserFields.investmentsCount: keep(UserFields.investmentsCount),
+        UserFields.yearsInvesting: keep(UserFields.yearsInvesting),
+        UserFields.sectorsOther: keep(UserFields.sectorsOther),
+        UserFields.preferredStagesOther: keep(UserFields.preferredStagesOther),
+        UserFields.preferredCommerceModelsOther: keep(
+          UserFields.preferredCommerceModelsOther,
+        ),
+        UserFields.emailPublic: d[UserFields.emailPublic] == true,
+        UserFields.phonePublic: d[UserFields.phonePublic] == true,
+        if (d[UserFields.emailPublic] == true)
+          UserFields.email: keep(UserFields.email),
+        if (d[UserFields.phonePublic] == true)
+          UserFields.phone: keep(UserFields.phone),
         UserFields.hasLedRound: keep(UserFields.hasLedRound),
         UserFields.roundsLed: keep(UserFields.roundsLed),
         UserFields.coInvest: keep(UserFields.coInvest),

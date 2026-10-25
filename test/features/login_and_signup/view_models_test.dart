@@ -25,9 +25,9 @@ void _fillValid(SignupViewModel vm, {String email = 'sara@gmail.com'}) {
   vm.password.text = 'Sara@1234';
   vm.confirm.text = 'Sara@1234';
   vm.setCity('Riyadh');
+  vm.bio.text = 'I build health startups in Riyadh.';
   if (vm.isFounder) {
     vm.toggleSector('HealthTech');
-    vm.bio.text = 'I build health startups in Riyadh.';
   } else {
     vm.value.text = 'Introductions to venture capital firms.';
     vm.gain.text = 'Early access to good startups.';
@@ -485,10 +485,11 @@ void main() {
     }
 
     void answerStep3(InvestorOnboardingViewModel vm) {
-      vm.pickDeals('1–5');
+      vm.pickYears('1–3 years');
+      vm.pickDeals('1–3');
       vm.pickLed('No');
-      vm.pickCoInvest('Possibly');
-      vm.pickTicket('SAR 100K – 500K');
+      vm.roundSize.min.text = '1,000';
+      vm.roundSize.max.text = '5,000';
     }
 
     test('step 3 is incomplete until the required answers are given', () {
@@ -498,61 +499,93 @@ void main() {
       expect(vm.step3Complete, isTrue);
     });
 
+    test('0 startups hides the size question and does not need it', () {
+      final vm = make();
+      vm.pickYears('1–3 years');
+      vm.pickDeals('0');
+      vm.pickLed('Yes');
+      expect(vm.showRoundSize, isFalse);
+      expect(vm.step3Complete, isTrue);
+      vm.roundSize.min.text = '10';
+      expect(vm.roundSizeError, isNull);
+      vm.pickDeals('10+');
+      expect(vm.showRoundSize, isTrue);
+      expect(vm.step3Complete, isFalse);
+    });
+
     test('Next while incomplete marks the step tried and shows the errors', () {
       final vm = make();
       expect(vm.dealsError, isNull);
       expect(vm.tryStep3(), isFalse);
-      expect(vm.dealsError, ValidationStrings.chooseOne);
+      expect(vm.dealsError, ValidationStrings.selectOne);
       expect(vm.ledError, ValidationStrings.chooseOne);
-      expect(vm.coInvestError, ValidationStrings.chooseOne);
-      expect(vm.ticketError, ValidationStrings.chooseOne);
     });
 
-    test('"Other" ticket needs text', () {
+    test('size errors show one at a time, in order', () {
       final vm = make();
-      answerStep3(vm);
-      vm.pickTicket('Other');
-      expect(vm.step3Complete, isFalse);
-      vm.ticketOther.text = 'SAR 50K';
+      vm.pickYears('1–3 years');
+      vm.pickDeals('4–6');
+      vm.pickLed('Yes');
+      expect(vm.roundSizeError, isNull);
+      expect(vm.tryStep3(), isFalse);
+      expect(vm.roundSizeError, ValidationStrings.roundMinEmpty);
+      vm.roundSize.min.text = '500';
+      expect(vm.roundSizeError, ValidationStrings.roundMinLow);
+      vm.roundSize.min.text = '1,000';
+      expect(vm.roundSizeError, ValidationStrings.roundMaxEmpty);
+      expect(vm.maxHasError, isTrue);
+      expect(vm.minHasError, isFalse);
+      vm.roundSize.max.text = '999';
+      expect(vm.roundSizeError, ValidationStrings.roundRange);
+      vm.roundSize.max.text = '2,000';
+      expect(vm.roundSizeError, isNull);
       expect(vm.step3Complete, isTrue);
     });
 
-    test('rounds led only matters when Yes; No clears it', () {
+    test('a minimum under 1,000 is flagged as soon as it is typed', () {
       final vm = make();
-      vm.pickLed('Yes');
-      vm.pickRoundsLed('3–5');
-      expect(vm.roundsLed, '3–5');
-      vm.pickLed('No');
-      expect(vm.roundsLed, isNull);
+      vm.pickDeals('1–3');
+      expect(vm.roundSizeError, isNull);
+      vm.roundSize.min.text = '999';
+      expect(vm.step3Tried, isFalse);
+      expect(vm.roundSizeError, ValidationStrings.roundMinLow);
+      expect(vm.minHasError, isTrue);
+      vm.roundSize.min.text = '1,000';
+      expect(vm.roundSizeError, isNull);
     });
 
     test('minimum above maximum blocks Next with the live error', () {
       final vm = make();
       answerStep3(vm);
-      vm.roundMin.text = '5,000,000';
-      vm.roundMax.text = '1,000,000';
-      expect(vm.rangeBad, isTrue);
-      expect(vm.rangeError, ValidationStrings.roundRange);
+      vm.roundSize.min.text = '5,000,000';
+      vm.roundSize.max.text = '1,000,000';
+      expect(vm.roundSize.rangeBad, isTrue);
+      expect(vm.roundSizeError, ValidationStrings.roundRange);
       expect(vm.step3Complete, isFalse);
-      vm.roundMax.text = '6,000,000';
+      vm.roundSize.max.text = '6,000,000';
       expect(vm.step3Complete, isTrue);
     });
 
     test('step 4 needs a sector, a stage and a model', () async {
       final vm = make();
-      expect(vm.step4Complete, isFalse);
+      expect(vm.tryStep4(), isFalse);
       expect(await vm.finish(), isNull);
       expect(vm.sectorsError, ValidationStrings.sectors);
       expect(vm.stagesError, ValidationStrings.selectAtLeastOneStage);
       expect(vm.modelsError, ValidationStrings.selectAtLeastOneModel);
-      expect(users.onboardingSaves, 0);
     });
 
+    test("a fresh step 4 starts with nothing chosen", () {
+      final vm = make();
+      expect(vm.sectors, isEmpty);
+      expect(vm.stages, isEmpty);
+      expect(vm.models, isEmpty);
+    });
     test('Finish saves the criteria and marks onboarding complete', () async {
       final vm = make();
       answerStep3(vm);
-      vm.roundMin.text = '1,000,000';
-      vm.roundMax.text = '5,000,000';
+      vm.roundSize.min.text = '1,000,000';
+      vm.roundSize.max.text = '5,000,000';
       vm.toggleSector('Fintech');
       vm.toggleSector('HealthTech');
       vm.toggleStage('Seed');
@@ -562,12 +595,12 @@ void main() {
       expect(updated!.onboardingCompleted, isTrue);
       expect(users.onboardingSaves, 1);
       final c = users.savedInvestorCriteria!;
-      expect(c.dealsCount, '1–5');
+      expect(c.dealsCount, '1–3');
       expect(c.hasLedRound, isFalse);
-      expect(c.coInvest, 'Possibly');
-      expect(c.ticketBand, 'SAR 100K – 500K');
       expect(c.roundMin, 1000000);
       expect(c.roundMax, 5000000);
+      expect(c.yearsInvesting, '1–3 years');
+      expect(c.roundSizeLabel, 'SAR 1M – 5M');
       // Sectors are saved in the chip order, not the tap order.
       expect(c.sectors, ['HealthTech', 'Fintech']);
       expect(c.stages, ['Seed']);

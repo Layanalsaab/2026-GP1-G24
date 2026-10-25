@@ -196,12 +196,12 @@ class SignupViewModel extends ChangeNotifier with SafeNotifier {
       ? AuthStrings.sectorsOtherEmpty
       : null;
 
-  /// Founders: the bio is required (the investor bio stays optional).
-  String? get bioError => attempted && isFounder && bio.text.trim().isEmpty
+  /// The bio is required.
+  String? get bioError => attempted && bio.text.trim().isEmpty
       ? ValidationStrings.bioRequired
       : null;
 
-  int get bioMax => isFounder ? Validators.maxFounderBio : Validators.maxBio;
+  int get bioMax => Validators.maxFounderBio;
 
   /// "What value can you bring to startups?" (investors): required.
   String? get valueError => attempted && !isFounder
@@ -224,8 +224,9 @@ class SignupViewModel extends ChangeNotifier with SafeNotifier {
         Validators.isPassword(password.text) &&
         Validators.confirmMatches(password.text, confirm.text) &&
         (city ?? '').trim().isNotEmpty &&
+        bio.text.trim().isNotEmpty &&
         (isFounder
-            ? founderOk && bio.text.trim().isNotEmpty
+            ? founderOk
             : gain.text.trim().isNotEmpty && value.text.trim().isNotEmpty);
   }
 

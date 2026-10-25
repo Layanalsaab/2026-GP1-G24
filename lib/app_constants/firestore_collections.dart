@@ -75,6 +75,9 @@ class UserFields {
   static const preferredCommerceModels = 'preferredCommerceModels';
   static const preferredCommerceModelsOther = 'preferredCommerceModelsOther';
 
+  /// How long they have been investing (one of the years options).
+  static const yearsInvesting = 'yearsInvesting';
+
   /// "What do you look for in a startup?" (a string).
   static const lookingFor = 'lookingFor';
 

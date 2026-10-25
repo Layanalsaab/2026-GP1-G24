@@ -134,8 +134,10 @@ class FieldLabel extends StatelessWidget {
   /// joining words; words that already have inner capitals or digits
   /// (LinkedIn, TAM, Year 1) are left alone.
   static String titleCase(String text) {
-    // These two sign-up questions keep a capital first letter only.
+    // Labels of more than two words are shown as written (sentence case);
+    // one or two words are Title Case ("Full Name", "Phone Number").
     if (_sentenceCase.contains(text.trim().toLowerCase())) return text;
+    if (text.trim().split(RegExp(r'\s+')).length > 2) return text;
     String cap(String w) {
       final i = w.indexOf(RegExp(r'[A-Za-zÀ-ɏ]'));
       if (i < 0) return w;

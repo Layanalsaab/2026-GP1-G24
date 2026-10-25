@@ -73,8 +73,8 @@ class AppRouter {
     }
     if (user.role == AccountRole.investor && !user.onboardingCompleted) {
       // Likewise a verified investor who did not finish the investor steps
-      // continues at "Your investments" (step 3 of 4).
-      InvestorInvestmentsScreen.open(context, user);
+      // continues at the first step still incomplete (step 3 or 4 of 4).
+      InvestorInvestmentsScreen.open(context, user, resume: true);
       return;
     }
     openHome(context);
