@@ -1,5 +1,7 @@
 import '../../../helpers/open_link.dart';
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../../app_constants/profile_strings.dart';
@@ -70,7 +72,12 @@ class _OwnProfileScreenState extends State<OwnProfileScreen> {
   }
 
   Future<void> _openStartup(MyStartupEntry entry) async {
-    await ManageStartupScreen.push(context, entry.startup, role: entry.role);
+    await ManageStartupScreen.push(
+      context,
+      entry.startup,
+      role: entry.role,
+      onLeave: () => unawaited(_vm.leave(entry.startup.id)),
+    );
     if (mounted) await _vm.refreshStartups();
   }
 
@@ -315,10 +322,11 @@ class _ContactPill extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 9),
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: isPublic ? const Color(0xFFEEF4EF) : AppColors.surface,
+        // Public: moss fill. Only you: a muted grey fill.
+        color: isPublic ? const Color(0xFFEEF4EF) : const Color(0xFFF0EDE6),
         borderRadius: BorderRadius.circular(999),
         border: Border.all(
-          color: isPublic ? const Color(0xFFCFE0D3) : const Color(0xFFE4E1DA),
+          color: isPublic ? const Color(0xFFCFE0D3) : const Color(0xFFF0EDE6),
         ),
       ),
       child: Text(

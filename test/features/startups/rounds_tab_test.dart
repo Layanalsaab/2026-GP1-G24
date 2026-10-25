@@ -98,14 +98,33 @@ void main() {
       vm.openForm();
       expect(vm.formValid, isFalse);
       expect(vm.addRound(), isFalse);
-      expect(vm.amountError, 'Please enter the round amount.');
+      expect(vm.amountError, 'Please enter the amount you’re raising.');
+      expect(
+        vm.raisedError,
+        'Please enter an amount. Enter 0 if you haven’t raised anything yet.',
+      );
       expect(vm.leadError, 'Please choose one.');
+      // Series A: over 7,500,000 up to 55,000,000.
+      expect(vm.amountHint, 'Series A: over SAR 7,500,000 to 55,000,000');
       vm.amount.text = '1,000,000';
+      expect(
+        vm.amountError,
+        'That amount isn’t in the Series A range. Enter more than SAR 7,500,000 and up to SAR 55,000,000.',
+      );
+      vm.amount.text = '10,000,000';
+      vm.raised.text = '12,000,000';
+      expect(
+        vm.raisedError,
+        'This can’t be more than the amount you’re raising.',
+      );
+      vm.raised.text = '2,000,000';
       vm.setLead(true);
       expect(vm.addRound(), isTrue);
       expect(vm.openRound!.number, 3);
       expect(vm.openRound!.type, StartupStage.seriesA);
-      expect(vm.openRound!.amount, 1000000);
+      expect(vm.openRound!.amount, 10000000);
+      // The new open round starts at what is already raised.
+      expect(vm.openRound!.raised, 2000000);
     });
   });
 
@@ -162,6 +181,10 @@ void main() {
     testWidgets('Add round: types, errors, then the new round is open', (
       t,
     ) async {
+      // A tall screen: the form is longer now (two amounts).
+      t.view.physicalSize = const Size(800, 2400);
+      t.view.devicePixelRatio = 1;
+      addTearDown(t.view.reset);
       await _openRounds(t);
       await t.tap(find.text('Close round'));
       await t.pumpAndSettle();
@@ -191,20 +214,37 @@ void main() {
       await t.pump(const Duration(milliseconds: 100));
       await t.pump(const Duration(milliseconds: 600));
       // Empty: both errors show.
+      await t.ensureVisible(find.text('Add round').last);
+      await t.pumpAndSettle();
       await t.tap(find.text('Add round').last);
       await t.pumpAndSettle();
-      expect(find.text('Please enter the round amount.'), findsOneWidget);
+      expect(
+        find.text('Please enter the amount you’re raising.'),
+        findsOneWidget,
+      );
       expect(find.text('Please choose one.'), findsOneWidget);
       await t.pump(const Duration(seconds: 4));
-      await t.enterText(find.byType(TextField).last, '1200000');
+      final fields = find.byType(TextField);
+      await t.enterText(fields.at(fields.evaluate().length - 2), '1200000');
       await t.pump();
       expect(find.text('1,200,000'), findsOneWidget);
+      // Series B: over 55,000,000 up to 190,000,000.
+      expect(
+        find.textContaining('isn’t in the Series B range'),
+        findsOneWidget,
+      );
+      await t.enterText(fields.at(fields.evaluate().length - 2), '60000000');
+      await t.enterText(fields.last, '0');
+      await t.pump();
+      await t.pumpAndSettle();
       await t.tap(find.text('Yes'));
       await t.pump();
+      await t.ensureVisible(find.text('Add round').last);
+      await t.pumpAndSettle();
       await t.tap(find.text('Add round').last);
       await t.pumpAndSettle();
       expect(find.text('Round 3'), findsOneWidget);
-      expect(find.text('1.2M'), findsOneWidget);
+      expect(find.text('60M'), findsOneWidget);
       expect(find.text('Close round'), findsOneWidget);
     });
 

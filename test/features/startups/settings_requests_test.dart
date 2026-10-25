@@ -49,6 +49,21 @@ Future<void> _open(
   await t.pumpAndSettle();
 }
 
+/// Test-only memberships (they used to be built-in sample data): Naql as
+/// co-founder, Mizan Learn as team member.
+final _teamStartups = [
+  MyStartupEntry(
+    startup: PrototypeSeed.naql,
+    role: StartupRole.coFounder,
+    addedAt: DateTime(2026, 10, 14),
+  ),
+  MyStartupEntry(
+    startup: PrototypeSeed.mizan,
+    role: StartupRole.member,
+    addedAt: DateTime(2026, 9, 2),
+  ),
+];
+
 void main() {
   setUpAll(() => GoogleFonts.config.allowRuntimeFetching = false);
   setUp(() {
@@ -74,10 +89,10 @@ void main() {
       );
     });
 
-    testWidgets('co-founder: everything a founder has, plus Leave', (t) async {
+    testWidgets('co-founder: Public profile and Leave, no Delete', (t) async {
       await _open(t, role: StartupRole.coFounder);
       expect(find.text('Public profile'), findsOneWidget);
-      expect(find.text('Delete startup'), findsOneWidget);
+      expect(find.text('Delete startup'), findsNothing);
       expect(find.text('Leave startup'), findsOneWidget);
       expect(
         find.text('You’ll stop being a co-founder of this startup'),
@@ -170,7 +185,7 @@ void main() {
       MaterialApp(
         theme: AppTheme.light,
         navigatorKey: AppToast.navigatorKey,
-        home: const MyStartupsScreen(),
+        home: MyStartupsScreen(teamStartups: _teamStartups),
       ),
     );
     await t.pumpAndSettle();

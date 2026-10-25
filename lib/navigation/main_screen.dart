@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 
 import '../app_constants/home_strings.dart';
 import '../data_access/repositories/bookmark_repository.dart';
-import '../data_access/mock_data/prototype_seed.dart';
 import '../data_access/repositories/startup_repository.dart';
 import '../features/bookmarks/screens/bookmarks_screen.dart';
 import '../features/explore_startups/screens/explore_screen.dart';
@@ -16,6 +15,7 @@ import '../features/search/view_models/home_filters.dart';
 import '../features/search/view_models/home_view_model.dart';
 import '../features/startups/screens/my_startups_screen.dart';
 import '../helpers/app_session.dart';
+import '../models/list_entries.dart';
 import '../shared_ui/icons/app_icons.dart';
 import '../shared_ui/navigation/app_route.dart';
 import '../shared_ui/theme/app_colors.dart';
@@ -74,18 +74,20 @@ class _MainScreenState extends State<MainScreen> {
       _session.setOwnStartupIds([for (final s in mine) s.id]);
       // The startups they belong to (co-founder / team member) are hidden
       // from Hub and For You too.
-      final member = <String>{
-        for (final e in PrototypeSeed.sampleTeamStartups) e.startup.id,
-      };
+      final member = <String>{};
+      final roles = <String, StartupRole>{};
+      final uid = _session.user?.uid;
       try {
         for (final s
             in await StartupRepository.instance.fetchMemberStartups()) {
           member.add(s.id);
+          roles[s.id] = StartupRole.of(s, uid) ?? StartupRole.member;
         }
       } catch (_) {
         // Memberships are an extra; the founder's own are still hidden.
       }
       if (!mounted) return;
+      _session.setMemberRoles(roles);
       _session.setMemberStartupIds(member);
       _vm.setOwnStartups(mine, alsoHide: member);
     } catch (_) {

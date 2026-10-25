@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../../../data_access/mock_data/prototype_seed.dart';
+import '../../../app_constants/validation_strings.dart';
 import '../../../helpers/formatters.dart';
+import '../../../helpers/round_limits.dart';
 import '../../../helpers/startup_validators.dart';
 import '../../../models/funding_round.dart';
 import '../../../models/startup_enums.dart';
@@ -33,10 +35,20 @@ class RoundsViewModel extends ChangeNotifier {
 
   final List<FundingRound> _rounds;
 
+  /// The startup's "already raised in this round" (from the Startup Ask), or
+  /// the accepted requests total when that is higher. When set, it is what
+  /// the OPEN round's Raised column shows. Null leaves the round's own value.
+  int? openRaised;
+
   /// Newest round first.
   List<FundingRound> get rounds {
     final list = [..._rounds]..sort((a, b) => b.number.compareTo(a.number));
-    return list;
+    final raised = openRaised;
+    if (raised == null) return list;
+    return [
+      for (final r in list)
+        if (r.isOpen) r.withRaised(raised) else r,
+    ];
   }
 
   /// The open round, or null when every round is closed (or there are none).
@@ -54,6 +66,7 @@ class RoundsViewModel extends ChangeNotifier {
   bool formOpen = false;
   StartupStage? type;
   final amount = TextEditingController();
+  final raised = TextEditingController();
   bool? wantsLead;
 
   /// True after the first tap on "Add round" with something missing.
@@ -84,6 +97,7 @@ class RoundsViewModel extends ChangeNotifier {
     formOpen = true;
     type = defaultType;
     amount.clear();
+    raised.clear();
     wantsLead = null;
     tried = false;
     notifyListeners();
@@ -100,6 +114,7 @@ class RoundsViewModel extends ChangeNotifier {
   }
 
   void setAmount(String _) => notifyListeners();
+  void setRaised(String _) => notifyListeners();
 
   void setLead(bool value) {
     wantsLead = value;
@@ -108,11 +123,28 @@ class RoundsViewModel extends ChangeNotifier {
 
   int? get amountValue => Formatters.parseMoney(amount.text);
 
-  /// "Please enter the round amount." when the amount is empty or zero.
+  int? get raisedValue => Formatters.parseMoney(raised.text);
+
+  /// The hint under "How much are you raising?" for the chosen round type.
+  String? get amountHint => RoundLimits.hint(type);
+
+  /// Empty (after "Add round" was tried) or outside the range of the round
+  /// type: the same limits and wording as the Startup Ask step. A number
+  /// outside the range says so at once.
   String? get amountError {
-    if (!tried) return null;
     final v = amountValue;
-    return v == null || v <= 0 ? 'Please enter the round amount.' : null;
+    if (v == null) return tried ? ValidationStrings.funding : null;
+    return RoundLimits.error(type, v) ??
+        (v <= 0 ? ValidationStrings.funding : null);
+  }
+
+  /// "How much have you already raised in this round?": required (0 is
+  /// fine), and not more than the amount being raised.
+  String? get raisedError {
+    final r = raisedValue;
+    if (r == null) return tried ? ValidationStrings.raisedEmpty : null;
+    final f = amountValue;
+    return f != null && r > f ? ValidationStrings.raisedTooMuch : null;
   }
 
   /// "Please choose one." until Yes or No is picked.
@@ -124,6 +156,9 @@ class RoundsViewModel extends ChangeNotifier {
       type != null &&
       StartupValidators.money(amount.text) != null &&
       (amountValue ?? 0) > 0 &&
+      RoundLimits.allows(type, amountValue!) &&
+      raisedValue != null &&
+      raisedValue! <= amountValue! &&
       wantsLead != null;
 
   /// Adds the round (opening it) when the form is valid; otherwise marks the
@@ -139,6 +174,8 @@ class RoundsViewModel extends ChangeNotifier {
       number: nextNumber,
       type: type!,
       amount: amountValue!,
+      // The new open round starts at what is already raised.
+      raised: raisedValue!,
       start: _now,
       wantsLeadInvestor: wantsLead,
     );
@@ -165,6 +202,7 @@ class RoundsViewModel extends ChangeNotifier {
   @override
   void dispose() {
     amount.dispose();
+    raised.dispose();
     super.dispose();
   }
 }

@@ -33,8 +33,8 @@ class ManageSettingsTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // A co-founder can do everything a founder can, so Delete is theirs too.
-    final canDelete = role.canManage;
+    // Only the founder can delete the startup.
+    final canDelete = role == StartupRole.founder;
     final cards = <Widget>[
       if (role.canManage)
         _SettingCard(

@@ -1,6 +1,9 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../../../app_constants/founder_tools_strings.dart';
+import '../../../data_access/repositories/request_repository.dart';
 import '../../../helpers/share_link.dart';
 import '../../../models/list_entries.dart';
 import '../../../helpers/app_session.dart';
@@ -162,8 +165,8 @@ class _ManageStartupScreenState extends State<ManageStartupScreen> {
   }
 
   Future<void> _delete() async {
-    // The founder and the co-founders can delete (checked again here).
-    if (!_role.canManage) return;
+    // Only the founder can delete (checked again here, not just hidden).
+    if (_role != StartupRole.founder) return;
     final name = _vm.startup.name;
     final confirmed = await showConfirmSheet(
       context,
@@ -191,7 +194,9 @@ class _ManageStartupScreenState extends State<ManageStartupScreen> {
     final leave = await showDiscardDialog(
       context,
       title: FounderToolsStrings.leaveTitle(name),
-      message: FounderToolsStrings.leaveMessage,
+      message: _role == StartupRole.coFounder
+          ? FounderToolsStrings.leaveMessageCoFounder
+          : FounderToolsStrings.leaveMessageMember,
       discardLabel: FounderToolsStrings.leaveStartup,
       keepLabel: 'Cancel',
     );
@@ -207,6 +212,17 @@ class _ManageStartupScreenState extends State<ManageStartupScreen> {
       listenable: Listenable.merge([_vm, _requests, _interest, _rounds]),
       builder: (context, _) {
         final s = _vm.startup;
+        // The open round's Raised: the "already raised" answer of the
+        // startup, or the accepted requests total when that is higher.
+        final already = s.raisedInRound;
+        _rounds.openRaised = already == null
+            ? null
+            : math.max(
+                already,
+                RequestRepository.instance
+                    .acceptedFor(s.id)
+                    .fold<int>(0, (sum, r) => sum + r.amount),
+              );
         final pane = switch (_vm.tab) {
           0 => ManageDashboardTab(
             startup: s,

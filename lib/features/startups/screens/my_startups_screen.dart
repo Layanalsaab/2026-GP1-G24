@@ -24,8 +24,8 @@ import 'startup_steps_screen.dart';
 class MyStartupsScreen extends StatefulWidget {
   const MyStartupsScreen({super.key, this.teamStartups});
 
-  /// The startups the user joined as a team member. Null = the mockup list
-  /// in `PrototypeSeed.sampleTeamStartups`; the backend passes the real ones.
+  /// Extra startups to list (tests); the real memberships are read from
+  /// Firestore.
   final List<MyStartupEntry>? teamStartups;
 
   /// Opens the screen with the forward transition.

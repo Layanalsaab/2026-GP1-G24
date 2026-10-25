@@ -1,7 +1,6 @@
 import '../../models/connection_request.dart';
 import '../../models/expressed_interest.dart';
 import '../../models/funding_round.dart';
-import '../../models/list_entries.dart';
 import '../../models/investor_profile.dart';
 import '../../models/program.dart';
 import '../../models/startup.dart';
@@ -15,13 +14,6 @@ import '../../models/team_member.dart';
 /// directory in Firestore yet); a founder's *own* startups always come from
 /// Firestore. Ids of sample startups start with `mock-`.
 class PrototypeSeed {
-  /// SAMPLE accounts for the sample team members: email -> (uid, name).
-  /// Used by the team e-mail lookup until it searches real accounts.
-  static const Map<String, (String, String)> sampleAccounts = {
-    'faisal.alkhaldi@gmail.com': ('sample-faisal', 'Faisal Alkhaldi'),
-    'nora.alharbi@gmail.com': ('sample-nora', 'Nora Alharbi'),
-  };
-
   PrototypeSeed._();
 
   /// True for the built-in sample startups (ids start with "mock-").
@@ -818,24 +810,6 @@ class PrototypeSeed {
   };
 
   // --------------------------------------------- list screens (interface)
-
-  /// MOCKUP DATA for My Startups (interface only): one startup where the
-  /// user is a co-founder (Naql) and one where they are a team member
-  /// (Mizan Learn). The founder's own startups still
-  /// come from the existing startup loading. Replace by the real memberships
-  /// when the backend is connected.
-  static final List<MyStartupEntry> sampleTeamStartups = [
-    MyStartupEntry(
-      startup: naql,
-      role: StartupRole.coFounder,
-      addedAt: DateTime(2026, 10, 14),
-    ),
-    MyStartupEntry(
-      startup: mizan,
-      role: StartupRole.member,
-      addedAt: DateTime(2026, 9, 2),
-    ),
-  ];
 
   /// MOCKUP DATA for Manage -> Rounds (interface only): Round 2 (Seed) is open
   /// and Round 1 (Pre-seed) is closed. The same sample shows for every

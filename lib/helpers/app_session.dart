@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../models/app_user.dart';
+import '../models/list_entries.dart';
 
 /// Who is using the app right now.
 enum SessionRole {
@@ -27,6 +28,7 @@ class AppSession extends ChangeNotifier {
   bool _guest = false;
   Set<String> _ownStartupIds = const {};
   Set<String> _memberStartupIds = const {};
+  Map<String, StartupRole> _memberRoles = const {};
 
   /// The signed-in account; null for a guest or when signed out.
   AppUser? get user => _user;
@@ -72,6 +74,7 @@ class AppSession extends ChangeNotifier {
     _guest = true;
     _ownStartupIds = const {};
     _memberStartupIds = const {};
+    _memberRoles = const {};
     notifyListeners();
   }
 
@@ -87,6 +90,13 @@ class AppSession extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// My role (co-founder / team member) in each startup I belong to.
+  StartupRole? memberRoleOf(String startupId) => _memberRoles[startupId];
+
+  void setMemberRoles(Map<String, StartupRole> roles) {
+    _memberRoles = Map.unmodifiable(roles);
+  }
+
   void setMemberStartupIds(Iterable<String> ids) {
     _memberStartupIds = Set.unmodifiable(ids);
     notifyListeners();
@@ -97,6 +107,7 @@ class AppSession extends ChangeNotifier {
     _guest = false;
     _ownStartupIds = const {};
     _memberStartupIds = const {};
+    _memberRoles = const {};
     notifyListeners();
   }
 

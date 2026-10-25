@@ -12,28 +12,33 @@ import 'founder_ui.dart';
 class StartupAsk {
   StartupAsk._();
 
-  static String _money(int? v) =>
-      v == null || v <= 0 ? '' : Formatters.sarShort(v);
-
   static bool funding(Startup s) => s.seeksFunding;
+
+  /// Partnership is selected when its box was ticked or partner types exist.
   static bool partnership(Startup s) =>
-      s.lookingFor.contains(LookingFor.partnership);
+      s.lookingFor.contains(LookingFor.partnership) ||
+      s.partnerTypes.isNotEmpty;
 
-  /// The Support items (everything but Funding and Partnership), as written.
-  static List<String> support(Startup s) => [
-    for (final l in LookingFor.values)
-      if (l != LookingFor.funding &&
-          l != LookingFor.partnership &&
-          s.lookingFor.contains(l))
-        s.lookingForLabelOf(l),
-  ];
+  /// Support is selected when its box was ticked or support types exist.
+  static bool supportSelected(Startup s) =>
+      s.lookingFor.contains(LookingFor.support) || s.supportTypes.isNotEmpty;
 
-  /// "SAR 500K · Looking for a lead investor" / "· No lead investor needed".
+  /// The partner types the founder picked ("Other" is the typed text).
+  static List<String> partners(Startup s) => s.partnerTypes;
+
+  /// The support types the founder picked ("Other" is the typed text).
+  static List<String> support(Startup s) => s.supportTypes;
+
+  /// "Raising SAR 500,000 · SAR 200,000 raised so far · Looking for a lead
+  /// investor" (or "· No lead investor needed"), full amounts with commas.
   static String fundingDetail(Startup s) {
-    final amount = _money(s.fundingRequirement);
+    final amount = s.fundingRequirement ?? 0;
+    final raised = s.raisedInRound;
     final lead = s.wantsLeadInvestor;
     return [
-      if (amount.isNotEmpty) amount,
+      if (amount > 0) 'Raising ${Formatters.sar(amount)}',
+      if (raised != null && raised > 0)
+        '${Formatters.sar(raised)} raised so far',
       if (lead != null)
         lead ? 'Looking for a lead investor' : 'No lead investor needed',
     ].join(' · ');

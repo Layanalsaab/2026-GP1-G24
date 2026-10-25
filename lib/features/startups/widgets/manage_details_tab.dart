@@ -4,7 +4,6 @@ import '../../../app_constants/founder_tools_strings.dart';
 import '../../../helpers/app_session.dart';
 import '../../../helpers/formatters.dart';
 import '../../../models/startup.dart';
-import '../../../models/startup_enums.dart';
 import '../../../models/team_member.dart';
 import '../../../models/list_entries.dart';
 import '../../../shared_ui/widgets/cards/box_grid.dart';
@@ -12,6 +11,7 @@ import 'founder_ui.dart';
 import 'manage_card.dart';
 import 'role_tag.dart';
 import 'startup_ask.dart';
+import '../../../helpers/startup_finance.dart';
 
 /// Manage startup -> Details: ONE white card holding the six sections of the
 /// add-startup form as an accordion, in this order: Overview, Startup
@@ -51,6 +51,9 @@ class ManageDetailsTab extends StatelessWidget {
   static String _money(int? v) =>
       v == null || v <= 0 ? '' : Formatters.sarShort(v);
 
+  /// An amount where 0 is a real answer (revenue, burn rate, valuation).
+  static String _amount(int? v) => v == null ? '' : Formatters.sarShort(v);
+
   /// The one-line summary of section [i].
   String _summary(int i) {
     final s = startup;
@@ -65,16 +68,18 @@ class ManageDetailsTab extends StatelessWidget {
             : 'Target market size ${_money(s.tam)}';
       case 3:
         final parts = [
-          if (_money(s.capital).isNotEmpty) 'Capital ${_money(s.capital)}',
-          if (_money(s.valuation).isNotEmpty)
-            'Valuation ${_money(s.valuation)}',
+          if (_amount(s.revenueThisYear).isNotEmpty)
+            'Revenue ${_amount(s.revenueThisYear)}',
+          if (_amount(s.valuation).isNotEmpty)
+            'Valuation ${_amount(s.valuation)}',
         ];
         return parts.isEmpty ? _notAdded : parts.join(' · ');
       case 4:
         final parts = [
           if (s.seeksFunding && _money(s.fundingRequirement).isNotEmpty)
             'Funding ${_money(s.fundingRequirement)}',
-          ...StartupAsk.support(s).take(2),
+          if (StartupAsk.partnership(s)) 'Partnership',
+          if (StartupAsk.supportSelected(s)) 'Support',
         ];
         return parts.isEmpty ? _notAdded : parts.join(' · ');
       default:
@@ -471,8 +476,23 @@ class _Finance extends StatelessWidget {
       children: [
         BoxGrid(
           items: [
-            ('Current available capital', ManageDetailsTab._money(s.capital)),
-            ('Current company valuation', ManageDetailsTab._money(s.valuation)),
+            (
+              FounderToolsStrings.revenueNowLabel,
+              ManageDetailsTab._amount(s.revenueThisYear),
+            ),
+            (
+              FounderToolsStrings.capitalLabel,
+              ManageDetailsTab._amount(s.capital),
+            ),
+            (
+              FounderToolsStrings.burnLabel,
+              ManageDetailsTab._amount(s.monthlyBurn),
+            ),
+            ('Runway', Runway.short(s.capital, s.monthlyBurn) ?? ''),
+            (
+              FounderToolsStrings.valuationLabel,
+              ManageDetailsTab._amount(s.valuation),
+            ),
           ],
         ),
         const SizedBox(height: 14),
@@ -506,10 +526,7 @@ class _Finance extends StatelessWidget {
               ],
             ),
           ),
-        _QA(FounderToolsStrings.growthLabel, s.growth),
-        // The business model answer is asked in the onboarding, which is
-        // being redone; until it is stored it reads "Not added yet".
-        const _QA('Business model', ''),
+        _QA(FounderToolsStrings.modelTextLabel, s.businessModelText),
       ],
     );
   }
@@ -523,10 +540,8 @@ class _Ask extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final funding = s.seeksFunding;
-    final partnership = s.lookingFor.contains(LookingFor.partnership);
-    final support = StartupAsk.support(s);
-    final amount = ManageDetailsTab._money(s.fundingRequirement);
-    final lead = s.wantsLeadInvestor;
+    final partnership = StartupAsk.partnership(s);
+    final support = StartupAsk.supportSelected(s);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -534,29 +549,23 @@ class _Ask extends StatelessWidget {
           icon: AppIcons.wallet,
           title: 'Funding',
           selected: funding,
-          detail: !funding
-              ? 'Off'
-              : [
-                  if (amount.isNotEmpty) amount,
-                  if (lead != null)
-                    lead
-                        ? 'Looking for a lead investor'
-                        : 'No lead investor needed',
-                ].join(' · '),
+          detail: funding ? StartupAsk.fundingDetail(s) : 'Not selected',
         ),
         const SizedBox(height: 10),
         AskRow(
           icon: AppIcons.people,
           title: 'Partnership',
           selected: partnership,
-          detail: partnership ? 'Open to partnerships' : 'Not selected',
+          detail: partnership
+              ? StartupAsk.partners(s).join(', ')
+              : 'Not selected',
         ),
         const SizedBox(height: 10),
         AskRow(
           icon: AppIcons.bulb,
           title: 'Support',
-          selected: support.isNotEmpty,
-          detail: support.isEmpty ? 'Not selected' : support.join(', '),
+          selected: support,
+          detail: support ? StartupAsk.support(s).join(', ') : 'Not selected',
         ),
       ],
     );
@@ -629,22 +638,24 @@ class _MemberCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
+                // Name and the tag capsules on the same line (they wrap only
+                // when they really do not fit).
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 4,
+                  crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
-                    Flexible(
-                      child: Text(
-                        isMe
-                            ? '${AppSession.instance.user?.fullName ?? member.name} (you)'
-                            : member.name,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppText.sans(size: 16, weight: FontWeight.w600),
+                    Text(
+                      isMe
+                          ? '${AppSession.instance.user?.fullName ?? member.name} (you)'
+                          : member.name,
+                      style: AppText.sans(
+                        size: 16,
+                        height: 20,
+                        weight: FontWeight.w600,
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    // Members are not stored with a role yet: your own row shows
-                    // your role, the others show "Team member".
-                    RoleTag(isMe ? myRole : StartupRole.member),
+                    ...teamTagsOf(member, isYou: false),
                   ],
                 ),
                 Text(

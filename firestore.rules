@@ -202,8 +202,7 @@ service cloud.firestore {
                               .difference([request.auth.uid].toSet());
 
       allow delete: if request.auth != null
-                    && (resource.data.founderId == request.auth.uid
-                        || resource.data.get('memberRoles', {}).get(request.auth.uid, '') == 'coFounder');
+                    && resource.data.founderId == request.auth.uid;
     }
 
     // Mirrors the app's validation (lib/helpers/startup_validators.dart and

@@ -5,6 +5,8 @@ import '../data_access/repositories/interaction_repository.dart';
 import '../features/program_details/screens/program_details_screen.dart';
 import '../features/profiles/screens/investor_profile_screen.dart';
 import '../features/startup_profile/screens/startup_profile_screen.dart';
+import '../features/startups/screens/manage_startup_screen.dart';
+import '../models/list_entries.dart';
 import '../helpers/app_session.dart';
 import '../models/home_item.dart';
 
@@ -20,6 +22,18 @@ void openHomeItem(BuildContext context, HomeItem item) {
       if (startup == null) return;
       InteractionRepository.instance.recordProfileView(item.bookmarkKey);
       final session = AppSession.instance;
+      // A startup I belong to never opens as a public page (no bookmark): a
+      // co-founder gets Manage, a team member Manage view only. The founder
+      // sees the preview of the startup page.
+      if (!session.ownStartupIds.contains(item.id)) {
+        final role =
+            session.memberRoleOf(item.id) ??
+            StartupRole.of(startup, session.user?.uid);
+        if (role != null && role != StartupRole.founder) {
+          ManageStartupScreen.open(context, startup, role: role);
+          return;
+        }
+      }
       StartupProfileScreen.open(
         context,
         startup: startup,

@@ -44,14 +44,13 @@ enum StartupSort {
 /// The list shows the founder's own startups plus the startups they were
 /// added to as a team member (view only). INTERFACE ONLY for the second
 /// part: [teamStartups] defaults to the mockup list in
-/// `PrototypeSeed.sampleTeamStartups`; the backend passes the real
-/// memberships instead. Filtering and sorting happen here, in memory.
+/// the real memberships come from Firestore. Filtering and sorting happen here, in memory.
 class MyStartupsViewModel extends ChangeNotifier with SafeNotifier {
   MyStartupsViewModel({
     StartupRepository? repository,
     List<MyStartupEntry>? teamStartups,
   }) : _repository = repository ?? StartupRepository.instance,
-       teamStartups = [...(teamStartups ?? PrototypeSeed.sampleTeamStartups)];
+       teamStartups = [...(teamStartups ?? const <MyStartupEntry>[])];
 
   final StartupRepository _repository;
 
@@ -89,6 +88,10 @@ class MyStartupsViewModel extends ChangeNotifier with SafeNotifier {
   /// Tells the session which startups the user belongs to as a member, so
   /// Hub and For You do not list them.
   void _publishMemberIds() {
+    AppSession.instance.setMemberRoles({
+      for (final e in [...memberStartups, ...teamStartups])
+        e.startup.id: e.role,
+    });
     AppSession.instance.setMemberStartupIds({
       for (final e in [...memberStartups, ...teamStartups]) e.startup.id,
     });

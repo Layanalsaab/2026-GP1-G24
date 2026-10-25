@@ -219,10 +219,9 @@ void main() {
     testWidgets('Overview: tiles, About with facts, Looking for', (t) async {
       AppSession.instance.signIn(_investor);
       await _pump(t, StartupProfileScreen(startup: PrototypeSeed.rafeeq));
-      expect(find.text('Raising'), findsOneWidget);
-      expect(find.text('SAR 500K'), findsOneWidget);
-      expect(find.text('Round 2 · Open'), findsOneWidget);
-      expect(find.text('Valuation'), findsOneWidget);
+      // No Raising / Valuation tiles on Overview any more.
+      expect(find.text('Round 2 · Open'), findsNothing);
+      expect(find.text('Valuation'), findsNothing);
       expect(find.text('About'), findsOneWidget);
       for (final fact in [
         'Sector',
@@ -234,6 +233,11 @@ void main() {
         expect(find.text(fact), findsOneWidget, reason: fact);
       }
       expect(find.text('Looking for'), findsOneWidget);
+      // Funding shows only the amount; no "raised so far" or lead investor.
+      expect(find.text('Raising SAR 500,000'), findsOneWidget);
+      expect(find.textContaining('raised so far'), findsNothing);
+      expect(find.textContaining('lead investor'), findsNothing);
+      expect(find.text('Open to partnerships'), findsNothing);
     });
 
     testWidgets('Business, Team and Funding tabs show their cards', (t) async {
@@ -252,8 +256,19 @@ void main() {
       expect(find.text('Founder'), findsOneWidget);
       expect(find.text('Associated investors'), findsOneWidget);
       await _goTo(t, 'Funding');
-      expect(find.text('Capital'), findsOneWidget);
-      expect(find.text('Available now'), findsOneWidget);
+      expect(find.text('Current round'), findsOneWidget);
+      expect(find.text('Funding goal'), findsOneWidget);
+      expect(find.text('Key numbers'), findsOneWidget);
+      for (final label in [
+        'Valuation',
+        'Available capital',
+        'Revenue this year',
+        'Monthly burn',
+        'Runway',
+      ]) {
+        expect(find.text(label), findsOneWidget, reason: label);
+      }
+      expect(find.text('Traction'), findsNothing);
       expect(find.text('Funding rounds'), findsOneWidget);
       expect(find.text('All amounts in SAR'), findsOneWidget);
       expect(find.text('Round 1'), findsOneWidget);

@@ -203,17 +203,23 @@ void main() {
           .ancestor(of: find.text(label), matching: find.byType(Container))
           .first,
     );
+    // Revenue and capital are in the same row: same height, labels on top.
+    final revenue = box('Current financial year revenue');
     final capital = box('Current available capital');
-    final valuation = box('Current company valuation');
-    expect(capital.height, valuation.height);
-    // The label is above its value in both boxes (not centred).
-    final capitalLabelY = t
-        .getTopLeft(find.text('Current available capital'))
-        .dy;
-    final valuationLabelY = t
-        .getTopLeft(find.text('Current company valuation'))
-        .dy;
-    expect(capitalLabelY, valuationLabelY);
+    expect(revenue.height, capital.height);
+    expect(
+      t.getTopLeft(find.text('Current financial year revenue')).dy,
+      t.getTopLeft(find.text('Current available capital')).dy,
+    );
+    // Every box of Finance and Growth is there.
+    for (final label in [
+      'Monthly burn rate',
+      'Runway',
+      'Current company valuation',
+      'Explain your business model',
+    ]) {
+      expect(find.text(label), findsOneWidget, reason: label);
+    }
   });
 
   testWidgets('Finance and Growth edits only its half, Startup Ask the other', (

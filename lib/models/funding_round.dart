@@ -48,6 +48,17 @@ class FundingRound {
   /// past it (e.g. 110 %).
   int get percent => amount <= 0 ? 0 : (raised * 100 / amount).round();
 
+  FundingRound withRaised(int value) => FundingRound(
+    number: number,
+    type: type,
+    amount: amount,
+    raised: value,
+    start: start,
+    end: end,
+    investors: investors,
+    wantsLeadInvestor: wantsLeadInvestor,
+  );
+
   FundingRound closed(DateTime when) => FundingRound(
     number: number,
     type: type,

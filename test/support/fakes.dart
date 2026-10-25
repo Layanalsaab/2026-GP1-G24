@@ -449,6 +449,10 @@ class FakeStartupRepository implements StartupRepository {
   /// Startups the user left (to check Leave removes only their membership).
   final List<String> left = [];
 
+  @override
+  Future<Startup?> fetchById(String id) async =>
+      [...startups, ...memberOf].where((s) => s.id == id).firstOrNull;
+
   /// The renames sent after a name change (uid, old, new).
   final List<(String, String, String)> renames = [];
 

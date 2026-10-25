@@ -38,6 +38,12 @@ class StartupRepository {
     return uid;
   }
 
+  /// One startup by id, or null when it doesn't exist (any more).
+  Future<Startup?> fetchById(String id) async {
+    final data = await _firestore.getDocument(_collection, id);
+    return Startup.fromMap(id, data);
+  }
+
   /// The signed-in founder's startups, most recently edited first.
   Future<List<Startup>> fetchMyStartups() async {
     final docs = await _firestore.queryWhereEqual(

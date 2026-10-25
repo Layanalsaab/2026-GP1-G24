@@ -275,6 +275,12 @@ class FounderToolsStrings {
   static String leaveTitle(String name) => 'Leave $name?';
   static const leaveMessage =
       'You won’t be able to see or manage this startup any more. The founder can add you again.';
+  static const leaveMessageCoFounder =
+      'You won’t be able to edit this startup anymore. A founder or co-founder can add you again.';
+  static const leaveMessageMember =
+      'You’ll be removed from this startup’s team. A founder or co-founder can add you again.';
+  static const noPermissionAnymore =
+      'You don’t have permission to edit this startup anymore.';
   static String leftToast(String name) => 'You left $name';
   static const deleteStartupText = 'Removes the startup and all its requests';
   static String deleteTitle(String name) => 'Delete $name?';

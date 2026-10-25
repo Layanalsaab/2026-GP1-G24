@@ -96,10 +96,19 @@ void main() {
     test(
       'a sample startup is left locally, without touching the backend',
       () async {
-        final vm = MyStartupsViewModel(repository: repo);
+        final vm = MyStartupsViewModel(
+          repository: repo,
+          teamStartups: [
+            MyStartupEntry(
+              startup: PrototypeSeed.naql,
+              role: StartupRole.coFounder,
+              addedAt: DateTime(2026, 10, 14),
+            ),
+          ],
+        );
         addTearDown(vm.dispose);
         await vm.load();
-        final sampleId = PrototypeSeed.sampleTeamStartups.first.startup.id;
+        final sampleId = PrototypeSeed.naql.id;
         await vm.leave(sampleId);
         expect(repo.left, isEmpty);
         expect(vm.entries.any((e) => e.startup.id == sampleId), isFalse);

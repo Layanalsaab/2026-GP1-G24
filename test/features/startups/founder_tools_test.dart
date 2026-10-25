@@ -182,10 +182,11 @@ void main() {
       vm.memberEmail.text = 'faisal.alkhaldi@gmail.com';
       vm.memberRole.text = 'CTO';
       vm.memberContribution.text = 'Built platforms';
-      // A registered e-mail: linked, no invitation.
-      expect(await vm.saveMember(), MemberSave.saved);
+      // Nobody is registered with that e-mail: invited.
+      expect(await vm.saveMember(), MemberSave.needsInvite);
+      expect(await vm.saveMember(inviteConfirmed: true), MemberSave.invited);
       expect(vm.team.single.meta, 'CTO');
-      expect(vm.team.single.invited, isFalse);
+      expect(vm.team.single.invited, isTrue);
       vm.openMemberEditor(0);
       vm.removeMember();
       expect(vm.team, isEmpty);

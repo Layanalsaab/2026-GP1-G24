@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:startsa/data_access/repositories/startup_repository.dart';
+import 'package:startsa/data_access/repositories/team_lookup.dart';
 import 'package:startsa/features/startups/view_models/startup_steps_view_model.dart';
 import 'package:startsa/helpers/app_session.dart';
 import 'package:startsa/helpers/round_limits.dart';
@@ -23,6 +24,17 @@ StartupStepsViewModel _vm({StartupStage stage = StartupStage.preSeed}) {
   return vm;
 }
 
+/// A test lookup with one registered account (the real one searches users).
+class _OneAccount extends TeamLookup {
+  const _OneAccount();
+
+  @override
+  Future<TeamAccount?> findByEmail(String email) async =>
+      email.trim().toLowerCase() == 'nora.alharbi@gmail.com'
+      ? const TeamAccount(uid: 'sample-nora', name: 'Nora Alharbi')
+      : null;
+}
+
 void main() {
   late FakeStartupRepository repo;
 
@@ -30,7 +42,10 @@ void main() {
     repo = FakeStartupRepository();
     StartupRepository.instance = repo;
     AppSession.instance = AppSession();
+    TeamLookup.instance = const _OneAccount();
   });
+
+  tearDown(() => TeamLookup.instance = const TeamLookup());
 
   group('Part 3: Overview, description and market', () {
     test('website message waits for a dot or Next', () {

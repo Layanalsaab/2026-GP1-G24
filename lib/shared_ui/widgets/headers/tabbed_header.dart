@@ -24,7 +24,11 @@ class HeaderAvatarTile extends StatelessWidget {
     this.size = 60,
     this.radius = 17,
     this.fontSize = 20,
+    this.imageUrl,
   });
+
+  /// The logo picture; the initials show when there is none.
+  final String? imageUrl;
 
   final String initials;
   final double size;
@@ -44,16 +48,24 @@ class HeaderAvatarTile extends StatelessWidget {
           end: Alignment(0.57, 0.82),
           colors: [Color(0xFFFAF3E3), Color(0xFFF2E6C9)],
         ),
+        image: (imageUrl ?? '').isEmpty
+            ? null
+            : DecorationImage(
+                image: NetworkImage(imageUrl!),
+                fit: BoxFit.cover,
+              ),
       ),
-      child: Text(
-        initials,
-        style: AppText.sans(
-          size: fontSize,
-          weight: FontWeight.w700,
-          color: AppColors.tagGoldText,
-          letterSpacing: 0.2,
-        ),
-      ),
+      child: (imageUrl ?? '').isNotEmpty
+          ? null
+          : Text(
+              initials,
+              style: AppText.sans(
+                size: fontSize,
+                weight: FontWeight.w700,
+                color: AppColors.tagGoldText,
+                letterSpacing: 0.2,
+              ),
+            ),
     );
   }
 }

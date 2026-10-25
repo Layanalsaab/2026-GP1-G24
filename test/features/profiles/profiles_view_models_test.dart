@@ -7,6 +7,7 @@ import 'package:startsa/features/startup_profile/view_models/startup_profile_vie
 import 'package:startsa/helpers/app_session.dart';
 import 'package:startsa/models/app_user.dart';
 import 'package:startsa/models/auth_failure.dart';
+import 'package:startsa/models/list_entries.dart';
 
 import '../../support/fakes.dart';
 
@@ -181,7 +182,10 @@ void main() {
 
     test('profile lists founded and member startups with roles', () async {
       final startups = FakeStartupRepository()
-        ..startups.add(PrototypeSeed.rafeeq);
+        ..startups.add(PrototypeSeed.rafeeq)
+        ..memberOf.add(
+          PrototypeSeed.naql.copyWith(memberRoles: {'u1': 'coFounder'}),
+        );
       final vm = AccountViewModel(
         user: _founder,
         userRepository: FakeUserRepository(),
@@ -190,7 +194,8 @@ void main() {
       );
       await vm.reload();
       expect(vm.startupEntries.first.isFounder, isTrue);
-      expect(vm.startupEntries.length, greaterThan(1));
+      expect(vm.startupEntries, hasLength(2));
+      expect(vm.startupEntries.last.role, StartupRole.coFounder);
     });
 
     test(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../app_constants/founder_tools_strings.dart';
 import '../../../helpers/formatters.dart';
 import '../../../models/funding_round.dart';
 import '../../../models/investor_profile.dart';
@@ -165,9 +166,18 @@ const _gap = 10.0;
 /// The rounds table (read only): used by Manage -> Rounds and by the startup
 /// page's Funding tab.
 class RoundsTable extends StatelessWidget {
-  const RoundsTable({super.key, required this.rounds});
+  const RoundsTable({
+    super.key,
+    required this.rounds,
+    this.emptyText = 'No rounds yet.',
+    this.centerEmpty = false,
+  });
 
   final List<FundingRound> rounds;
+
+  /// The text of an empty table (the startup page centres its own).
+  final String emptyText;
+  final bool centerEmpty;
 
   @override
   Widget build(BuildContext context) {
@@ -181,7 +191,8 @@ class RoundsTable extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.all(18),
               child: Text(
-                'No rounds yet.',
+                emptyText,
+                textAlign: centerEmpty ? TextAlign.center : TextAlign.start,
                 style: AppText.sans(size: 14, color: AppColors.grey),
               ),
             ),
@@ -532,20 +543,38 @@ class _AddRoundForm extends StatelessWidget {
           ),
           const SizedBox(height: FieldHelperRow.gapAfter),
           AppField(
-            label: 'Round amount (SAR)',
+            label: FounderToolsStrings.fundingLabel,
             required: true,
+            sentenceCase: true,
+            info: FounderToolsStrings.fundingInfo,
+            hint: vm.amountHint,
             error: vm.amountError,
             child: MoneyField(
               controller: vm.amount,
               onChanged: vm.setAmount,
               hasError: vm.amountError != null,
-              semanticLabel: 'Round amount (SAR)',
+              semanticLabel: FounderToolsStrings.fundingLabel,
+            ),
+          ),
+          const SizedBox(height: FieldHelperRow.gapAfter),
+          AppField(
+            label: FounderToolsStrings.raisedLabel,
+            required: true,
+            sentenceCase: true,
+            info: FounderToolsStrings.raisedInfo,
+            error: vm.raisedError,
+            child: MoneyField(
+              controller: vm.raised,
+              onChanged: vm.setRaised,
+              hasError: vm.raisedError != null,
+              semanticLabel: FounderToolsStrings.raisedLabel,
             ),
           ),
           const SizedBox(height: FieldHelperRow.gapAfter),
           ChipGroupField(
-            label: 'Are you looking for a lead investor?',
+            label: FounderToolsStrings.leadLabel,
             required: true,
+            sentenceCase: true,
             options: const ['Yes', 'No'],
             selected: [if (vm.wantsLead != null) vm.wantsLead! ? 'Yes' : 'No'],
             onTap: (label) => vm.setLead(label == 'Yes'),

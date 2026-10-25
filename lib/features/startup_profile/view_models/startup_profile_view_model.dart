@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import '../../../app_constants/profile_strings.dart';
 import '../../../data_access/repositories/discovery_repository.dart';
+import '../../../data_access/repositories/request_repository.dart';
 import '../../../helpers/app_session.dart';
 import '../../../helpers/formatters.dart';
 import '../../../helpers/safe_notifier.dart';
@@ -46,6 +47,37 @@ class StartupProfileViewModel extends ChangeNotifier with SafeNotifier {
   /// Rounds, newest first.
   List<FundingRound> get roundsNewestFirst =>
       [...rounds]..sort((a, b) => b.number.compareTo(a.number));
+
+  /// The "Current round" card: the open round, or (no round but the startup
+  /// is raising) the Step 7 values with the startup's stage as the type.
+  /// Raised is the larger of "already raised in this round" and the total of
+  /// the accepted requests. Null when the startup is not raising.
+  CurrentRound? get currentRound {
+    final accepted = RequestRepository.instance
+        .acceptedFor(startup.id)
+        .fold<int>(0, (sum, r) => sum + r.amount);
+    final open = openRound;
+    if (open != null) {
+      final base = startup.raisedInRound ?? open.raised;
+      return CurrentRound(
+        type: open.type.label,
+        goal: open.amount,
+        raised: base > accepted ? base : accepted,
+        wantsLead: open.wantsLeadInvestor ?? startup.wantsLeadInvestor,
+      );
+    }
+    final goal = startup.fundingRequirement ?? 0;
+    if (startup.seeksFunding && goal > 0) {
+      final base = startup.raisedInRound ?? 0;
+      return CurrentRound(
+        type: startup.stageLabel,
+        goal: goal,
+        raised: base > accepted ? base : accepted,
+        wantsLead: startup.wantsLeadInvestor,
+      );
+    }
+    return null;
+  }
 
   /// Tab order: Overview, Business, Team, Funding.
   static const tabLabels = [
@@ -172,4 +204,23 @@ class StartupProfileViewModel extends ChangeNotifier with SafeNotifier {
 
   static String? _money(int? v) =>
       v == null || v <= 0 ? null : Formatters.sarShort(v);
+}
+
+/// What the "Current round" card shows.
+class CurrentRound {
+  const CurrentRound({
+    required this.type,
+    required this.goal,
+    required this.raised,
+    required this.wantsLead,
+  });
+
+  /// "Pre-seed", "Seed"...
+  final String type;
+  final int goal;
+  final int raised;
+  final bool? wantsLead;
+
+  /// 40 for 200,000 of 500,000 (can go past 100; the bar stops at 100).
+  int get percent => goal <= 0 ? 0 : (raised * 100 / goal).round();
 }

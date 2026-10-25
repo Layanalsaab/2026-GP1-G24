@@ -49,6 +49,21 @@ Future<void> _tapPill(WidgetTester t, String label) async {
   await t.pump(const Duration(milliseconds: 600));
 }
 
+/// Test-only memberships (they used to be built-in sample data): Naql as
+/// co-founder, Mizan Learn as team member.
+final _teamStartups = [
+  MyStartupEntry(
+    startup: PrototypeSeed.naql,
+    role: StartupRole.coFounder,
+    addedAt: DateTime(2026, 10, 14),
+  ),
+  MyStartupEntry(
+    startup: PrototypeSeed.mizan,
+    role: StartupRole.member,
+    addedAt: DateTime(2026, 9, 2),
+  ),
+];
+
 void main() {
   setUpAll(() => GoogleFonts.config.allowRuntimeFetching = false);
   setUp(() => StartupRepository.instance = FakeStartupRepository());
@@ -114,7 +129,7 @@ void main() {
 
   group('My Startups', () {
     testWidgets('team-member startups show a tag and View', (t) async {
-      await _pump(t, const MyStartupsScreen());
+      await _pump(t, MyStartupsScreen(teamStartups: _teamStartups));
       expect(find.text('My Startups'), findsOneWidget);
       expect(find.text('All startups'), findsOneWidget);
       expect(find.text('Newest first'), findsOneWidget);
@@ -131,7 +146,7 @@ void main() {
     });
 
     testWidgets('the role filter has four options', (t) async {
-      await _pump(t, const MyStartupsScreen());
+      await _pump(t, MyStartupsScreen(teamStartups: _teamStartups));
       await _tapPill(t, 'All startups');
       for (final o in ['All', 'Founder', 'Co-founder', 'Team member']) {
         expect(find.text(o), findsWidgets, reason: o);
@@ -147,7 +162,7 @@ void main() {
     });
 
     testWidgets('the filter sheet applies at once and stays open', (t) async {
-      await _pump(t, const MyStartupsScreen());
+      await _pump(t, MyStartupsScreen(teamStartups: _teamStartups));
       await _tapPill(t, 'All startups');
       expect(find.text('Filter startups'), findsOneWidget);
       expect(find.text('VISIBILITY'), findsOneWidget);
@@ -171,7 +186,7 @@ void main() {
     testWidgets('both banners have exactly the same height', (t) async {
       await _pump(t, BookmarksScreen(items: _saved));
       final bookmarks = t.getSize(find.byType(ListScreenHeader)).height;
-      await _pump(t, const MyStartupsScreen());
+      await _pump(t, MyStartupsScreen(teamStartups: _teamStartups));
       final mine = t.getSize(find.byType(ListScreenHeader)).height;
       expect(mine, bookmarks);
     });

@@ -16,6 +16,7 @@ import '../../../helpers/round_limits.dart';
 import '../../../helpers/startup_finance.dart';
 import '../../../helpers/startup_validators.dart';
 import '../../../helpers/validators.dart';
+import '../../../models/list_entries.dart';
 import '../../../models/startup.dart';
 import '../../../models/startup_enums.dart';
 import '../../../models/team_member.dart';
@@ -948,8 +949,16 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
     if (isSaving) return null;
     isSaving = true;
     saveError = null;
+    lostPermission = false;
     notifyListeners();
     try {
+      // Editing: my CURRENT role is read again right before writing. If I was
+      // removed (or turned into a team member) nothing is saved.
+      if (isEditing && !await _stillAllowed()) {
+        lostPermission = true;
+        saveError = FounderToolsStrings.noPermissionAnymore;
+        return null;
+      }
       final startup = _build();
       final saved = isEditing
           ? await _repository.update(
@@ -978,6 +987,22 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
     } finally {
       isSaving = false;
       notifyListeners();
+    }
+  }
+
+  /// True when the editor opened because of a role that no longer exists.
+  bool lostPermission = false;
+
+  Future<bool> _stillAllowed() async {
+    final uid = AppSession.instance.user?.uid;
+    if (uid == null) return true;
+    try {
+      final fresh = await _repository.fetchById(initial!.id);
+      if (fresh == null) return false;
+      return StartupRole.of(fresh, uid)?.canManage ?? false;
+    } catch (_) {
+      // Offline: the rules still decide when the write is sent.
+      return true;
     }
   }
 

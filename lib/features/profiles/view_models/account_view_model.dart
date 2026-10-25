@@ -162,9 +162,34 @@ class AccountViewModel extends ChangeNotifier with SafeNotifier {
     } catch (_) {
       // Memberships are an extra: the founder's own startups still show.
     }
-    // INTERFACE ONLY: the sample memberships, until the invites exist.
-    entries.addAll(PrototypeSeed.sampleTeamStartups);
     return entries;
+  }
+
+  /// Leave a startup I belong to (from the profile): the same logic as My
+  /// Startups. A real startup drops only my own membership; the sample ones
+  /// (interface only) just disappear locally.
+  Future<void> leave(String startupId) async {
+    final entry = memberEntries
+        .where((e) => e.startup.id == startupId)
+        .firstOrNull;
+    if (entry == null) return;
+    memberEntries = [
+      for (final e in memberEntries)
+        if (e.startup.id != startupId) e,
+    ];
+    final session = _session;
+    session.setMemberStartupIds({
+      ...session.memberStartupIds.where((id) => id != startupId),
+    });
+    notifyListeners();
+    if (!PrototypeSeed.isSampleStartup(startupId)) {
+      try {
+        await _startups.leave(entry.startup);
+      } catch (_) {
+        memberEntries = [...memberEntries, entry];
+        notifyListeners();
+      }
+    }
   }
 
   /// Re-reads the startups list (after Manage or Edit profile closed).

@@ -246,6 +246,8 @@ class _StartupStepsScreenState extends State<StartupStepsScreen> {
     if (!mounted) return;
     if (saved == null) {
       AppToast.error(context, _vm.saveError ?? FounderToolsStrings.saveFailed);
+      // Lost the right to edit: nothing was saved, so close the editor.
+      if (_vm.lostPermission) Navigator.of(context).pop();
       return;
     }
     switch (widget.mode) {
