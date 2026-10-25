@@ -210,6 +210,9 @@ service cloud.firestore {
     // the enums in lib/models/startup_enums.dart). The "legacy" values are
     // what documents saved before the current lists were adopted still
     // contain, so those startups can be updated without being rewritten first.
+    // The four enum fields use ONE regular-expression check each (a long
+    // `in [...]` list costs one expression per value, and a request may
+    // evaluate at most 1000 expressions).
     function validStartup(d) {
       return d.keys().hasAll(['founderId', 'name', 'description', 'sector',
                               'stage', 'businessModel', 'location',
@@ -236,32 +239,10 @@ service cloud.firestore {
         // The one-line pitch: at most 120.
         && optionalString(d, 'oneLinePitch', 120)
         && d.description is string && d.description.size() <= 1500
-        && d.sector in ['healthtech', 'fintech', 'edtech', 'ecommerce',
-                        'logistics', 'agritech', 'proptech', 'cleantech',
-                        'tourism', 'saas', 'ai', 'cybersecurity', 'gaming',
-                        'media', 'foodtech', 'mobility', 'retail', 'energy',
-                        'insurtech', 'legaltech', 'hr_tech', 'biotech',
-                        'manufacturing', 'sports', 'other',
-                        // legacy
-                        'hrtech', 'ecommerce_retail', 'logistics_transport',
-                        'food_beverage', 'software_cloud']
-        && d.stage in ['pre_seed', 'seed', 'series_a', 'series_b', 'series_c',
-                       'other',
-                       // legacy
-                       'idea', 'mvp', 'early_revenue', 'growth']
-        && d.businessModel in ['b2g', 'b2b', 'b2b2c', 'd2c', 'b2c', 'c2c',
-                               'b2e', 'c2b', 'g2c', 'g2g', 'other',
-                               // legacy
-                               'marketplace']
-        && d.location in ['abha', 'al_ahsa', 'al_baha', 'al_jubail',
-                          'al_kharj', 'al_khobar', 'al_qatif', 'arar',
-                          'buraydah', 'dammam', 'dhahran', 'hafar_al_batin',
-                          'hail', 'jazan', 'jeddah', 'khamis_mushait',
-                          'makkah', 'madinah', 'najran', 'riyadh', 'sakaka',
-                          'tabuk',
-                          // legacy
-                          'taif', 'unaizah', 'yanbu',
-                          'khobar', 'mecca', 'medina', 'other']
+        && d.sector is string && d.sector.matches('^(healthtech|fintech|edtech|ecommerce|logistics|agritech|proptech|cleantech|tourism|saas|ai|cybersecurity|gaming|media|foodtech|mobility|retail|energy|insurtech|legaltech|hr_tech|biotech|manufacturing|sports|other|hrtech|ecommerce_retail|logistics_transport|food_beverage|software_cloud)$')
+        && d.stage is string && d.stage.matches('^(pre_seed|seed|series_a|series_b|series_c|other|idea|mvp|early_revenue|growth)$')
+        && d.businessModel is string && d.businessModel.matches('^(b2g|b2b|b2b2c|d2c|b2c|c2c|b2e|c2b|g2c|g2g|other|marketplace)$')
+        && d.location is string && d.location.matches('^(abha|al_ahsa|al_baha|al_jubail|al_kharj|al_khobar|al_qatif|arar|buraydah|dammam|dhahran|hafar_al_batin|hail|jazan|jeddah|khamis_mushait|makkah|madinah|najran|riyadh|sakaka|tabuk|taif|unaizah|yanbu|khobar|mecca|medina|other)$')
         && d.lookingFor is list && d.lookingFor.size() >= 1
         && d.lookingFor.hasOnly(['funding', 'cofounder', 'talent',
                                  'partnership', 'support', 'mentorship', 'advisors',

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/widgets.dart';
 
 import '../../../app_constants/founder_tools_strings.dart';
@@ -967,7 +968,11 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
       }
       return saved;
     } catch (e) {
-      saveError = FounderToolsStrings.saveFailed;
+      // In a debug build the real reason is appended, so a failure can be
+      // diagnosed from the screen (the plain message ships in release).
+      saveError = kDebugMode
+          ? '${FounderToolsStrings.saveFailed} [$e]'
+          : FounderToolsStrings.saveFailed;
       debugPrint('Saving the startup failed: $e (${startupErrorMessage(e)})');
       return null;
     } finally {
