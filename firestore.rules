@@ -211,7 +211,11 @@ service cloud.firestore {
                              'expectedGrowth', 'currentAvailableCapital',
                              'expectedRevenueYear1', 'expectedRevenueYear2',
                              'expectedRevenueYear3', 'valuation',
-                             'wantsLeadInvestor', 'memberIds', 'memberRoles'])
+                             'wantsLeadInvestor', 'memberIds', 'memberRoles',
+                             // Finance and Growth / Startup Ask answers
+                             'revenueThisYear', 'monthlyBurnRate',
+                             'businessModelExplanation', 'raisedInRound',
+                             'partnerTypes', 'supportTypes'])
         && d.name is string && d.name.size() >= 1 && d.name.size() <= 40
         // The one-line pitch: at most 120.
         && optionalString(d, 'oneLinePitch', 120)
@@ -244,7 +248,7 @@ service cloud.firestore {
                           'khobar', 'mecca', 'medina', 'other']
         && d.lookingFor is list && d.lookingFor.size() >= 1
         && d.lookingFor.hasOnly(['funding', 'cofounder', 'talent',
-                                 'partnership', 'mentorship', 'advisors',
+                                 'partnership', 'support', 'mentorship', 'advisors',
                                  'marketing', 'tech_development', 'other',
                                  // legacy
                                  'partnerships', 'team_members', 'services'])
@@ -274,6 +278,12 @@ service cloud.firestore {
         && optionalMoney(d, 'expectedRevenueYear3')
         // The valuation may be 0.
         && optionalMoney(d, 'valuation')
+        && optionalMoney(d, 'revenueThisYear')
+        && optionalMoney(d, 'monthlyBurnRate')
+        && optionalMoney(d, 'raisedInRound')
+        && optionalString(d, 'businessModelExplanation', 250)
+        && optionalTextList(d, 'partnerTypes')
+        && optionalTextList(d, 'supportTypes')
         && (!('teamMembers' in d) || (d.teamMembers is list && d.teamMembers.size() <= 20))
         && (!('wantsLeadInvestor' in d) || d.wantsLeadInvestor == null
             || d.wantsLeadInvestor is bool)
@@ -300,6 +310,13 @@ service cloud.firestore {
     function optionalString(d, field, maxLength) {
       let v = d.get(field, null);
       return v == null || (v is string && v.size() <= maxLength);
+    }
+
+    // A list of short texts (partner / support types): at most 10 entries
+    // (the app limits each entry to 40 characters).
+    function optionalTextList(d, field) {
+      let v = d.get(field, null);
+      return v == null || (v is list && v.size() <= 10);
     }
 
     // A SAR amount: a whole number, 0 or more, at most 13 digits.

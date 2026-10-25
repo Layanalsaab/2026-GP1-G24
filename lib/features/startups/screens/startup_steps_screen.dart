@@ -8,6 +8,7 @@ import '../../../navigation/app_router.dart';
 import '../../../navigation/main_screen.dart';
 import '../../../shared_ui/widgets/overlays/app_dialog.dart';
 import '../../login_and_signup/screens/verify_email_screen.dart';
+import '../../login_and_signup/view_models/signup_flow.dart';
 import '../view_models/startup_steps_view_model.dart';
 import '../widgets/founder_ui.dart';
 import '../widgets/manage_details_tab.dart';
@@ -119,6 +120,11 @@ class _StartupStepsScreenState extends State<StartupStepsScreen> {
   bool get _edit => widget.mode == StartupStepsMode.edit;
   bool get _section => widget.onlySection != null;
 
+  /// The first startup was forced after a log in (no sign-up in progress):
+  /// the account and the e-mail are already done, so the steps are numbered
+  /// 1 to 6 and leaving the flow means signing out.
+  bool get _fromLogin => _onboarding && SignupFlow.current == null;
+
   @override
   void initState() {
     super.initState();
@@ -144,12 +150,32 @@ class _StartupStepsScreenState extends State<StartupStepsScreen> {
       _leave();
     } else if (_vm.previous()) {
       _scrollTop();
+    } else if (_fromLogin) {
+      _leaveForcedStartup();
     } else if (_onboarding) {
-      // Step 3 of 6: Back returns to the Verify step (the stack was reset).
+      // Step 3 of 8: Back returns to the Verify step (the stack was reset).
       VerifyEmailScreen.openFromOnboarding(context);
     } else {
       _leave();
     }
+  }
+
+  /// Back on the first step of the startup forced after a log in. If
+  /// anything was entered, asks first (Discard / Keep editing). Either way
+  /// the unfinished startup is dropped and the user is signed out and sent to
+  /// Log in: the ACCOUNT stays, and the next log in starts from an empty form.
+  Future<void> _leaveForcedStartup() async {
+    if (_vm.isDirty) {
+      final discard = await showDiscardDialog(
+        context,
+        title: FounderToolsStrings.discardStartupTitle,
+        message: FounderToolsStrings.discardStartupMessage,
+        discardLabel: FounderToolsStrings.discard,
+        keepLabel: FounderToolsStrings.keepEditing,
+      );
+      if (!mounted || !discard) return;
+    }
+    await AppRouter.logOut(context, toLogin: true);
   }
 
   /// Leaving the first step: nothing entered or changed -> just go back;
@@ -225,6 +251,7 @@ class _StartupStepsScreenState extends State<StartupStepsScreen> {
     switch (widget.mode) {
       case StartupStepsMode.onboarding:
         await _vm.completeOnboarding(saved);
+        SignupFlow.current = null;
         if (!mounted) return;
         AppRouter.openHome(context);
       case StartupStepsMode.add:
@@ -251,13 +278,13 @@ class _StartupStepsScreenState extends State<StartupStepsScreen> {
       listenable: _vm,
       builder: (context, _) {
         final step = _vm.step;
-        final offset = _onboarding ? 2 : 0;
+        final offset = _onboarding && !_fromLogin ? 2 : 0;
         final total = offset + StartupStepsViewModel.stepCount;
         return PopScope(
           // The first step can only be left through the unsaved-changes check.
           canPop: _section
               ? !_vm.isDirty
-              : step == 0 && (_onboarding || !_vm.isDirty),
+              : !_fromLogin && step == 0 && (_onboarding || !_vm.isDirty),
           onPopInvokedWithResult: (didPop, _) {
             if (!didPop) _back();
           },

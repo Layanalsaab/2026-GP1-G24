@@ -29,6 +29,7 @@ Future<void> showMultiPickerSheet(
   VoidCallback? onUndoOther,
   int otherMax = 40,
 }) {
+  // The same bottom sheet as the Sector / Stage / Commerce model pickers.
   return showAppBottomSheet<void>(
     context,
     builder: (_) => MultiPickerSheet(
@@ -97,6 +98,12 @@ class _MultiPickerSheetState extends State<MultiPickerSheet> {
   bool _showError = false;
 
   bool get _hasOther => widget.otherNoun != null;
+
+  /// Like the Sector / Stage / Commerce model pickers: only a list with a
+  /// search box is pinned tall; a short one fits its content and grows by the
+  /// "Other" write-in when that is ticked.
+  bool get _tall => widget.searchHint != null;
+
   bool get _otherOpen => _hasOther && _selected.contains(widget.otherLabel);
   bool get _otherBlank => _other.text.trim().isEmpty;
 
@@ -139,8 +146,9 @@ class _MultiPickerSheetState extends State<MultiPickerSheet> {
       },
       child: AppSheetScaffold(
         title: widget.title,
-        tall: true,
+        tall: _tall,
         child: Column(
+          mainAxisSize: _tall ? MainAxisSize.max : MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             if (widget.searchHint != null)
@@ -152,8 +160,10 @@ class _MultiPickerSheetState extends State<MultiPickerSheet> {
                   onChanged: (_) => setState(() {}),
                 ),
               ),
-            Expanded(
+            Flexible(
+              fit: _tall ? FlexFit.tight : FlexFit.loose,
               child: ListView(
+                shrinkWrap: !_tall,
                 padding: const EdgeInsets.fromLTRB(12, 4, 12, 12),
                 children: [
                   for (final o in shown)
@@ -243,7 +253,9 @@ class _CheckRowState extends State<_CheckRow> {
             constraints: const BoxConstraints(minHeight: 50),
             padding: const EdgeInsets.symmetric(horizontal: 14),
             decoration: BoxDecoration(
-              color: _hover ? AppColors.moss50 : Colors.transparent,
+              color: checked
+                  ? AppColors.moss100
+                  : (_hover ? AppColors.moss50 : Colors.transparent),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
@@ -286,7 +298,7 @@ class _CheckRowState extends State<_CheckRow> {
                     widget.label,
                     style: AppText.sans(
                       size: 16,
-                      color: AppColors.ink,
+                      color: checked ? AppColors.green : AppColors.ink,
                       weight: checked ? FontWeight.w600 : FontWeight.w400,
                     ),
                   ),

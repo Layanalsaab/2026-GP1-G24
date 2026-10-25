@@ -132,6 +132,29 @@ void main() {
         await t.pump(const Duration(seconds: 2));
       });
 
+      testWidgets('founder edit profile: field order and no sectors sub-line', (
+        t,
+      ) async {
+        AppSession.instance.signIn(_founder);
+        await _pump(t, const EditProfileScreen(user: _founder), size: size);
+        double y(String label) => t
+            .getTopLeft(find.textContaining(label, findRichText: true).first)
+            .dy;
+        final order = [
+          y('Full Name'),
+          y('Bio'),
+          y('Email Address'),
+          y('Phone Number'),
+          y('LinkedIn'),
+          y('Which city'),
+          y('Which sectors'),
+        ];
+        final sorted = [...order]..sort();
+        expect(order, sorted);
+        expect(find.textContaining('Select all that apply'), findsNothing);
+        expect(find.textContaining('Password'), findsNothing);
+      });
+
       testWidgets('edit profile shows errors and the fix toast', (t) async {
         AppSession.instance.signIn(_founder);
         await _pump(t, const EditProfileScreen(user: _founder), size: size);

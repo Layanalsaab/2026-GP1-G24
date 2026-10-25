@@ -150,44 +150,26 @@ class LogoPickerRow extends StatelessWidget {
     super.key,
     required this.onTap,
     this.hasLogo = false,
-    this.initials = 'S',
     this.image,
   });
 
   final VoidCallback? onTap;
   final bool hasLogo;
-  final String initials;
   final ImageProvider? image;
 
   @override
   Widget build(BuildContext context) {
-    final tile = hasLogo
+    // The same square as the profile photo in Create your account: empty
+    // (dashed border, camera) until a logo is picked, then the picture.
+    final tile = image != null
         ? Pop(
             child: Container(
               width: 76,
               height: 76,
-              alignment: Alignment.center,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(20),
-                gradient: const LinearGradient(
-                  begin: Alignment(-0.57, -0.82),
-                  end: Alignment(0.57, 0.82),
-                  colors: [Color(0xFFFAF3E3), Color(0xFFF2E6C9)],
-                ),
-                image: image == null
-                    ? null
-                    : DecorationImage(image: image!, fit: BoxFit.cover),
+                image: DecorationImage(image: image!, fit: BoxFit.cover),
               ),
-              child: image != null
-                  ? null
-                  : Text(
-                      initials,
-                      style: AppText.sans(
-                        size: 26,
-                        weight: FontWeight.w700,
-                        color: AppColors.tagGoldText,
-                      ),
-                    ),
             ),
           )
         : CustomPaint(
@@ -197,7 +179,7 @@ class LogoPickerRow extends StatelessWidget {
               height: 76,
               child: Center(
                 child: AppIcon.filled(
-                  AppIcons.image,
+                  AppIcons.camera,
                   size: 26,
                   color: AppColors.grey,
                 ),

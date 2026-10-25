@@ -74,7 +74,7 @@ void main() {
         ),
         w: w,
       );
-      expect(find.text('STEP 1 OF 7'), findsOneWidget);
+      expect(find.text('STEP 1 OF 8'), findsOneWidget);
       await t.tap(find.text('Continue'));
       await t.pump(const Duration(milliseconds: 500));
       expect(find.text('Enter your first and last name.'), findsOneWidget);
@@ -264,7 +264,7 @@ void main() {
       await t.tap(find.text('Done'));
       await t.pump(const Duration(milliseconds: 600));
       expect(find.text('HealthTech, Fintech'), findsOneWidget);
-      expect(find.textContaining('2 selected'), findsOneWidget);
+      expect(find.textContaining('selected'), findsNothing);
       expect(t.takeException(), isNull);
     });
 
@@ -305,7 +305,7 @@ void main() {
       await t.pump(const Duration(milliseconds: 100));
       await t.pump(const Duration(milliseconds: 600));
       expect(find.text('Select sectors'), findsOneWidget);
-      expect(find.textContaining('0 selected'), findsOneWidget);
+      expect(find.textContaining('selected'), findsNothing);
     });
 
     testWidgets('a misspelled or unknown domain is simply not valid', (
@@ -458,7 +458,7 @@ void main() {
     expect(find.text('sara@gmail.com'), findsWidgets);
     await t.tap(find.text('OK'));
     await t.pump(const Duration(milliseconds: 500));
-    expect(find.text('STEP 2 OF 7'), findsOneWidget);
+    expect(find.text('STEP 2 OF 8'), findsOneWidget);
   });
 
   testWidgets('Continue before verifying says the email is not verified yet', (

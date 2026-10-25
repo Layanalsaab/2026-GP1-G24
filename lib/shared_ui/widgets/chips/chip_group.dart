@@ -168,7 +168,11 @@ class ChipGroupField extends StatelessWidget {
     this.otherHint,
     this.otherError,
     this.otherMax = 40,
+    this.sentenceCase = false,
   });
+
+  /// Label as written (see FieldLabel.sentenceCase).
+  final bool sentenceCase;
 
   final String label;
   final List<String> options;
@@ -196,6 +200,7 @@ class ChipGroupField extends StatelessWidget {
     return AppField(
       label: label,
       required: required,
+      sentenceCase: sentenceCase,
       info: info,
       infoOpen: infoOpen,
       onInfoToggle: onInfoToggle,

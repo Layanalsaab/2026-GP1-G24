@@ -44,6 +44,12 @@ class Startup {
     this.revenueYear3,
     this.valuation,
     this.wantsLeadInvestor,
+    this.revenueThisYear,
+    this.monthlyBurn,
+    this.businessModelText = '',
+    this.raisedInRound,
+    this.partnerTypes = const [],
+    this.supportTypes = const [],
     this.memberRoles = const {},
   });
 
@@ -161,6 +167,23 @@ class Startup {
   /// "Are you looking for a lead investor?" (Yes / No). Null until answered.
   final bool? wantsLeadInvestor;
 
+  /// Revenue earned so far this financial year (0 allowed).
+  final int? revenueThisYear;
+
+  /// Money lost each month: monthly costs minus monthly revenue (0 allowed).
+  final int? monthlyBurn;
+
+  /// "Explain your business model": how the startup makes money.
+  final String businessModelText;
+
+  /// The part of the funding round already committed (0 allowed).
+  final int? raisedInRound;
+
+  /// What kind of partner / support the startup looks for ("Other" is stored
+  /// as the text the founder typed).
+  final List<String> partnerTypes;
+  final List<String> supportTypes;
+
   /// Co-founders and team members by uid: `'coFounder'` or `'member'`. The
   /// founder is [founderId], never in this map.
   final Map<String, String> memberRoles;
@@ -172,7 +195,12 @@ class Startup {
   static const longTextMax = 1000;
 
   /// Longest "Who are your target customers?" answer.
-  static const customersMax = 300;
+  static const customersMax = 250;
+
+  /// Longest "What problem does your startup solve?" / "What is your
+  /// solution?" answer.
+  static const problemMax = 350;
+  static const solutionMax = 350;
 
   /// Longest brief description.
   static const descriptionMax = 150;
@@ -272,6 +300,12 @@ class Startup {
     StartupFields.revenueYear3: revenueYear3,
     StartupFields.valuation: valuation,
     StartupFields.wantsLeadInvestor: wantsLeadInvestor,
+    StartupFields.revenueThisYear: revenueThisYear,
+    StartupFields.monthlyBurn: monthlyBurn,
+    StartupFields.businessModelText: businessModelText,
+    StartupFields.raisedInRound: raisedInRound,
+    StartupFields.partnerTypes: partnerTypes,
+    StartupFields.supportTypes: supportTypes,
     StartupFields.memberIds: memberIds,
     StartupFields.memberRoles: memberRoles,
   };
@@ -340,6 +374,13 @@ class Startup {
       revenueYear3: (data[StartupFields.revenueYear3] as num?)?.toInt(),
       valuation: (data[StartupFields.valuation] as num?)?.toInt(),
       wantsLeadInvestor: data[StartupFields.wantsLeadInvestor] as bool?,
+      revenueThisYear: (data[StartupFields.revenueThisYear] as num?)?.toInt(),
+      monthlyBurn: (data[StartupFields.monthlyBurn] as num?)?.toInt(),
+      businessModelText:
+          (data[StartupFields.businessModelText] as String?) ?? '',
+      raisedInRound: (data[StartupFields.raisedInRound] as num?)?.toInt(),
+      partnerTypes: _strings(data[StartupFields.partnerTypes]),
+      supportTypes: _strings(data[StartupFields.supportTypes]),
       memberRoles: _roles(data[StartupFields.memberRoles]),
     );
   }
@@ -382,6 +423,12 @@ class Startup {
     int? revenueYear3,
     int? valuation,
     bool? wantsLeadInvestor,
+    int? revenueThisYear,
+    int? monthlyBurn,
+    String? businessModelText,
+    int? raisedInRound,
+    List<String>? partnerTypes,
+    List<String>? supportTypes,
     Map<String, String>? memberRoles,
   }) => Startup(
     id: id ?? this.id,
@@ -420,6 +467,18 @@ class Startup {
     revenueYear3: revenueYear3 ?? this.revenueYear3,
     valuation: valuation ?? this.valuation,
     wantsLeadInvestor: wantsLeadInvestor ?? this.wantsLeadInvestor,
+    revenueThisYear: revenueThisYear ?? this.revenueThisYear,
+    monthlyBurn: monthlyBurn ?? this.monthlyBurn,
+    businessModelText: businessModelText ?? this.businessModelText,
+    raisedInRound: raisedInRound ?? this.raisedInRound,
+    partnerTypes: partnerTypes ?? this.partnerTypes,
+    supportTypes: supportTypes ?? this.supportTypes,
     memberRoles: memberRoles ?? this.memberRoles,
   );
+
+  static List<String> _strings(Object? raw) => [
+    if (raw is List)
+      for (final v in raw)
+        if (v is String && v.trim().isNotEmpty) v,
+  ];
 }

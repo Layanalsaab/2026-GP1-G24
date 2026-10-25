@@ -15,6 +15,13 @@ import '../../models/team_member.dart';
 /// directory in Firestore yet); a founder's *own* startups always come from
 /// Firestore. Ids of sample startups start with `mock-`.
 class PrototypeSeed {
+  /// SAMPLE accounts for the sample team members: email -> (uid, name).
+  /// Used by the team e-mail lookup until it searches real accounts.
+  static const Map<String, (String, String)> sampleAccounts = {
+    'faisal.alkhaldi@gmail.com': ('sample-faisal', 'Faisal Alkhaldi'),
+    'nora.alharbi@gmail.com': ('sample-nora', 'Nora Alharbi'),
+  };
+
   PrototypeSeed._();
 
   /// True for the built-in sample startups (ids start with "mock-").
@@ -137,19 +144,22 @@ class PrototypeSeed {
     sam: 600000000,
     som: 24000000,
     team: const [
+      // SAMPLE team members (kept): the founder first, then a co-founder.
       TeamMember(
         name: 'Shahad Alabdulkarim',
+        email: 'shahad@gmail.com',
         role: 'CEO',
-        specialization: 'Healthcare operations',
-        yearsExperience: 8,
-        bio: 'Ran home-care operations for a Riyadh hospital group for six years.',
+        contribution: 'Ran home-care operations for a Riyadh hospital group for six years.',
+        isFounder: true,
       ),
       TeamMember(
         name: 'Faisal Alkhaldi',
+        email: 'faisal.alkhaldi@gmail.com',
         role: 'CTO',
-        specialization: 'Mobile and cloud',
-        yearsExperience: 10,
-        bio: 'Built booking platforms used by more than 200,000 patients.',
+        contribution:
+            'Built booking platforms used by more than 200,000 patients.',
+        coFounder: true,
+        uid: 'sample-faisal',
       ),
     ],
     growth: 'Expand to Jeddah and Dammam in year 2 and reach 40,000 monthly visits by year 3.',

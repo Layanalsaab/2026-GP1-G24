@@ -48,6 +48,14 @@ void _bigScreen(WidgetTester tester) {
   addTearDown(tester.view.reset);
 }
 
+/// The Finance and Growth / Startup Ask answers older sample startups lack.
+Startup _withNewAnswers(Startup s) => s.copyWith(
+  revenueThisYear: 0,
+  monthlyBurn: 0,
+  businessModelText: 'Monthly subscriptions',
+  raisedInRound: 0,
+);
+
 /// Fills every required answer of all four steps.
 void _fillAll(StartupStepsViewModel vm) {
   vm.name.text = 'Nakhla Pay';
@@ -62,14 +70,18 @@ void _fillAll(StartupStepsViewModel vm) {
   vm.customers.text = 'c';
   vm.advantage.text = 'a';
   vm.tam.text = '2,400,000,000';
-  vm.growth.text = 'g';
+  vm.revenueNow.text = '0';
   vm.capital.text = '350,000';
+  vm.burn.text = '50,000';
+  vm.modelText.text = 'Monthly subscriptions';
   vm.rev1.text = '1,000';
   vm.rev2.text = '2,000';
   vm.rev3.text = '3,000';
   vm.valuation.text = '0';
+  vm.toggleLookingFor('Funding');
+  vm.funding.text = '3,000,000';
+  vm.raised.text = '0';
   vm.setLead(true);
-  vm.funding.text = '500,000';
 }
 
 void main() {
@@ -105,9 +117,21 @@ void main() {
       expect(vm.next(), StepAdvance.advanced);
       expect(vm.step, 3);
       expect(vm.next(), StepAdvance.advanced);
+      expect(vm.step, 4);
+      expect(vm.next(), StepAdvance.advanced);
       expect(vm.step, StartupStepsViewModel.teamStep);
       expect(vm.next(), StepAdvance.readyToSave);
       expect(vm.previous(), isTrue);
+    });
+
+    test('Finance and Growth and Startup Ask are two real steps', () {
+      expect(StartupStepsViewModel.stepCount, 6);
+      expect(StartupStepsViewModel.sectionSteps, [0, 1, 2, 3, 4, 5]);
+      expect(FounderToolsStrings.stepTitles[3], 'Finance and Growth');
+      expect(FounderToolsStrings.stepTitles[4], 'Startup Ask');
+      final vm = StartupStepsViewModel(onlySection: 4);
+      addTearDown(vm.dispose);
+      expect(vm.step, 4);
     });
 
     test('founded year error shows as soon as 4 digits are typed', () {
@@ -122,7 +146,7 @@ void main() {
       expect(vm.errorOf(StartupField.founded), isNull);
     });
 
-    test('valuation 0 is allowed and has no error text', () {
+    test('valuation 0 is allowed; empty shows its message', () {
       final vm = StartupStepsViewModel();
       addTearDown(vm.dispose);
       _fillAll(vm);
@@ -131,11 +155,14 @@ void main() {
       vm.valuation.clear();
       expect(vm.currentComplete, isFalse);
       vm.next();
-      expect(vm.errorOf(StartupField.valuation), isNull);
+      expect(
+        vm.errorOf(StartupField.valuation),
+        'Please enter your current valuation.',
+      );
       expect(vm.hasError(StartupField.valuation), isTrue);
     });
 
-    test('team member editor blocks Next and validates', () {
+    test('team member editor blocks Next and validates', () async {
       final vm = StartupStepsViewModel();
       addTearDown(vm.dispose);
       _fillAll(vm);
@@ -143,15 +170,22 @@ void main() {
       expect(vm.currentComplete, isTrue);
       vm.openMemberEditor();
       expect(vm.next(), StepAdvance.memberOpen);
-      expect(vm.saveMember(), isFalse);
-      expect(vm.memberError(vm.memberName), 'Required');
+      expect(await vm.saveMember(), MemberSave.invalid);
+      expect(vm.memberError(vm.memberName), 'Please enter their full name.');
+      expect(vm.memberError(vm.memberEmail), 'Please enter their email.');
+      expect(vm.memberError(vm.memberRole), 'Please enter the role.');
+      expect(
+        vm.memberError(vm.memberContribution),
+        'Please describe the contribution.',
+      );
       vm.memberName.text = 'Faisal Alkhaldi';
+      vm.memberEmail.text = 'faisal.alkhaldi@gmail.com';
       vm.memberRole.text = 'CTO';
-      vm.memberSpec.text = 'Mobile and cloud';
-      vm.memberYears.text = '10';
-      vm.memberBio.text = 'Built platforms';
-      expect(vm.saveMember(), isTrue);
-      expect(vm.team.single.meta, 'CTO · 10 yrs · Mobile and cloud');
+      vm.memberContribution.text = 'Built platforms';
+      // A registered e-mail: linked, no invitation.
+      expect(await vm.saveMember(), MemberSave.saved);
+      expect(vm.team.single.meta, 'CTO');
+      expect(vm.team.single.invited, isFalse);
       vm.openMemberEditor(0);
       vm.removeMember();
       expect(vm.team, isEmpty);
@@ -172,19 +206,20 @@ void main() {
         repo.startups.single.description,
         'We help small shops accept card payments.',
       );
-      expect(repo.startups.single.fundingRequirement, 500000);
+      expect(repo.startups.single.fundingRequirement, 3000000);
       expect(repo.startups.single.valuation, 0);
       expect(AppSession.instance.ownStartupIds, contains(saved!.id));
     });
 
     test('edit mode starts from the startup and updates it', () async {
-      final s = PrototypeSeed.rafeeq.copyWith(id: 'x1');
+      final s = _withNewAnswers(PrototypeSeed.rafeeq.copyWith(id: 'x1'));
       repo.startups.add(s);
       final vm = StartupStepsViewModel(initial: s);
       addTearDown(vm.dispose);
       expect(vm.isEditing, isTrue);
       expect(vm.stepComplete(0), isTrue);
       expect(vm.stepComplete(3), isTrue);
+      expect(vm.stepComplete(4), isTrue);
       vm.name.text = 'Rafeeq Care';
       final saved = await vm.save();
       expect(saved!.name, 'Rafeeq Care');
@@ -386,7 +421,7 @@ void main() {
         _app(const StartupStepsScreen(mode: StartupStepsMode.add)),
       );
       await tester.pumpAndSettle();
-      expect(find.text('STEP 1 OF 5'), findsOneWidget);
+      expect(find.text('STEP 1 OF 6'), findsOneWidget);
       expect(find.text('Overview'), findsOneWidget);
       await tester.tap(find.text('Next'));
       await tester.pump(const Duration(milliseconds: 300));
@@ -436,13 +471,15 @@ void main() {
       expect(_label('Visibility'), findsNothing);
     });
 
-    testWidgets('Onboarding numbering starts at STEP 3 OF 7', (tester) async {
+    testWidgets('Onboarding numbering starts at STEP 3 OF 8', (tester) async {
       _bigScreen(tester);
+      SignupFlow.current = SignupFlow(role: AccountRole.founder)
+        ..accountCreated = true;
       await tester.pumpWidget(
         _app(const StartupStepsScreen(mode: StartupStepsMode.onboarding)),
       );
       await tester.pumpAndSettle();
-      expect(find.text('STEP 3 OF 7'), findsOneWidget);
+      expect(find.text('STEP 3 OF 8'), findsOneWidget);
       expect(find.text('Overview'), findsOneWidget);
     });
 
@@ -554,7 +591,7 @@ void main() {
     testWidgets('Save changes on the last step leaves the edit form', (
       tester,
     ) async {
-      repo.startups.add(PrototypeSeed.rafeeq);
+      repo.startups.add(_withNewAnswers(PrototypeSeed.rafeeq));
       _bigScreen(tester);
       Startup? result;
       await tester.pumpWidget(
@@ -563,7 +600,7 @@ void main() {
             builder: (context) => TextButton(
               onPressed: () async => result = await StartupStepsScreen.pushEdit(
                 context,
-                PrototypeSeed.rafeeq,
+                _withNewAnswers(PrototypeSeed.rafeeq),
               ),
               child: const Text('edit'),
             ),
@@ -576,7 +613,7 @@ void main() {
       final name = find.widgetWithText(TextField, 'Rafeeq Health');
       await tester.enterText(name, 'Rafeeq Health Plus');
       await tester.pump();
-      for (var i = 0; i < 4; i++) {
+      for (var i = 0; i < 5; i++) {
         await tester.tap(find.text('Next'));
         await tester.pumpAndSettle();
       }

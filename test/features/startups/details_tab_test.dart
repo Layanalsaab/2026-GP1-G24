@@ -227,11 +227,11 @@ void main() {
     expect(find.text('EDIT STARTUP'), findsOneWidget);
     expect(find.text('Finance and Growth'), findsOneWidget);
     expect(
-      find.textContaining('Current Available Capital', findRichText: true),
+      find.textContaining('Current available capital', findRichText: true),
       findsOneWidget,
     );
     expect(
-      find.textContaining('Lead Investor', findRichText: true),
+      find.textContaining('lead investor', findRichText: true),
       findsNothing,
     );
     await t.tap(find.bySemanticsLabel('Back').first);
@@ -244,11 +244,11 @@ void main() {
     await t.pumpAndSettle();
     expect(find.text('Startup Ask'), findsOneWidget);
     expect(
-      find.textContaining('Lead Investor', findRichText: true),
+      find.textContaining('lead investor', findRichText: true),
       findsOneWidget,
     );
     expect(
-      find.textContaining('Current Available Capital', findRichText: true),
+      find.textContaining('Current available capital', findRichText: true),
       findsNothing,
     );
   });

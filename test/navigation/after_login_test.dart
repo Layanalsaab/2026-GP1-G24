@@ -6,6 +6,8 @@ import 'package:startsa/data_access/repositories/auth_repository.dart';
 import 'package:startsa/data_access/repositories/discovery_repository.dart';
 import 'package:startsa/data_access/repositories/startup_repository.dart';
 import 'package:startsa/features/login_and_signup/screens/investor_investments_screen.dart';
+import 'package:startsa/features/login_and_signup/screens/login_screen.dart';
+import 'package:startsa/features/login_and_signup/view_models/signup_flow.dart';
 import 'package:startsa/features/login_and_signup/screens/verify_email_screen.dart';
 import 'package:startsa/features/login_and_signup/screens/welcome_screen.dart';
 import 'package:startsa/features/startups/screens/startup_steps_screen.dart';
@@ -30,6 +32,7 @@ void main() {
   late FakeStartupRepository startups;
 
   setUp(() {
+    SignupFlow.current = null;
     startups = FakeStartupRepository();
     StartupRepository.instance = startups;
     AuthRepository.instance = FakeAuthRepository();
@@ -62,7 +65,7 @@ void main() {
     (t) async {
       await logIn(t);
       expect(find.byType(StartupStepsScreen), findsOneWidget);
-      expect(find.text('STEP 3 OF 7'), findsOneWidget);
+      expect(find.text('STEP 1 OF 6'), findsOneWidget);
       expect(
         find.byType(VerifyEmailScreen),
         findsNothing,
@@ -80,15 +83,49 @@ void main() {
     await t.pump(const Duration(seconds: 3));
   });
 
-  testWidgets('Back on that first step logs out to Welcome', (t) async {
+  testWidgets('Back on the first step (nothing entered) logs out to Log in', (
+    t,
+  ) async {
     await logIn(t);
     await t.tap(find.bySemanticsLabel('Back').first);
     await t.pump();
     await t.pump(const Duration(milliseconds: 600));
-    expect(find.byType(WelcomeScreen), findsOneWidget);
+    expect(find.byType(LoginScreen), findsOneWidget);
+    expect(find.text('Discard this startup?'), findsNothing);
     expect(AppSession.instance.user, isNull);
     await t.pump(const Duration(seconds: 3));
   });
+
+  testWidgets(
+    'typed something: Back asks; Keep editing stays, Discard logs out',
+    (t) async {
+      await logIn(t);
+      await t.enterText(find.byType(TextField).first, 'Nakhla Pay');
+      await t.pump();
+      await t.tap(find.bySemanticsLabel('Back').first);
+      await t.pumpAndSettle();
+      expect(find.text('Discard this startup?'), findsOneWidget);
+      expect(
+        find.text(
+          'If you go back now, the details you entered will be deleted.',
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Discard sign-up?'), findsNothing);
+      await t.tap(find.text('Keep editing'));
+      await t.pumpAndSettle();
+      expect(find.byType(StartupStepsScreen), findsOneWidget);
+      expect(AppSession.instance.user, isNotNull);
+      await t.tap(find.bySemanticsLabel('Back').first);
+      await t.pumpAndSettle();
+      await t.tap(find.text('Discard'));
+      await t.pump();
+      await t.pump(const Duration(milliseconds: 600));
+      expect(find.byType(LoginScreen), findsOneWidget);
+      expect(AppSession.instance.user, isNull);
+      await t.pump(const Duration(seconds: 3));
+    },
+  );
 
   const investor = AppUser(
     uid: 'u2',

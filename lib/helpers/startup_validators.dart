@@ -1,4 +1,6 @@
 import '../app_constants/validation_strings.dart';
+import '../models/startup_enums.dart';
+import 'round_limits.dart';
 
 /// Pure validators for the Add / Edit startup steps (docs/06 section 8).
 /// Each returns the error message, or null when the value is valid. Inputs
@@ -99,18 +101,47 @@ class StartupValidators {
       ? null
       : ValidationStrings.revenue;
 
-  /// Required, and 0 is allowed. Shows no error text: it only keeps Next
-  /// grey, so this returns a bool.
+  /// Required, and 0 is allowed.
   static bool valuationOk(String v) => money(v) != null;
+
+  static String? valuation(String v) =>
+      valuationOk(v) ? null : ValidationStrings.valuation;
+
+  /// Revenue this financial year and the monthly burn: required, 0 allowed.
+  static String? revenueNow(String v) =>
+      money(v) == null ? ValidationStrings.revenueNow : null;
+  static String? burn(String v) =>
+      money(v) == null ? ValidationStrings.burn : null;
+
+  static String? businessModelText(String v) =>
+      v.trim().isEmpty ? ValidationStrings.businessModel : null;
 
   static String? leadInvestor(bool? answer) =>
       answer == null ? ValidationStrings.chooseOne : null;
 
-  static String? funding(String v) {
+  /// "How much are you raising?": required, and inside the limits of the
+  /// round type ([stage]).
+  static String? funding(String v, [StartupStage? stage]) {
     final amount = money(v);
-    return amount == null || amount <= 0 ? ValidationStrings.funding : null;
+    if (amount == null) return ValidationStrings.funding;
+    return RoundLimits.error(stage, amount) ??
+        (amount <= 0 ? ValidationStrings.funding : null);
   }
 
+  /// "How much have you already raised in this round?": required (0 is
+  /// fine) and not more than the amount being raised.
+  static String? raisedInRound(String raised, String funding) {
+    final r = money(raised);
+    if (r == null) return ValidationStrings.raisedEmpty;
+    final f = money(funding);
+    return f != null && r > f ? ValidationStrings.raisedTooMuch : null;
+  }
+
+  static String? partnerTypes(Iterable<Object> selected) =>
+      selected.isEmpty ? ValidationStrings.partnerTypes : null;
+  static String? supportTypes(Iterable<Object> selected) =>
+      selected.isEmpty ? ValidationStrings.supportTypes : null;
+
   static String? lookingFor(Iterable<Object> selected) =>
-      selected.isEmpty ? ValidationStrings.selectAtLeastOneOption : null;
+      selected.isEmpty ? ValidationStrings.selectAtLeastOne : null;
 }

@@ -125,6 +125,14 @@ class StartupFields {
   static const valuation = 'valuation';
   static const wantsLeadInvestor = 'wantsLeadInvestor';
 
+  // Finance and Growth / Startup Ask answers.
+  static const revenueThisYear = 'revenueThisYear';
+  static const monthlyBurn = 'monthlyBurnRate';
+  static const businessModelText = 'businessModelExplanation';
+  static const raisedInRound = 'raisedInRound';
+  static const partnerTypes = 'partnerTypes';
+  static const supportTypes = 'supportTypes';
+
   /// The people of the startup other than the founder. Kept INSIDE the
   /// startup document: `memberIds` (for queries) and `memberRoles` (uid ->
   /// 'coFounder' or 'member'). Deleting the startup deletes every membership

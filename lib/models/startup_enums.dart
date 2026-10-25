@@ -230,6 +230,7 @@ enum LookingFor {
   cofounder('cofounder', 'Co-founder'),
   talent('talent', 'Talent'),
   partnership('partnership', 'Partnership'),
+  support('support', 'Support'),
   mentorship('mentorship', 'Mentorship'),
   advisors('advisors', 'Advisors'),
   marketing('marketing', 'Marketing'),

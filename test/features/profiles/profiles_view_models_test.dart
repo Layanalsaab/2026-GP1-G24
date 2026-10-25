@@ -273,10 +273,7 @@ void main() {
       vm.toggleSector('Other');
       vm.setLinkedin('not a link');
       expect(await vm.submit(), isNull);
-      expect(
-        vm.otherError,
-        'Please type your other sector — it can’t be blank.',
-      );
+      expect(vm.otherError, 'Tell us your other sector — it can’t be blank.');
       expect(
         vm.linkedinError,
         'Enter a LinkedIn profile link, like linkedin.com/in/your-name',

@@ -46,7 +46,8 @@ class FounderToolsStrings {
     'Overview',
     'Startup Description',
     'Target Market',
-    'Funding & goals',
+    'Finance and Growth',
+    'Startup Ask',
     'Startup Team',
   ];
   static const onboardingFirstTitle = 'Overview';
@@ -112,40 +113,96 @@ class FounderToolsStrings {
   static const marketInfo =
       'The total amount customers in your target market spend per year on products like yours. Enter it in SAR.';
   static const teamLabel = 'Team members';
+  static const teamSub = 'Including you as a founder';
   static const teamInfo =
-      'Show that your team has the experience to run this project: relevant skills, past roles and results, and why you are the best team to build it.';
+      'Co-founders can edit this startup. Other members can only view it. Everyone you add by email gets linked to their Start.sa profile, or receives an invitation.';
   static const addMember = 'Add team member';
   static const newMember = 'New team member';
   static const editMember = 'Edit team member';
   static const memberName = 'Full name';
   static const memberNameHint = 'e.g. Faisal Alkhaldi';
+  static const memberEmail = 'Email';
+  static const memberEmailHint = 'e.g. name@example.com';
   static const memberRole = 'Role';
   static const memberRoleHint = 'e.g. CTO';
-  static const memberSpec = 'Specialization';
-  static const memberSpecHint = 'e.g. Mobile and cloud';
-  static const memberYears = 'Years of experience';
-  static const memberYearsHint = 'e.g. 10';
-  static const memberBio = 'Short bio';
-  static const memberBioHint = 'Relevant experience and past results';
+  static const memberContribution = 'Contribution';
+  static const memberContributionInfo =
+      'What does this person bring to the startup? For example, their experience, skills or connections.';
+  static const coFounderTitle = 'Co-founder';
+  static const coFounderText =
+      'Co-founders can edit this startup. Other members can only view it.';
+  static const tagMember = 'Member';
+  static const addYourRole = 'Add your role';
+  static const titleYourDetails = 'Your details';
+  static const titleEditFounder = 'Edit founder';
+  static const memberContributionHint =
+      'Experience, skills or connections they bring';
+  static String editMemberOf(String name) => 'Edit $name';
+  static const inviteTitle = 'This person isn’t on Start.sa yet';
+  static String inviteMessage(String email) =>
+      'We’ll email $email an invitation to join and see this startup. Do you want to continue?';
+  static const sendInvite = 'Send invite';
+  static const invitationSent = 'Invitation sent';
   static const cancel = 'Cancel';
   static const addMemberButton = 'Add member';
-  static const saveMemberButton = 'Save member';
+  static const saveMemberButton = 'Save';
   static const removeMember = 'Remove this member';
   static const editMemberLabel = 'Edit team member';
 
   // Step 4
   static const growthLabel = 'Expected growth';
-  static const growthHint = 'How big can the company grow, and how fast?';
+  static const revenueNowLabel = 'Current financial year revenue';
+  static const revenueNowInfo =
+      'The money your startup has earned so far this financial year. Enter 0 if you haven’t made any sales yet.';
   static const capitalLabel = 'Current available capital';
-  static const revenueLabel = 'Expected revenue, next 3 years';
-  static const revenueHint = 'Amounts in SAR';
+  static const burnLabel = 'Monthly burn rate';
+  static const burnInfo =
+      'How much money you lose each month: your monthly costs minus your monthly revenue. Enter 0 if you earn more than you spend.';
+  static const revenueLabel = 'Expected revenue, next 3 years (SAR)';
   static const valuationLabel = 'Current company valuation';
+  static const valuationInfo =
+      'What your whole company is worth today. If you’ve raised money before, use the valuation from that round.';
+  static const modelTextLabel = 'Explain your business model';
+  static const modelTextHint = 'Describe how your startup makes money';
+  static const modelTextInfo =
+      'How your startup makes money. For example: who pays you, what you charge, and how often.';
+  static const modelTextMax = 250;
   static const leadLabel = 'Are you looking for a lead investor?';
   static const leadInfo =
       'A lead investor sets the terms of your round and brings other investors in.';
-  static const fundingLabel = 'Funding amount';
+  static const fundingLabel = 'How much are you raising?';
+  static const fundingInfo =
+      'The total amount you want to raise in this funding round.';
+  static const raisedLabel = 'How much have you already raised in this round?';
+  static const raisedInfo =
+      'The amount investors have already committed to this round. Enter 0 if you haven’t raised anything yet.';
   static const lookingForLabel = 'What are you looking for?';
   static const lookingForOtherHint = 'What else are you looking for?';
+  static const partnerLabel = 'What type of partner do you need?';
+  static const supportLabel = 'What type of support do you need?';
+  static const partnerPlaceholder = 'Select partner types';
+  static const supportPlaceholder = 'Select support types';
+  static const partnerTitle = 'Select partner types';
+  static const supportTitle = 'Select support types';
+  static const partnerOptions = [
+    'Distribution',
+    'Technology',
+    'Supplier',
+    'Marketing',
+    'Government',
+    'Corporate',
+    'Other',
+  ];
+  static const supportOptions = [
+    'Mentorship',
+    'Advisors',
+    'Co-founder',
+    'Hiring',
+    'Marketing',
+    'Tech development',
+    'Legal and accounting',
+    'Other',
+  ];
   static const visibilityLabel = 'Visibility';
   static const visibilityPublicTitle = 'Public';
   static const visibilityPublicText =

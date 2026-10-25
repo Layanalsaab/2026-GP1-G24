@@ -179,6 +179,8 @@ class FieldLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = hasError ? AppColors.error : AppColors.ink;
     final style = AppText.label.copyWith(color: color);
+    // The "i" is part of the text, so it always sits right after the last
+    // word of the question, even when the question wraps to two lines.
     final text = Text.rich(
       TextSpan(
         style: style,
@@ -194,33 +196,29 @@ class FieldLabel extends StatelessWidget {
               ),
             ),
           ],
+          if (onInfoTap != null)
+            WidgetSpan(
+              alignment: PlaceholderAlignment.middle,
+              child: Padding(
+                padding: const EdgeInsets.only(left: 2),
+                // 28 px button in a 20 px row (the prototype's -4 px margins).
+                child: SizedBox(
+                  width: 28,
+                  height: 20,
+                  child: OverflowBox(
+                    maxHeight: 28,
+                    child: InfoButton(onTap: onInfoTap, open: infoOpen),
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Flexible(
-          child: Semantics(
-            label: required ? '$label (required)' : label,
-            excludeSemantics: true,
-            child: text,
-          ),
-        ),
-        if (onInfoTap != null)
-          Padding(
-            padding: const EdgeInsets.only(left: 2),
-            // 28 px button in a 20 px row (the prototype's -4 px margins).
-            child: SizedBox(
-              width: 28,
-              height: 20,
-              child: OverflowBox(
-                maxHeight: 28,
-                child: InfoButton(onTap: onInfoTap, open: infoOpen),
-              ),
-            ),
-          ),
-      ],
+    return Semantics(
+      label: required ? '$label (required)' : label,
+      excludeSemantics: true,
+      child: text,
     );
   }
 }

@@ -29,6 +29,7 @@ import '../../../shared_ui/widgets/lists/press_surface.dart';
 import '../../../shared_ui/widgets/overlays/app_bottom_sheet.dart';
 import '../../../shared_ui/widgets/overlays/app_toast.dart';
 import '../../../shared_ui/widgets/overlays/picker_sheet.dart';
+import '../../login_and_signup/widgets/phone_formatter.dart';
 import '../view_models/edit_account_view_model.dart';
 
 /// Edit profile (docs/05 C5, docs/06 section 7, screenshots 41 and 41b):
@@ -160,6 +161,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 textCapitalization: TextCapitalization.words,
               ),
               LabeledTextField(
+                label: AuthStrings.bio,
+                required: true,
+                value: _vm.bio,
+                onChanged: _vm.setBio,
+                placeholder: AuthStrings.bioPlaceholder,
+                maxLength: Validators.maxFounderBio,
+                multiline: true,
+                error: _vm.bioError,
+              ),
+              LabeledTextField(
                 label: AuthStrings.email,
                 required: true,
                 value: u.email,
@@ -172,21 +183,27 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   fieldName: 'email',
                 ),
               ),
-              LabeledTextField(
+              AppField(
                 label: AuthStrings.phone,
                 required: true,
-                value: _vm.phone,
-                onChanged: _vm.setPhone,
-                placeholder: AuthStrings.phonePlaceholder,
-                prefix: AuthStrings.phonePrefix,
-                maxLength: Validators.phoneLength,
-                keyboardType: TextInputType.phone,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                error: _vm.phoneError,
                 labelTrailing: VisibilityPill(
                   isPublic: _vm.phonePublic,
                   onChanged: _vm.setPhonePublic,
                   fieldName: 'phone',
+                ),
+                error: _vm.phoneError,
+                child: AppTextField(
+                  value: _phoneShown(),
+                  onChanged: _vm.setPhone,
+                  hint: AuthStrings.phonePlaceholder,
+                  semanticLabel: AuthStrings.phone,
+                  prefix: AuthStrings.phonePrefix,
+                  counterMax: Validators.phoneLength,
+                  counterOf: (t) => Validators.phoneDigits(t).length,
+                  warnLow: false,
+                  keyboardType: TextInputType.phone,
+                  inputFormatters: const [PhoneInputFormatter()],
+                  hasError: _vm.phoneError != null,
                 ),
               ),
               LabeledTextField(
@@ -217,8 +234,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               AppField(
                 label: AuthStrings.sectorsQuestion,
                 required: true,
-                subLabel:
-                    'Select all that apply · ${_sectorSet.length} selected',
                 error: _vm.sectorsError ?? _vm.otherError,
                 child: SelectField(
                   placeholder: AuthStrings.sectorsPlaceholder,
@@ -228,22 +243,20 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   onTap: _pickSectors,
                 ),
               ),
-              LabeledTextField(
-                label: AuthStrings.bio,
-                required: true,
-                value: _vm.bio,
-                onChanged: _vm.setBio,
-                placeholder: AuthStrings.bioPlaceholder,
-                maxLength: Validators.maxFounderBio,
-                multiline: true,
-                error: _vm.bioError,
-              ),
             ],
           ),
         ],
       ),
     );
   }
+
+  /// The saved digits as "5X XXX XXXX" (what the field shows).
+  String _phoneShown() => const PhoneInputFormatter()
+      .formatEditUpdate(
+        TextEditingValue.empty,
+        TextEditingValue(text: _vm.phone),
+      )
+      .text;
 
   Future<void> _photo() async {
     var pick = true;

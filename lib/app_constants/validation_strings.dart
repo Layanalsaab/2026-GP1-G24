@@ -11,7 +11,7 @@ class ValidationStrings {
   static const emailLive = 'Enter a valid email, like name@example.com';
   static const phoneRequired = 'Please enter your phone number.';
   static const phoneInvalid = 'Enter a 9-digit Saudi number, like 5X XXX XXXX';
-  static const phoneEdit = 'Please enter a 9-digit phone number.';
+  static const phoneEdit = phoneInvalid;
   static const linkedin =
       'Enter a LinkedIn profile link, like linkedin.com/in/your-name';
 
@@ -33,6 +33,7 @@ class ValidationStrings {
   static const required = 'Required';
   static const selectAtLeastOneStage = 'Select at least one stage.';
   static const selectAtLeastOneModel = 'Select at least one commerce model.';
+  static const selectAtLeastOne = 'Select at least one.';
   static const selectAtLeastOneOption = 'Select at least one option.';
 
   // Investor
@@ -50,6 +51,15 @@ class ValidationStrings {
   // Toasts used by forms
   static const fixFields = 'Please fix the highlighted fields';
   static const fillRequired = 'Please fix the highlighted fields';
+  static const memberNameRequired = 'Please enter their full name.';
+  static const memberEmailRequired = 'Please enter their email.';
+  static const memberEmailInvalid =
+      'Enter a valid email, like name@example.com';
+  static const memberRoleRequired = 'Please enter the role.';
+  static const memberContributionRequired = 'Please describe the contribution.';
+  static const memberDuplicate = 'This person is already on the team.';
+  static const founderRowIncomplete =
+      'Add your role and contribution: tap the pencil.';
   static const saveMemberFirst = 'Save or cancel the team member first';
 
   // "Other" write-ins (noun: "sector", "stage", "commerce model", ...)
@@ -78,18 +88,31 @@ class ValidationStrings {
   static const foundedRequired = 'Please enter the year you were founded.';
   static String foundedRange(int last) =>
       'Enter a year between 1900 and $last.';
-  static const websiteInvalid = 'Enter a valid website, like example.com';
+  static const websiteInvalid =
+      'Enter a valid website, like example.com or https://example.com';
   static const problem = 'Please describe the problem.';
   static const solution = 'Please describe your solution.';
   static const targetCustomers = 'Please describe your target customers.';
   static const marketSize = 'Please enter your target market size.';
-  static const marketSizeZero = 'Target market size cannot be zero.';
+  static const marketSizeZero = 'Target market size must be more than 0.';
   static const different = 'Please explain what makes your startup unique.';
   static const growth = 'Please describe your expected growth.';
   static const capital = 'Please enter your current capital.';
   static const revenue =
       'Please enter the expected revenue for all three years.';
-  static const funding = 'Please enter the funding amount you need.';
+  static const funding = 'Please enter the amount you’re raising.';
+  static const valuation = 'Please enter your current valuation.';
+  static const revenueNow =
+      'Please enter your revenue. Enter 0 if you haven’t made any yet.';
+  static const burn =
+      'Please enter your monthly burn rate. Enter 0 if you earn more than you spend.';
+  static const businessModel = 'Please explain your business model.';
+  static const raisedEmpty =
+      'Please enter an amount. Enter 0 if you haven’t raised anything yet.';
+  static const raisedTooMuch =
+      'This can’t be more than the amount you’re raising.';
+  static const partnerTypes = 'Select at least one partner type.';
+  static const supportTypes = 'Select at least one support type.';
 
   // ---- Valuation calculator ----
   static const calcFunding = 'Enter the amount you want to raise.';

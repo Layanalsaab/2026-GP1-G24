@@ -11,6 +11,8 @@ import '../data_access/repositories/request_repository.dart';
 import '../data_access/repositories/startup_repository.dart';
 import '../features/login_and_signup/screens/investor_investments_screen.dart';
 import '../features/login_and_signup/screens/welcome_screen.dart';
+import '../features/login_and_signup/screens/login_screen.dart';
+import '../features/login_and_signup/view_models/signup_flow.dart';
 import '../features/startups/screens/startup_steps_screen.dart';
 import '../helpers/app_session.dart';
 import '../models/app_user.dart';
@@ -91,7 +93,10 @@ class AppRouter {
 
   /// Signs out of Firebase, forgets the session data and returns to Welcome
   /// with the back transition. A guest simply leaves.
-  static Future<void> logOut(BuildContext context) async {
+  static Future<void> logOut(
+    BuildContext context, {
+    bool toLogin = false,
+  }) async {
     if (!AppSession.instance.isGuest) {
       try {
         await AuthRepository.instance.signOut();
@@ -102,10 +107,22 @@ class AppRouter {
         return;
       }
     }
+    SignupFlow.current = null;
     BookmarkRepository.instance.clear();
     RequestRepository.instance.clear();
     InterestRepository.instance.clear();
     AppSession.instance.signOut();
-    if (context.mounted) openStart(context);
+    if (!context.mounted) return;
+    if (toLogin) {
+      // Back transition to the Log in screen (the stack is cleared).
+      AppNav.reset(
+        context,
+        const LoginScreen(),
+        kind: RouteKind.back,
+        greenHeader: true,
+      );
+    } else {
+      openStart(context);
+    }
   }
 }

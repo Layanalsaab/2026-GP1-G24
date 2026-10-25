@@ -175,6 +175,7 @@ Future<bool> showDiscardDialog(
   required String message,
   String discardLabel = 'Discard',
   String keepLabel = 'Keep editing',
+  bool danger = true,
 }) async {
   FocusManager.instance.primaryFocus?.unfocus();
   final result = await showAppDialog<bool>(
@@ -201,7 +202,9 @@ Future<bool> showDiscardDialog(
           const SizedBox(height: 22),
           AppButton(
             label: discardLabel,
-            variant: AppButtonVariant.danger,
+            variant: danger
+                ? AppButtonVariant.danger
+                : AppButtonVariant.primary,
             onPressed: () => Navigator.of(ctx).pop(true),
           ),
           const SizedBox(height: 4),

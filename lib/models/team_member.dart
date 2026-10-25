@@ -1,47 +1,69 @@
-/// One person in a startup's team (Add startup step 3, Team tab on the
+/// One person in a startup's team (Startup Team step, Team tab on the
 /// startup profile). Stored inside the startup document as a map.
 class TeamMember {
   const TeamMember({
     required this.name,
     required this.role,
-    required this.specialization,
-    required this.yearsExperience,
-    required this.bio,
+    required this.contribution,
+    this.email = '',
+    this.coFounder = false,
+    this.invited = false,
+    this.isFounder = false,
     this.uid,
   });
 
   static const nameMax = 50;
   static const roleMax = 40;
-  static const specializationMax = 60;
-  static const yearsMaxDigits = 2;
-  static const bioMax = 1000;
+  static const emailMax = 100;
+  static const contributionMax = 300;
 
   final String name;
+
+  /// Lower-case, trimmed. Empty on older startups.
+  final String email;
 
   /// e.g. "CTO".
   final String role;
 
-  /// e.g. "Mobile and cloud".
-  final String specialization;
-  final int yearsExperience;
-  final String bio;
+  /// What this person brings to the startup.
+  final String contribution;
+
+  /// Co-founders can edit the startup; other members can only view it.
+  final bool coFounder;
+
+  /// Added by an email that is not (yet) a Start.sa account.
+  final bool invited;
+
+  /// The startup's founder: always the first member.
+  final bool isFounder;
 
   /// The account this person is, once it is linked. A linked member shows
   /// the account's CURRENT name (it follows Edit profile); an unlinked one
   /// shows the typed text.
   final String? uid;
 
-  TeamMember copyWith({String? name, String? uid}) => TeamMember(
+  TeamMember copyWith({
+    String? name,
+    String? email,
+    String? role,
+    String? contribution,
+    bool? coFounder,
+    bool? invited,
+    bool? isFounder,
+    String? uid,
+  }) => TeamMember(
     name: name ?? this.name,
-    role: role,
-    specialization: specialization,
-    yearsExperience: yearsExperience,
-    bio: bio,
+    email: email ?? this.email,
+    role: role ?? this.role,
+    contribution: contribution ?? this.contribution,
+    coFounder: coFounder ?? this.coFounder,
+    invited: invited ?? this.invited,
+    isFounder: isFounder ?? this.isFounder,
     uid: uid ?? this.uid,
   );
 
-  /// "CTO · 10 yrs · Mobile and cloud" (the sub-line on a team row).
-  String get meta => '$role · $yearsExperience yrs · $specialization';
+  /// The sub-line on a team row: the role.
+  String get meta => role;
 
   /// Two letters for the avatar (first letter of the first and last word).
   String get initials {
@@ -59,10 +81,12 @@ class TeamMember {
 
   Map<String, Object?> toMap() => {
     'fullName': name,
+    'email': email,
     'role': role,
-    'specialization': specialization,
-    'yearsOfExperience': yearsExperience,
-    'shortBio': bio,
+    'contribution': contribution,
+    'coFounder': coFounder,
+    'invited': invited,
+    'isFounder': isFounder,
     if (uid != null) 'uid': uid,
   };
 
@@ -73,13 +97,15 @@ class TeamMember {
     if (name is! String || role is! String) return null;
     return TeamMember(
       name: name,
+      email: ((raw['email'] as String?) ?? '').trim().toLowerCase(),
       role: role,
-      specialization: (raw['specialization'] as String?) ?? '',
-      yearsExperience:
-          ((raw['yearsOfExperience'] ?? raw['yearsExperience']) as num?)
-              ?.toInt() ??
-          0,
-      bio: ((raw['shortBio'] ?? raw['bio']) as String?) ?? '',
+      // Older startups kept a "short bio" here.
+      contribution:
+          ((raw['contribution'] ?? raw['shortBio'] ?? raw['bio']) as String?) ??
+          '',
+      coFounder: raw['coFounder'] == true,
+      invited: raw['invited'] == true,
+      isFounder: raw['isFounder'] == true,
       uid: raw['uid'] as String?,
     );
   }
@@ -88,12 +114,23 @@ class TeamMember {
   bool operator ==(Object other) =>
       other is TeamMember &&
       other.name == name &&
+      other.email == email &&
       other.role == role &&
-      other.specialization == specialization &&
-      other.yearsExperience == yearsExperience &&
-      other.bio == bio;
+      other.contribution == contribution &&
+      other.coFounder == coFounder &&
+      other.invited == invited &&
+      other.isFounder == isFounder &&
+      other.uid == uid;
 
   @override
-  int get hashCode =>
-      Object.hash(name, role, specialization, yearsExperience, bio);
+  int get hashCode => Object.hash(
+    name,
+    email,
+    role,
+    contribution,
+    coFounder,
+    invited,
+    isFounder,
+    uid,
+  );
 }

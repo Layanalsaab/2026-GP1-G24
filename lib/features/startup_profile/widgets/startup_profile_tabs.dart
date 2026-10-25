@@ -277,7 +277,7 @@ class StartupProfilePane extends StatelessWidget {
                   name: m.name,
                   role: StartupRole.member,
                   line: m.meta,
-                  extra: m.bio,
+                  extra: m.contribution,
                 ),
             ],
           ),

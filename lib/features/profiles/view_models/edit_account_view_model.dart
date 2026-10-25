@@ -113,7 +113,7 @@ class EditAccountViewModel extends ChangeNotifier with SafeNotifier {
   String? get sectorsError => attempted ? Validators.sectors(_chosen) : null;
   String? get otherError =>
       attempted && otherSelected && otherSector.trim().isEmpty
-      ? ValidationStrings.otherChips('sector')
+      ? ValidationStrings.otherSelect('sector')
       : null;
 
   /// A founder's bio is required (the investor's stays optional).

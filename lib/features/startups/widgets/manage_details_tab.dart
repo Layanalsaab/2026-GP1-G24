@@ -655,11 +655,11 @@ class _MemberCard extends StatelessWidget {
                     color: AppColors.grey,
                   ),
                 ),
-                if (member.bio.isNotEmpty)
+                if (member.contribution.isNotEmpty)
                   Padding(
                     padding: const EdgeInsets.only(top: 4),
                     child: Text(
-                      member.bio,
+                      member.contribution,
                       style: AppText.sans(
                         size: 14,
                         height: 20,

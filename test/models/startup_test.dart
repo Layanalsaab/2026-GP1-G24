@@ -41,9 +41,9 @@ void main() {
         TeamMember(
           name: 'Faisal Alkhaldi',
           role: 'CTO',
-          specialization: 'Cloud',
-          yearsExperience: 10,
-          bio: 'Short bio',
+          contribution: 'Built the platform',
+          email: 'faisal.alkhaldi@gmail.com',
+          coFounder: true,
         ),
       ],
     );
@@ -86,9 +86,11 @@ void main() {
       {
         'fullName': 'Faisal Alkhaldi',
         'role': 'CTO',
-        'specialization': 'Cloud',
-        'yearsOfExperience': 10,
-        'shortBio': 'Short bio',
+        'email': 'faisal.alkhaldi@gmail.com',
+        'contribution': 'Built the platform',
+        'coFounder': true,
+        'invited': false,
+        'isFounder': false,
       },
     ]);
     final back = Startup.fromMap('s1', map)!;
@@ -240,6 +242,7 @@ void main() {
         'Co-founder',
         'Talent',
         'Partnership',
+        'Support',
         'Mentorship',
         'Advisors',
         'Marketing',
@@ -370,13 +373,7 @@ void main() {
         sam: 600000000,
         som: 24000000,
         team: const [
-          TeamMember(
-            name: 'Faisal Alkhaldi',
-            role: 'CTO',
-            specialization: 'Mobile',
-            yearsExperience: 10,
-            bio: 'b',
-          ),
+          TeamMember(name: 'Faisal Alkhaldi', role: 'CTO', contribution: 'b'),
         ],
         growth: 'g',
         capital: 350000,
@@ -388,7 +385,7 @@ void main() {
       );
       final back = Startup.fromMap('s1', full.toMap())!;
       expect(back.tam, 2400000000);
-      expect(back.team.single.meta, 'CTO · 10 yrs · Mobile');
+      expect(back.team.single.meta, 'CTO');
       expect(back.team.single.initials, 'FA');
       expect(back.valuation, 0);
       expect(back.wantsLeadInvestor, isTrue);

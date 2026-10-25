@@ -238,6 +238,16 @@ class _SignupScreenState extends State<SignupScreen> {
                           textCapitalization: TextCapitalization.words,
                           autofillHints: const [AutofillHints.name],
                         ),
+                        if (founder)
+                          LabeledTextField(
+                            label: AuthStrings.bio,
+                            required: founder,
+                            controller: vm.bio,
+                            placeholder: AuthStrings.bioPlaceholder,
+                            maxLength: vm.bioMax,
+                            multiline: true,
+                            error: vm.bioError,
+                          ),
                         LabeledTextField(
                           label: AuthStrings.email,
                           required: true,
@@ -332,8 +342,6 @@ class _SignupScreenState extends State<SignupScreen> {
                           AppField(
                             label: AuthStrings.sectorsQuestion,
                             required: true,
-                            subLabel:
-                                'Select all that apply · ${vm.sectors.length} selected',
                             error: vm.sectorsError ?? vm.sectorsOtherError,
                             child: SelectField(
                               placeholder: AuthStrings.sectorsPlaceholder,
@@ -367,15 +375,16 @@ class _SignupScreenState extends State<SignupScreen> {
                             error: vm.gainError,
                           ),
                         ],
-                        LabeledTextField(
-                          label: AuthStrings.bio,
-                          required: founder,
-                          controller: vm.bio,
-                          placeholder: AuthStrings.bioPlaceholder,
-                          maxLength: vm.bioMax,
-                          multiline: true,
-                          error: vm.bioError,
-                        ),
+                        if (!founder)
+                          LabeledTextField(
+                            label: AuthStrings.bio,
+                            required: false,
+                            controller: vm.bio,
+                            placeholder: AuthStrings.bioPlaceholder,
+                            maxLength: vm.bioMax,
+                            multiline: true,
+                            error: vm.bioError,
+                          ),
                       ],
                     ),
                   ],
