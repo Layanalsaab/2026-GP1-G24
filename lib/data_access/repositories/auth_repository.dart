@@ -7,6 +7,7 @@ import '../../models/auth_failure.dart';
 import '../firebase_services/auth_service.dart';
 import 'bookmark_repository.dart';
 import 'startup_repository.dart';
+import 'team_lookup.dart';
 import 'user_repository.dart';
 
 class SignupResult {
@@ -232,6 +233,15 @@ class AuthRepository {
     } catch (_) {
       // Carry on: the account itself must still be removed.
     }
+    // A co-founder / team member leaves the teams they belong to, so they are
+    // not listed on those startups any more.
+    try {
+      await StartupRepository.instance.leaveAll();
+    } catch (_) {
+      // Carry on: the account itself must still be removed.
+    }
+    // Nobody can find or open a person who no longer exists.
+    await TeamLookup.instance.remove(uid: account.uid, email: account.email);
     // Saved bookmarks live under the user document and are not deleted
     // with it, so they are removed first (while still signed in).
     try {

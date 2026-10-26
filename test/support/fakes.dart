@@ -492,6 +492,9 @@ class FakeStartupRepository implements StartupRepository {
   }
 
   @override
+  Future<void> leaveAll() async => memberOf.clear();
+
+  @override
   Future<void> deleteAllMine() async => startups.clear();
 
   @override

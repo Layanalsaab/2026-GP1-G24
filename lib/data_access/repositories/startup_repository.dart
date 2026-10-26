@@ -99,16 +99,36 @@ class StartupRepository {
     return startups;
   }
 
-  /// "Leave startup": removes ONLY the signed-in user's own membership (their
-  /// uid from `memberIds` and `memberRoles`). The security rules allow a
-  /// member to change nothing else.
+  /// "Leave startup": removes ONLY the signed-in user's own membership: their
+  /// uid from `memberIds` and `memberRoles`, and their card from the team
+  /// list (`teamMembers`), so they are not shown on the Team tab any more. The
+  /// security rules allow a member to change nothing else.
   Future<void> leave(Startup startup) async {
     final uid = _founderId;
+    final rest = [
+      for (final m in startup.team)
+        if (m.uid != uid) m.toMap(),
+    ];
+    final hadCard = rest.length != startup.team.length;
     await _firestore.updateDocument(_collection, startup.id, {
       StartupFields.memberIds: _firestore.arrayRemove([uid]),
       '${StartupFields.memberRoles}.$uid': _firestore.deleteField(),
+      if (hadCard) StartupFields.team: rest,
     });
     changes.value++;
+  }
+
+  /// Leaves every startup the signed-in user is a co-founder / team member of
+  /// (used when the account is deleted). Best effort per startup.
+  Future<void> leaveAll() async {
+    final mine = await fetchMemberStartups();
+    for (final s in mine) {
+      try {
+        await leave(s);
+      } catch (_) {
+        // Carry on with the others.
+      }
+    }
   }
 
   /// "My name carries over": after [uid] changed their name on Edit profile,

@@ -120,6 +120,23 @@ await check('phone Public + e-mail Private: only the phone', true, () => setDoc(
 await check('somebody else cannot write my profile', false, () => setDoc(doc(stranger, 'publicProfiles', 'f9'), profile()));
 await check('a role other than founder / investor is refused', false, () => setDoc(doc(owner, 'publicProfiles', 'f9'), profile({ role: 'admin' })));
 
+// Leave startup / delete account: a member drops their own card from the team
+await env.withSecurityRulesDisabled(async (ctx) => {
+  await setDoc(doc(ctx.firestore(), 'startups', 'S2'), {
+    founderId: 'f1', name: 'Naql', description: 'd', sector: 'fintech', stage: 'seed',
+    businessModel: 'b2b', location: 'riyadh', lookingFor: ['funding'], isPublic: true,
+    memberIds: ['c1', 'm1'], memberRoles: { c1: 'coFounder', m1: 'member' },
+    teamMembers: [{ fullName: 'Founder', uid: 'f1' }, { fullName: 'Omar', uid: 'c1' }, { fullName: 'Mona', uid: 'm1' }],
+  });
+});
+const mona = env.authenticatedContext('m1', { email: 'm1@gmail.com', email_verified: true }).firestore();
+const fcard = { fullName: 'Founder', uid: 'f1' }, ccard = { fullName: 'Omar', uid: 'c1' }, mcard = { fullName: 'Mona', uid: 'm1' };
+await check('leave while ADDING a card is refused', false, () => updateDoc(doc(mona, 'startups', 'S2'), { memberIds: ['c1'], memberRoles: { c1: 'coFounder' }, teamMembers: [fcard, ccard, mcard, { fullName: 'Evil', uid: 'e1' }] }));
+await check('leave while EDITING a card is refused', false, () => updateDoc(doc(mona, 'startups', 'S2'), { memberIds: ['c1'], memberRoles: { c1: 'coFounder' }, teamMembers: [fcard, { fullName: 'Hacked', uid: 'c1' }] }));
+await check('leave while changing the name is refused', false, () => updateDoc(doc(mona, 'startups', 'S2'), { memberIds: ['c1'], memberRoles: { c1: 'coFounder' }, name: 'Mine' }));
+await check('member leaves and drops their card', true, () => updateDoc(doc(mona, 'startups', 'S2'), { memberIds: ['c1'], memberRoles: { c1: 'coFounder' }, teamMembers: [fcard, ccard] }));
+await check('a stranger cannot drop cards', false, () => updateDoc(doc(stranger, 'startups', 'S2'), { teamMembers: [fcard] }));
+
 console.log(fails === 0 ? 'ALL PASSED' : fails + ' FAILED');
 await env.cleanup();
 process.exit(fails === 0 ? 0 : 1);

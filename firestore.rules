@@ -227,11 +227,18 @@ service cloud.firestore {
                          == invitationFor(startupId).role;
 
       // Leave startup: a member removes only their own uid from memberIds
-      // and their own entry from memberRoles; nothing else may change.
+      // and their own entry from memberRoles, and their card from the team
+      // list (teamMembers: the new list only drops entries, nothing is added
+      // or edited); nothing else may change.
       allow update: if request.auth != null
                     && request.auth.uid in resource.data.get('memberIds', [])
                     && request.resource.data.diff(resource.data).affectedKeys()
-                         .hasOnly(['memberIds', 'memberRoles'])
+                         .hasOnly(['memberIds', 'memberRoles', 'teamMembers'])
+                    && (!('teamMembers' in request.resource.data.diff(resource.data).affectedKeys())
+                        || (resource.data.get('teamMembers', []).toSet()
+                              .hasAll(request.resource.data.teamMembers)
+                            && request.resource.data.teamMembers.size()
+                                 < resource.data.get('teamMembers', []).size()))
                     && !(request.auth.uid in request.resource.data.memberIds)
                     && request.resource.data.memberIds.toSet()
                          == resource.data.memberIds.toSet()

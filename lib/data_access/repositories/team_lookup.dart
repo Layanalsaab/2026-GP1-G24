@@ -76,4 +76,22 @@ class TeamLookup {
       debugPrint('Could not publish the e-mail index entry: $e');
     }
   }
+
+  /// Removes my entry and my public profile when my account is deleted, so
+  /// nobody finds or opens a person who no longer exists. Best effort.
+  Future<void> remove({required String uid, required String email}) async {
+    final key = email.trim().toLowerCase();
+    try {
+      if (key.isNotEmpty) {
+        await _db.deleteDocument(FirestoreCollections.emailIndex, key);
+      }
+    } catch (e) {
+      debugPrint('Could not remove the e-mail index entry: $e');
+    }
+    try {
+      await _db.deleteDocument(FirestoreCollections.publicProfiles, uid);
+    } catch (e) {
+      debugPrint('Could not remove the public profile: $e');
+    }
+  }
 }
