@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+
+import '../../../helpers/picture_data.dart';
+
 import 'package:flutter/services.dart';
 
 import '../../../app_constants/account_strings.dart';
@@ -88,6 +91,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     if (_vm.hasPhoto) {
       if (_vm.newPhoto != null) {
         image = FileImage(_vm.newPhoto!);
+      } else if (PictureData.bytes(u.photoData) != null) {
+        image = MemoryImage(PictureData.bytes(u.photoData)!);
       } else if ((u.photoUrl ?? '').isNotEmpty) {
         image = NetworkImage(u.photoUrl!);
       }
@@ -300,6 +305,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     if (_vm.hasPhoto) {
       if (_vm.newPhoto != null) {
         image = FileImage(_vm.newPhoto!);
+      } else if (PictureData.bytes(u.photoData) != null) {
+        image = MemoryImage(PictureData.bytes(u.photoData)!);
       } else if ((u.photoUrl ?? '').isNotEmpty) {
         image = NetworkImage(u.photoUrl!);
       }

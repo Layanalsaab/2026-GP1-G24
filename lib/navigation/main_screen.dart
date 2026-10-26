@@ -89,8 +89,7 @@ class _MainScreenState extends State<MainScreen> {
       final roles = <String, StartupRole>{};
       final uid = _session.user?.uid;
       try {
-        for (final s
-            in await _startups.fetchMemberStartups()) {
+        for (final s in await _startups.fetchMemberStartups()) {
           member.add(s.id);
           roles[s.id] = StartupRole.of(s, uid) ?? StartupRole.member;
         }

@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../app_constants/account_strings.dart';
 import '../../shared_ui/theme/app_colors.dart';
+import 'image_fit.dart';
 
 enum ProfilePhotoFailure { tooLarge, failed }
 
@@ -23,11 +24,10 @@ class ProfilePhotoPickerService {
 
   static ProfilePhotoPickerService instance = const ProfilePhotoPickerService();
 
-  /// Largest photo file we upload. storage.rules enforces the same limit.
-  static const maxBytes = 2 * 1024 * 1024;
-
-  static const _outputSize = 512;
-  static const _jpegQuality = 80;
+  // Small on purpose: the picture is saved INSIDE the Firestore document
+  // (no Firebase Storage), so it must be under ~100 KB.
+  static const _outputSize = 256;
+  static const _jpegQuality = 70;
 
   /// Returns the cropped JPEG, or null when the user cancels. Throws
   /// [ProfilePhotoException] when the image can't be used.
@@ -69,7 +69,11 @@ class ProfilePhotoPickerService {
       if (cropped == null) return null;
 
       final file = File(cropped.path);
-      if (await file.length() >= maxBytes) {
+      // Under ~100 KB (compressed again when it is not): it is saved inside
+      // the Firestore document.
+      try {
+        await ImageFit.bytesUnder(file);
+      } on ImageTooLarge {
         throw const ProfilePhotoException(ProfilePhotoFailure.tooLarge);
       }
       return file;

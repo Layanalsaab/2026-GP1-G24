@@ -27,6 +27,7 @@ class Startup {
     this.lookingForOther,
     this.isPublic = false,
     this.logoUrl,
+    this.logoData,
     this.createdAt,
     this.updatedAt,
     this.problem = '',
@@ -136,6 +137,10 @@ class Startup {
   /// False by default, so an unfinished profile is never exposed.
   final bool isPublic;
   final String? logoUrl;
+
+  /// The logo as base64 text (a compressed square, under ~100 KB); null
+  /// when the startup has none (the initials show as the default picture).
+  final String? logoData;
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -285,6 +290,8 @@ class Startup {
     StartupFields.fundingRequirement: fundingRequirement,
     StartupFields.isPublic: isPublic,
     StartupFields.logoUrl: logoUrl,
+    // Only stored when there is one (removing the logo deletes the field).
+    if (logoData != null) StartupFields.logoData: logoData,
     StartupFields.problem: problem,
     StartupFields.solution: solution,
     StartupFields.customers: customers,
@@ -353,6 +360,7 @@ class Startup {
           ?.toInt(),
       isPublic: data[StartupFields.isPublic] == true,
       logoUrl: data[StartupFields.logoUrl] as String?,
+      logoData: data[StartupFields.logoData] as String?,
       createdAt: data[StartupFields.createdAt] as DateTime?,
       updatedAt: data[StartupFields.updatedAt] as DateTime?,
       problem: (data[StartupFields.problem] as String?) ?? '',
@@ -403,6 +411,7 @@ class Startup {
     Set<LookingFor>? lookingFor,
     int? fundingRequirement,
     String? logoUrl,
+    String? logoData,
     bool clearLogo = false,
     bool clearFunding = false,
     bool? isPublic,
@@ -454,6 +463,7 @@ class Startup {
         : (fundingRequirement ?? this.fundingRequirement),
     isPublic: isPublic ?? this.isPublic,
     logoUrl: clearLogo ? null : (logoUrl ?? this.logoUrl),
+    logoData: clearLogo ? null : (logoData ?? this.logoData),
     createdAt: createdAt,
     updatedAt: updatedAt,
     problem: problem ?? this.problem,

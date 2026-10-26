@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../helpers/picture_data.dart';
+
 import '../../motion/motion.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text.dart';
@@ -25,10 +27,14 @@ class HeaderAvatarTile extends StatelessWidget {
     this.radius = 17,
     this.fontSize = 20,
     this.imageUrl,
+    this.imageData,
   });
 
   /// The logo picture; the initials show when there is none.
   final String? imageUrl;
+
+  /// The saved copy of the logo (base64): shown first when there is one.
+  final String? imageData;
 
   final String initials;
   final double size;
@@ -37,10 +43,22 @@ class HeaderAvatarTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final initialsText = Text(
+      initials,
+      style: AppText.sans(
+        size: fontSize,
+        weight: FontWeight.w700,
+        color: AppColors.tagGoldText,
+        letterSpacing: 0.2,
+      ),
+    );
+    final bytes = PictureData.bytes(imageData);
+    final hasPicture = bytes != null || (imageUrl ?? '').isNotEmpty;
     return Container(
       width: size,
       height: size,
       alignment: Alignment.center,
+      clipBehavior: hasPicture ? Clip.antiAlias : Clip.none,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(radius),
         gradient: const LinearGradient(
@@ -48,24 +66,30 @@ class HeaderAvatarTile extends StatelessWidget {
           end: Alignment(0.57, 0.82),
           colors: [Color(0xFFFAF3E3), Color(0xFFF2E6C9)],
         ),
-        image: (imageUrl ?? '').isEmpty
-            ? null
-            : DecorationImage(
-                image: NetworkImage(imageUrl!),
-                fit: BoxFit.cover,
-              ),
       ),
-      child: (imageUrl ?? '').isNotEmpty
-          ? null
-          : Text(
-              initials,
-              style: AppText.sans(
-                size: fontSize,
-                weight: FontWeight.w700,
-                color: AppColors.tagGoldText,
-                letterSpacing: 0.2,
-              ),
-            ),
+      // The default picture (the initials) shows while the logo loads, and
+      // when there is none or it can't be loaded.
+      child: bytes != null
+          ? Image.memory(
+              bytes,
+              width: size,
+              height: size,
+              fit: BoxFit.cover,
+              gaplessPlayback: true,
+              errorBuilder: (_, _, _) => initialsText,
+            )
+          : hasPicture
+          ? Image.network(
+              imageUrl!,
+              width: size,
+              height: size,
+              fit: BoxFit.cover,
+              gaplessPlayback: true,
+              errorBuilder: (_, _, _) => initialsText,
+              loadingBuilder: (_, child, progress) =>
+                  progress == null ? child : initialsText,
+            )
+          : initialsText,
     );
   }
 }

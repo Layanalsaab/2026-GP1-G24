@@ -47,6 +47,7 @@ class PublicProfile {
     this.sectors = const [],
     this.linkedin = '',
     this.photoUrl,
+    this.photoData,
     this.email,
     this.phone,
     this.emailPublic = false,
@@ -63,6 +64,9 @@ class PublicProfile {
   final List<String> sectors;
   final String linkedin;
   final String? photoUrl;
+
+  /// The photo as base64 text (null: the initials show).
+  final String? photoData;
 
   /// Present only when [emailPublic] / [phonePublic].
   final String? email;
@@ -114,6 +118,9 @@ class PublicProfile {
       ],
       linkedin: ((data['linkedinUrl'] ?? data['linkedin']) as String?) ?? '',
       photoUrl: data['photoUrl'] as String?,
+      photoData: (data['photoData'] as String?)?.trim().isEmpty ?? true
+          ? null
+          : data['photoData'] as String?,
       // Never trust a field whose switch is off.
       email: emailPublic ? data['email'] as String? : null,
       phone: phonePublic ? data['phone'] as String? : null,

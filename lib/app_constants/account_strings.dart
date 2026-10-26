@@ -118,8 +118,7 @@ class AccountStrings {
   static const changePhoto = 'Change photo';
   static const removePhoto = 'Remove photo';
   static const cropPhotoTitle = 'Crop photo';
-  static const photoTooLarge =
-      'That photo is too large. Please choose one under 2 MB.';
+  static const photoTooLarge = 'This photo is too large. Try another one.';
   static const photoFailed =
       "We couldn't use that photo. Please try another one.";
   static const photoSaveFailed =

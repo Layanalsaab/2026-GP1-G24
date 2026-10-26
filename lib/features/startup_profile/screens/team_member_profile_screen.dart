@@ -173,6 +173,8 @@ class _TeamMemberProfileScreenState extends State<TeamMemberProfileScreen> {
       bodyMaxLines: 2,
       animate: false,
       badge: RoleTag(role),
+      imageUrl: item?.imageUrl,
+      imageData: item?.imageData,
       onTap: () => _openStartup(ref),
     );
   }
@@ -200,6 +202,7 @@ class _TeamMemberProfileScreenState extends State<TeamMemberProfileScreen> {
               tagsLabel: ProfileStrings.interestedIn,
               tags: p?.sectors ?? const [],
               photoUrl: p?.photoUrl,
+              photoData: p?.photoData,
               linkedin: p?.linkedin,
               onLinkedin: () => openExternalLink(p?.linkedin ?? ''),
             ),

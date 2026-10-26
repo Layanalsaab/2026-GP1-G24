@@ -308,7 +308,11 @@ class _ManageStartupScreenState extends State<ManageStartupScreen> {
               TabbedHeader(
                 title: s.name,
                 eyebrow: RoleTag.labelOf(_role),
-                avatar: HeaderAvatarTile(initials: s.initials),
+                avatar: HeaderAvatarTile(
+                  initials: s.initials,
+                  imageUrl: s.logoUrl,
+                  imageData: s.logoData,
+                ),
                 subline: Row(
                   children: [
                     LiveDot(on: s.isPublic),

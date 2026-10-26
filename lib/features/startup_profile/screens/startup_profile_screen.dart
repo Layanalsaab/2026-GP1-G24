@@ -80,7 +80,11 @@ class _StartupProfileScreenState extends State<StartupProfileScreen> {
         // and no stat strip here: they live in the Overview tab.
         final header = TabbedHeader(
           title: s.name,
-          avatar: HeaderAvatarTile(initials: s.initials, imageUrl: s.logoUrl),
+          avatar: HeaderAvatarTile(
+            initials: s.initials,
+            imageUrl: s.logoUrl,
+            imageData: s.logoData,
+          ),
           subline: Text(
             _vm.infoLine,
             maxLines: 1,

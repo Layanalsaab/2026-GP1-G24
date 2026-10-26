@@ -244,14 +244,14 @@ class FakeUserRepository implements UserRepository {
   Future<String> uploadProfilePhoto(String uid, File photo) async {
     if (photoFails != null) throw AuthException(photoFails!);
     photoUploads.add(uid);
-    final url = 'https://photos.test/$uid.jpg';
+    const data = 'QUJD'; // base64 text of a tiny picture
     final p = profiles[uid];
-    if (p != null) profiles[uid] = p.copyWith(photoUrl: url);
-    return url;
+    if (p != null) profiles[uid] = p.copyWith(photoData: data);
+    return data;
   }
 
   @override
-  Future<void> removeProfilePhoto(String uid, String photoUrl) async {
+  Future<void> removeProfilePhoto(String uid) async {
     if (photoFails != null) throw AuthException(photoFails!);
     photoRemovals.add(uid);
     final p = profiles[uid];

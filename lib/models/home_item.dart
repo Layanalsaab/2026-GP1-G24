@@ -30,6 +30,8 @@ class HomeItem {
     this.matchReason,
     this.joinedLabel,
     this.isNew = false,
+    this.imageUrl,
+    this.imageData,
   });
 
   final HomeItemKind kind;
@@ -74,6 +76,12 @@ class HomeItem {
   final String? joinedLabel;
   final bool isNew;
 
+  /// The startup's logo or the person's photo (null: the default picture).
+  final String? imageUrl;
+
+  /// The saved logo (base64), shown before [imageUrl].
+  final String? imageData;
+
   /// `s-<id>`, `i-<id>`, `p-<id>`: the key a bookmark is stored under.
   String get bookmarkKey => switch (kind) {
     HomeItemKind.startup => 's-$id',
@@ -101,6 +109,8 @@ class HomeItem {
     matchReason: reason,
     joinedLabel: joinedLabel,
     isNew: isNew,
+    imageUrl: imageUrl,
+    imageData: imageData,
   );
 
   HomeItem withJoined(String label) => HomeItem(
@@ -123,6 +133,8 @@ class HomeItem {
     matchReason: matchReason,
     joinedLabel: label,
     isNew: true,
+    imageUrl: imageUrl,
+    imageData: imageData,
   );
 
   factory HomeItem.fromStartup(Startup s) => HomeItem(
@@ -139,6 +151,8 @@ class HomeItem {
     sectors: [s.sectorLabel, if (s.sector == Sector.other) 'Other'],
     lookingFor: [for (final l in s.lookingFor) s.lookingForLabelOf(l)],
     commerceModel: s.businessModelLabel,
+    imageUrl: s.logoUrl,
+    imageData: s.logoData,
   );
 
   factory HomeItem.fromInvestor(InvestorProfile i) => HomeItem(
@@ -156,6 +170,7 @@ class HomeItem {
     matchPercent: i.matchPercent,
     matchReason: i.matchReason,
     joinedLabel: i.joinedLabel,
+    imageUrl: i.photoUrl,
   );
 
   factory HomeItem.fromProgram(Program p) => HomeItem(

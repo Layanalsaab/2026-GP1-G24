@@ -5,19 +5,17 @@ import '../../models/app_user.dart';
 import '../../models/auth_failure.dart';
 import '../../models/investor_criteria.dart';
 import '../firebase_services/firestore_service.dart';
-import '../firebase_services/storage_service.dart';
+import '../device_services/image_fit.dart';
 
 /// Reads and writes the `users` collection (document id = Auth UID).
 class UserRepository {
-  UserRepository({FirestoreService? firestore, StorageService? storage})
-    : _firestore = firestore ?? FirestoreService(),
-      _storage = storage ?? StorageService();
+  UserRepository({FirestoreService? firestore})
+    : _firestore = firestore ?? FirestoreService();
 
   /// The app-wide instance. Tests replace it with a fake.
   static UserRepository instance = UserRepository();
 
   final FirestoreService _firestore;
-  final StorageService _storage;
 
   /// Creates the `users/{uid}` document. [phone] is the 9 digits without
   /// +966; empty / null values are not stored.
@@ -82,33 +80,54 @@ class UserRepository {
     }
   }
 
-  /// Uploads [photo] to `users/{uid}/profile.jpg` and stores its download URL
-  /// in the profile. Returns the URL. Needs the signed-in user to be [uid].
+  /// Saves [photo] as a small compressed picture (base64 text, under ~100 KB)
+  /// in `publicProfiles/{uid}.photoData`; no Firebase Storage. Returns the
+  /// saved text. Needs the signed-in user to be [uid].
   Future<String> uploadProfilePhoto(String uid, File photo) async {
-    final url = await _storage.uploadFile(
-      path: StoragePaths.userProfilePhoto(uid),
-      file: photo,
-      contentType: 'image/jpeg',
-    );
-    await _firestore.updateDocument(FirestoreCollections.users, uid, {
-      UserFields.photoUrl: url,
-    });
-    return url;
+    final data = await ImageFit.base64Of(photo);
+    final d = await _firestore.getDocument(FirestoreCollections.users, uid);
+    await _firestore.setDocument(FirestoreCollections.publicProfiles, uid, {
+      'fullName': d?[UserFields.fullName] ?? '',
+      'role': d?[UserFields.role] == 'investor' ? 'investor' : 'founder',
+      'photoData': data,
+      'updatedAt': _firestore.serverTimestamp(),
+    }, merge: true);
+    return data;
   }
 
-  /// Removes the profile photo: the file (a missing file counts as removed)
-  /// and the `photoUrl` field.
-  Future<void> removeProfilePhoto(String uid, String photoUrl) async {
-    await _storage.deleteByUrl(photoUrl);
-    await _firestore.updateDocument(FirestoreCollections.users, uid, {
-      UserFields.photoUrl: null,
-    });
+  /// Removes the profile photo: the `photoData` field is deleted.
+  Future<void> removeProfilePhoto(String uid) async {
+    try {
+      await _firestore.updateDocument(
+        FirestoreCollections.publicProfiles,
+        uid,
+        {'photoData': _firestore.deleteField()},
+      );
+    } on AuthException catch (e) {
+      // No public profile yet means there is no photo to remove.
+      if (e.failure != AuthFailure.notFound) rethrow;
+    }
   }
 
   /// Null when the profile is missing or has no valid role.
   Future<AppUser?> getProfile(String uid) async {
     final data = await _firestore.getDocument(FirestoreCollections.users, uid);
-    return AppUser.fromMap(uid, data);
+    final user = AppUser.fromMap(uid, data);
+    if (user == null) return null;
+    // The photo is saved on the public profile; read it with the profile.
+    try {
+      final pub = await _firestore.getDocument(
+        FirestoreCollections.publicProfiles,
+        uid,
+      );
+      final photo = (pub?['photoData'] as String?)?.trim();
+      if (photo != null && photo.isNotEmpty) {
+        return user.copyWith(photoData: photo);
+      }
+    } catch (_) {
+      // No photo shown: the initials are the default.
+    }
+    return user;
   }
 
   /// Saves the investor's answers to sign-up steps 3 and 4 and marks their

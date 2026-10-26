@@ -65,6 +65,8 @@ class MyStartupCard extends StatelessWidget {
               children: [
                 TileAvatar(
                   initials: s.initials,
+                  imageUrl: s.logoUrl,
+                  imageData: s.logoData,
                   tone: TileTone.gold,
                   size: 48,
                   radius: 14,

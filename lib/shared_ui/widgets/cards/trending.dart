@@ -60,6 +60,8 @@ class TrendingRow extends StatelessWidget {
     required this.name,
     this.kind = HueAvatarKind.startup,
     this.onTap,
+    this.imageUrl,
+    this.imageData,
   });
 
   /// 1-based rank; 1 gets the gold kicker.
@@ -70,6 +72,8 @@ class TrendingRow extends StatelessWidget {
   final String name;
   final HueAvatarKind kind;
   final VoidCallback? onTap;
+  final String? imageUrl;
+  final String? imageData;
 
   @override
   Widget build(BuildContext context) {
@@ -108,7 +112,13 @@ class TrendingRow extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 14),
-            HueAvatar(name: name, kind: kind, size: 50),
+            HueAvatar(
+              name: name,
+              kind: kind,
+              size: 50,
+              imageUrl: imageUrl,
+              imageData: imageData,
+            ),
           ],
         ),
       ),

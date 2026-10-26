@@ -3,7 +3,7 @@
 import { initializeTestEnvironment } from '@firebase/rules-unit-testing';
 import {
   setDoc, getDoc, getDocs, updateDoc, doc, collection, query, where,
-  writeBatch, serverTimestamp, arrayUnion,
+  writeBatch, serverTimestamp, arrayUnion, deleteField,
 } from 'firebase/firestore';
 import fs from 'fs';
 import path from 'path';
@@ -144,6 +144,25 @@ await check('leave while EDITING a card is refused', false, () => updateDoc(doc(
 await check('leave while changing the name is refused', false, () => updateDoc(doc(mona, 'startups', 'S2'), { memberIds: ['c1'], memberRoles: { c1: 'coFounder' }, name: 'Mine' }));
 await check('member leaves and drops their card', true, () => updateDoc(doc(mona, 'startups', 'S2'), { memberIds: ['c1'], memberRoles: { c1: 'coFounder' }, teamMembers: [fcard, ccard] }));
 await check('a stranger cannot drop cards', false, () => updateDoc(doc(stranger, 'startups', 'S2'), { teamMembers: [fcard] }));
+
+// Profile photo and startup logo: small pictures saved as base64 text
+const pic = (n) => 'A'.repeat(n);
+await check('photoData within 150000 chars is allowed', true, () => setDoc(doc(owner, 'publicProfiles', 'f9'), profile({ photoData: pic(1000) })));
+await check('photoData over 150000 chars is refused', false, () => setDoc(doc(owner, 'publicProfiles', 'f9'), profile({ photoData: pic(150001) })));
+await check('photoData that is not text is refused', false, () => setDoc(doc(owner, 'publicProfiles', 'f9'), profile({ photoData: 12345 })));
+await env.withSecurityRulesDisabled((ctx) => setDoc(doc(ctx.firestore(), 'startups', 'S3'), {
+  founderId: 'f1', name: 'Rafeeq', description: 'd', sector: 'fintech', stage: 'seed',
+  businessModel: 'b2b', location: 'riyadh', lookingFor: ['funding'], isPublic: true,
+  createdAt: new Date(0), fundingRequirement: 500000, memberIds: [], memberRoles: {}, teamMembers: [],
+}));
+const touch = (extra) => ({ ...extra, updatedAt: serverTimestamp() });
+await check('founder updates a startup (baseline)', true, () => updateDoc(doc(founder, 'startups', 'S3'), touch({ problem: 'x' })));
+await check('logoData of 1000 chars is allowed', true, () => updateDoc(doc(founder, 'startups', 'S3'), touch({ logoData: pic(1000) })));
+await check('logoData of 140000 chars (a ~100 KB picture) is allowed', true, () => updateDoc(doc(founder, 'startups', 'S3'), touch({ logoData: pic(140000) })));
+await check('logoData over 150000 chars is refused', false, () => updateDoc(doc(founder, 'startups', 'S3'), touch({ logoData: pic(150001) })));
+await check('logoData that is not text is refused', false, () => updateDoc(doc(founder, 'startups', 'S3'), touch({ logoData: 42 })));
+await check('a stranger cannot set logoData', false, () => updateDoc(doc(stranger, 'startups', 'S3'), touch({ logoData: pic(10) })));
+await check('removing the logo (deleting the field) is allowed', true, () => updateDoc(doc(founder, 'startups', 'S3'), touch({ logoData: deleteField() })));
 
 console.log(fails === 0 ? 'ALL PASSED' : fails + ' FAILED');
 await env.cleanup();

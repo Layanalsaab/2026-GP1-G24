@@ -117,6 +117,10 @@ class StartupFields {
   static const fundingRequirement = 'fundingRequirement';
   static const isPublic = 'isPublic';
   static const logoUrl = 'logoUrl';
+
+  /// The logo itself, a small compressed picture saved as base64 text inside
+  /// the startup (no Firebase Storage).
+  static const logoData = 'logoData';
   static const createdAt = 'createdAt';
   static const updatedAt = 'updatedAt';
 

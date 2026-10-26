@@ -44,6 +44,9 @@ dependencies:
   provider: ^6.1.5+1
   image_picker: ^1.2.3
   image_cropper: ^12.2.1
+  # Re-compresses a picked photo or logo that is still over 100 KB (already
+  # part of the build as a dependency of other packages).
+  image: ^4.12.0
   url_launcher: ^6.3.3
   path_drawing: ^1.0.1
   app_links: ^7.2.2

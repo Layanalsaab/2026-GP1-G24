@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../app_constants/startup_strings.dart';
 import '../../shared_ui/theme/app_colors.dart';
+import 'image_fit.dart';
 
 enum LogoPickFailure { tooLarge, failed }
 
@@ -18,13 +19,12 @@ class LogoPickException implements Exception {
 /// Picks a startup logo from the gallery, crops it to a square, and
 /// compresses it. The only code that talks to image_picker / image_cropper.
 class LogoPickerService {
-  /// Largest logo file we upload. storage.rules enforces the same limit.
-  static const maxBytes = 2 * 1024 * 1024;
-
   /// Logos are shown at most ~100px; 512px keeps them sharp on dense screens
   /// while keeping uploads small.
-  static const _outputSize = 512;
-  static const _jpegQuality = 80;
+  // Small on purpose: the picture is saved INSIDE the Firestore document
+  // (no Firebase Storage), so it must be under ~100 KB.
+  static const _outputSize = 256;
+  static const _jpegQuality = 70;
 
   final _picker = ImagePicker();
   final _cropper = ImageCropper();
@@ -70,7 +70,11 @@ class LogoPickerService {
       if (cropped == null) return null;
 
       final file = File(cropped.path);
-      if (await file.length() > maxBytes) {
+      // Under ~100 KB (compressed again when it is not): it is saved inside
+      // the Firestore document.
+      try {
+        await ImageFit.bytesUnder(file);
+      } on ImageTooLarge {
         throw const LogoPickException(LogoPickFailure.tooLarge);
       }
       return file;

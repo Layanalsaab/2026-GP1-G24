@@ -71,6 +71,7 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
     user = value;
     notifyListeners();
   }
+
   final DiscoveryRepository _discovery;
   final InteractionRepository _interactions;
   final MatchingRepository _matching;
@@ -310,9 +311,7 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
       final s = matchStartup;
       if (s == null) return null;
       final m = s.toMap();
-      return 's-${s.id}-${jsonEncode([
-        for (final f in _startupMatchFields) m[f],
-      ])}';
+      return 's-${s.id}-${jsonEncode([for (final f in _startupMatchFields) m[f]])}';
     }
     final u = user;
     if (!isInvestor || u == null) return null;

@@ -655,6 +655,7 @@ class _MemberCard extends StatelessWidget {
         children: [
           TileAvatar(
             initials: member.initials,
+            imageData: member.photoData,
             size: 40,
             fontSize: 14,
             round: true,

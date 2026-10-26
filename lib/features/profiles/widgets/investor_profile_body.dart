@@ -220,7 +220,12 @@ class InvestorProfileBody extends StatelessWidget {
                 for (var i = 0; i < associations.length; i++)
                   ListRow(
                     showDivider: i > 0,
-                    leading: HueAvatar(name: associations[i].name, size: 44),
+                    leading: HueAvatar(
+                      name: associations[i].name,
+                      size: 44,
+                      imageUrl: associations[i].logoUrl,
+                      imageData: associations[i].logoData,
+                    ),
                     title: associations[i].name,
                     subtitle:
                         '${associations[i].sectorLabel} · ${associations[i].location.label}',

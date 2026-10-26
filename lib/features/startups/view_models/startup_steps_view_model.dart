@@ -420,7 +420,12 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
   ];
 
   String? get existingLogoUrl => removeLogo ? null : initial?.logoUrl;
-  bool get hasLogo => newLogo != null || existingLogoUrl != null;
+
+  /// The saved logo (base64) of the startup being edited, until removed.
+  String? get existingLogoData => removeLogo ? null : initial?.logoData;
+
+  bool get hasLogo =>
+      newLogo != null || existingLogoUrl != null || existingLogoData != null;
 
   // ------------------------------------------------------------ validation
 
@@ -1208,6 +1213,7 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
           : null,
       isPublic: isPublic,
       logoUrl: initial?.logoUrl,
+      logoData: initial?.logoData,
       createdAt: initial?.createdAt,
       updatedAt: initial?.updatedAt,
       problem: problem.text.trim(),

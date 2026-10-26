@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+
+import '../../../helpers/picture_data.dart';
+
 import 'package:flutter/services.dart';
 
 import '../../../app_constants/founder_tools_strings.dart';
@@ -161,9 +164,11 @@ class _Basics extends StatelessWidget {
           hasLogo: vm.hasLogo,
           image: vm.newLogo != null
               ? FileImage(vm.newLogo!)
-              : (vm.existingLogoUrl != null
-                    ? NetworkImage(vm.existingLogoUrl!)
-                    : null),
+              : (PictureData.bytes(vm.existingLogoData) != null
+                    ? MemoryImage(PictureData.bytes(vm.existingLogoData)!)
+                    : (vm.existingLogoUrl != null
+                          ? NetworkImage(vm.existingLogoUrl!)
+                          : null)),
         ),
         if (vm.logoError != null)
           Padding(

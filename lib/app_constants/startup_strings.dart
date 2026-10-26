@@ -92,8 +92,7 @@ class StartupStrings {
   static const logoChange = 'Change logo';
   static const logoRemove = 'Remove';
   static const cropLogoTitle = 'Crop logo';
-  static const logoTooLarge =
-      'This image is larger than 2 MB after compression. Choose a smaller one.';
+  static const logoTooLarge = 'This logo is too large. Try another one.';
   static const logoPickFailed = "We couldn't open that image. Try another one.";
 
   // Fields

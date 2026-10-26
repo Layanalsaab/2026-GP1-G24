@@ -62,7 +62,7 @@ class FounderToolsStrings {
   static const fillRequired = 'Please fix the highlighted fields';
   static const saveMemberFirst = 'Save or cancel the team member first';
   static const saveFailed = 'We couldn’t save your startup. Please try again.';
-  static const logoTooLarge = 'That image is too large. Choose one under 2 MB.';
+  static const logoTooLarge = 'This logo is too large. Try another one.';
   static const logoFailed = 'We couldn’t use that image. Try another one.';
 
   // Step 1

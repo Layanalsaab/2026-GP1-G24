@@ -33,20 +33,22 @@ class PublicProfileRepository {
     }
   }
 
-  static final Map<String, (String, DateTime)> _nameCache = {};
+  static final Map<String, (String, String?, DateTime)> _nameCache = {};
   static const _nameTtl = Duration(minutes: 2);
 
-  /// The CURRENT account names of [uids] (from their public profiles), so a
+  /// The CURRENT name and photo of [uids] (from their public profiles), so a
   /// team card follows the person's Edit profile. A person with no profile is
   /// simply missing from the result. Cached for two minutes; best effort.
-  Future<Map<String, String>> namesOf(Iterable<String> uids) async {
+  Future<Map<String, ({String name, String? photoData})>> liveOf(
+    Iterable<String> uids,
+  ) async {
     final now = DateTime.now();
-    final out = <String, String>{};
+    final out = <String, ({String name, String? photoData})>{};
     final missing = <String>[];
     for (final uid in uids.toSet()) {
       final hit = _nameCache[uid];
-      if (hit != null && now.difference(hit.$2) < _nameTtl) {
-        out[uid] = hit.$1;
+      if (hit != null && now.difference(hit.$3) < _nameTtl) {
+        out[uid] = (name: hit.$1, photoData: hit.$2);
       } else {
         missing.add(uid);
       }
@@ -58,11 +60,13 @@ class PublicProfileRepository {
             final data = await _firestore.getDocument(_col, uid);
             final name = data?['fullName'];
             if (name is String && name.trim().isNotEmpty) {
-              out[uid] = name.trim();
-              _nameCache[uid] = (name.trim(), now);
+              final photo = (data?['photoData'] as String?)?.trim();
+              final url = photo == null || photo.isEmpty ? null : photo;
+              out[uid] = (name: name.trim(), photoData: url);
+              _nameCache[uid] = (name.trim(), url, now);
             }
           } catch (_) {
-            // Keep the name stored on the card.
+            // Keep what is stored on the card.
           }
         }(),
     ]);
@@ -87,17 +91,11 @@ class PublicProfileRepository {
     PublicProfile profile, {
     String? alsoCheck,
   }) async {
-    final ids = <String>{
-      for (final r in profile.startups) r.id,
-      ?alsoCheck,
-    };
+    final ids = <String>{for (final r in profile.startups) r.id, ?alsoCheck};
     final found = await Future.wait([
       for (final id in ids) _roleIn(id, profile.id),
     ]);
-    return [
-      for (final r in found)
-        ?r,
-    ];
+    return [for (final r in found) ?r];
   }
 
   Future<ProfileStartupRef?> _roleIn(String startupId, String personId) async {
@@ -121,12 +119,7 @@ class PublicProfileRepository {
         role = null;
       }
       if (role == null) return null;
-      return ProfileStartupRef(
-        id: s.id,
-        name: s.name,
-        role: role,
-        startup: s,
-      );
+      return ProfileStartupRef(id: s.id, name: s.name, role: role, startup: s);
     } catch (_) {
       // Not allowed to read it (a private startup) or not there any more.
       return null;

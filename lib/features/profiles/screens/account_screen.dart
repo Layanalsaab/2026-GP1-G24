@@ -129,6 +129,8 @@ class _OwnProfileScreenState extends State<OwnProfileScreen> {
                     bodyMaxLines: 2,
                     animate: false,
                     badge: RoleTag(entry.role),
+                    imageUrl: item.imageUrl,
+                    imageData: item.imageData,
                     onTap: () => _openStartup(entry),
                   );
                 },
@@ -178,6 +180,7 @@ class _OwnProfileScreenState extends State<OwnProfileScreen> {
                       : ProfileStrings.interestedIn,
                   tags: _vm.sectors,
                   photoUrl: u.photoUrl,
+                  photoData: u.photoData,
                   linkedin: _vm.linkedin,
                   onLinkedin: () => openExternalLink(_vm.linkedin),
                 ),
@@ -215,6 +218,8 @@ class _OwnProfileScreenState extends State<OwnProfileScreen> {
                                   leading: HueAvatar(
                                     name: _vm.associations[i].name,
                                     size: 44,
+                                    imageUrl: _vm.associations[i].logoUrl,
+                                    imageData: _vm.associations[i].logoData,
                                   ),
                                   title: _vm.associations[i].name,
                                   subtitle:

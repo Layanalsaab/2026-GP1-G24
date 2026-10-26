@@ -107,9 +107,8 @@ class MatchingRepository {
     final byId = {for (final s in pool) s.id: s};
     return [
       for (final r in ranker.matchesForInvestor(me, pool))
-        HomeItem.fromStartup(
-          _shownStartups[r.id] = startups[r.id]!,
-        ).withMatch(r.percent, ranker.shortReason(me, byId[r.id]!)),
+        HomeItem.fromStartup(_shownStartups[r.id] = startups[r.id]!)
+            .withMatch(r.percent, ranker.shortReason(me, byId[r.id]!)),
     ];
   }
 

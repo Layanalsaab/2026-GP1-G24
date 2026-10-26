@@ -36,6 +36,7 @@ class AppUser {
     this.preferredStages = const [],
     this.ticketSize,
     this.photoUrl,
+    this.photoData,
     this.linkedin,
     this.gain = '',
     this.valueOffered = '',
@@ -79,6 +80,11 @@ class AppUser {
 
   /// Download URL of the profile photo; null when the user has none.
   final String? photoUrl;
+
+  /// The photo itself, a small compressed square as base64 text. It lives on
+  /// `publicProfiles/{uid}` (not in `users`) and is read when the profile
+  /// loads; null when the user has none (the initials show instead).
+  final String? photoData;
 
   /// Optional LinkedIn profile link (sign-up, Edit profile).
   final String? linkedin;
@@ -137,6 +143,7 @@ class AppUser {
     List<String>? preferredStages,
     String? ticketSize,
     String? photoUrl,
+    String? photoData,
     bool clearPhoto = false,
     String? linkedin,
     String? gain,
@@ -160,6 +167,7 @@ class AppUser {
     preferredStages: preferredStages ?? this.preferredStages,
     ticketSize: ticketSize ?? this.ticketSize,
     photoUrl: clearPhoto ? null : (photoUrl ?? this.photoUrl),
+    photoData: clearPhoto ? null : (photoData ?? this.photoData),
     linkedin: linkedin ?? this.linkedin,
     gain: gain ?? this.gain,
     valueOffered: valueOffered ?? this.valueOffered,

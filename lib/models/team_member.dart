@@ -10,6 +10,7 @@ class TeamMember {
     this.invited = false,
     this.isFounder = false,
     this.uid,
+    this.photoData,
   });
 
   static const nameMax = 50;
@@ -42,6 +43,10 @@ class TeamMember {
   /// shows the typed text.
   final String? uid;
 
+  /// The person's photo (base64), read from their public profile when a team is
+  /// shown. Never stored on the startup (null: the default picture).
+  final String? photoData;
+
   TeamMember copyWith({
     String? name,
     String? email,
@@ -51,6 +56,7 @@ class TeamMember {
     bool? invited,
     bool? isFounder,
     String? uid,
+    String? photoData,
   }) => TeamMember(
     name: name ?? this.name,
     email: email ?? this.email,
@@ -60,6 +66,7 @@ class TeamMember {
     invited: invited ?? this.invited,
     isFounder: isFounder ?? this.isFounder,
     uid: uid ?? this.uid,
+    photoData: photoData ?? this.photoData,
   );
 
   /// The sub-line on a team row: the role.

@@ -40,6 +40,8 @@ class HomeCard extends StatelessWidget {
     this.animate = true,
     this.bodyMaxLines = 3,
     this.badge,
+    this.imageUrl,
+    this.imageData,
   });
 
   final String name;
@@ -76,6 +78,12 @@ class HomeCard extends StatelessWidget {
   /// person's profile). Cards in the Hub don't use it.
   final Widget? badge;
 
+  /// The startup's logo or the person's photo (the initials when none).
+  final String? imageUrl;
+
+  /// The saved copy of the picture (base64): shown first when there is one.
+  final String? imageData;
+
   @override
   Widget build(BuildContext context) {
     final showActions = onShare != null || onBookmark != null;
@@ -102,7 +110,13 @@ class HomeCard extends StatelessWidget {
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        HueAvatar(name: name, kind: kind, size: 58),
+                        HueAvatar(
+                          name: name,
+                          kind: kind,
+                          size: 58,
+                          imageUrl: imageUrl,
+                          imageData: imageData,
+                        ),
                         const SizedBox(width: 14),
                         Expanded(
                           child: _NameBlock(
@@ -480,6 +494,8 @@ class RailCard extends StatelessWidget {
     required this.joined,
     this.kind = HueAvatarKind.startup,
     this.onTap,
+    this.imageUrl,
+    this.imageData,
   });
 
   final String name;
@@ -491,6 +507,8 @@ class RailCard extends StatelessWidget {
   final String joined;
   final HueAvatarKind kind;
   final VoidCallback? onTap;
+  final String? imageUrl;
+  final String? imageData;
 
   @override
   Widget build(BuildContext context) {
@@ -517,7 +535,13 @@ class RailCard extends StatelessWidget {
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        HueAvatar(name: name, kind: kind, size: 58),
+                        HueAvatar(
+                          name: name,
+                          kind: kind,
+                          size: 58,
+                          imageUrl: imageUrl,
+                          imageData: imageData,
+                        ),
                         const SizedBox(width: 14),
                         Expanded(
                           child: _NameBlock(name: name, tag: tag, city: city),

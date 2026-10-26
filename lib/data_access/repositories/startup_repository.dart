@@ -9,7 +9,7 @@ import '../../models/startup.dart';
 import '../../models/team_member.dart';
 import '../firebase_services/auth_service.dart';
 import '../firebase_services/firestore_service.dart';
-import '../firebase_services/storage_service.dart';
+import '../device_services/image_fit.dart';
 import 'funding_round_repository.dart';
 import 'public_profile_repository.dart';
 
@@ -21,11 +21,9 @@ class StartupRepository {
   StartupRepository({
     AuthService? auth,
     FirestoreService? firestore,
-    StorageService? storage,
     FundingRoundRepository? rounds,
   }) : _auth = auth ?? AuthService(),
        _firestore = firestore ?? FirestoreService(),
-       _storage = storage ?? StorageService(),
        _roundsOverride = rounds;
 
   /// The app-wide instance. Tests replace it with a fake.
@@ -37,7 +35,6 @@ class StartupRepository {
 
   final AuthService _auth;
   final FirestoreService _firestore;
-  final StorageService _storage;
   final FundingRoundRepository? _roundsOverride;
 
   /// Read when used, so a test can replace FundingRoundRepository.instance.
@@ -68,7 +65,7 @@ class StartupRepository {
     return startup == null ? null : await _withLiveNames(startup);
   }
 
-  /// A joined person's card shows their CURRENT account name (it follows
+  /// A joined person's card shows their CURRENT account name and photo (it follows
   /// Edit profile), not the one typed when they were invited. Sample startups
   /// and cards not linked to an account keep what is stored. Best effort.
   Future<Startup> _withLiveNames(Startup s) async {
@@ -79,12 +76,17 @@ class StartupRepository {
           if (m.uid != null && !m.invited) m.uid!,
       };
       if (uids.isEmpty) return s;
-      final names = await PublicProfileRepository.instance.namesOf(uids);
-      if (names.isEmpty) return s;
+      final live = await PublicProfileRepository.instance.liveOf(uids);
+      if (live.isEmpty) return s;
       return s.copyWith(
         team: [
           for (final m in s.team)
-            names[m.uid] == null ? m : m.copyWith(name: names[m.uid]),
+            live[m.uid] == null
+                ? m
+                : m.copyWith(
+                    name: live[m.uid]!.name,
+                    photoData: live[m.uid]!.photoData,
+                  ),
         ],
       );
     } catch (_) {
@@ -211,14 +213,13 @@ class StartupRepository {
   Future<Startup> create(Startup startup, {File? logo}) async {
     final founderId = _founderId;
     final id = _firestore.newDocumentId(_collection);
-    // Upload first: if it fails, nothing has been written yet.
-    final logoUrl = logo == null
-        ? null
-        : await _uploadLogo(founderId, id, logo);
+    // The logo is a small compressed picture saved inside the startup
+    // (no Firebase Storage). Done first: if it fails, nothing is written.
+    final logoData = logo == null ? null : await ImageFit.base64Of(logo);
     final toSave = startup.copyWith(
       id: id,
       founderId: founderId,
-      logoUrl: logoUrl,
+      logoData: logoData,
     );
     try {
       // Funding ticked: Round 1 opens in the same write.
@@ -237,8 +238,6 @@ class StartupRepository {
         ]);
       }
     } catch (_) {
-      // Don't leave an orphan logo behind when the document wasn't saved.
-      if (logoUrl != null) await _deleteLogoQuietly(logoUrl);
       rethrow;
     }
     changes.value++;
@@ -248,8 +247,8 @@ class StartupRepository {
 
   /// Saves changes to an existing startup.
   ///
-  /// Pass [newLogo] to replace the logo, or [removeLogo] to clear it. The old
-  /// logo file is deleted only after the document points at the new one.
+  /// Pass [newLogo] to replace the logo, or [removeLogo] to clear it (the field
+  /// is deleted). The logo is saved inside the startup as base64 text.
   ///
   /// The funding rounds follow the Funding answers in the same write: Funding
   /// ticked opens a round (or updates the open one), unticked closes it.
@@ -258,14 +257,9 @@ class StartupRepository {
     File? newLogo,
     bool removeLogo = false,
   }) async {
-    // Logos live under the founder's folder, whoever (co-founder) uploads.
-    final founderId = startup.founderId;
-    final oldLogoUrl = startup.logoUrl;
     var updated = startup;
     if (newLogo != null) {
-      updated = startup.copyWith(
-        logoUrl: await _uploadLogo(founderId, startup.id, newLogo),
-      );
+      updated = startup.copyWith(logoData: await ImageFit.base64Of(newLogo));
     } else if (removeLogo) {
       updated = startup.copyWith(clearLogo: true);
     }
@@ -275,6 +269,9 @@ class StartupRepository {
     final roundWrites = await _rounds.writesFor(startup.id, updated);
     final startupData = {
       ...updated.toMap(),
+      // "Remove logo" deletes the field.
+      if (updated.logoData == null)
+        StartupFields.logoData: _firestore.deleteField(),
       StartupFields.updatedAt: _firestore.serverTimestamp(),
     };
     if (roundWrites.isEmpty) {
@@ -286,8 +283,6 @@ class StartupRepository {
       ]);
     }
 
-    final logoChanged = oldLogoUrl != null && oldLogoUrl != updated.logoUrl;
-    if (logoChanged) await _deleteLogoQuietly(oldLogoUrl);
     changes.value++;
     _refreshMyProfile();
     return updated;
@@ -302,16 +297,12 @@ class StartupRepository {
     }
   }
 
-  /// Deletes the startup, its funding rounds and its logo. Every membership goes with it (the
+  /// Deletes the startup and its funding rounds (the logo is inside the startup). Every membership goes with it (the
   /// members are stored inside the startup document), so it disappears from
   /// every team member's My Startups. Other people's bookmarks of it are
   /// dropped the next time they open Bookmarks (the bookmark repository
   /// removes a bookmark whose startup no longer exists).
   Future<void> delete(Startup startup) async {
-    final logoUrl = startup.logoUrl;
-    // Logo first: if that fails we stop, and the startup is still intact for
-    // the founder to retry. (A missing logo file counts as deleted.)
-    if (logoUrl != null) await _storage.deleteByUrl(logoUrl);
     // Its funding rounds first: Firestore doesn't delete a subcollection
     // with its document, and the rules read the startup to allow it.
     final roundDeletes = await _rounds.deletesFor(startup.id);
@@ -319,25 +310,6 @@ class StartupRepository {
     await _firestore.deleteDocument(_collection, startup.id);
     changes.value++;
     _refreshMyProfile();
-  }
-
-  Future<String> _uploadLogo(String founderId, String startupId, File logo) {
-    // A new file name per upload, so cached images never show an old logo.
-    final fileName = 'logo_${DateTime.now().millisecondsSinceEpoch}.jpg';
-    return _storage.uploadFile(
-      path: StoragePaths.startupLogo(founderId, startupId, fileName),
-      file: logo,
-      contentType: 'image/jpeg',
-    );
-  }
-
-  Future<void> _deleteLogoQuietly(String url) async {
-    try {
-      await _storage.deleteByUrl(url);
-    } catch (e) {
-      // Cleanup only: the startup itself was saved correctly.
-      debugPrint('Could not delete old logo: $e');
-    }
   }
 
   /// A just-saved document may have no server timestamp yet; treat it as new.

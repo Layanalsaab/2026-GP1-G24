@@ -30,6 +30,7 @@ class InvestorProfile {
     this.roundSize,
     this.ledRound,
     this.commerceModels = const [],
+    this.photoUrl,
   });
 
   final String id;
@@ -91,6 +92,9 @@ class InvestorProfile {
 
   /// Short names ("B2B").
   final List<String> commerceModels;
+
+  /// Profile photo (null: the default picture).
+  final String? photoUrl;
 
   /// "SAR 500K – 1M" from two amounts (K thousands, M millions); one amount
   /// gives "SAR 500K"; none gives "".
@@ -157,6 +161,7 @@ class InvestorProfile {
           : amountLabel(c?.roundMin, c?.roundMax),
       ledRound: c?.hasLedRound,
       commerceModels: shortModels.isEmpty ? const [] : shortModels.split(', '),
+      photoUrl: _text(d['photoUrl']),
     );
   }
 
@@ -207,5 +212,6 @@ class InvestorProfile {
     roundSize: roundSize,
     ledRound: ledRound,
     commerceModels: commerceModels,
+    photoUrl: photoUrl,
   );
 }

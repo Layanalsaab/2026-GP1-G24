@@ -83,6 +83,7 @@ class _InvestorProfileScreenState extends State<InvestorProfileScreen> {
                         metaTail: _vm.associationCount,
                         tagsLabel: ProfileStrings.investsIn,
                         tags: inv.sectors,
+                        photoUrl: inv.photoUrl,
                         linkedin: _vm.linkedin,
                         onLinkedin: () => openExternalLink(_vm.linkedin),
                       ),

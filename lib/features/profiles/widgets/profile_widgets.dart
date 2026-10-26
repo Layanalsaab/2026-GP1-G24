@@ -2,6 +2,8 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../../../helpers/picture_data.dart';
+
 import '../../../app_constants/profile_strings.dart';
 import '../../../helpers/share_link.dart';
 import '../../../data_access/repositories/bookmark_repository.dart';
@@ -85,6 +87,7 @@ class ProfileHead extends StatelessWidget {
     required this.tags,
     this.city,
     this.photoUrl,
+    this.photoData,
     this.linkedin,
     this.onLinkedin,
   });
@@ -98,13 +101,27 @@ class ProfileHead extends StatelessWidget {
   final List<String> tags;
   final String? photoUrl;
 
+  /// The saved copy of the photo (base64): shown first when there is one.
+  final String? photoData;
+
   /// Shows the LinkedIn pill when non-empty.
   final String? linkedin;
   final VoidCallback? onLinkedin;
 
+  /// The default picture: the initials.
+  Widget _initialsText() => Text(
+    initials,
+    style: AppText.sans(
+      size: 30,
+      weight: FontWeight.w700,
+      color: AppColors.moss600,
+    ),
+  );
+
   @override
   Widget build(BuildContext context) {
-    final hasPhoto = (photoUrl ?? '').isNotEmpty;
+    final bytes = PictureData.bytes(photoData);
+    final hasPhoto = bytes != null || (photoUrl ?? '').isNotEmpty;
     final hasCity = (city ?? '').trim().isNotEmpty;
     return Padding(
       padding: const EdgeInsets.fromLTRB(18, 0, 18, 18),
@@ -129,23 +146,28 @@ class ProfileHead extends StatelessWidget {
                     offset: Offset(0, 8),
                   ),
                 ],
-                image: hasPhoto
-                    ? DecorationImage(
-                        image: NetworkImage(photoUrl!),
-                        fit: BoxFit.cover,
-                      )
-                    : null,
               ),
-              child: hasPhoto
-                  ? null
-                  : Text(
-                      initials,
-                      style: AppText.sans(
-                        size: 30,
-                        weight: FontWeight.w700,
-                        color: AppColors.moss600,
-                      ),
-                    ),
+              child: bytes != null
+                  ? Image.memory(
+                      bytes,
+                      width: 96,
+                      height: 96,
+                      fit: BoxFit.cover,
+                      gaplessPlayback: true,
+                      errorBuilder: (_, _, _) => _initialsText(),
+                    )
+                  : hasPhoto
+                  ? Image.network(
+                      photoUrl!,
+                      width: 96,
+                      height: 96,
+                      fit: BoxFit.cover,
+                      gaplessPlayback: true,
+                      errorBuilder: (_, _, _) => _initialsText(),
+                      loadingBuilder: (_, child, progress) =>
+                          progress == null ? child : _initialsText(),
+                    )
+                  : _initialsText(),
             ),
           ),
           const SizedBox(height: 12),

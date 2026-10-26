@@ -121,7 +121,10 @@ class EditAccountViewModel extends ChangeNotifier with SafeNotifier {
   bool removePhoto = false;
 
   bool get hasPhoto =>
-      newPhoto != null || (!removePhoto && (user.photoUrl ?? '').isNotEmpty);
+      newPhoto != null ||
+      (!removePhoto &&
+          ((user.photoData ?? '').isNotEmpty ||
+              (user.photoUrl ?? '').isNotEmpty));
 
   /// True after the first Save attempt: errors then update as the user types.
   bool attempted = false;
@@ -270,20 +273,21 @@ class EditAccountViewModel extends ChangeNotifier with SafeNotifier {
             .saveInvestorOnboarding(uid: user.uid, criteria: built)
             .timeout(_saveLimit);
       }
-      var photoUrl = user.photoUrl;
+      var photoData = user.photoData;
       var photoRemoved = false;
       final picked = newPhoto;
       if (picked != null) {
         try {
-          photoUrl = await _users.uploadProfilePhoto(user.uid, picked);
+          photoData = await _users.uploadProfilePhoto(user.uid, picked);
         } catch (_) {
           formError = AccountStrings.photoSaveFailed;
           return null;
         }
-      } else if (removePhoto && photoUrl != null) {
+      } else if (removePhoto &&
+          (photoData != null || (user.photoUrl ?? '').isNotEmpty)) {
         try {
-          await _users.removeProfilePhoto(user.uid, photoUrl);
-          photoUrl = null;
+          await _users.removeProfilePhoto(user.uid);
+          photoData = null;
           photoRemoved = true;
         } catch (_) {
           formError = AccountStrings.photoSaveFailed;
@@ -302,16 +306,15 @@ class EditAccountViewModel extends ChangeNotifier with SafeNotifier {
         linkedin: link,
         gain: user.isInvestor ? hope : null,
         valueOffered: user.isInvestor ? bring : null,
-        photoUrl: photoUrl,
+        photoData: photoData,
         clearPhoto: photoRemoved,
         investorCriteria: built,
         emailPublic: emailPublic,
         phonePublic: phonePublic,
       );
-      // Teams find me by e-mail with my current name.
-      if (name != user.fullName.trim()) {
-        unawaited(TeamLookup.instance.publish(updated, emailVerified: true));
-      }
+      // Teams find me by e-mail with my current name, and my public profile
+      // (name, photo, city, bio, sectors, public contact) stays up to date.
+      unawaited(TeamLookup.instance.publish(updated, emailVerified: true));
       return updated;
     } on AuthException catch (e) {
       formError = e.failure == AuthFailure.network

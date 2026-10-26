@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:startsa/app_constants/account_strings.dart';
 import 'package:startsa/app_constants/app_strings.dart';
 import 'package:startsa/app_constants/auth_strings.dart';
 import 'package:startsa/app_constants/validation_strings.dart';
@@ -235,7 +236,7 @@ void main() {
       addTearDown(vm.dispose);
       expect(await vm.togglePhoto(), isNull);
       picker.failure = ProfilePhotoFailure.tooLarge;
-      expect(await vm.togglePhoto(), contains('2 MB'));
+      expect(await vm.togglePhoto(), AccountStrings.photoTooLarge);
     });
   });
 

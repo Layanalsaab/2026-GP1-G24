@@ -52,6 +52,7 @@ class TeamMemberRow extends StatelessWidget {
             children: [
               TileAvatar(
                 initials: member.initials,
+                imageData: member.photoData,
                 size: 40,
                 radius: 12,
                 fontSize: 13,

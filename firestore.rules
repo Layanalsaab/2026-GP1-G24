@@ -108,13 +108,16 @@ service cloud.firestore {
                                                  'sectorsOther', 'linkedinUrl',
                                                  'emailPublic', 'phonePublic',
                                                  'email', 'phone', 'startups',
-                                                 'isSample', 'updatedAt'])
+                                                 'isSample', 'updatedAt',
+                                                 'photoData'])
         && request.resource.data.fullName is string
         && request.resource.data.fullName.size() <= 50
         && optionalString(request.resource.data, 'about', 1000)
         && optionalString(request.resource.data, 'bio', 2000)
         && optionalString(request.resource.data, 'valueOffered', 1000)
         && optionalString(request.resource.data, 'hopeToGain', 1000)
+        // The photo: a small compressed picture saved as base64 text.
+        && optionalString(request.resource.data, 'photoData', 150000)
         && request.resource.data.get('role', 'founder') in ['founder', 'investor']
         // The profile is always public. The e-mail and the phone are listed
         // ONLY when the person set that one to Public (each on its own).
@@ -331,7 +334,7 @@ service cloud.firestore {
                              'location', 'foundedYear', 'websiteUrl',
                              'lookingFor', 'lookingForOther',
                              'fundingRequirement', 'isPublic',
-                             'logoUrl', 'createdAt', 'updatedAt',
+                             'logoUrl', 'logoData', 'createdAt', 'updatedAt',
                              'problem', 'solution', 'targetCustomers',
                              'differentiation', 'marketSizeTam',
                              'marketSizeSam', 'marketSizeSom', 'teamMembers',
@@ -371,6 +374,8 @@ service cloud.firestore {
         && validFoundedYear(d)
         && optionalString(d, 'websiteUrl', 2048)
         && optionalString(d, 'logoUrl', 2048)
+        // The logo: a small compressed picture saved as base64 text.
+        && optionalString(d, 'logoData', 150000)
         && optionalString(d, 'problem', 1000)
         && optionalString(d, 'solution', 1000)
         && optionalString(d, 'targetCustomers', 1000)
