@@ -69,22 +69,11 @@ const SAUDI_CITIES = ['Riyadh', 'Jeddah', 'Dammam', 'Al Khobar', 'Makkah', 'Madi
   'Buraydah', 'Hail', 'Jazan', 'Najran', 'Al Ahsa', 'Taif', 'Yanbu', 'Dhahran', 'Al Jubail'];
 
 // ---------------------------------------------------------- the sample pool
+// Saudi names only: every sample founder / team member is Saudi.
 const GROUPS = [
   { weight: 50, male: ['Abdullah', 'Faisal', 'Khalid', 'Saud', 'Turki', 'Nawaf', 'Mansour', 'Fahad', 'Salman', 'Rayan', 'Bandar', 'Majed', 'Yazeed', 'Talal', 'Sultan', 'Omar', 'Hamad', 'Ibrahim', 'Mishari', 'Abdulaziz', 'Nasser', 'Waleed', 'Meshal', 'Badr'],
     female: ['Noura', 'Lama', 'Reem', 'Haifa', 'Sarah', 'Maha', 'Dana', 'Hessa', 'Jawaher', 'Ghada', 'Rawan', 'Layan', 'Shahad', 'Joud', 'Amal', 'Latifa', 'Bayan', 'Dalal', 'Wejdan', 'Asma', 'Munira', 'Abeer'],
     last: ['Alharbi', 'Alotaibi', 'Alqahtani', 'Alghamdi', 'Alzahrani', 'Aldossari', 'Alshehri', 'Almutairi', 'Alsubaie', 'Alshammari', 'Alamri', 'Alharthi', 'Alrashed', 'Alfaraj', 'Alsaif', 'Alhajri', 'Alkhaldi', 'Alnasser', 'Alsalem', 'Alanazi', 'Alyami', 'Albalawi'] },
-  { weight: 20, male: ['Karim', 'Tariq', 'Samir', 'Hadi', 'Youssef', 'Mahmoud', 'Ahmed', 'Mostafa', 'Amr', 'Ziad', 'Rami', 'Jad', 'Omar', 'Basel'],
-    female: ['Nour', 'Salma', 'Yasmin', 'Layla', 'Rania', 'Hala', 'Mariam', 'Farah', 'Dina', 'Lina', 'Hana', 'Tala'],
-    last: ['Haddad', 'Khoury', 'Nasser', 'Mansour', 'Saleh', 'Hassan', 'Ibrahim', 'Farouk', 'Zaki', 'Abboud', 'Salameh', 'Fahmy', 'Sabbagh', 'Darwish'] },
-  { weight: 6, male: ['Amine', 'Mehdi', 'Sofiane', 'Anis', 'Yassine', 'Walid'],
-    female: ['Imane', 'Sana', 'Lamia', 'Nadia', 'Hind', 'Meriem'],
-    last: ['Benali', 'Cherif', 'Mansouri', 'Bouzid', 'Haddadi', 'Belkacem'] },
-  { weight: 10, male: ['Arjun', 'Rohan', 'Vikram', 'Imran', 'Bilal', 'Hamza', 'Rahul', 'Faizan'],
-    female: ['Priya', 'Ananya', 'Neha', 'Zainab', 'Ayesha', 'Sana', 'Meera', 'Hira'],
-    last: ['Khan', 'Sheikh', 'Patel', 'Sharma', 'Siddiqui', 'Qureshi', 'Malik', 'Iyer', 'Ahmed'] },
-  { weight: 14, male: ['Daniel', 'Michael', 'Lucas', 'Marco', 'Thomas', 'David', 'Pierre', 'Jonas'],
-    female: ['Sophia', 'Emma', 'Chloe', 'Elena', 'Julia', 'Anna', 'Marie', 'Clara'],
-    last: ['Miller', 'Johnson', 'Rossi', 'Novak', 'Schmidt', 'Garcia', 'Laurent', 'Weber', 'Bianchi'] },
 ];
 const FOUNDER_TITLES = ['Founder & CEO', 'Co-founder & CEO', 'Founder', 'CEO', 'Co-founder'];
 const TEAM_ROLES = [
