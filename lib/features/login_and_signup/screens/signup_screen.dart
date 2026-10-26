@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../../app_constants/app_strings.dart';
 import '../../../app_constants/auth_strings.dart';
@@ -342,6 +343,10 @@ class _SignupScreenState extends State<SignupScreen> {
                           placeholder: AuthStrings.passwordPlaceholder,
                           maxLength: Validators.maxPassword,
                           password: true,
+                          // A space is never part of a password.
+                          inputFormatters: [
+                            FilteringTextInputFormatter.deny(RegExp(r'\s')),
+                          ],
                           valid: vm.passwordValid,
                           focusNode: vm.passwordFocus,
                           below: vm.showPasswordRules
@@ -355,6 +360,9 @@ class _SignupScreenState extends State<SignupScreen> {
                           controller: vm.confirm,
                           placeholder: AuthStrings.confirmPlaceholder,
                           password: true,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.deny(RegExp(r'\s')),
+                          ],
                           valid: vm.confirmValid,
                           error: vm.confirmError,
                         ),

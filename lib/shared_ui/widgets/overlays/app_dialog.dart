@@ -77,10 +77,15 @@ class VerifyEmailDialog extends StatelessWidget {
     this.needLogin = false,
     this.inSignup = false,
     this.notVerifiedYet = false,
+    this.below,
   });
 
   final String email;
   final VoidCallback onClose;
+
+  /// Extra content under the spam hint (Log in: the resend row with its
+  /// 60 s countdown, the same as on the Verify step).
+  final Widget? below;
   final bool needLogin;
   final bool inSignup;
 
@@ -157,6 +162,7 @@ class VerifyEmailDialog extends StatelessWidget {
             textAlign: TextAlign.center,
             style: AppText.sans(size: 13, color: AppColors.hint),
           ),
+          ?below,
           const SizedBox(height: 20),
           AppButton(label: 'OK', onPressed: onClose),
         ],
@@ -219,3 +225,4 @@ Future<bool> showDiscardDialog(
   );
   return result ?? false;
 }
+

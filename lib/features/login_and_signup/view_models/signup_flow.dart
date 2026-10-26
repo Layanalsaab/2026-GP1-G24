@@ -33,6 +33,13 @@ class SignupFlow {
   /// True once step 1 created the Auth account in this flow.
   bool accountCreated = false;
 
+  /// The details the account was last saved with (see
+  /// SignupViewModel.detailsKey), to know if Back + Continue changed them.
+  String? savedDetails;
+
+  /// The photo the account was last saved with.
+  String? savedPhotoPath;
+
   /// The step-1 form, kept so Back from the Verify step keeps its answers.
   SignupViewModel? form;
 

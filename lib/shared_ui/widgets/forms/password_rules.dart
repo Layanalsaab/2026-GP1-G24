@@ -15,8 +15,7 @@ class PasswordRule {
 
 /// The five sign-up password rules evaluated live: at least 8 characters,
 /// one uppercase letter, one lowercase letter, one number, one special
-/// character (any
-/// character that is not a letter or digit).
+/// character (any character that is not a letter, digit or space).
 List<PasswordRule> evaluatePasswordRules(String password) => [
   PasswordRule('At least 8 characters', password.length >= 8),
   PasswordRule('One uppercase letter', RegExp('[A-Z]').hasMatch(password)),
@@ -24,7 +23,8 @@ List<PasswordRule> evaluatePasswordRules(String password) => [
   PasswordRule('One number', RegExp('[0-9]').hasMatch(password)),
   PasswordRule(
     'One special character (! @ # \$)',
-    RegExp('[^A-Za-z0-9]').hasMatch(password),
+    // A space is not a special character.
+    RegExp(r'[^A-Za-z0-9\s]').hasMatch(password),
   ),
 ];
 

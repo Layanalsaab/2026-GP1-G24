@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../../app_constants/app_strings.dart';
@@ -41,6 +43,40 @@ class LoginViewModel extends ChangeNotifier with SafeNotifier {
 
   String get verificationEmail => _sentEmail;
 
+  /// The same 60 s resend cooldown as the Verify step.
+  static const resendCooldown = Duration(seconds: 60);
+
+  DateTime? _nextResendAt;
+  Timer? _timer;
+
+  /// Seconds left before "Resend email" turns on (0 = available).
+  int resendSeconds = 0;
+
+  /// The "Too many attempts" line under the resend row.
+  String? resendError;
+
+  void _tick() {
+    final at = _nextResendAt;
+    final left = at == null
+        ? 0
+        : (at.difference(DateTime.now()).inMilliseconds / 1000).ceil();
+    final next = left < 0 ? 0 : left;
+    if (next != resendSeconds) {
+      resendSeconds = next;
+      notifyListeners();
+    }
+    if (next == 0) {
+      _timer?.cancel();
+      _timer = null;
+    }
+  }
+
+  void _startTimer() {
+    _timer?.cancel();
+    if (resendSeconds <= 0) return;
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) => _tick());
+  }
+
   void _edited() {
     _credentialsError = null;
     notifyListeners();
@@ -73,6 +109,12 @@ class LoginViewModel extends ChangeNotifier with SafeNotifier {
       return null;
     }
 
+    // Another email: its own cooldown.
+    if (email.text.trim().toLowerCase() != _sentEmail.toLowerCase()) {
+      _nextResendAt = null;
+      resendError = null;
+      _tick();
+    }
     _sentEmail = email.text.trim();
     _sentPassword = password.text;
     isLoading = true;
@@ -104,23 +146,32 @@ class LoginViewModel extends ChangeNotifier with SafeNotifier {
     return null;
   }
 
-  /// "Resend verification email" in the verify pop-up.
+  /// "Resend email" in the verify pop-up (same rules as the Verify step).
   Future<ResendOutcome> resend() async {
     if (isResending) return ResendOutcome.failed;
+    if (resendSeconds > 0) return ResendOutcome.failed;
     isResending = true;
     formError = null;
+    resendError = null;
     notifyListeners();
     try {
       final result = await _auth.resendVerification(_sentEmail, _sentPassword);
-      return result == ResendResult.sent
-          ? ResendOutcome.sent
-          : ResendOutcome.alreadyVerified;
+      if (result == ResendResult.sent) {
+        _nextResendAt = DateTime.now().add(resendCooldown);
+        _tick();
+        _startTimer();
+        return ResendOutcome.sent;
+      }
+      return ResendOutcome.alreadyVerified;
     } on AuthException catch (e) {
-      formError = switch (e.failure) {
-        AuthFailure.network => AppStrings.networkError,
-        AuthFailure.tooManyRequests => AppStrings.tooManyRequests,
-        _ => AppStrings.genericError,
-      };
+      if (e.failure == AuthFailure.tooManyRequests) {
+        resendError = AppStrings.resendTooMany;
+      } else {
+        formError = switch (e.failure) {
+          AuthFailure.network => AppStrings.networkError,
+          _ => AppStrings.genericError,
+        };
+      }
       return ResendOutcome.failed;
     } catch (_) {
       formError = AppStrings.genericError;
@@ -133,6 +184,7 @@ class LoginViewModel extends ChangeNotifier with SafeNotifier {
 
   @override
   void dispose() {
+    _timer?.cancel();
     email.removeListener(_edited);
     password.removeListener(_edited);
     email.dispose();
