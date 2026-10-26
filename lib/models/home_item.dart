@@ -30,6 +30,7 @@ class HomeItem {
     this.matchReason,
     this.joinedLabel,
     this.isNew = false,
+    this.createdAt,
   });
 
   final HomeItemKind kind;
@@ -74,6 +75,10 @@ class HomeItem {
   final String? joinedLabel;
   final bool isNew;
 
+  /// When the startup / investor joined Start.sa (for "Newest"). Null when
+  /// unknown (programs, older documents).
+  final DateTime? createdAt;
+
   /// `s-<id>`, `i-<id>`, `p-<id>`: the key a bookmark is stored under.
   String get bookmarkKey => switch (kind) {
     HomeItemKind.startup => 's-$id',
@@ -101,6 +106,7 @@ class HomeItem {
     matchReason: reason,
     joinedLabel: joinedLabel,
     isNew: isNew,
+    createdAt: createdAt,
   );
 
   HomeItem withJoined(String label) => HomeItem(
@@ -123,6 +129,7 @@ class HomeItem {
     matchReason: matchReason,
     joinedLabel: label,
     isNew: true,
+    createdAt: createdAt,
   );
 
   factory HomeItem.fromStartup(Startup s) => HomeItem(
@@ -139,6 +146,7 @@ class HomeItem {
     sectors: [s.sectorLabel, if (s.sector == Sector.other) 'Other'],
     lookingFor: [for (final l in s.lookingFor) s.lookingForLabelOf(l)],
     commerceModel: s.businessModelLabel,
+    createdAt: s.createdAt,
   );
 
   factory HomeItem.fromInvestor(InvestorProfile i) => HomeItem(
@@ -156,6 +164,7 @@ class HomeItem {
     matchPercent: i.matchPercent,
     matchReason: i.matchReason,
     joinedLabel: i.joinedLabel,
+    createdAt: i.createdAt,
   );
 
   factory HomeItem.fromProgram(Program p) => HomeItem(
