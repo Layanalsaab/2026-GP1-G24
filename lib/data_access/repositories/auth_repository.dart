@@ -187,8 +187,8 @@ class AuthRepository {
               .uploadProfilePhoto(account.uid, photo)
               .timeout(const Duration(seconds: 30));
         } else if (removePhoto) {
-          final url = (await _users.getProfile(account.uid))?.photoUrl;
-          if (url != null) await _users.removeProfilePhoto(account.uid, url);
+          // The photo is saved inside the public profile (no Storage).
+          await _users.removeProfilePhoto(account.uid);
         }
       } catch (e) {
         debugPrint('Updating the profile photo failed: $e');

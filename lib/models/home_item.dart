@@ -30,12 +30,9 @@ class HomeItem {
     this.matchReason,
     this.joinedLabel,
     this.isNew = false,
-<<<<<<< HEAD
     this.imageUrl,
     this.imageData,
-=======
     this.createdAt,
->>>>>>> a21adb66f4df6b4b1774ae9990d1c323232c704b
   });
 
   final HomeItemKind kind;
@@ -80,17 +77,15 @@ class HomeItem {
   final String? joinedLabel;
   final bool isNew;
 
-<<<<<<< HEAD
   /// The startup's logo or the person's photo (null: the default picture).
   final String? imageUrl;
 
   /// The saved logo (base64), shown before [imageUrl].
   final String? imageData;
-=======
+
   /// When the startup / investor joined Start.sa (for "Newest"). Null when
   /// unknown (programs, older documents).
   final DateTime? createdAt;
->>>>>>> a21adb66f4df6b4b1774ae9990d1c323232c704b
 
   /// `s-<id>`, `i-<id>`, `p-<id>`: the key a bookmark is stored under.
   String get bookmarkKey => switch (kind) {
@@ -119,12 +114,9 @@ class HomeItem {
     matchReason: reason,
     joinedLabel: joinedLabel,
     isNew: isNew,
-<<<<<<< HEAD
     imageUrl: imageUrl,
     imageData: imageData,
-=======
     createdAt: createdAt,
->>>>>>> a21adb66f4df6b4b1774ae9990d1c323232c704b
   );
 
   HomeItem withJoined(String label) => HomeItem(
@@ -147,12 +139,9 @@ class HomeItem {
     matchReason: matchReason,
     joinedLabel: label,
     isNew: true,
-<<<<<<< HEAD
     imageUrl: imageUrl,
     imageData: imageData,
-=======
     createdAt: createdAt,
->>>>>>> a21adb66f4df6b4b1774ae9990d1c323232c704b
   );
 
   factory HomeItem.fromStartup(Startup s) => HomeItem(
@@ -169,12 +158,9 @@ class HomeItem {
     sectors: [s.sectorLabel, if (s.sector == Sector.other) 'Other'],
     lookingFor: [for (final l in s.lookingFor) s.lookingForLabelOf(l)],
     commerceModel: s.businessModelLabel,
-<<<<<<< HEAD
     imageUrl: s.logoUrl,
     imageData: s.logoData,
-=======
     createdAt: s.createdAt,
->>>>>>> a21adb66f4df6b4b1774ae9990d1c323232c704b
   );
 
   factory HomeItem.fromInvestor(InvestorProfile i) => HomeItem(
@@ -192,11 +178,8 @@ class HomeItem {
     matchPercent: i.matchPercent,
     matchReason: i.matchReason,
     joinedLabel: i.joinedLabel,
-<<<<<<< HEAD
     imageUrl: i.photoUrl,
-=======
     createdAt: i.createdAt,
->>>>>>> a21adb66f4df6b4b1774ae9990d1c323232c704b
   );
 
   factory HomeItem.fromProgram(Program p) => HomeItem(
