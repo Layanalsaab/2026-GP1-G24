@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 
 import '../../app_constants/firestore_collections.dart';
@@ -8,6 +9,7 @@ import '../../models/team_member.dart';
 import '../firebase_services/auth_service.dart';
 import '../firebase_services/firestore_service.dart';
 import '../firebase_services/invite_relay_service.dart';
+import 'public_profile_repository.dart';
 
 /// The result of sending one invitation e-mail.
 enum InviteSendResult {
@@ -69,6 +71,7 @@ class InvitationRepository {
     required Startup startup,
     required TeamMember member,
     required String invitedByName,
+    bool newUser = false,
   }) async {
     final email = member.email.trim().toLowerCase();
     final id = Invitation.idOf(startup.id, email);
@@ -86,6 +89,7 @@ class InvitationRepository {
         contribution: member.contribution,
         invitedBy: _uid,
         invitedByName: invitedByName,
+        newUser: newUser,
       );
       await _firestore.setDocument(_col, id, {
         ...invitation.toCreateMap(),
@@ -106,6 +110,7 @@ class InvitationRepository {
       'role': role,
       'roleText': member.role,
       'contribution': member.contribution,
+      'newUser': newUser,
       if (existing.status != InvitationStatus.pending) 'emailSent': false,
     });
     await _addToInviteIndex(email, startup.name);
@@ -118,6 +123,7 @@ class InvitationRepository {
       contribution: member.contribution,
       invitedBy: existing.invitedBy,
       invitedByName: existing.invitedByName,
+      newUser: newUser,
       emailSent: existing.status == InvitationStatus.pending
           ? existing.emailSent
           : false,
@@ -253,10 +259,13 @@ class InvitationRepository {
       FirestoreWrite.update(_col, invitation.id, {
         'status': InvitationStatus.accepted.value,
         'acceptedBy': uid,
+        'acceptedByName': fullName,
         'respondedAt': _firestore.serverTimestamp(),
       }),
     ]);
     await _removeFromInviteIndex(invitation.emailLower, invitation.startupName);
+    // My profile now lists this startup.
+    unawaited(PublicProfileRepository.instance.refreshMyStartups(uid));
   }
 
   /// "No thanks."
@@ -279,7 +288,7 @@ class InvitationRepository {
     final accepted = {
       for (final i in sent)
         if (i.status == InvitationStatus.accepted && i.acceptedBy != null)
-          i.emailLower: i.acceptedBy!,
+          i.emailLower: i,
     };
     if (accepted.isEmpty) return null;
     var changed = false;
@@ -288,7 +297,15 @@ class InvitationRepository {
         if (m.invited && accepted.containsKey(m.email))
           () {
             changed = true;
-            return m.copyWith(invited: false, uid: accepted[m.email]);
+            final who = accepted[m.email]!;
+            // Their own account name replaces the one the founder typed.
+            return m.copyWith(
+              invited: false,
+              uid: who.acceptedBy,
+              name: who.acceptedByName.trim().isEmpty
+                  ? null
+                  : who.acceptedByName.trim(),
+            );
           }()
         else
           m,

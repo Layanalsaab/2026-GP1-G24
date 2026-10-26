@@ -815,6 +815,14 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
     return uid != null && m.uid == uid;
   }
 
+  /// Somebody who joined through their account: their name and e-mail are
+  /// theirs, so the founder can't edit them.
+  bool isLinkedMember(TeamMember m) =>
+      !m.isFounder && !m.invited && m.uid != null;
+
+  bool get editingLinked =>
+      editorOpen && editingIndex != null && isLinkedMember(team[editingIndex!]);
+
   bool get editingFounder =>
       editorOpen && editingIndex != null && isLockedMember(team[editingIndex!]);
 
@@ -839,7 +847,7 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
   /// only needs the role and the contribution).
   bool get memberComplete {
     final roleOk = !_blank(memberRole) && !_blank(memberContribution);
-    if (editingFounder) return roleOk;
+    if (editingFounder || editingLinked) return roleOk;
     return _validName(memberName.text) &&
         _emailValid &&
         !memberDuplicate &&
@@ -849,7 +857,10 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
   /// The error under an editor field: empty ones after "Add member" was
   /// tried; format and duplicate errors show as soon as they apply.
   String? memberError(TextEditingController c) {
-    if (editingFounder && (c == memberName || c == memberEmail)) return null;
+    if ((editingFounder || editingLinked) &&
+        (c == memberName || c == memberEmail)) {
+      return null;
+    }
     if (c == memberName) {
       if (_blank(c)) {
         return memberTried ? ValidationStrings.memberNameRequired : null;
@@ -898,6 +909,10 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
     memberTried = false;
   });
 
+  /// E-mails found to be registered accounts while adding members: their
+  /// invitation is not a "create your account" one.
+  final Set<String> _registeredEmails = {};
+
   /// "Add member" / "Save member".
   ///
   /// - [MemberSave.invalid]: a field is wrong or empty (errors now show).
@@ -921,15 +936,13 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
       );
       return MemberSave.saved;
     }
-    final emailOk = _emailValid && !memberDuplicate;
-    final rest = !_blank(memberRole) && !_blank(memberContribution);
-    if (!emailOk || !rest) {
-      _touch(() => memberTried = true);
-      return MemberSave.invalid;
-    }
     // Somebody who already joined: only the role, the contribution and the
     // Co-founder box change (their name and e-mail are theirs).
     if (old != null && !old.invited && old.uid != null) {
+      if (_blank(memberRole) || _blank(memberContribution)) {
+        _touch(() => memberTried = true);
+        return MemberSave.invalid;
+      }
       _commitMember(
         old.copyWith(
           role: memberRole.text.trim(),
@@ -939,6 +952,12 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
       );
       return MemberSave.saved;
     }
+    final emailOk = _emailValid && !memberDuplicate;
+    final rest = !_blank(memberRole) && !_blank(memberContribution);
+    if (!emailOk || !rest) {
+      _touch(() => memberTried = true);
+      return MemberSave.invalid;
+    }
     final email = memberEmail.text.trim().toLowerCase();
     final account = await TeamLookup.instance.findByEmail(email);
     if (account != null && !account.isFounder) {
@@ -947,6 +966,7 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
       return MemberSave.invalid;
     }
     if (account != null) {
+      _registeredEmails.add(email);
       // Already on Start.sa: they get an invitation to accept (no dialog
       // needed); their account name replaces the typed one.
       final alreadyInvited = old != null && old.invited && old.email == email;
@@ -1110,6 +1130,7 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
           startup: saved,
           member: m,
           invitedByName: myName,
+          newUser: !_registeredEmails.contains(m.email),
         );
         if (!inv.isPending || inv.emailSent) continue;
         final outcome = await _invitations.sendEmail(inv);

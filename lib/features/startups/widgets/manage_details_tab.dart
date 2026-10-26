@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../../app_constants/founder_tools_strings.dart';
 import '../../../helpers/app_session.dart';
+import '../../profiles/screens/account_screen.dart';
+import '../../startup_profile/screens/team_member_profile_screen.dart';
 import '../../../helpers/formatters.dart';
 import '../../../models/startup.dart';
 import '../../../models/team_member.dart';
@@ -598,6 +600,8 @@ class _Team extends StatelessWidget {
                 ? s.team[i].uid == user?.uid
                 : me != null && s.team[i].name.trim().toLowerCase() == me,
             myRole: myRole,
+            startupName: s.name,
+            startupId: s.id,
           ),
         ],
       ],
@@ -610,15 +614,37 @@ class _MemberCard extends StatelessWidget {
     required this.member,
     required this.isMe,
     required this.myRole,
+    this.startupName = '',
+    this.startupId,
   });
 
   final TeamMember member;
   final bool isMe;
   final StartupRole myRole;
+  final String startupName;
+  final String? startupId;
+
+  /// A person who joined (or the founder) has a profile to open; one who is
+  /// still Invited, Not sent or Declined has none yet.
+  bool get _opensProfile =>
+      member.isFounder || (!member.invited && member.uid != null);
+
+  void _open(BuildContext context) {
+    if (isMe) {
+      OwnProfileScreen.open(context);
+      return;
+    }
+    TeamMemberProfileScreen.open(
+      context,
+      member,
+      startupName: startupName,
+      startupId: startupId,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    final card = Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: const Color(0xFFF7F4EC),
@@ -682,6 +708,16 @@ class _MemberCard extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+    if (!_opensProfile) return card;
+    return Semantics(
+      button: true,
+      label: member.name,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: () => _open(context),
+        child: card,
       ),
     );
   }

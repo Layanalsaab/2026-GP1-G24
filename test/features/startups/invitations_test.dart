@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:startsa/data_access/repositories/invitation_repository.dart';
 import 'package:startsa/data_access/repositories/startup_repository.dart';
+import 'package:startsa/data_access/repositories/team_lookup.dart';
 import 'package:startsa/features/login_and_signup/screens/login_screen.dart';
 import 'package:startsa/features/startups/screens/invite_screen.dart';
 import 'package:startsa/features/startups/view_models/startup_steps_view_model.dart';
@@ -17,6 +18,17 @@ import 'package:startsa/models/team_member.dart';
 import 'package:startsa/navigation/invite_links.dart';
 
 import '../../support/fakes.dart';
+
+/// One registered account: sara@gmail.com.
+class _Sara extends TeamLookup {
+  const _Sara();
+
+  @override
+  Future<TeamAccount?> findByEmail(String email) async =>
+      email.trim().toLowerCase() == 'sara@gmail.com'
+      ? const TeamAccount(uid: 'sara1', name: 'Sara Alswailem')
+      : null;
+}
 
 const _fahad = AppUser(
   uid: 'uid1',
@@ -109,6 +121,11 @@ void main() {
       expect(back.isCoFounder, isTrue);
       expect(back.status, InvitationStatus.pending);
       expect(back.emailSent, isFalse);
+      expect(back.newUser, isFalse);
+      expect(
+        Invitation.fromMap({...inv.toCreateMap(), 'newUser': true})!.newUser,
+        isTrue,
+      );
     });
   });
 
@@ -130,6 +147,52 @@ void main() {
       addTearDown(vm2.dispose);
       await vm2.save();
       expect(invites.sentEmails, isEmpty);
+    });
+
+    test('an e-mail with no account is a "create your account" invite', () async {
+      final vm = formWithTeam();
+      addTearDown(vm.dispose);
+      await addInvited(vm);
+      await vm.save();
+      expect(invites.store.values.single.newUser, isTrue);
+    });
+
+    test('an invitation to a registered person is not a new-user one', () async {
+      TeamLookup.instance = const _Sara();
+      addTearDown(() => TeamLookup.instance = const TeamLookup());
+      final vm = formWithTeam();
+      addTearDown(vm.dispose);
+      vm.openMemberEditor();
+      vm.memberName.text = 'Sara';
+      vm.memberEmail.text = 'sara@gmail.com';
+      vm.memberRole.text = 'COO';
+      vm.memberContribution.text = 'Operations';
+      await vm.saveMember();
+      // Their account name replaces the typed one straight away.
+      expect(vm.team.last.name, 'Sara Alswailem');
+      await vm.save();
+      expect(invites.store.values.single.newUser, isFalse);
+    });
+
+    test('the name and e-mail of a joined member are locked', () async {
+      final vm = formWithTeam();
+      addTearDown(vm.dispose);
+      const joined = TeamMember(
+        name: 'Sara Alswailem',
+        email: 'sara@gmail.com',
+        role: 'COO',
+        contribution: 'Ops',
+        uid: 'sara1',
+      );
+      const waiting = TeamMember(
+        name: 'Omar',
+        email: 'omar@gmail.com',
+        role: 'CTO',
+        contribution: 'Tech',
+        invited: true,
+      );
+      expect(vm.isLinkedMember(joined), isTrue);
+      expect(vm.isLinkedMember(waiting), isFalse);
     });
 
     test('a failed e-mail is reported and kept "not sent"', () async {
@@ -357,6 +420,23 @@ void main() {
       expect(find.textContaining('sara@gmail.com'), findsOneWidget);
       expect(find.text('Create account'), findsOneWidget);
       expect(find.text('Log in'), findsOneWidget);
+    });
+
+    testWidgets('a new person goes straight to Create your account', (t) async {
+      AppSession.instance = AppSession();
+      invites.store['S1~sara@gmail.com'] = const Invitation(
+        startupId: 'S1',
+        startupName: 'Rafeeq Health',
+        emailLower: 'sara@gmail.com',
+        role: Invitation.roleMember,
+        invitedBy: 'u1',
+        newUser: true,
+      );
+      await pump(t, 'S1~sara@gmail.com');
+      // No invitation page with "Log in": the sign-up form, e-mail filled in.
+      expect(find.text('Log in'), findsNothing);
+      expect(find.text('Create account'), findsNothing);
+      expect(find.text('sara@gmail.com'), findsOneWidget);
     });
 
     testWidgets('Log in has no "Sign up" line and can start with an email', (

@@ -56,6 +56,24 @@ class SignupScreen extends StatefulWidget {
     );
   }
 
+  /// Like [open], but takes the place of the current screen (the invitation
+  /// page): going back doesn't land on a page that offers "Log in".
+  static void openReplacing(
+    BuildContext context,
+    AccountRole role, {
+    required String email,
+  }) {
+    final flow = SignupFlow.current ?? SignupFlow(role: role);
+    flow.fromInvite = true;
+    SignupFlow.current = flow;
+    Navigator.of(context).pushReplacement(
+      AppRoute<void>(
+        builder: (_) => SignupScreen(role: role, flow: flow, email: email),
+        greenHeader: true,
+      ),
+    );
+  }
+
   @override
   State<SignupScreen> createState() => _SignupScreenState();
 }

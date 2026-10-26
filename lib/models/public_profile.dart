@@ -1,13 +1,20 @@
+import 'startup.dart';
+
 /// One startup a person belongs to, as listed on their profile.
 class ProfileStartupRef {
   const ProfileStartupRef({
     required this.id,
     required this.name,
     required this.role,
+    this.startup,
   });
 
   final String id;
   final String name;
+
+  /// The startup itself, when it was loaded for the profile (so it can be
+  /// shown as a full card). Never stored.
+  final Startup? startup;
 
   /// `founder`, `coFounder` or `member`.
   final String role;

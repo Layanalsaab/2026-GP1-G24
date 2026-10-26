@@ -15,7 +15,10 @@ class _FakeProfiles implements PublicProfileRepository {
   Future<PublicProfile?> get(String id) async => profiles[id];
 
   @override
-  Future<List<ProfileStartupRef>> startupsOf(PublicProfile profile) async =>
+  Future<List<ProfileStartupRef>> startupsOf(
+    PublicProfile profile, {
+    String? alsoCheck,
+  }) async =>
       profile.startups;
 
   @override

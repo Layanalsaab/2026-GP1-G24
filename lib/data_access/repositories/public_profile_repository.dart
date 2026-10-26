@@ -3,6 +3,8 @@ import 'package:flutter/foundation.dart';
 import '../../app_constants/firestore_collections.dart';
 import '../../models/app_user.dart';
 import '../../models/public_profile.dart';
+import '../../models/team_member.dart';
+import 'startup_repository.dart';
 import '../firebase_services/firestore_service.dart';
 
 /// Public profiles (`publicProfiles/{id}`): the always-public face of an
@@ -31,45 +33,130 @@ class PublicProfileRepository {
     }
   }
 
-  /// The startups of [profile]: the ones stored on a sample profile, plus the
-  /// startups of a real account (founded by it, or where it is a member).
-  /// Private startups the viewer may not read simply don't come back.
-  Future<List<ProfileStartupRef>> startupsOf(PublicProfile profile) async {
-    final byId = {for (final r in profile.startups) r.id: r};
-    try {
-      final founded = await _firestore.queryWhereEqual(
-        FirestoreCollections.startups,
-        StartupFields.founderId,
-        profile.id,
-      );
-      for (final d in founded) {
-        final name = d.data[StartupFields.name];
-        if (name is String) {
-          byId[d.id] = ProfileStartupRef(id: d.id, name: name, role: 'founder');
-        }
+  static final Map<String, (String, DateTime)> _nameCache = {};
+  static const _nameTtl = Duration(minutes: 2);
+
+  /// The CURRENT account names of [uids] (from their public profiles), so a
+  /// team card follows the person's Edit profile. A person with no profile is
+  /// simply missing from the result. Cached for two minutes; best effort.
+  Future<Map<String, String>> namesOf(Iterable<String> uids) async {
+    final now = DateTime.now();
+    final out = <String, String>{};
+    final missing = <String>[];
+    for (final uid in uids.toSet()) {
+      final hit = _nameCache[uid];
+      if (hit != null && now.difference(hit.$2) < _nameTtl) {
+        out[uid] = hit.$1;
+      } else {
+        missing.add(uid);
       }
-      final member = await _firestore.queryWhereArrayContains(
-        FirestoreCollections.startups,
-        StartupFields.memberIds,
-        profile.id,
-      );
-      for (final d in member) {
-        final name = d.data[StartupFields.name];
-        final roles = d.data[StartupFields.memberRoles];
-        if (name is String) {
-          byId[d.id] = ProfileStartupRef(
-            id: d.id,
-            name: name,
-            role: roles is Map && roles[profile.id] == 'coFounder'
-                ? 'coFounder'
-                : 'member',
-          );
-        }
-      }
-    } catch (e) {
-      debugPrint('Could not list the startups of ${profile.id}: $e');
     }
-    return byId.values.toList();
+    await Future.wait([
+      for (final uid in missing)
+        () async {
+          try {
+            final data = await _firestore.getDocument(_col, uid);
+            final name = data?['fullName'];
+            if (name is String && name.trim().isNotEmpty) {
+              out[uid] = name.trim();
+              _nameCache[uid] = (name.trim(), now);
+            }
+          } catch (_) {
+            // Keep the name stored on the card.
+          }
+        }(),
+    ]);
+    return out;
+  }
+
+  /// Forget the cached names (after I change my own name).
+  static void forgetNames() => _nameCache.clear();
+
+  /// The startups of [profile], each with the person's role there.
+  ///
+  /// A profile stores only the ids of the startups it MAY belong to (written
+  /// by its owner when they join, create or leave one). Each is then read ONE
+  /// BY ONE (a private startup loads only for people on its team, so a
+  /// stranger never sees it) and kept only if the person really is its
+  /// founder, a member or on its team list; the role comes from the startup,
+  /// so a stale id never shows a startup the person has left.
+  ///
+  /// [alsoCheck] is a startup to test too (the one the profile was opened
+  /// from), so a person is listed there even before their own list caught up.
+  Future<List<ProfileStartupRef>> startupsOf(
+    PublicProfile profile, {
+    String? alsoCheck,
+  }) async {
+    final ids = <String>{
+      for (final r in profile.startups) r.id,
+      ?alsoCheck,
+    };
+    final found = await Future.wait([
+      for (final id in ids) _roleIn(id, profile.id),
+    ]);
+    return [
+      for (final r in found)
+        ?r,
+    ];
+  }
+
+  Future<ProfileStartupRef?> _roleIn(String startupId, String personId) async {
+    try {
+      final s = await StartupRepository.instance.fetchById(startupId);
+      if (s == null) return null;
+      TeamMember? card;
+      for (final m in s.team) {
+        if (m.uid == personId) card = m;
+      }
+      final String? role;
+      if (s.founderId == personId || (card?.isFounder ?? false)) {
+        role = 'founder';
+      } else if (s.memberRoles[personId] == 'coFounder' ||
+          ((card?.coFounder ?? false) && !(card?.invited ?? false))) {
+        role = 'coFounder';
+      } else if (s.memberRoles.containsKey(personId) ||
+          (card != null && !card.invited)) {
+        role = 'member';
+      } else {
+        role = null;
+      }
+      if (role == null) return null;
+      return ProfileStartupRef(
+        id: s.id,
+        name: s.name,
+        role: role,
+        startup: s,
+      );
+    } catch (_) {
+      // Not allowed to read it (a private startup) or not there any more.
+      return null;
+    }
+  }
+
+  /// Saves the ids of MY startups (founded, or joined) on my public profile,
+  /// so other people's profile view of me can list them. Best effort, and it
+  /// only updates a profile that exists (it never brings a deleted one back).
+  Future<void> refreshMyStartups(String uid) async {
+    try {
+      final mine = await StartupRepository.instance.fetchMyStartups();
+      final joined = await StartupRepository.instance.fetchMemberStartups();
+      final refs = <ProfileStartupRef>[
+        for (final s in mine)
+          ProfileStartupRef(id: s.id, name: s.name, role: 'founder'),
+        for (final s in joined)
+          ProfileStartupRef(
+            id: s.id,
+            name: s.name,
+            role: s.memberRoles[uid] == 'coFounder' ? 'coFounder' : 'member',
+          ),
+      ];
+      await _firestore.updateDocument(_col, uid, {
+        'startups': [for (final r in refs.take(30)) r.toMap()],
+        'updatedAt': _firestore.serverTimestamp(),
+      });
+    } catch (e) {
+      debugPrint('Could not refresh the startups on my profile: $e');
+    }
   }
 
   /// Publishes (or refreshes) a founder's own public profile. The e-mail and

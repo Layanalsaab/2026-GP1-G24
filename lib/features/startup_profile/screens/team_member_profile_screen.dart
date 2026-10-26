@@ -8,7 +8,6 @@ import '../../../helpers/open_link.dart';
 import '../../../models/list_entries.dart';
 import '../../../models/public_profile.dart';
 import '../../../models/home_item.dart';
-import '../../../models/startup.dart';
 import '../../../models/team_member.dart';
 import '../../../shared_ui/icons/app_icons.dart';
 import '../../../shared_ui/navigation/app_route.dart';
@@ -37,11 +36,16 @@ class TeamMemberProfileScreen extends StatefulWidget {
     super.key,
     required this.member,
     this.startupName = '',
+    this.startupId,
     this.repository,
   });
 
   final TeamMember member;
   final String startupName;
+
+  /// The startup this profile was opened from: it is checked too, so the
+  /// person is listed there even if their own list isn't up to date yet.
+  final String? startupId;
 
   /// Tests pass a fake.
   final PublicProfileRepository? repository;
@@ -50,9 +54,14 @@ class TeamMemberProfileScreen extends StatefulWidget {
     BuildContext context,
     TeamMember member, {
     String startupName = '',
+    String? startupId,
   }) => AppNav.push(
     context,
-    TeamMemberProfileScreen(member: member, startupName: startupName),
+    TeamMemberProfileScreen(
+      member: member,
+      startupName: startupName,
+      startupId: startupId,
+    ),
     greenHeader: true,
   );
 
@@ -64,7 +73,6 @@ class TeamMemberProfileScreen extends StatefulWidget {
 class _TeamMemberProfileScreenState extends State<TeamMemberProfileScreen> {
   PublicProfile? _profile;
   List<ProfileStartupRef> _startups = const [];
-  final Map<String, Startup> _full = {};
   bool _loading = true;
 
   PublicProfileRepository get _repo =>
@@ -82,35 +90,22 @@ class _TeamMemberProfileScreenState extends State<TeamMemberProfileScreen> {
     var startups = <ProfileStartupRef>[];
     if (uid != null) {
       profile = await _repo.get(uid);
-      if (profile != null) startups = await _repo.startupsOf(profile);
+      if (profile != null) {
+        startups = await _repo.startupsOf(profile, alsoCheck: widget.startupId);
+      }
     }
-    // The full startups, so each row can show its description, sector and city.
-    final full = <String, Startup>{};
-    await Future.wait([
-      for (final r in startups)
-        () async {
-          try {
-            final st = await StartupRepository.instance.fetchById(r.id);
-            if (st != null) full[r.id] = st;
-          } catch (_) {
-            // The row falls back to the name and the role.
-          }
-        }(),
-    ]);
     if (!mounted) return;
     setState(() {
       _profile = profile;
       _startups = startups;
-      _full
-        ..clear()
-        ..addAll(full);
       _loading = false;
     });
   }
 
   Future<void> _openStartup(ProfileStartupRef ref) async {
     try {
-      final startup = await StartupRepository.instance.fetchById(ref.id);
+      final startup =
+          ref.startup ?? await StartupRepository.instance.fetchById(ref.id);
       if (!mounted) return;
       if (startup == null) {
         AppToast.error(context, 'This startup is no longer available.');
@@ -168,7 +163,7 @@ class _TeamMemberProfileScreenState extends State<TeamMemberProfileScreen> {
       'coFounder' => StartupRole.coFounder,
       _ => StartupRole.member,
     };
-    final st = _full[ref.id];
+    final st = ref.startup;
     final item = st == null ? null : HomeItem.fromStartup(st);
     return HomeCard(
       name: ref.name,

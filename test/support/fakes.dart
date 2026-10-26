@@ -562,6 +562,7 @@ class FakeInvitationRepository implements InvitationRepository {
     required Startup startup,
     required TeamMember member,
     required String invitedByName,
+    bool newUser = false,
   }) async {
     final email = member.email.trim().toLowerCase();
     final id = Invitation.idOf(startup.id, email);
@@ -581,6 +582,7 @@ class FakeInvitationRepository implements InvitationRepository {
       invitedBy: 'uid1',
       invitedByName: invitedByName,
       emailSent: existing?.emailSent ?? false,
+      newUser: newUser,
     );
     store[id] = inv;
     inviteIndex.putIfAbsent(email, () => []).add(startup.name);
@@ -609,6 +611,7 @@ class FakeInvitationRepository implements InvitationRepository {
         invitedBy: i.invitedBy,
         invitedByName: i.invitedByName,
         emailSent: true,
+        newUser: i.newUser,
       );
     }
     return sendResult;

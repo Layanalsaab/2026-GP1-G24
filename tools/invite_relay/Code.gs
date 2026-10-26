@@ -84,6 +84,7 @@ function readInvitation_(id, idToken) {
     invitedBy: str('invitedBy'),
     invitedByName: str('invitedByName'),
     status: str('status'),
+    newUser: !!(f.newUser && f.newUser.booleanValue),
     lastSentAt: f.lastSentAt && f.lastSentAt.timestampValue
       ? new Date(f.lastSentAt.timestampValue).getTime()
       : 0,
@@ -107,7 +108,7 @@ function sendInvitation_(id, inv) {
     who + ' added you to the ' + startup + ' team on Start.sa as a ' + role + '.\n\n' +
     'If you have the Start.sa app installed, open this link:\n' + link + '\n' +
     "If you don't have the app yet, install it first, then come back to this email and open the link again.\n\n" +
-    'Sign in or create your account using this email, ' + inv.emailLower +
+    (inv.newUser ? 'Create your Start.sa account using this email, ' : 'Sign in or create your account using this email, ') + inv.emailLower +
     ", and you'll be added to the team automatically.\n\n" +
     "If you weren't expecting this, you can ignore this email.";
 
@@ -132,9 +133,9 @@ function sendInvitation_(id, inv) {
     '<p style="margin:0 0 28px 0;font-size:15px;color:#374151;">If you have the Start.sa app installed, tap the button below. ' +
     'If you don&#39;t have it yet, install the app first, then come back to this email and tap the button.</p>' +
     '<table cellpadding="0" cellspacing="0" align="center"><tr><td align="center" bgcolor="#1E7A3C" style="border-radius:9px;">' +
-    '<a href="' + esc_(link) + '" style="display:inline-block;padding:13px 34px;color:#ffffff;text-decoration:none;font-weight:bold;font-size:15px;">Open Start.sa</a>' +
+    '<a href="' + esc_(link) + '" style="display:inline-block;padding:13px 34px;color:#ffffff;text-decoration:none;font-weight:bold;font-size:15px;">' + (inv.newUser ? 'Create your account' : 'Open Start.sa') + '</a>' +
     '</td></tr></table>' +
-    '<p style="margin:28px 0 0 0;font-size:15px;color:#374151;">Sign in or create your account using this email, <strong>' + esc_(inv.emailLower) +
+    '<p style="margin:28px 0 0 0;font-size:15px;color:#374151;">' + (inv.newUser ? 'Create your Start.sa account using this email, ' : 'Sign in or create your account using this email, ') + '<strong>' + esc_(inv.emailLower) +
     '</strong>, and you&#39;ll be added to the team automatically.</p>' +
     '<p style="margin:32px 0 0 0;font-size:11.5px;color:#9aa1a8;">Button not working? Paste this link into your browser:<br>' +
     '<a href="' + esc_(link) + '" style="color:#9aa1a8;word-break:break-all;">' + esc_(link) + '</a></p>' +
