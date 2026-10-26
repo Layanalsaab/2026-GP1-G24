@@ -363,6 +363,34 @@ class FakeAuthRepository implements AuthRepository {
     if (discardFails != null) throw AuthException(discardFails!);
   }
 
+  int updateUnverifiedCalls = 0;
+
+  /// The full name of the last [updateUnverifiedProfile] call.
+  String? lastUpdatedName;
+
+  @override
+  Future<void> updateUnverifiedProfile({
+    required String email,
+    required String password,
+    required String fullName,
+    String? phone,
+    String? city,
+    String? bio,
+    List<String> sectorsOfInterest = const [],
+    String? sectorsOther,
+    String? linkedin,
+    String? gain,
+    String? valueOffered,
+    File? photo,
+    bool removePhoto = false,
+    bool emailPublic = false,
+    bool phonePublic = false,
+  }) async {
+    updateUnverifiedCalls++;
+    lastUpdatedName = fullName;
+    await gate;
+  }
+
   @override
   Future<ResendResult> resendVerification(String email, String password) async {
     resendCalls++;

@@ -248,7 +248,8 @@ class _MainScreenState extends State<MainScreen> {
                             title: _vm.title,
                             initials: _session.user?.initials ?? '',
                             guest: guest,
-                            hasNotification: !guest,
+                            // No dot until notifications exist.
+                            hasNotification: false,
                             menuLabel: HomeStrings.menuLabel,
                             onAvatarTap: _openMenu,
                             onSignUp: () => ChooseRoleScreen.open(context),

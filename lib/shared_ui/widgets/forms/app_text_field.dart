@@ -434,17 +434,20 @@ class _MaxLengthFormatter extends TextInputFormatter {
     TextEditingValue newValue,
   ) {
     final over = newValue.text.characters.length > max;
-    if (onOverflow != null && over != _last) {
-      _last = over;
+    // Told on every edit (not only when it changes): this formatter is made
+    // again on every rebuild, so it can't remember the last value, and the
+    // red "Maximum N characters" line must clear as soon as the text is
+    // back within the limit. The field ignores repeats of the same value.
+    if (onOverflow != null) {
       // Not during the framework's editing callback: tell the field after.
-      WidgetsBinding.instance.addPostFrameCallback((_) => onOverflow!(over));
+      WidgetsBinding.instance
+        ..addPostFrameCallback((_) => onOverflow!(over))
+        ..ensureVisualUpdate();
     }
     if (!over) return newValue;
     return LengthLimitingTextInputFormatter(max)
         .formatEditUpdate(oldValue, newValue);
   }
-
-  bool _last = false;
 }
 
 /// Holds the "went past the limit" flag of one [LabeledTextField].

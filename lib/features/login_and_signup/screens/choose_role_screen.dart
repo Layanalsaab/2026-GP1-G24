@@ -6,10 +6,12 @@ import '../../../shared_ui/icons/app_icons.dart';
 import '../../../shared_ui/navigation/app_route.dart';
 import '../../../shared_ui/theme/app_colors.dart';
 import '../../../shared_ui/widgets/buttons/app_button.dart';
+import '../../../shared_ui/widgets/forms/form_page.dart';
 import '../../../shared_ui/widgets/headers/auth_headers.dart';
 import '../../../shared_ui/widgets/headers/overlap_layout.dart';
 import '../widgets/auth_navigation.dart';
 import '../widgets/role_card.dart';
+import 'login_screen.dart';
 import 'signup_screen.dart';
 
 /// Choose role (docs/05 A6): Founder (pre-selected) or Investor, then
@@ -64,6 +66,14 @@ class _ChooseRoleScreenState extends State<ChooseRoleScreen> {
                     label: AuthStrings.continueLabel,
                     onPressed: () => SignupScreen.open(context, _role),
                   ),
+                ),
+                // Somebody who already has an account (e.g. a guest who
+                // tapped Sign up) goes to Log in instead.
+                FooterLink.moss(
+                  prefix: AuthStrings.haveAccount,
+                  linkLabel: AuthStrings.logIn,
+                  onTap: () => LoginScreen.open(context),
+                  padding: const EdgeInsets.only(top: 4),
                 ),
               ],
             ),
