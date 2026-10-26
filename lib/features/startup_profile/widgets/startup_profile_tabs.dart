@@ -296,6 +296,7 @@ class StartupProfilePane extends StatelessWidget {
       context,
       m,
       startupName: viewModel.startup.name,
+      startupId: viewModel.startup.id,
     );
   }
 

@@ -72,6 +72,9 @@ class TeamLookup {
       );
       // The always-public face of a founder, for team profiles.
       await PublicProfileRepository.instance.publish(user);
+      if (user.isFounder) {
+        await PublicProfileRepository.instance.refreshMyStartups(user.uid);
+      }
     } catch (e) {
       debugPrint('Could not publish the e-mail index entry: $e');
     }

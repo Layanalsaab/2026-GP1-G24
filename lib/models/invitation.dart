@@ -42,6 +42,8 @@ class Invitation {
     this.emailSent = false,
     this.lastSentAt,
     this.acceptedBy,
+    this.acceptedByName = '',
+    this.newUser = false,
   });
 
   /// `coFounder` or `member` (the same words as `Startup.memberRoles`).
@@ -64,6 +66,15 @@ class Invitation {
 
   /// The account that accepted (set when [status] is accepted).
   final String? acceptedBy;
+
+  /// The name the person has on their account when they joined: it replaces
+  /// the name the founder typed on the team card.
+  final String acceptedByName;
+
+  /// True when nobody had a Start.sa account with this e-mail when the
+  /// invitation was made: the e-mail and the link then say "Create your
+  /// account" only (never "log in").
+  final bool newUser;
 
   bool get isCoFounder => role == roleCoFounder;
   bool get isPending => status == InvitationStatus.pending;
@@ -90,6 +101,7 @@ class Invitation {
     'invitedByName': invitedByName,
     'status': InvitationStatus.pending.value,
     'emailSent': false,
+    'newUser': newUser,
   };
 
   static Invitation? fromMap(Map<String, dynamic>? data) {
@@ -117,6 +129,8 @@ class Invitation {
       emailSent: data['emailSent'] == true,
       lastSentAt: data['lastSentAt'] as DateTime?,
       acceptedBy: data['acceptedBy'] as String?,
+      acceptedByName: (data['acceptedByName'] as String?) ?? '',
+      newUser: data['newUser'] == true,
     );
   }
 }

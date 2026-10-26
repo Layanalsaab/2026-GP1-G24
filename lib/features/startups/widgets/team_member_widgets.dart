@@ -281,6 +281,7 @@ class TeamMemberEditor extends StatelessWidget {
     required this.title,
     required this.editing,
     required this.lockedIdentity,
+    this.lockedNameEmail = false,
     required this.name,
     required this.email,
     required this.role,
@@ -300,6 +301,10 @@ class TeamMemberEditor extends StatelessWidget {
   /// True when editing an existing member (the button reads "Save").
   final bool editing;
   final bool lockedIdentity;
+
+  /// A member who joined: the name and e-mail are theirs (the name follows
+  /// their account), but the role, contribution and Co-founder box can change.
+  final bool lockedNameEmail;
   final TextEditingController name;
   final TextEditingController email;
   final TextEditingController role;
@@ -378,7 +383,7 @@ class TeamMemberEditor extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 12),
-          if (lockedIdentity)
+          if (lockedIdentity || lockedNameEmail)
             _locked(FounderToolsStrings.memberName, name)
           else
             _field(
@@ -389,7 +394,7 @@ class TeamMemberEditor extends StatelessWidget {
               caps: TextCapitalization.words,
             ),
           const SizedBox(height: gap),
-          if (lockedIdentity)
+          if (lockedIdentity || lockedNameEmail)
             _locked(FounderToolsStrings.memberEmail, email)
           else
             _field(

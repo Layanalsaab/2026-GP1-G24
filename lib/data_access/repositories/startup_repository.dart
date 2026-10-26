@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -10,6 +11,7 @@ import '../firebase_services/auth_service.dart';
 import '../firebase_services/firestore_service.dart';
 import '../firebase_services/storage_service.dart';
 import 'funding_round_repository.dart';
+import 'public_profile_repository.dart';
 
 /// Reads and writes the `startups` collection and the startups' logos in
 /// Storage. Screens and view models never touch Firebase directly.
@@ -62,7 +64,32 @@ class StartupRepository {
   /// One startup by id, or null when it doesn't exist (any more).
   Future<Startup?> fetchById(String id) async {
     final data = await _firestore.getDocument(_collection, id);
-    return Startup.fromMap(id, data);
+    final startup = Startup.fromMap(id, data);
+    return startup == null ? null : await _withLiveNames(startup);
+  }
+
+  /// A joined person's card shows their CURRENT account name (it follows
+  /// Edit profile), not the one typed when they were invited. Sample startups
+  /// and cards not linked to an account keep what is stored. Best effort.
+  Future<Startup> _withLiveNames(Startup s) async {
+    try {
+      if (s.founderId == 'crunchbase-dataset') return s;
+      final uids = {
+        for (final m in s.team)
+          if (m.uid != null && !m.invited) m.uid!,
+      };
+      if (uids.isEmpty) return s;
+      final names = await PublicProfileRepository.instance.namesOf(uids);
+      if (names.isEmpty) return s;
+      return s.copyWith(
+        team: [
+          for (final m in s.team)
+            names[m.uid] == null ? m : m.copyWith(name: names[m.uid]),
+        ],
+      );
+    } catch (_) {
+      return s;
+    }
   }
 
   /// The signed-in founder's startups, most recently edited first.
@@ -73,7 +100,9 @@ class StartupRepository {
       _founderId,
     );
     final startups = [
-      for (final doc in docs) ?Startup.fromMap(doc.id, doc.data),
+      for (final doc in docs)
+        if (Startup.fromMap(doc.id, doc.data) case final s?)
+          await _withLiveNames(s),
     ];
     // Sorted here instead of with orderBy: a founder has a handful of
     // startups, and this avoids needing a composite Firestore index.
@@ -93,10 +122,22 @@ class StartupRepository {
       uid,
     );
     final startups = [
-      for (final doc in docs) ?Startup.fromMap(doc.id, doc.data),
+      for (final doc in docs)
+        if (Startup.fromMap(doc.id, doc.data) case final s?)
+          await _withLiveNames(s),
     ];
     startups.sort((a, b) => _editedAt(b).compareTo(_editedAt(a)));
     return startups;
+  }
+
+  /// My public profile lists my startups (so other people see them on my
+  /// profile): keep that list in step. Best effort, never blocks.
+  void _refreshMyProfile() {
+    try {
+      unawaited(PublicProfileRepository.instance.refreshMyStartups(_founderId));
+    } catch (_) {
+      // Not signed in (or not a founder account): nothing to refresh.
+    }
   }
 
   /// "Leave startup": removes ONLY the signed-in user's own membership: their
@@ -116,6 +157,7 @@ class StartupRepository {
       if (hadCard) StartupFields.team: rest,
     });
     changes.value++;
+    _refreshMyProfile();
   }
 
   /// Leaves every startup the signed-in user is a co-founder / team member of
@@ -140,6 +182,7 @@ class StartupRepository {
     required String oldName,
     required String newName,
   }) async {
+    PublicProfileRepository.forgetNames();
     final old = oldName.trim().toLowerCase();
     for (final startup in await fetchMyStartups()) {
       var changed = false;
@@ -199,6 +242,7 @@ class StartupRepository {
       rethrow;
     }
     changes.value++;
+    _refreshMyProfile();
     return toSave;
   }
 
@@ -245,6 +289,7 @@ class StartupRepository {
     final logoChanged = oldLogoUrl != null && oldLogoUrl != updated.logoUrl;
     if (logoChanged) await _deleteLogoQuietly(oldLogoUrl);
     changes.value++;
+    _refreshMyProfile();
     return updated;
   }
 
@@ -273,6 +318,7 @@ class StartupRepository {
     if (roundDeletes.isNotEmpty) await _firestore.commit(roundDeletes);
     await _firestore.deleteDocument(_collection, startup.id);
     changes.value++;
+    _refreshMyProfile();
   }
 
   Future<String> _uploadLogo(String founderId, String startupId, File logo) {

@@ -788,6 +788,7 @@ class _Team extends StatelessWidget {
       title: _titleOf(member),
       editing: member != null,
       lockedIdentity: locked,
+      lockedNameEmail: !locked && member != null && vm.isLinkedMember(member),
       name: vm.memberName,
       email: vm.memberEmail,
       role: vm.memberRole,

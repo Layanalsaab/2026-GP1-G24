@@ -30,10 +30,27 @@
       <strong>To join, install the Start.sa app:</strong>
       <ol>
         <li>Install the Start.sa app.</li>
-        <li>Come back to your email and tap <strong>Open Start.sa</strong> again.</li>
-        <li>Sign in or create your account <strong>using the email the invitation was sent to</strong>.</li>
+        <li>Come back to your email and tap the button again.</li>
+        <li id="last">Sign in or create your account <strong>using the email the invitation was sent to</strong>.</li>
       </ol>
     </div>
   </main>
+  <script>
+    // Somebody with no Start.sa account yet is only told to create one.
+    (function () {
+      var id = new URLSearchParams(location.search).get('i');
+      if (!id) return;
+      fetch('https://firestore.googleapis.com/v1/projects/startsa-ea49e/databases/(default)/documents/invitations/' + encodeURIComponent(id))
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (d) {
+          var f = d && d.fields;
+          if (f && f.newUser && f.newUser.booleanValue) {
+            document.getElementById('last').innerHTML =
+              'Create your account <strong>using the email the invitation was sent to</strong>.';
+          }
+        })
+        .catch(function () {});
+    })();
+  </script>
 </body>
 </html>

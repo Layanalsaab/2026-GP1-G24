@@ -69,7 +69,7 @@ await check('stranger cannot cancel', false, () => updateDoc(doc(stranger, 'invi
 await check('accept with the WRONG role is refused', false, async () => {
   const b = writeBatch(sara);
   b.update(doc(sara, 'startups', 'S1'), { memberIds: ['c1', 's1'], memberRoles: { c1: 'coFounder', s1: 'member' }, teamMembers: [], updatedAt: serverTimestamp() });
-  b.update(doc(sara, 'invitations', 'S1~sara@gmail.com'), { status: 'accepted', respondedAt: serverTimestamp() });
+  b.update(doc(sara, 'invitations', 'S1~sara@gmail.com'), { status: 'accepted', respondedAt: serverTimestamp(), acceptedBy: 's1', acceptedByName: 'Sara Alswailem' });
   await b.commit();
 });
 await check('accept while unverified is refused', false, async () => {
@@ -91,6 +91,14 @@ await check('decline is allowed for the invited person', true, async () => {
   await env.withSecurityRulesDisabled((ctx) => setDoc(doc(ctx.firestore(), 'invitations', 'S1~dina@gmail.com'), { ...inv({ emailLower: 'dina@gmail.com' }), createdAt: new Date(0) }));
   const dina = env.authenticatedContext('d1', { email: 'dina@gmail.com', email_verified: true }).firestore();
   await updateDoc(doc(dina, 'invitations', 'S1~dina@gmail.com'), { status: 'declined', respondedAt: serverTimestamp() });
+});
+await check('a new-user flag on a new invitation is allowed', true, () => setDoc(doc(founder, 'invitations', 'S1~newbie@gmail.com'), inv({ emailLower: 'newbie@gmail.com', newUser: true })));
+await check('a non-boolean new-user flag is refused', false, () => setDoc(doc(founder, 'invitations', 'S1~bad2@gmail.com'), inv({ emailLower: 'bad2@gmail.com', newUser: 'yes' })));
+await check('the team re-invites and updates the new-user flag', true, () => updateDoc(doc(founder, 'invitations', 'S1~newbie@gmail.com'), { newUser: false }));
+await check('a 60-letter joiner name is refused', false, async () => {
+  await env.withSecurityRulesDisabled((ctx) => setDoc(doc(ctx.firestore(), 'invitations', 'S1~long@gmail.com'), { ...inv({ emailLower: 'long@gmail.com' }), createdAt: new Date(0) }));
+  const longp = env.authenticatedContext('l1', { email: 'long@gmail.com', email_verified: true }).firestore();
+  await updateDoc(doc(longp, 'invitations', 'S1~long@gmail.com'), { status: 'accepted', respondedAt: serverTimestamp(), acceptedBy: 'l1', acceptedByName: 'x'.repeat(60) });
 });
 await check('founder cancels', true, () => updateDoc(doc(founder, 'invitations', 'S1~omar@gmail.com'), { status: 'cancelled' }));
 

@@ -54,6 +54,19 @@ class _InviteScreenState extends State<InviteScreen> {
       found = null;
     }
     if (!mounted) return;
+    // Nobody had an account with this e-mail (and nobody is signed in): there
+    // is nothing to log in to, so go straight to "Create your account".
+    if (found != null &&
+        found.isPending &&
+        found.newUser &&
+        AppSession.instance.user == null) {
+      SignupScreen.openReplacing(
+        context,
+        AccountRole.founder,
+        email: found.emailLower,
+      );
+      return;
+    }
     setState(() {
       _invitation = found;
       _loading = false;
