@@ -39,6 +39,7 @@ class HomeCard extends StatelessWidget {
     this.index = 0,
     this.animate = true,
     this.bodyMaxLines = 3,
+    this.badge,
   });
 
   final String name;
@@ -71,6 +72,10 @@ class HomeCard extends StatelessWidget {
   /// stops at 2).
   final int bodyMaxLines;
 
+  /// Optional small badge next to the name (e.g. a role capsule on a
+  /// person's profile). Cards in the Hub don't use it.
+  final Widget? badge;
+
   @override
   Widget build(BuildContext context) {
     final showActions = onShare != null || onBookmark != null;
@@ -100,7 +105,12 @@ class HomeCard extends StatelessWidget {
                         HueAvatar(name: name, kind: kind, size: 58),
                         const SizedBox(width: 14),
                         Expanded(
-                          child: _NameBlock(name: name, tag: tag, city: city),
+                          child: _NameBlock(
+                            name: name,
+                            tag: tag,
+                            city: city,
+                            badge: badge,
+                          ),
                         ),
                         // Space reserved for the absolutely placed actions
                         // (the prototype pulls them out with negative margins).
@@ -207,8 +217,14 @@ class HomeCard extends StatelessWidget {
 
 /// Name + (tag chip, pin, city) column shared by [HomeCard] and [RailCard].
 class _NameBlock extends StatelessWidget {
-  const _NameBlock({required this.name, required this.tag, required this.city});
+  const _NameBlock({
+    required this.name,
+    required this.tag,
+    required this.city,
+    this.badge,
+  });
 
+  final Widget? badge;
   final String name;
   final String tag;
   final String city;
@@ -219,7 +235,16 @@ class _NameBlock extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        _FitName(name),
+        if (badge == null)
+          _FitName(name)
+        else
+          Row(
+            children: [
+              Flexible(child: _FitName(name)),
+              const SizedBox(width: 8),
+              badge!,
+            ],
+          ),
         const SizedBox(height: 5),
         Row(
           children: [

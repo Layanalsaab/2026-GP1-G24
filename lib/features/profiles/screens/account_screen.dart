@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import '../../../app_constants/profile_strings.dart';
 import '../../../helpers/app_session.dart';
 import '../../../models/app_user.dart';
+import '../../../models/home_item.dart';
 import '../../../models/list_entries.dart';
 import '../../../shared_ui/theme/app_text.dart';
 import '../../startups/widgets/role_tag.dart';
@@ -14,6 +15,7 @@ import '../../../shared_ui/icons/app_icons.dart';
 import '../../../shared_ui/navigation/app_route.dart';
 import '../../../shared_ui/theme/app_colors.dart';
 import '../../../shared_ui/widgets/cards/avatars.dart';
+import '../../../shared_ui/widgets/cards/home_card.dart';
 import '../../../shared_ui/widgets/cards/profile_blocks.dart';
 import '../../../shared_ui/widgets/headers/profile_banner.dart';
 import '../../startup_profile/screens/startup_profile_screen.dart';
@@ -69,6 +71,71 @@ class _OwnProfileScreenState extends State<OwnProfileScreen> {
     if (latest != null) _vm.updateUser(latest);
     // A new name also changes my team cards, so read the startups again.
     await _vm.refreshStartups();
+  }
+
+  /// My startups, as the same cards as the Hub (and as on a founder's
+  /// profile), each with my role there as a capsule at the top right.
+  Widget _myStartups(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(4, 4, 4, 12),
+          child: Row(
+            children: [
+              Expanded(
+                child: Semantics(
+                  header: true,
+                  child: Text(
+                    ProfileStrings.myStartups,
+                    style: AppText.sectionTitle,
+                  ),
+                ),
+              ),
+              Semantics(
+                button: true,
+                label: ProfileStrings.addStartup,
+                excludeSemantics: true,
+                child: InkWell(
+                  onTap: () => StartupStepsScreen.openAdd(context),
+                  child: Text(
+                    ProfileStrings.addStartup,
+                    style: AppText.sans(
+                      size: 14.5,
+                      weight: FontWeight.w600,
+                      color: AppColors.moss600,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (_vm.startupEntries.isEmpty)
+          const ProfileText(ProfileStrings.noStartups, muted: true)
+        else
+          for (var i = 0; i < _vm.startupEntries.length; i++)
+            Padding(
+              padding: EdgeInsets.only(top: i == 0 ? 0 : 16),
+              child: Builder(
+                builder: (context) {
+                  final entry = _vm.startupEntries[i];
+                  final item = HomeItem.fromStartup(entry.startup);
+                  return HomeCard(
+                    name: item.name,
+                    tag: item.tag,
+                    city: item.city,
+                    body: item.line,
+                    bodyMaxLines: 2,
+                    animate: false,
+                    badge: RoleTag(entry.role),
+                    onTap: () => _openStartup(entry),
+                  );
+                },
+              ),
+            ),
+      ],
+    );
   }
 
   Future<void> _openStartup(MyStartupEntry entry) async {
@@ -135,33 +202,7 @@ class _OwnProfileScreenState extends State<OwnProfileScreen> {
                           delay: stagger(),
                           child: ProfileText(about),
                         ),
-                      if (_vm.isFounder)
-                        ProfileSection(
-                          title: ProfileStrings.myStartups,
-                          actionLabel: ProfileStrings.addStartup,
-                          onAction: () => StartupStepsScreen.openAdd(context),
-                          delay: stagger(),
-                          child: _vm.startupEntries.isEmpty
-                              ? const ProfileText(
-                                  ProfileStrings.noStartups,
-                                  muted: true,
-                                )
-                              : Column(
-                                  children: [
-                                    for (
-                                      var i = 0;
-                                      i < _vm.startupEntries.length;
-                                      i++
-                                    )
-                                      _StartupRow(
-                                        entry: _vm.startupEntries[i],
-                                        showDivider: i > 0,
-                                        onTap: () =>
-                                            _openStartup(_vm.startupEntries[i]),
-                                      ),
-                                  ],
-                                ),
-                        ),
+                      if (_vm.isFounder) _myStartups(context),
                       if (_vm.associations.isNotEmpty)
                         ProfileSection(
                           title: ProfileStrings.associations,
@@ -218,91 +259,6 @@ class _OwnProfileScreenState extends State<OwnProfileScreen> {
           ),
         );
       },
-    );
-  }
-}
-
-/// One startup of the profile: logo, name with the role tag, the brief
-/// description (two lines) and a chevron. Tapping opens Manage (view only for
-/// a team member).
-class _StartupRow extends StatelessWidget {
-  const _StartupRow({
-    required this.entry,
-    required this.showDivider,
-    required this.onTap,
-  });
-
-  final MyStartupEntry entry;
-  final bool showDivider;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final startup = entry.startup;
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        decoration: BoxDecoration(
-          border: showDivider
-              ? const Border(top: BorderSide(color: AppColors.border))
-              : null,
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            HueAvatar(name: startup.name, size: 44),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Flexible(
-                        child: Text(
-                          startup.name,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: AppText.sans(
-                            size: 15,
-                            weight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      RoleTag(entry.role),
-                    ],
-                  ),
-                  if (startup.summary.trim().isNotEmpty) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      startup.summary.trim(),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppText.sans(
-                        size: 13,
-                        height: 19,
-                        color: const Color(0xFF6B726C),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-            const SizedBox(width: 8),
-            const Padding(
-              padding: EdgeInsets.only(top: 12),
-              child: AppIcon.outline(
-                AppIcons.rowChevron,
-                size: 18,
-                stroke: 2,
-                color: AppColors.hint,
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

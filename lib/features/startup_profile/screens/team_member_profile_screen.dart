@@ -7,14 +7,14 @@ import '../../../helpers/app_session.dart';
 import '../../../helpers/open_link.dart';
 import '../../../models/list_entries.dart';
 import '../../../models/public_profile.dart';
+import '../../../models/home_item.dart';
 import '../../../models/startup.dart';
 import '../../../models/team_member.dart';
 import '../../../shared_ui/icons/app_icons.dart';
 import '../../../shared_ui/navigation/app_route.dart';
 import '../../../shared_ui/theme/app_colors.dart';
 import '../../../shared_ui/theme/app_text.dart';
-import '../../../shared_ui/widgets/cards/pills.dart';
-import '../../../shared_ui/widgets/cards/avatars.dart';
+import '../../../shared_ui/widgets/cards/home_card.dart';
 import '../../../shared_ui/widgets/cards/profile_blocks.dart';
 import '../../../shared_ui/widgets/headers/profile_banner.dart';
 import '../../../shared_ui/widgets/overlays/app_toast.dart';
@@ -140,6 +140,48 @@ class _TeamMemberProfileScreenState extends State<TeamMemberProfileScreen> {
     );
   }
 
+  /// The person's startups as the same cards as the Hub, each with the
+  /// person's role there as a capsule at the top right.
+  Widget _startupCards() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(4, 4, 4, 12),
+          child: Semantics(
+            header: true,
+            child: Text('Startups', style: AppText.sectionTitle),
+          ),
+        ),
+        for (var i = 0; i < _startups.length; i++)
+          Padding(
+            padding: EdgeInsets.only(top: i == 0 ? 0 : 16),
+            child: _startupCard(_startups[i]),
+          ),
+      ],
+    );
+  }
+
+  Widget _startupCard(ProfileStartupRef ref) {
+    final role = switch (ref.role) {
+      'founder' => StartupRole.founder,
+      'coFounder' => StartupRole.coFounder,
+      _ => StartupRole.member,
+    };
+    final st = _full[ref.id];
+    final item = st == null ? null : HomeItem.fromStartup(st);
+    return HomeCard(
+      name: ref.name,
+      tag: item?.tag ?? '',
+      city: item?.city ?? '',
+      body: item?.line ?? '',
+      bodyMaxLines: 2,
+      animate: false,
+      badge: RoleTag(role),
+      onTap: () => _openStartup(ref),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final p = _profile;
@@ -179,21 +221,7 @@ class _TeamMemberProfileScreenState extends State<TeamMemberProfileScreen> {
                       title: ProfileStrings.about,
                       child: ProfileText(about),
                     ),
-                  if (_startups.isNotEmpty)
-                    ProfileSection(
-                      title: 'Startups',
-                      child: Column(
-                        children: [
-                          for (var i = 0; i < _startups.length; i++)
-                            _StartupRow(
-                              ref: _startups[i],
-                              startup: _full[_startups[i].id],
-                              showDivider: i > 0,
-                              onTap: () => _openStartup(_startups[i]),
-                            ),
-                        ],
-                      ),
-                    ),
+                  if (_startups.isNotEmpty) _startupCards(),
                   // Only what the person made Public (each on its own).
                   if (p != null && (p.email != null || p.phone != null))
                     ProfileSection(
@@ -218,113 +246,6 @@ class _TeamMemberProfileScreenState extends State<TeamMemberProfileScreen> {
                     ),
                 ],
               ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// One startup on a person's profile, like its card elsewhere: logo, name with
-/// the role capsule, the brief description, and the sector and city pills.
-class _StartupRow extends StatelessWidget {
-  const _StartupRow({
-    required this.ref,
-    required this.startup,
-    required this.showDivider,
-    required this.onTap,
-  });
-
-  final ProfileStartupRef ref;
-  final Startup? startup;
-  final bool showDivider;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final st = startup;
-    final summary = (st?.summary ?? '').trim();
-    final pills = <String>[
-      if (st != null && st.sectorLabel.trim().isNotEmpty) st.sectorLabel,
-      if (st != null && st.location.label.trim().isNotEmpty) st.location.label,
-    ];
-    final role = switch (ref.role) {
-      'founder' => StartupRole.founder,
-      'coFounder' => StartupRole.coFounder,
-      _ => StartupRole.member,
-    };
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        decoration: BoxDecoration(
-          border: showDivider
-              ? const Border(top: BorderSide(color: AppColors.border))
-              : null,
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            HueAvatar(name: ref.name, size: 44),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Flexible(
-                        child: Text(
-                          ref.name,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: AppText.sans(
-                            size: 15,
-                            weight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      RoleTag(role),
-                    ],
-                  ),
-                  if (summary.isNotEmpty) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      summary,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppText.sans(
-                        size: 13,
-                        height: 19,
-                        color: const Color(0xFF6B726C),
-                      ),
-                    ),
-                  ],
-                  if (pills.isNotEmpty) ...[
-                    const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        for (final label in pills)
-                          AppPill(label: label, height: 26, fontSize: 12),
-                      ],
-                    ),
-                  ],
-                ],
-              ),
-            ),
-            const SizedBox(width: 8),
-            const Padding(
-              padding: EdgeInsets.only(top: 12),
-              child: AppIcon.outline(
-                AppIcons.rowChevron,
-                size: 18,
-                stroke: 2,
-                color: AppColors.hint,
-              ),
-            ),
           ],
         ),
       ),
