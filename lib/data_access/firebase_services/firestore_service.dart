@@ -124,6 +124,37 @@ class FirestoreService {
     ];
   });
 
+  /// Every document in [collection] whose [field] equals [value], now and
+  /// after every change: Firestore sends the whole list first, then only the
+  /// documents that changed (one read each), and the stream gives the full
+  /// updated list each time. Errors arrive as [AuthException]s.
+  Stream<List<FirestoreDocument>> watchWhereEqual(
+    String collection,
+    String field,
+    Object value,
+  ) => _db
+      .collection(collection)
+      .where(field, isEqualTo: value)
+      .snapshots()
+      .map(
+        (snapshot) => [
+          for (final doc in snapshot.docs)
+            (id: doc.id, data: _toPlain(doc.data())),
+        ],
+      )
+      .handleError((Object e) {
+        debugPrint('Firestore listener error: $e');
+        if (e is FirebaseException) {
+          throw AuthException(switch (e.code) {
+            'unavailable' => AuthFailure.network,
+            'permission-denied' ||
+            'unauthenticated' => AuthFailure.permissionDenied,
+            _ => AuthFailure.unknown,
+          });
+        }
+        throw e;
+      });
+
   /// Up to [limit] documents of [collection] (no filter).
   Future<List<FirestoreDocument>> listCollection(
     String collection, {
