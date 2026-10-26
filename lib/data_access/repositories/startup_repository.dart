@@ -29,6 +29,10 @@ class StartupRepository {
   /// The app-wide instance. Tests replace it with a fake.
   static StartupRepository instance = StartupRepository();
 
+  /// Bumps after the signed-in user created, saved, deleted or left a
+  /// startup, so screens that keep a copy (Matches "for" list) reload it.
+  final ValueNotifier<int> changes = ValueNotifier<int>(0);
+
   final AuthService _auth;
   final FirestoreService _firestore;
   final StorageService _storage;
@@ -104,6 +108,7 @@ class StartupRepository {
       StartupFields.memberIds: _firestore.arrayRemove([uid]),
       '${StartupFields.memberRoles}.$uid': _firestore.deleteField(),
     });
+    changes.value++;
   }
 
   /// "My name carries over": after [uid] changed their name on Edit profile,
@@ -173,6 +178,7 @@ class StartupRepository {
       if (logoUrl != null) await _deleteLogoQuietly(logoUrl);
       rethrow;
     }
+    changes.value++;
     return toSave;
   }
 
@@ -218,6 +224,7 @@ class StartupRepository {
 
     final logoChanged = oldLogoUrl != null && oldLogoUrl != updated.logoUrl;
     if (logoChanged) await _deleteLogoQuietly(oldLogoUrl);
+    changes.value++;
     return updated;
   }
 
@@ -245,6 +252,7 @@ class StartupRepository {
     final roundDeletes = await _rounds.deletesFor(startup.id);
     if (roundDeletes.isNotEmpty) await _firestore.commit(roundDeletes);
     await _firestore.deleteDocument(_collection, startup.id);
+    changes.value++;
   }
 
   Future<String> _uploadLogo(String founderId, String startupId, File logo) {

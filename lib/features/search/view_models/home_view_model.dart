@@ -1,9 +1,11 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 
 import '../../../app_constants/home_strings.dart';
 import '../../../data_access/repositories/discovery_repository.dart';
 import '../../../data_access/repositories/interaction_repository.dart';
-import '../../../data_access/repositories/recommendation_repository.dart';
+import '../../../data_access/repositories/matching_repository.dart';
 import '../../../helpers/app_session.dart';
 import '../../../helpers/safe_notifier.dart';
 import '../../../models/app_user.dart';
@@ -38,16 +40,18 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
     this.user,
     DiscoveryRepository? discovery,
     InteractionRepository? interactions,
-    RecommendationRepository? recommendations,
+    MatchingRepository? matching,
     Set<String> ownStartupIds = const {},
     List<Startup> ownStartups = const [],
   }) : _discovery = discovery ?? DiscoveryRepository.instance,
        _interactions = interactions ?? InteractionRepository.instance,
-       _recommendations = recommendations ?? RecommendationRepository.instance,
+       _matching = matching ?? MatchingRepository.instance,
        _ownIds = ownStartupIds,
        _own = ownStartups {
     // The lists fill in when Firestore answers.
     _discovery.changes.addListener(notifyListeners);
+    // A watched startup / investor changed: compute the open Matches again.
+    _matching.changes.addListener(_onMatchingChange);
   }
 
   /// Loads the public startups and investors (again).
@@ -57,10 +61,19 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
   bool get directoryFailed => _discovery.loadFailed;
 
   final SessionRole role;
-  final AppUser? user;
+
+  /// The signed-in user. Replaced by [setUser] when they edit their profile
+  /// (e.g. an investor's preferences), so Matches follows.
+  AppUser? user;
+
+  void setUser(AppUser? value) {
+    if (identical(value, user)) return;
+    user = value;
+    notifyListeners();
+  }
   final DiscoveryRepository _discovery;
   final InteractionRepository _interactions;
-  final RecommendationRepository _recommendations;
+  final MatchingRepository _matching;
 
   Set<String> _ownIds;
   List<Startup> _own;
@@ -281,15 +294,97 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
   Startup? get matchStartup =>
       _own.isEmpty ? null : _own[matchFor.clamp(0, _own.length - 1)];
 
-  /// Founder: investors matched to the chosen startup. Investor: startups
-  /// matched to their criteria.
-  List<HomeItem> get matches {
+  /// Matches come from Firestore (MatchingRepository), so they load in the
+  /// background: [matches] starts the load the first time it is read for a
+  /// startup / investor and the page rebuilds when the cards arrive.
+  List<HomeItem> _matchItems = const [];
+  String? _matchKey;
+  bool matchesLoading = false;
+  bool matchesFailed = false;
+
+  /// What [matches] is for: the chosen startup (founder) or the investor,
+  /// with the answers matching reads, so an edit (new stage, round opened or
+  /// closed, new preferences) loads the list again.
+  String? get _currentMatchKey {
     if (isFounder) {
       final s = matchStartup;
-      return s == null ? const [] : _recommendations.investorsForStartup(s);
+      if (s == null) return null;
+      final m = s.toMap();
+      return 's-${s.id}-${jsonEncode([
+        for (final f in _startupMatchFields) m[f],
+      ])}';
     }
     final u = user;
-    return u == null ? const [] : _recommendations.startupsForInvestor(u);
+    if (!isInvestor || u == null) return null;
+    return 'i-${u.uid}-${jsonEncode(u.investorCriteria?.toFields())}';
+  }
+
+  /// The startup fields matching reads (lib/recommender/knowledge_filter).
+  static const _startupMatchFields = [
+    'sector',
+    'stage',
+    'businessModel',
+    'lookingFor',
+    'fundingRequirement',
+    'wantsLeadInvestor',
+  ];
+
+  /// The pools changed: the same list is computed again, without the
+  /// loading state (the cards stay until the new ones are ready).
+  void _onMatchingChange() {
+    final key = _matchKey;
+    if (key != null && key == _currentMatchKey) _loadMatches(key, quiet: true);
+  }
+
+  /// Founder: investors matched to the chosen startup. Investor: startups
+  /// matched to their criteria. Empty while [matchesLoading].
+  List<HomeItem> get matches {
+    final key = _currentMatchKey;
+    if (key == null) return const [];
+    if (key != _matchKey) _loadMatches(key);
+    return _matchItems;
+  }
+
+  /// Pull-to-refresh / "Try again": reads the data again.
+  Future<void> refreshMatches() async {
+    final key = _currentMatchKey;
+    if (key == null) return;
+    final load = _loadMatches(key, refresh: true);
+    notifyListeners(); // shows the loading state
+    await load;
+  }
+
+  Future<void> _loadMatches(
+    String key, {
+    bool refresh = false,
+    bool quiet = false,
+  }) async {
+    // Called while building: change state now, notify only after the await.
+    _matchKey = key;
+    if (!quiet) {
+      _matchItems = const [];
+      matchesLoading = true;
+      matchesFailed = false;
+    }
+    final startup = isFounder ? matchStartup : null;
+    final investor = user;
+    List<HomeItem> items = const [];
+    var failed = false;
+    try {
+      items = startup != null
+          ? await _matching.investorsForStartup(startup, refresh: refresh)
+          : await _matching.startupsForInvestor(investor!, refresh: refresh);
+    } catch (e) {
+      debugPrint('Matches failed to load: $e');
+      // A failed quiet update keeps the cards already shown.
+      if (quiet) return;
+      failed = true;
+    }
+    if (_matchKey != key) return; // the choice changed meanwhile
+    _matchItems = items;
+    matchesFailed = failed;
+    matchesLoading = false;
+    notifyListeners();
   }
 
   // ---- Page identity (replays the card entrance when it changes) ----
@@ -309,6 +404,7 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
   @override
   void dispose() {
     _discovery.changes.removeListener(notifyListeners);
+    _matching.changes.removeListener(_onMatchingChange);
     searchController.dispose();
     super.dispose();
   }
