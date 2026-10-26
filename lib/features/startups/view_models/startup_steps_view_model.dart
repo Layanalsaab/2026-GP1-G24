@@ -126,6 +126,7 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
     _fillFrom(initial);
     _ensureFounder();
     if (onlyStep != null) step = onlyStep!;
+    _openFounderIfNeeded();
     _baseline = _signature();
     for (final c in _controllers) {
       c.addListener(notifyListeners);
@@ -246,6 +247,7 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
     _ensureFounder();
     step = ((d['step'] as num?)?.toInt() ?? 0).clamp(0, stepCount - 1);
     furthestStep = step;
+    _openFounderIfNeeded();
     _baseline = _signature();
     notifyListeners();
   }
@@ -736,6 +738,7 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
     if (!isSectionEdit && step < stepCount - 1) {
       step++;
       if (step > furthestStep) furthestStep = step;
+      _openFounderIfNeeded();
       notifyListeners();
       return StepAdvance.advanced;
     }
@@ -779,7 +782,15 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
     team = list;
   }
 
-  TeamMember? get founderMember {
+  /// On the team step, the founder's own details open straight away while
+  /// their role or contribution is still empty, so they see what to fill in.
+  void _openFounderIfNeeded() {
+    if (step != teamStep || editorOpen || founderComplete) return;
+    final i = team.indexWhere((m) => m.isFounder);
+    if (i >= 0) openMemberEditor(i);
+  }
+
+    TeamMember? get founderMember {
     final i = team.indexWhere((m) => m.isFounder);
     return i < 0 ? null : team[i];
   }
