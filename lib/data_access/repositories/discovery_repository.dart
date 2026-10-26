@@ -34,10 +34,11 @@ class DiscoveryRepository {
   /// The app-wide instance. Tests replace it with a fake.
   static DiscoveryRepository instance = DiscoveryRepository();
 
-  /// How many documents each list loads (the lists render as plain columns,
-  /// so they are capped).
-  static const startupLimit = 150;
-  static const investorLimit = 150;
+  /// How many documents each list loads. The dataset has more than 150
+  /// public startups, so 150 hid most of them. Cards still show 20 at a
+  /// time ("Show more").
+  static const startupLimit = 2000;
+  static const investorLimit = 2000;
 
   final FirestoreService? _firestore;
   final bool sample;

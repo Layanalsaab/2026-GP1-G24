@@ -209,12 +209,14 @@ class Validators {
       FieldRule(ValidationStrings.ruleNumber, RegExp(r'[0-9]').hasMatch(p)),
       FieldRule(
         ValidationStrings.ruleSpecial,
-        RegExp(r'[^A-Za-z0-9]').hasMatch(p),
+        // A space is not a special character.
+        RegExp(r'[^A-Za-z0-9\s]').hasMatch(p),
       ),
     ];
   }
 
   static bool isPassword(String? value) =>
+      !RegExp(r'\s').hasMatch(value ?? '') &&
       passwordRules(value).every((r) => r.met);
 
   /// "Passwords don’t match" once something is typed in the confirm field.

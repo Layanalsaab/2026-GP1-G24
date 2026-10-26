@@ -323,6 +323,22 @@ class SignupViewModel extends ChangeNotifier with SafeNotifier {
     _confirmedInvestorEmail = email.text.trim().toLowerCase();
   }
 
+  /// Everything on the form except the email, password and photo, as one
+  /// string, to see if it changed since the account was saved.
+  String get detailsKey => [
+    name.text.trim(),
+    Validators.phoneDigits(phone.text),
+    city ?? '',
+    bio.text.trim(),
+    (sectors.toList()..sort()).join(','),
+    sectorsOther.text.trim(),
+    linkedin.text.trim(),
+    gain.text.trim(),
+    value.text.trim(),
+    emailPublic,
+    phonePublic,
+  ].join('|');
+
   // ------------------------------------------------------------- submit
 
   /// Validates, then creates the account. Returns true when the user may
@@ -348,7 +364,36 @@ class SignupViewModel extends ChangeNotifier with SafeNotifier {
             flow.password == pw &&
             flow.createdRole == role;
         // Back to step 1 and Continue again: never create a second account.
-        if (same) return true;
+        // If only the details changed, they are saved on the same account.
+        if (same) {
+          if (detailsKey != flow.savedDetails ||
+              photo?.path != flow.savedPhotoPath) {
+            final other = sectors.contains(otherLabel)
+                ? sectorsOther.text.trim()
+                : null;
+            await _auth.updateUnverifiedProfile(
+              email: mail,
+              password: pw,
+              fullName: name.text.trim(),
+              phone: Validators.phoneDigits(phone.text),
+              city: city,
+              bio: bio.text.trim(),
+              sectorsOfInterest: isFounder ? sectors.toList() : const [],
+              sectorsOther: other,
+              linkedin: linkedin.text.trim(),
+              gain: isFounder ? null : gain.text.trim(),
+              valueOffered: isFounder ? null : value.text.trim(),
+              photo: photo?.path != flow.savedPhotoPath ? photo : null,
+              removePhoto: photo == null && flow.savedPhotoPath != null,
+              emailPublic: emailPublic,
+              phonePublic: phonePublic,
+            );
+            flow
+              ..savedDetails = detailsKey
+              ..savedPhotoPath = photo?.path;
+          }
+          return true;
+        }
         // Changed email / password / role: remove the unverified account.
         try {
           await _auth.discardUnverifiedAccount(flow.email, flow.password);
@@ -404,7 +449,9 @@ class SignupViewModel extends ChangeNotifier with SafeNotifier {
             ? DateTime.now().add(const Duration(seconds: 60))
             : null
         ..createdRole = role
-        ..accountCreated = true;
+        ..accountCreated = true
+        ..savedDetails = detailsKey
+        ..savedPhotoPath = photo?.path;
       return true;
     } on AuthException catch (e) {
       _showFailure(e.failure, mail);

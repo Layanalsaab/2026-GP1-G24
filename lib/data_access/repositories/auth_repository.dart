@@ -144,6 +144,60 @@ class AuthRepository {
     await _safeSignOut();
   }
 
+  /// Sign-up: the user went back from the Verify step and changed only their
+  /// details (same email and password). Signs in just long enough to save
+  /// the new details on the still unverified account, then signs out.
+  Future<void> updateUnverifiedProfile({
+    required String email,
+    required String password,
+    required String fullName,
+    String? phone,
+    String? city,
+    String? bio,
+    List<String> sectorsOfInterest = const [],
+    String? sectorsOther,
+    String? linkedin,
+    String? gain,
+    String? valueOffered,
+    File? photo,
+    bool removePhoto = false,
+    bool emailPublic = false,
+    bool phonePublic = false,
+  }) async {
+    final account = await _signInOrGeneric(email, password);
+    try {
+      await _users.updateProfile(
+        uid: account.uid,
+        fullName: fullName,
+        bio: bio ?? '',
+        phone: phone ?? '',
+        sectorsOfInterest: sectorsOfInterest,
+        city: city,
+        sectorsOther: sectorsOther,
+        linkedin: linkedin,
+        gain: gain,
+        valueOffered: valueOffered,
+        emailPublic: emailPublic,
+        phonePublic: phonePublic,
+      );
+      // The photo is optional, so a failed upload never stops the sign-up.
+      try {
+        if (photo != null) {
+          await _users
+              .uploadProfilePhoto(account.uid, photo)
+              .timeout(const Duration(seconds: 30));
+        } else if (removePhoto) {
+          final url = (await _users.getProfile(account.uid))?.photoUrl;
+          if (url != null) await _users.removeProfilePhoto(account.uid, url);
+        }
+      } catch (e) {
+        debugPrint('Updating the profile photo failed: $e');
+      }
+    } finally {
+      await _safeSignOut();
+    }
+  }
+
   /// Sends a new verification email. Signing in is needed to send it, so the
   /// session is opened just long enough and always closed again.
   Future<ResendResult> resendVerification(String email, String password) async {

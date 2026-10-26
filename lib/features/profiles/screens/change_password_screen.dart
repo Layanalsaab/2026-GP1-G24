@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../../app_constants/profile_strings.dart';
 import '../../../shared_ui/navigation/app_route.dart';
@@ -93,6 +94,9 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                       label: ProfileStrings.newPassword,
                       required: true,
                       controller: _new,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.deny(RegExp(r'\s')),
+                      ],
                       placeholder: ProfileStrings.newPasswordHint,
                       password: true,
                       enabled: !loading,
@@ -109,6 +113,9 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                       label: ProfileStrings.confirmPassword,
                       required: true,
                       controller: _confirm,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.deny(RegExp(r'\s')),
+                      ],
                       placeholder: ProfileStrings.confirmPasswordHint,
                       password: true,
                       enabled: !loading,

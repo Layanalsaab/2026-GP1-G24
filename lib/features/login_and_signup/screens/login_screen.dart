@@ -13,7 +13,9 @@ import '../../../shared_ui/widgets/headers/overlap_layout.dart';
 import '../../../shared_ui/widgets/overlays/app_dialog.dart';
 import '../../../shared_ui/widgets/overlays/app_toast.dart';
 import '../view_models/login_view_model.dart';
+import '../view_models/verify_email_view_model.dart';
 import '../widgets/auth_navigation.dart';
+import '../widgets/resend_row.dart';
 import 'forgot_password_screen.dart';
 
 /// Log in (docs/05 A12): email and password; an unverified account gets the
@@ -68,6 +70,7 @@ class _LoginScreenState extends State<LoginScreen> {
         needLogin: true,
         notVerifiedYet: true,
         onClose: () => Navigator.of(ctx).pop(),
+        below: _LoginResend(vm: _vm),
       ),
     );
   }
@@ -138,6 +141,42 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         );
       },
+    );
+  }
+}
+
+/// The resend row of the "Email not verified yet" pop-up: the same row and
+/// 60 s countdown as the Verify step.
+class _LoginResend extends StatelessWidget {
+  const _LoginResend({required this.vm});
+
+  final LoginViewModel vm;
+
+  Future<void> _resend(BuildContext context) async {
+    final outcome = await vm.resend();
+    if (!context.mounted) return;
+    switch (outcome) {
+      case ResendOutcome.sent:
+        break; // the countdown starting is the feedback
+      case ResendOutcome.alreadyVerified:
+        AppToast.show(context, AuthStrings.alreadyVerifiedLogin);
+      case ResendOutcome.failed:
+        final error = vm.formError;
+        if (error != null) AppToast.error(context, error);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: vm,
+      builder: (context, _) => ResendRow(
+        seconds: vm.resendSeconds,
+        error: vm.resendError,
+        busy: vm.isResending,
+        onResend: () => _resend(context),
+        divider: false,
+      ),
     );
   }
 }

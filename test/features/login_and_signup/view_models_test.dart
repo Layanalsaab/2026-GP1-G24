@@ -157,6 +157,24 @@ void main() {
       },
     );
 
+    test('Back, a changed name, Continue: saved on the same account', () async {
+      final flow = SignupFlow(role: AccountRole.founder);
+      final first = make(AccountRole.founder, flow: flow);
+      addTearDown(first.dispose);
+      _fillValid(first);
+      await first.submit();
+      expect(auth.updateUnverifiedCalls, 0);
+      final second = make(AccountRole.founder, flow: flow);
+      addTearDown(second.dispose);
+      _fillValid(second);
+      second.name.text = 'Sara Changed';
+      expect(await second.submit(), isTrue);
+      expect(auth.signUpCalls, 1);
+      expect(auth.discardCalls, 0);
+      expect(auth.updateUnverifiedCalls, 1);
+      expect(auth.lastUpdatedName, 'Sara Changed');
+    });
+
     test('a changed email discards the unverified account first', () async {
       final flow = SignupFlow(role: AccountRole.founder);
       final first = make(AccountRole.founder, flow: flow);
@@ -427,6 +445,20 @@ void main() {
       expect(vm.needsVerification, isTrue);
       expect(vm.verificationEmail, 'a@b.co');
       expect(await vm.resend(), ResendOutcome.sent);
+    });
+
+    test('log in resend has the same 60 second cooldown', () async {
+      auth.logInFails = AuthFailure.emailNotVerified;
+      final vm = make();
+
+      vm.email.text = 'a@b.co';
+      vm.password.text = 'Pass@123';
+      await vm.submit();
+      expect(vm.resendSeconds, 0);
+      expect(await vm.resend(), ResendOutcome.sent);
+      expect(vm.resendSeconds, inInclusiveRange(59, 60));
+      expect(await vm.resend(), ResendOutcome.failed);
+      expect(auth.resendCalls, 1);
     });
   });
 
