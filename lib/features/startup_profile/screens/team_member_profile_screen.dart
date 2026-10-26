@@ -172,11 +172,12 @@ class _TeamMemberProfileScreenState extends State<TeamMemberProfileScreen> {
                                 size: 44,
                               ),
                               title: _startups[i].name,
-                              subtitle: switch (_startups[i].role) {
-                                'founder' => 'Founder',
-                                'coFounder' => 'Co-founder',
-                                _ => 'Team member',
-                              },
+                              // The same coloured capsule as on the Team tab.
+                              trailing: RoleTag(switch (_startups[i].role) {
+                                'founder' => StartupRole.founder,
+                                'coFounder' => StartupRole.coFounder,
+                                _ => StartupRole.member,
+                              }),
                               onTap: () => _openStartup(_startups[i]),
                             ),
                         ],
