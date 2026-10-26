@@ -45,6 +45,9 @@ class _MainScreenState extends State<MainScreen> {
 
   AppSession get _session => AppSession.instance;
 
+  /// Kept so the same notifier is removed in dispose (tests swap instances).
+  late final StartupRepository _startups = StartupRepository.instance;
+
   @override
   void initState() {
     super.initState();
@@ -54,13 +57,21 @@ class _MainScreenState extends State<MainScreen> {
       ownStartupIds: _session.belongingStartupIds,
     );
     _session.addListener(_onSession);
+    // A startup was created, edited (stage, round opened or closed...),
+    // deleted or left: "Matches for" and the hidden ids follow.
+    _startups.changes.addListener(_onStartupsChanged);
     if (_session.isFounder) _loadOwnStartups();
     _vm.refreshDirectory();
+  }
+
+  void _onStartupsChanged() {
+    if (_session.isFounder) _loadOwnStartups();
   }
 
   @override
   void dispose() {
     _session.removeListener(_onSession);
+    _startups.changes.removeListener(_onStartupsChanged);
     _vm.dispose();
     _scroll.dispose();
     super.dispose();
@@ -69,7 +80,7 @@ class _MainScreenState extends State<MainScreen> {
   /// The founder's startups: hidden from the lists and shown in "Matches for".
   Future<void> _loadOwnStartups() async {
     try {
-      final mine = await StartupRepository.instance.fetchMyStartups();
+      final mine = await _startups.fetchMyStartups();
       if (!mounted) return;
       _session.setOwnStartupIds([for (final s in mine) s.id]);
       // The startups they belong to (co-founder / team member) are hidden
@@ -79,7 +90,7 @@ class _MainScreenState extends State<MainScreen> {
       final uid = _session.user?.uid;
       try {
         for (final s
-            in await StartupRepository.instance.fetchMemberStartups()) {
+            in await _startups.fetchMemberStartups()) {
           member.add(s.id);
           roles[s.id] = StartupRole.of(s, uid) ?? StartupRole.member;
         }
@@ -95,9 +106,12 @@ class _MainScreenState extends State<MainScreen> {
     }
   }
 
-  /// Profile edited: refresh the avatar initials and the menu.
+  /// Profile edited: refresh the avatar initials and the menu, and give
+  /// Matches the new answers (an investor's preferences).
   void _onSession() {
-    if (mounted) setState(() {});
+    if (!mounted) return;
+    _vm.setUser(_session.user);
+    setState(() {});
   }
 
   void _selectTab(int index) {

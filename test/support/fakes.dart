@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:startsa/data_access/firebase_services/auth_service.dart';
 import 'package:startsa/data_access/repositories/app_settings_repository.dart';
 import 'package:startsa/data_access/repositories/auth_repository.dart';
@@ -424,6 +425,9 @@ class FakeAppSettingsRepository implements AppSettingsRepository {
 /// In-memory stand-in for [StartupRepository].
 class FakeStartupRepository implements StartupRepository {
   final List<Startup> startups = [];
+
+  @override
+  final ValueNotifier<int> changes = ValueNotifier<int>(0);
   AuthFailure? fetchFails;
   AuthFailure? deleteFails;
 
