@@ -7,10 +7,13 @@ import '../../../helpers/app_session.dart';
 import '../../../helpers/open_link.dart';
 import '../../../models/list_entries.dart';
 import '../../../models/public_profile.dart';
+import '../../../models/startup.dart';
 import '../../../models/team_member.dart';
 import '../../../shared_ui/icons/app_icons.dart';
 import '../../../shared_ui/navigation/app_route.dart';
 import '../../../shared_ui/theme/app_colors.dart';
+import '../../../shared_ui/theme/app_text.dart';
+import '../../../shared_ui/widgets/cards/pills.dart';
 import '../../../shared_ui/widgets/cards/avatars.dart';
 import '../../../shared_ui/widgets/cards/profile_blocks.dart';
 import '../../../shared_ui/widgets/headers/profile_banner.dart';
@@ -61,6 +64,7 @@ class TeamMemberProfileScreen extends StatefulWidget {
 class _TeamMemberProfileScreenState extends State<TeamMemberProfileScreen> {
   PublicProfile? _profile;
   List<ProfileStartupRef> _startups = const [];
+  final Map<String, Startup> _full = {};
   bool _loading = true;
 
   PublicProfileRepository get _repo =>
@@ -80,10 +84,26 @@ class _TeamMemberProfileScreenState extends State<TeamMemberProfileScreen> {
       profile = await _repo.get(uid);
       if (profile != null) startups = await _repo.startupsOf(profile);
     }
+    // The full startups, so each row can show its description, sector and city.
+    final full = <String, Startup>{};
+    await Future.wait([
+      for (final r in startups)
+        () async {
+          try {
+            final st = await StartupRepository.instance.fetchById(r.id);
+            if (st != null) full[r.id] = st;
+          } catch (_) {
+            // The row falls back to the name and the role.
+          }
+        }(),
+    ]);
     if (!mounted) return;
     setState(() {
       _profile = profile;
       _startups = startups;
+      _full
+        ..clear()
+        ..addAll(full);
       _loading = false;
     });
   }
@@ -165,19 +185,10 @@ class _TeamMemberProfileScreenState extends State<TeamMemberProfileScreen> {
                       child: Column(
                         children: [
                           for (var i = 0; i < _startups.length; i++)
-                            ListRow(
+                            _StartupRow(
+                              ref: _startups[i],
+                              startup: _full[_startups[i].id],
                               showDivider: i > 0,
-                              leading: HueAvatar(
-                                name: _startups[i].name,
-                                size: 44,
-                              ),
-                              title: _startups[i].name,
-                              // The same coloured capsule as on the Team tab.
-                              trailing: RoleTag(switch (_startups[i].role) {
-                                'founder' => StartupRole.founder,
-                                'coFounder' => StartupRole.coFounder,
-                                _ => StartupRole.member,
-                              }),
                               onTap: () => _openStartup(_startups[i]),
                             ),
                         ],
@@ -207,6 +218,113 @@ class _TeamMemberProfileScreenState extends State<TeamMemberProfileScreen> {
                     ),
                 ],
               ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// One startup on a person's profile, like its card elsewhere: logo, name with
+/// the role capsule, the brief description, and the sector and city pills.
+class _StartupRow extends StatelessWidget {
+  const _StartupRow({
+    required this.ref,
+    required this.startup,
+    required this.showDivider,
+    required this.onTap,
+  });
+
+  final ProfileStartupRef ref;
+  final Startup? startup;
+  final bool showDivider;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final st = startup;
+    final summary = (st?.summary ?? '').trim();
+    final pills = <String>[
+      if (st != null && st.sectorLabel.trim().isNotEmpty) st.sectorLabel,
+      if (st != null && st.location.label.trim().isNotEmpty) st.location.label,
+    ];
+    final role = switch (ref.role) {
+      'founder' => StartupRole.founder,
+      'coFounder' => StartupRole.coFounder,
+      _ => StartupRole.member,
+    };
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          border: showDivider
+              ? const Border(top: BorderSide(color: AppColors.border))
+              : null,
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            HueAvatar(name: ref.name, size: 44),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          ref.name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppText.sans(
+                            size: 15,
+                            weight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      RoleTag(role),
+                    ],
+                  ),
+                  if (summary.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      summary,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppText.sans(
+                        size: 13,
+                        height: 19,
+                        color: const Color(0xFF6B726C),
+                      ),
+                    ),
+                  ],
+                  if (pills.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        for (final label in pills)
+                          AppPill(label: label, height: 26, fontSize: 12),
+                      ],
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            const Padding(
+              padding: EdgeInsets.only(top: 12),
+              child: AppIcon.outline(
+                AppIcons.rowChevron,
+                size: 18,
+                stroke: 2,
+                color: AppColors.hint,
+              ),
+            ),
           ],
         ),
       ),
