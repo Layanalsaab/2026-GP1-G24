@@ -249,7 +249,9 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
 
   List<HomeItem> get _programs => _discovery.programs();
   List<HomeItem> get _investors => _discovery.investors();
-  List<HomeItem> get _startups => _discovery.startups(excludeIds: _ownIds);
+  /// Every public startup, the user's own included: the Hub is the full
+  /// directory. Only For You ("New" and "Recommended") leaves them out.
+  List<HomeItem> get _startups => _discovery.startups();
 
   List<HomeItem> _filtered(List<HomeItem> base) => HomeFilters.sorted([
     for (final it in base)

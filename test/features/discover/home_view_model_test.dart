@@ -39,11 +39,11 @@ void main() {
       m.dispose();
     });
 
-    test('a founder never sees their own startups', () {
+    test('a founder sees their own startups in the Hub', () {
       final id = PrototypeSeed.startups.first.id;
       final m = vm(SessionRole.founder, own: {id});
       m.setHubSwitch(0);
-      expect(m.hubCards.any((i) => i.id == id), isFalse);
+      expect(m.hubCards.any((i) => i.id == id), isTrue);
       m.dispose();
     });
 

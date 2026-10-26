@@ -338,12 +338,12 @@ void main() {
       expect(ids, isNot(contains(privateId)));
     });
 
-    test('the startups I belong to are not in my Hub or For You', () {
+    test('the startups I belong to are in my Hub but not in For You', () {
       final naql = PrototypeSeed.naql.id;
       final m = HomeViewModel(role: SessionRole.founder, ownStartupIds: {naql})
         ..setHubSwitch(0);
       addTearDown(m.dispose);
-      expect(m.hubCards.any((i) => i.id == naql), isFalse);
+      expect(m.hubCards.any((i) => i.id == naql), isTrue);
       m.setForYouSwitch(0);
       expect(m.newItems.any((i) => i.id == naql), isFalse);
       expect(m.recommended.any((i) => i.id == naql), isFalse);
