@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -6,6 +7,7 @@ import '../../../app_constants/account_strings.dart';
 import '../../../app_constants/app_strings.dart';
 import '../../../app_constants/validation_strings.dart';
 import '../../../data_access/repositories/startup_repository.dart';
+import '../../../data_access/repositories/team_lookup.dart';
 import '../../../data_access/repositories/user_repository.dart';
 import '../../../helpers/safe_notifier.dart';
 import '../../../helpers/validators.dart';
@@ -290,7 +292,7 @@ class EditAccountViewModel extends ChangeNotifier with SafeNotifier {
       }
       // Saved: nothing is left to discard.
       dirty = false;
-      return user.copyWith(
+      final updated = user.copyWith(
         fullName: name,
         bio: about,
         phone: phone,
@@ -306,6 +308,11 @@ class EditAccountViewModel extends ChangeNotifier with SafeNotifier {
         emailPublic: emailPublic,
         phonePublic: phonePublic,
       );
+      // Teams find me by e-mail with my current name.
+      if (name != user.fullName.trim()) {
+        unawaited(TeamLookup.instance.publish(updated, emailVerified: true));
+      }
+      return updated;
     } on AuthException catch (e) {
       formError = e.failure == AuthFailure.network
           ? AppStrings.networkError

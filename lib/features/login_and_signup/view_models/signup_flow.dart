@@ -36,8 +36,15 @@ class SignupFlow {
   /// The step-1 form, kept so Back from the Verify step keeps its answers.
   SignupViewModel? form;
 
-  /// "STEP n OF total": 7 for a founder, 4 for an investor.
-  int get totalSteps => role == AccountRole.founder
+  /// Opened from a team invitation: the person joins a team, so there is no
+  /// startup to create. Only two steps: Create account and Verify email.
+  bool fromInvite = false;
+
+  /// "STEP n OF total": 8 for a founder, 4 for an investor, 2 when the
+  /// sign-up came from a team invitation.
+  int get totalSteps => fromInvite
+      ? 2
+      : role == AccountRole.founder
       ? 2 + FounderToolsStrings.stepTitles.length
       : 4;
 }

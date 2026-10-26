@@ -8,6 +8,7 @@ import '../../../app_constants/auth_strings.dart';
 import '../../../app_constants/validation_strings.dart';
 import '../../../data_access/device_services/profile_photo_picker_service.dart';
 import '../../../data_access/repositories/auth_repository.dart';
+import '../../../data_access/repositories/invitation_repository.dart';
 import '../../../helpers/safe_notifier.dart';
 import '../../../helpers/validators.dart';
 import '../../../models/app_user.dart';
@@ -292,6 +293,34 @@ class SignupViewModel extends ChangeNotifier with SafeNotifier {
     } catch (_) {
       return AccountStrings.photoFailed;
     }
+  }
+
+  // ------------------------------------------------------ invited e-mail
+
+  /// The e-mail an investor already confirmed ("Continue as investor") after
+  /// the "you've been invited" warning, so it is not asked twice.
+  String? _confirmedInvestorEmail;
+
+  /// The names of the startups that invited this e-mail, when an INVESTOR is
+  /// about to sign up with it (empty otherwise, or if the e-mail was already
+  /// confirmed). The sign-up screen warns before the account is created.
+  Future<List<String>> invitedTeams({InvitationRepository? repository}) async {
+    final mail = email.text.trim().toLowerCase();
+    if (isFounder || flow.accountCreated || mail == _confirmedInvestorEmail) {
+      return const [];
+    }
+    if (!Validators.isSignupEmail(mail)) return const [];
+    try {
+      return await (repository ?? InvitationRepository.instance).invitedBy(
+        mail,
+      );
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  void confirmInvestorEmail() {
+    _confirmedInvestorEmail = email.text.trim().toLowerCase();
   }
 
   // ------------------------------------------------------------- submit

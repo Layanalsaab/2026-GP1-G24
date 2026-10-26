@@ -103,13 +103,29 @@ service cloud.firestore {
                                                  'ticketRange', 'about', 'bio',
                                                  'valueOffered', 'hopeToGain',
                                                  'linkedin', 'photoUrl',
-                                                 'createdAt'])
+                                                 'createdAt', 'role',
+                                                 'sectorsOfInterest',
+                                                 'sectorsOther', 'linkedinUrl',
+                                                 'emailPublic', 'phonePublic',
+                                                 'email', 'phone', 'startups',
+                                                 'isSample', 'updatedAt'])
         && request.resource.data.fullName is string
         && request.resource.data.fullName.size() <= 50
         && optionalString(request.resource.data, 'about', 1000)
         && optionalString(request.resource.data, 'bio', 2000)
         && optionalString(request.resource.data, 'valueOffered', 1000)
-        && optionalString(request.resource.data, 'hopeToGain', 1000);
+        && optionalString(request.resource.data, 'hopeToGain', 1000)
+        && request.resource.data.get('role', 'founder') in ['founder', 'investor']
+        // The profile is always public. The e-mail and the phone are listed
+        // ONLY when the person set that one to Public (each on its own).
+        && (!('email' in request.resource.data)
+            || request.resource.data.get('emailPublic', false) == true)
+        && (!('phone' in request.resource.data)
+            || request.resource.data.get('phonePublic', false) == true)
+        && optionalString(request.resource.data, 'email', 100)
+        && optionalString(request.resource.data, 'phone', 20)
+        && optionalList(request.resource.data, 'sectorsOfInterest', 25)
+        && optionalList(request.resource.data, 'startups', 30);
       allow delete: if request.auth != null && request.auth.uid == uid;
     }
 
@@ -189,6 +205,26 @@ service cloud.firestore {
                     && request.resource.data.createdAt == resource.data.createdAt
                     && request.resource.data.updatedAt == request.time
                     && validStartup(request.resource.data);
+
+      // Accepting an invitation: a person with a VERIFIED email that has a
+      // pending invitation to this startup adds ONLY themselves, with the
+      // role the invitation gave (invitation id = startupId~email).
+      allow update: if request.auth != null
+                    && request.auth.token.email_verified == true
+                    && !(request.auth.uid in resource.data.get('memberIds', []))
+                    && request.resource.data.diff(resource.data).affectedKeys()
+                         .hasOnly(['memberIds', 'memberRoles', 'teamMembers',
+                                   'updatedAt'])
+                    && request.resource.data.memberIds.toSet()
+                         == resource.data.get('memberIds', []).toSet()
+                              .union([request.auth.uid].toSet())
+                    && request.resource.data.memberRoles
+                         .diff(resource.data.get('memberRoles', {}))
+                         .affectedKeys().hasOnly([request.auth.uid])
+                    && request.resource.data.get('teamMembers', []).size() <= 20
+                    && invitationFor(startupId).status == 'pending'
+                    && request.resource.data.memberRoles[request.auth.uid]
+                         == invitationFor(startupId).role;
 
       // Leave startup: a member removes only their own uid from memberIds
       // and their own entry from memberRoles; nothing else may change.
@@ -407,6 +443,104 @@ service cloud.firestore {
     // An investor's request to a startup. Created by the investor, read by
     // that investor and by the startup's founder, and only the founder can
     // change the status.
+    // ---------------------------------------------------------- invitations
+    // One invitation per startup and e-mail; the id is `startupId~email`
+    // (e-mail lower-case). A founder or co-founder of the startup creates and
+    // cancels them. Anyone can read ONE by its id (the invite screen before
+    // the person has an account; the ids can't be guessed) but nobody can
+    // list them, except the invited person (verified e-mail) and the person
+    // who sent them.
+    function invitationFor(startupId) {
+      return get(/databases/$(database)/documents/invitations/$(startupId + '~' + request.auth.token.email.lower())).data;
+    }
+
+    function canInvite(startupId) {
+      let s = get(/databases/$(database)/documents/startups/$(startupId)).data;
+      return s.founderId == request.auth.uid
+          || s.get('memberRoles', {}).get(request.auth.uid, '') == 'coFounder';
+    }
+
+    function myVerifiedEmail(d) {
+      return request.auth.token.email_verified == true
+          && d.emailLower == request.auth.token.email.lower();
+    }
+
+    match /invitations/{invitationId} {
+      allow get: if true;
+      allow list: if request.auth != null
+                  && (myVerifiedEmail(resource.data)
+                      || resource.data.invitedBy == request.auth.uid);
+
+      allow create: if request.auth != null
+        && request.resource.data.keys().hasOnly(['startupId', 'startupName',
+             'emailLower', 'role', 'roleText', 'contribution', 'invitedBy',
+             'invitedByName', 'status', 'emailSent', 'createdAt', 'lastSentAt',
+             'respondedAt'])
+        && request.resource.data.invitedBy == request.auth.uid
+        && request.resource.data.status == 'pending'
+        && invitationId == request.resource.data.startupId + '~'
+                           + request.resource.data.emailLower
+        && request.resource.data.role in ['coFounder', 'member']
+        && request.resource.data.emailLower.matches('^[^\\s@]+@[^\\s@]+\\.[^\\s@]{2,}$')
+        && request.resource.data.emailLower.size() <= 100
+        && optionalString(request.resource.data, 'roleText', 40)
+        && optionalString(request.resource.data, 'contribution', 300)
+        && optionalString(request.resource.data, 'startupName', 40)
+        && optionalString(request.resource.data, 'invitedByName', 50)
+        && canInvite(request.resource.data.startupId);
+
+      allow update: if request.auth != null
+        && (
+          // The team: cancel, re-invite, mark the e-mail as sent.
+          (canInvite(resource.data.startupId)
+           && request.resource.data.diff(resource.data).affectedKeys()
+                .hasOnly(['status', 'emailSent', 'lastSentAt', 'role',
+                          'roleText', 'contribution'])
+           && request.resource.data.status in ['pending', 'cancelled'])
+          ||
+          // The invited person: accept or decline.
+          (myVerifiedEmail(resource.data)
+           && resource.data.status == 'pending'
+           && request.resource.data.diff(resource.data).affectedKeys()
+                .hasOnly(['status', 'respondedAt', 'acceptedBy'])
+           && request.resource.data.get('acceptedBy', request.auth.uid)
+                == request.auth.uid
+           && request.resource.data.status in ['accepted', 'declined'])
+        );
+
+      allow delete: if request.auth != null && canInvite(resource.data.startupId);
+    }
+
+    // The names of the startups that invited an e-mail that has no account
+    // yet, so sign-up can warn "you've been invited" before the account is
+    // created. Read one by its id (no listing).
+    match /inviteEmails/{emailLower} {
+      allow get: if true;
+      allow create, update: if request.auth != null
+        && request.resource.data.keys().hasOnly(['names', 'updatedAt'])
+        && request.resource.data.names is list
+        && request.resource.data.names.size() <= 20;
+      allow delete: if request.auth != null;
+    }
+
+    // Finds an account by e-mail: id = the e-mail (lower-case), written by
+    // the account's owner once the e-mail is verified. A signed-in user can
+    // read one by its id; nobody can list them.
+    match /emailIndex/{emailLower} {
+      allow get: if request.auth != null;
+      allow create, update: if request.auth != null
+        && request.auth.token.email_verified == true
+        && request.auth.token.email.lower() == emailLower
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.keys().hasOnly(['uid', 'fullName', 'role',
+                                                 'updatedAt'])
+        && request.resource.data.role in ['founder', 'investor']
+        && request.resource.data.fullName is string
+        && request.resource.data.fullName.size() <= 50;
+      allow delete: if request.auth != null
+                    && resource.data.uid == request.auth.uid;
+    }
+
     match /requests/{requestId} {
       allow read: if request.auth != null
         && (resource.data.investorId == request.auth.uid

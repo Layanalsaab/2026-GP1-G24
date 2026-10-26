@@ -21,8 +21,9 @@ class _OldRulesFirestore extends FirestoreService {
   Future<void> setDocument(
     String collection,
     String id,
-    Map<String, Object?> data,
-  ) async {
+    Map<String, Object?> data, {
+    bool merge = false,
+  }) async {
     attempts++;
     if (!_allowedOnCreate.containsAll(data.keys)) {
       throw const AuthException(AuthFailure.permissionDenied);

@@ -1,7 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../../app_constants/auth_strings.dart';
 import '../../../app_constants/validation_strings.dart';
+import '../../../data_access/repositories/team_lookup.dart';
+import '../../../data_access/repositories/user_repository.dart';
+import '../../../helpers/invitation_claimer.dart';
 import '../../../helpers/app_session.dart';
 import '../../../models/app_user.dart';
 import '../../../navigation/app_router.dart';
@@ -161,11 +166,31 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen>
     }
   }
 
-  void _onVerified(AppUser user) {
+  Future<void> _onVerified(AppUser user) async {
     AppSession.instance.signIn(user);
+    // Teams can find this account by e-mail from now on.
+    unawaited(TeamLookup.instance.publish(user, emailVerified: true));
     if (user.role == AccountRole.founder) {
+      // A new account joins every team that invited its e-mail, and then has
+      // no need to create a startup first.
+      final joined = await InvitationClaimer.acceptAll(user);
+      if (!mounted) return;
+      if (joined.isNotEmpty) {
+        SignupFlow.current = null;
+        try {
+          await UserRepository.instance.completeOnboarding(user.uid);
+        } catch (_) {}
+        if (!mounted) return;
+        AppRouter.openHome(context);
+        AppToast.showGlobal(InvitationClaimer.addedMessage(joined));
+        return;
+      }
       StartupStepsScreen.openOnboarding(context);
     } else {
+      // An investor can't join a team: whatever invited this e-mail is
+      // marked declined.
+      await InvitationClaimer.declineAll();
+      if (!mounted) return;
       InvestorInvestmentsScreen.open(context, user);
     }
   }

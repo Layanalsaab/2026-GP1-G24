@@ -7,6 +7,11 @@ import '../data_access/repositories/app_settings_repository.dart';
 import '../data_access/repositories/auth_repository.dart';
 import '../data_access/repositories/bookmark_repository.dart';
 import '../data_access/repositories/interest_repository.dart';
+import '../data_access/repositories/invitation_repository.dart';
+import '../data_access/repositories/team_lookup.dart';
+import '../app_constants/app_config.dart';
+import '../features/startups/widgets/invitation_dialogs.dart';
+import '../helpers/invitation_claimer.dart';
 import '../data_access/repositories/request_repository.dart';
 import '../data_access/repositories/startup_repository.dart';
 import '../features/login_and_signup/screens/investor_investments_screen.dart';
@@ -56,12 +61,25 @@ class AppRouter {
     AppSession.instance.signIn(user);
     // The saved bookmarks load in the background (icons fill when ready).
     unawaited(BookmarkRepository.instance.load(user.uid));
+    // Teams can find this account by e-mail from now on.
+    unawaited(TeamLookup.instance.publish(user, emailVerified: true));
+    // Invitations to a team waiting for this e-mail.
+    final joined = await _handleInvitations(context, user);
+    if (!context.mounted) return;
     var needsStartup = false;
     if (user.role == AccountRole.founder) {
       try {
         final mine = await StartupRepository.instance.fetchMyStartups();
         AppSession.instance.setOwnStartupIds([for (final s in mine) s.id]);
         needsStartup = mine.isEmpty;
+        if (needsStartup) {
+          // Somebody who joined a team doesn't have to create a startup.
+          try {
+            needsStartup =
+                (await StartupRepository.instance.fetchMemberStartups())
+                    .isEmpty;
+          } catch (_) {}
+        }
       } catch (_) {
         // Offline or denied: open Home; the shell loads the list again.
       }
@@ -80,9 +98,49 @@ class AppRouter {
       return;
     }
     openHome(context);
-    if (welcomeBack) {
+    if (joined.isNotEmpty) {
+      AppToast.showGlobal(InvitationClaimer.addedMessage(joined));
+    } else if (welcomeBack) {
       AppToast.showGlobal('Welcome back, ${user.firstName}');
     }
+  }
+
+  /// Invitations to a team that wait for this account's e-mail: a founder
+  /// joins (at once, or after "Accept / Decline"); an investor can't, so
+  /// they are marked declined. Returns the names of the startups joined.
+  static Future<List<String>> _handleInvitations(
+    BuildContext context,
+    AppUser user,
+  ) async {
+    if (user.role != AccountRole.founder) {
+      await InvitationClaimer.declineAll();
+      return const [];
+    }
+    final joined = <String>[];
+    final repo = InvitationRepository.instance;
+    for (final invitation in await InvitationClaimer.pending()) {
+      var accept = AppConfig.autoJoinExistingAccounts;
+      if (!AppConfig.autoJoinExistingAccounts) {
+        if (!context.mounted) return joined;
+        final answer = await showInvitationDecision(context, invitation);
+        if (answer == null) continue; // decide later
+        if (!answer) {
+          try {
+            await repo.decline(invitation);
+          } catch (_) {}
+          continue;
+        }
+        accept = true;
+      }
+      if (!accept) continue;
+      try {
+        await repo.accept(invitation, fullName: user.fullName);
+        joined.add(invitation.startupName);
+      } catch (_) {
+        // Stays pending: it is offered again next time.
+      }
+    }
+    return joined;
   }
 
   /// "Continue as guest": Home as a guest (reset, "up").

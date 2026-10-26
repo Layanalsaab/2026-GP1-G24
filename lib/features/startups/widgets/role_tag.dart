@@ -3,18 +3,20 @@ import 'package:flutter/material.dart';
 import '../../../app_constants/founder_tools_strings.dart';
 import '../../../models/list_entries.dart';
 import '../../../models/team_member.dart';
+import '../../../shared_ui/theme/app_colors.dart';
 import '../../../shared_ui/theme/app_text.dart';
 
 /// The role tag next to a startup name: height 20, radius 999, 11 px
 /// semibold, padding 0 8. Founder = gold, Co-founder = blue, Team member =
 /// green. (Invited = transparent with a dashed grey border: [RoleTag.invited].)
 class RoleTag extends StatelessWidget {
-  const RoleTag(this.role, {super.key, this.label}) : invited = false;
+  const RoleTag(this.role, {super.key, this.label})
+    : invited = false,
+      warn = false;
 
   /// "Invited": transparent, 1 px dashed `#B9BDB8` border, grey text.
-  const RoleTag.invited({super.key})
+  const RoleTag.invited({super.key, this.label, this.warn = false})
     : role = null,
-      label = null,
       invited = true;
 
   final StartupRole? role;
@@ -22,6 +24,9 @@ class RoleTag extends StatelessWidget {
 
   /// Text shown instead of the role's own name ("You · Founder").
   final String? label;
+
+  /// The dashed tag in red ("Declined").
+  final bool warn;
 
   static String labelOf(StartupRole role) => switch (role) {
     StartupRole.founder => FounderToolsStrings.roleFounder,
@@ -33,7 +38,7 @@ class RoleTag extends StatelessWidget {
   Widget build(BuildContext context) {
     if (invited) {
       return Semantics(
-        label: 'Invited',
+        label: label ?? 'Invited',
         excludeSemantics: true,
         child: CustomPaint(
           painter: _DashedPillPainter(),
@@ -45,12 +50,12 @@ class RoleTag extends StatelessWidget {
             child: Center(
               widthFactor: 1,
               child: Text(
-                'Invited',
+                label ?? 'Invited',
                 style: AppText.sans(
                   size: 11,
                   height: 18,
                   weight: FontWeight.w600,
-                  color: const Color(0xFF5B625D),
+                  color: warn ? AppColors.error : const Color(0xFF5B625D),
                 ),
               ),
             ),
@@ -123,7 +128,11 @@ class _DashedPillPainter extends CustomPainter {
 /// tag (Founder / Co-founder / Member, prefixed "You · " on my own card), and
 /// for an invited person a dashed "Invited" tag next to it (never on the
 /// founder).
-List<Widget> teamTagsOf(TeamMember member, {required bool isYou}) {
+List<Widget> teamTagsOf(
+  TeamMember member, {
+  required bool isYou,
+  bool declined = false,
+}) {
   final you = isYou ? 'You · ' : '';
   final tag = member.isFounder
       ? RoleTag(StartupRole.founder, label: '${you}Founder')
@@ -132,6 +141,9 @@ List<Widget> teamTagsOf(TeamMember member, {required bool isYou}) {
       : RoleTag(StartupRole.member, label: '${you}Member');
   return [
     tag,
-    if (member.invited && !member.isFounder) const RoleTag.invited(),
+    if (member.invited && !member.isFounder)
+      declined
+          ? const RoleTag.invited(label: 'Declined', warn: true)
+          : const RoleTag.invited(),
   ];
 }

@@ -32,6 +32,8 @@ class _OneAccount extends TeamLookup {
   Future<TeamAccount?> findByEmail(String email) async =>
       email.trim().toLowerCase() == 'nora.alharbi@gmail.com'
       ? const TeamAccount(uid: 'sample-nora', name: 'Nora Alharbi')
+      : email.trim().toLowerCase() == 'layan.investor@gmail.com'
+      ? const TeamAccount(uid: 'inv', name: 'Layan', isFounder: false)
       : null;
 }
 
@@ -302,7 +304,7 @@ void main() {
     });
 
     test(
-      'registered e-mail fills in the name; duplicates are refused',
+      'registered founder: invited with their account name; investor refused',
       () async {
         final vm = StartupStepsViewModel();
         addTearDown(vm.dispose);
@@ -311,10 +313,22 @@ void main() {
         vm.memberEmail.text = 'NORA.alharbi@gmail.com';
         vm.memberRole.text = 'CMO';
         vm.memberContribution.text = 'Marketing';
-        expect(await vm.saveMember(), MemberSave.saved);
+        expect(await vm.saveMember(), MemberSave.invited);
         expect(vm.team.last.name, 'Nora Alharbi');
-        expect(vm.team.last.invited, isFalse);
-        expect(vm.team.last.uid, 'sample-nora');
+        // An existing account gets an invitation to accept.
+        expect(vm.team.last.invited, isTrue);
+        // An investor account can't be on a team.
+        vm.openMemberEditor();
+        vm.memberName.text = 'Layan';
+        vm.memberEmail.text = 'layan.investor@gmail.com';
+        vm.memberRole.text = 'Advisor';
+        vm.memberContribution.text = 'Advises';
+        expect(await vm.saveMember(), MemberSave.invalid);
+        expect(
+          vm.memberError(vm.memberEmail),
+          'This email belongs to an investor account, which can’t join a team.',
+        );
+        vm.cancelMemberEditor();
         vm.openMemberEditor();
         vm.memberName.text = 'Nora Alharbi';
         vm.memberEmail.text = 'nora.alharbi@gmail.com';

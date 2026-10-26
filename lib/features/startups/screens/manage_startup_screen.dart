@@ -3,7 +3,9 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../../../app_constants/founder_tools_strings.dart';
+import '../../../data_access/repositories/invitation_repository.dart';
 import '../../../data_access/repositories/request_repository.dart';
+import '../../../data_access/repositories/startup_repository.dart';
 import '../../../helpers/share_link.dart';
 import '../../../models/list_entries.dart';
 import '../../../helpers/app_session.dart';
@@ -97,6 +99,29 @@ class _ManageStartupScreenState extends State<ManageStartupScreen> {
   late final ActivityViewModel _activity = ActivityViewModel(
     startupId: widget.startup.id,
   );
+
+  @override
+  void initState() {
+    super.initState();
+    _fixInvitedCards();
+  }
+
+  /// Somebody accepted an invitation while the startup was private, so only
+  /// the team can fix their card ("Invited" -> a member). Done when a person
+  /// who can manage opens the startup.
+  Future<void> _fixInvitedCards() async {
+    if (!_canEdit || !widget.startup.team.any((m) => m.invited)) return;
+    try {
+      final fixed = await InvitationRepository.instance.reconcileTeam(
+        widget.startup,
+      );
+      if (fixed == null || !mounted) return;
+      await StartupRepository.instance.setTeam(widget.startup.id, fixed);
+      if (mounted) _vm.replace(_vm.startup.copyWith(team: fixed));
+    } catch (_) {
+      // The cards are fixed next time.
+    }
+  }
 
   @override
   void dispose() {

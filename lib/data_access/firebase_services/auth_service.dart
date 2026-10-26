@@ -50,6 +50,13 @@ class AuthService {
     return _toAccount(_auth.currentUser);
   });
 
+  /// The signed-in user's Firebase ID token (proof of who they are, used by
+  /// the invitation e-mail relay), or null when nobody is signed in.
+  Future<String?> idToken() => _guard(() async {
+    final user = _auth.currentUser;
+    return user?.getIdToken();
+  });
+
   Future<void> sendVerificationEmail() => _guard(() async {
     final user = _auth.currentUser;
     if (user == null) throw const AuthException(AuthFailure.unknown);

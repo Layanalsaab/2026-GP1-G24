@@ -21,6 +21,7 @@ import '../../../shared_ui/widgets/overlays/app_dialog.dart';
 import '../../../shared_ui/widgets/overlays/app_toast.dart';
 import '../../../shared_ui/widgets/overlays/multi_picker_sheet.dart';
 import '../../../shared_ui/widgets/overlays/picker_sheet.dart';
+import '../../startups/widgets/invitation_dialogs.dart';
 import '../view_models/signup_flow.dart';
 import '../view_models/signup_view_model.dart';
 import '../widgets/auth_navigation.dart';
@@ -30,7 +31,10 @@ import 'verify_email_screen.dart';
 /// Sign-up step 1, "Create your account" (docs/05 A7), for [role]. Founders
 /// also pick their sectors; investors say what they hope to gain.
 class SignupScreen extends StatefulWidget {
-  const SignupScreen({super.key, required this.role, this.flow});
+  const SignupScreen({super.key, required this.role, this.flow, this.email});
+
+  /// An e-mail to start with (the one an invitation was sent to).
+  final String? email;
 
   final AccountRole role;
 
@@ -39,12 +43,14 @@ class SignupScreen extends StatefulWidget {
   final SignupFlow? flow;
 
   /// Pushes the step-1 form for [role] (Choose role -> Continue).
-  static void open(BuildContext context, AccountRole role) {
+  static void open(BuildContext context, AccountRole role, {String? email}) {
     final flow = SignupFlow.current ?? SignupFlow(role: role);
+    // A sign-up that starts from an invitation has two steps only.
+    if (email != null) flow.fromInvite = true;
     SignupFlow.current = flow;
     AppNav.push(
       context,
-      SignupScreen(role: role, flow: flow),
+      SignupScreen(role: role, flow: flow, email: email),
       greenHeader: true,
     );
   }
@@ -69,6 +75,8 @@ class _SignupScreenState extends State<SignupScreen> {
     } else {
       _vm = SignupViewModel(role: widget.role, flow: flow);
     }
+    final start = widget.email;
+    if (start != null && _vm.email.text.trim().isEmpty) _vm.email.text = start;
   }
 
   @override
@@ -149,7 +157,32 @@ class _SignupScreenState extends State<SignupScreen> {
     if (result != null) _vm.setCity(result.value);
   }
 
+  /// An investor whose e-mail was invited to a team is asked first: the role
+  /// can't be changed after sign-up.
+  Future<bool> _confirmInvestor() async {
+    final names = await _vm.invitedTeams();
+    if (!mounted) return false;
+    if (names.isEmpty) return true;
+    final join = await showInvitedInvestorDialog(context, names);
+    if (!mounted || join == null) return false;
+    if (join) {
+      // Back to the form as a founder: the invitation adds them to the team.
+      final flow = SignupFlow(role: AccountRole.founder);
+      SignupFlow.current = flow;
+      Navigator.of(context).pushReplacement(
+        AppRoute<void>(
+          builder: (_) => SignupScreen(role: AccountRole.founder, flow: flow),
+          greenHeader: true,
+        ),
+      );
+      return false;
+    }
+    _vm.confirmInvestorEmail();
+    return true;
+  }
+
   Future<void> _submit() async {
+    if (!await _confirmInvestor()) return;
     final ok = await _vm.submit();
     if (!mounted) return;
     if (ok) {

@@ -143,6 +143,19 @@ class FounderToolsStrings {
       'We’ll email $email an invitation to join and see this startup. Do you want to continue?';
   static const sendInvite = 'Send invite';
   static const invitationSent = 'Invitation sent';
+  static const invitationQueued = 'Invitation will be sent when you save';
+  static String invitationsSent(int n) =>
+      n == 1 ? 'Invitation sent' : '$n invitations sent';
+  static String invitesFailed(int n) => n == 1
+      ? 'Saved, but the invitation email wasn’t sent. Save again to try again.'
+      : 'Saved, but $n invitation emails weren’t sent. Save again to try again.';
+  static const invitesOffline =
+      'No internet connection. Save again when you’re back online to send the invitation.';
+  static const invitesLimit =
+      'We’ve reached today’s invitation limit. Save again tomorrow to send it.';
+  static const inviteJoinFailed =
+      'We couldn’t join the team. Please try again.';
+  static const tagDeclined = 'Declined';
   static const cancel = 'Cancel';
   static const addMemberButton = 'Add member';
   static const saveMemberButton = 'Save';

@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import '../../app_constants/firestore_collections.dart';
 import '../../models/auth_failure.dart';
 import '../../models/startup.dart';
+import '../../models/team_member.dart';
 import '../firebase_services/auth_service.dart';
 import '../firebase_services/firestore_service.dart';
 import '../firebase_services/storage_service.dart';
@@ -45,6 +46,14 @@ class StartupRepository {
     if (uid == null) throw const AuthException(AuthFailure.permissionDenied);
     return uid;
   }
+
+  /// Saves only the team list of a startup (somebody accepted an invitation
+  /// while the startup was private, so the team fixes their card).
+  Future<void> setTeam(String startupId, List<TeamMember> team) =>
+      _firestore.updateDocument(_collection, startupId, {
+        StartupFields.team: [for (final m in team) m.toMap()],
+        StartupFields.updatedAt: _firestore.serverTimestamp(),
+      });
 
   /// One startup by id, or null when it doesn't exist (any more).
   Future<Startup?> fetchById(String id) async {

@@ -17,8 +17,9 @@ class _MemoryFirestore extends FirestoreService {
   Future<void> setDocument(
     String collection,
     String id,
-    Map<String, Object?> data,
-  ) async => (store[collection] ??= {})[id] = data;
+    Map<String, Object?> data, {
+    bool merge = false,
+  }) async => (store[collection] ??= {})[id] = data;
 
   @override
   Future<void> deleteDocument(String collection, String id) async =>

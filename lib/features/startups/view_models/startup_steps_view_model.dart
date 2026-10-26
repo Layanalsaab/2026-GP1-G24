@@ -1,12 +1,13 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/widgets.dart';
 
 import '../../../app_constants/founder_tools_strings.dart';
 import '../../../app_constants/validation_strings.dart';
 import '../../../data_access/device_services/logo_picker_service.dart';
+import '../../../data_access/firebase_services/invite_relay_service.dart';
+import '../../../data_access/repositories/invitation_repository.dart';
 import '../../../data_access/repositories/startup_repository.dart';
 import '../../../data_access/repositories/team_lookup.dart';
 import '../../../data_access/repositories/user_repository.dart';
@@ -17,6 +18,7 @@ import '../../../helpers/startup_finance.dart';
 import '../../../helpers/startup_validators.dart';
 import '../../../helpers/validators.dart';
 import '../../../models/list_entries.dart';
+import '../../../models/invitation.dart';
 import '../../../models/startup.dart';
 import '../../../models/startup_enums.dart';
 import '../../../models/team_member.dart';
@@ -51,6 +53,25 @@ enum StartupField {
   lead,
   partnerTypes,
   supportTypes,
+}
+
+/// What happened to the invitation e-mails when a startup was saved.
+class InviteSummary {
+  const InviteSummary({
+    this.sent = 0,
+    this.failed = 0,
+    this.offline = false,
+    this.limit = false,
+  });
+
+  final int sent;
+  final int failed;
+
+  /// No connection / Gmail's daily limit (each has its own message).
+  final bool offline;
+  final bool limit;
+
+  bool get nothing => sent == 0 && failed == 0;
 }
 
 /// What happened when a team member was saved.
@@ -93,11 +114,13 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
     this.initial,
     StartupRepository? repository,
     UserRepository? users,
+    InvitationRepository? invitations,
     LogoPickerService? logoPicker,
     DateTime? now,
     this.onlySection,
   }) : _repository = repository ?? StartupRepository.instance,
        _users = users ?? UserRepository.instance,
+       _invitations = invitations ?? InvitationRepository.instance,
        _logoPickerOverride = logoPicker,
        _now = now ?? DateTime.now() {
     _fillFrom(initial);
@@ -244,6 +267,7 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
   int? get onlyStep => onlySection == null ? null : sectionSteps[onlySection!];
   final StartupRepository _repository;
   final UserRepository _users;
+  final InvitationRepository _invitations;
   final LogoPickerService? _logoPickerOverride;
   final DateTime _now;
 
@@ -303,6 +327,9 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
   final memberName = TextEditingController();
   final memberRole = TextEditingController();
   final memberEmail = TextEditingController();
+
+  /// The e-mail of an investor account that was refused as a member.
+  String? _blockedEmail;
   final memberContribution = TextEditingController();
   bool memberCoFounder = false;
 
@@ -820,6 +847,10 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
       return _validName(c.text) ? null : ValidationStrings.fullName;
     }
     if (c == memberEmail) {
+      if (_blockedEmail != null &&
+          c.text.trim().toLowerCase() == _blockedEmail) {
+        return ValidationStrings.memberIsInvestor;
+      }
       if (_blank(c)) {
         return memberTried ? ValidationStrings.memberEmailRequired : null;
       }
@@ -885,10 +916,29 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
       _touch(() => memberTried = true);
       return MemberSave.invalid;
     }
+    // Somebody who already joined: only the role, the contribution and the
+    // Co-founder box change (their name and e-mail are theirs).
+    if (old != null && !old.invited && old.uid != null) {
+      _commitMember(
+        old.copyWith(
+          role: memberRole.text.trim(),
+          contribution: memberContribution.text.trim(),
+          coFounder: memberCoFounder,
+        ),
+      );
+      return MemberSave.saved;
+    }
     final email = memberEmail.text.trim().toLowerCase();
     final account = await TeamLookup.instance.findByEmail(email);
+    if (account != null && !account.isFounder) {
+      // An investor account can't be on a startup's team.
+      _touch(() => _blockedEmail = email);
+      return MemberSave.invalid;
+    }
     if (account != null) {
-      // A registered account: its name replaces the typed one.
+      // Already on Start.sa: they get an invitation to accept (no dialog
+      // needed); their account name replaces the typed one.
+      final alreadyInvited = old != null && old.invited && old.email == email;
       memberName.text = account.name;
       _commitMember(
         TeamMember(
@@ -897,10 +947,10 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
           role: memberRole.text.trim(),
           contribution: memberContribution.text.trim(),
           coFounder: memberCoFounder,
-          uid: account.uid,
+          invited: true,
         ),
       );
-      return MemberSave.saved;
+      return alreadyInvited ? MemberSave.saved : MemberSave.invited;
     }
     if (!_validName(memberName.text)) {
       _touch(() => memberTried = true);
@@ -963,6 +1013,7 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
         return null;
       }
       final startup = _build();
+      inviteSummary = const InviteSummary();
       final saved = isEditing
           ? await _repository.update(
               startup,
@@ -978,19 +1029,110 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
           saved.id,
         });
       }
+      inviteSummary = await _sendInvitations(saved);
       return saved;
     } catch (e) {
       // In a debug build the real reason is appended, so a failure can be
       // diagnosed from the screen (the plain message ships in release).
-      saveError = kDebugMode
-          ? '${FounderToolsStrings.saveFailed} [$e]'
-          : FounderToolsStrings.saveFailed;
+      saveError = FounderToolsStrings.saveFailed;
       debugPrint('Saving the startup failed: $e (${startupErrorMessage(e)})');
       return null;
     } finally {
       isSaving = false;
       notifyListeners();
     }
+  }
+
+  /// Why the last invitation e-mail was refused (shown in debug builds).
+  String? lastInviteError;
+
+  /// What happened to the invitation e-mails of the last [save].
+  InviteSummary inviteSummary = const InviteSummary();
+
+  /// The status of each invitation I sent for this startup, by e-mail (to
+  /// show "Declined" on a card).
+  Map<String, InvitationStatus> inviteStatus = const {};
+
+  /// Reads the invitations of this startup and, when somebody accepted while
+  /// the startup was private, fixes their card.
+  Future<void> loadInvitations() async {
+    final s = initial;
+    if (s == null) return;
+    try {
+      final sent = await _invitations.sentFor(s.id);
+      inviteStatus = {for (final i in sent) i.emailLower: i.status};
+      final fixed = await _invitations.reconcileTeam(s.copyWith(team: team));
+      if (fixed != null) {
+        team = fixed;
+        _baseline = _signature();
+      }
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Could not read the invitations: $e');
+    }
+  }
+
+  /// Creates the invitations of every invited member, cancels the ones of
+  /// members that were removed, and sends the e-mails not sent yet.
+  Future<InviteSummary> _sendInvitations(Startup saved) async {
+    var sent = 0, failed = 0;
+    var offline = false, limit = false;
+    final byEmail = {
+      for (final m in saved.team)
+        if (m.invited && !m.isFounder && m.email.isNotEmpty) m.email: m,
+    };
+    try {
+      for (final old in initial?.team ?? const <TeamMember>[]) {
+        if (old.invited &&
+            old.email.isNotEmpty &&
+            !byEmail.containsKey(old.email)) {
+          await _invitations.cancel(saved.id, old.email);
+        }
+      }
+    } catch (e) {
+      debugPrint('Could not cancel an invitation: $e');
+    }
+    final myName = AppSession.instance.user?.fullName ?? '';
+    for (final m in byEmail.values) {
+      try {
+        final inv = await _invitations.ensure(
+          startup: saved,
+          member: m,
+          invitedByName: myName,
+        );
+        if (!inv.isPending || inv.emailSent) continue;
+        final outcome = await _invitations.sendEmail(inv);
+        if (outcome != InviteSendResult.sent) {
+          lastInviteError = InviteRelayService.lastError;
+        }
+        switch (outcome) {
+          case InviteSendResult.sent:
+            sent++;
+          case InviteSendResult.notConfigured:
+            failed++;
+          case InviteSendResult.offline:
+            offline = true;
+            failed++;
+          case InviteSendResult.dailyLimit:
+            limit = true;
+            failed++;
+          case InviteSendResult.tooSoon:
+            break;
+          case InviteSendResult.failed:
+            failed++;
+        }
+      } catch (e) {
+        debugPrint('Could not create an invitation: $e');
+        lastInviteError = 'invitation: $e';
+        failed++;
+      }
+    }
+    return InviteSummary(
+      sent: sent,
+      failed: failed,
+      offline: offline,
+      limit: limit,
+    );
   }
 
   /// True when the editor opened because of a role that no longer exists.
@@ -1081,7 +1223,7 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
       valuation: StartupValidators.money(valuation.text),
       wantsLeadInvestor: wantsFunding ? wantsLead : null,
       // Editing a startup keeps its co-founders and team members.
-      memberRoles: initial?.memberRoles ?? const {},
+      memberRoles: _roles(),
     );
   }
 
@@ -1116,6 +1258,30 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
       }
     }
     return (picked, other);
+  }
+
+  /// Who has access: the startup's current members, updated by the team list.
+  /// A person who joined gets the role of their Co-founder box; a joined
+  /// person removed from the list loses access.
+  Map<String, String> _roles() {
+    final roles = {...?initial?.memberRoles};
+    final inTeam = <String>{};
+    for (final m in team) {
+      final uid = m.uid;
+      if (uid == null || m.invited || m.isFounder) continue;
+      inTeam.add(uid);
+      // Only people who already have access change role.
+      if (roles.containsKey(uid)) {
+        roles[uid] = m.coFounder ? 'coFounder' : 'member';
+      }
+    }
+    final before = {
+      for (final m in initial?.team ?? const <TeamMember>[]) m.uid,
+    };
+    roles.removeWhere(
+      (uid, _) => !inTeam.contains(uid) && before.contains(uid),
+    );
+    return roles;
   }
 
   static String _money(int? v) {

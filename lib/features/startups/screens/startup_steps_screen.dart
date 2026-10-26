@@ -130,6 +130,8 @@ class _StartupStepsScreenState extends State<StartupStepsScreen> {
     super.initState();
     final d = widget.draft;
     if (d != null) _vm.loadDraft(d);
+    // Editing: who declined, and who accepted while the startup was private.
+    if (widget.startup != null) _vm.loadInvitations();
   }
 
   String? get _uid => AppSession.instance.user?.uid;
@@ -241,6 +243,27 @@ class _StartupStepsScreenState extends State<StartupStepsScreen> {
     }
   }
 
+  /// The invitation e-mails of this save: an error when some did not go out,
+  /// "Invitation sent" when they did (replaces the plain "saved" message).
+  bool _tellAboutInvitations() {
+    final r = _vm.inviteSummary;
+    if (r.nothing) return false;
+    if (r.failed > 0) {
+      // One plain message per situation, never technical text.
+      AppToast.error(
+        context,
+        r.offline
+            ? FounderToolsStrings.invitesOffline
+            : r.limit
+            ? FounderToolsStrings.invitesLimit
+            : FounderToolsStrings.invitesFailed(r.failed),
+      );
+    } else if (r.sent > 0) {
+      AppToast.confirm(context, FounderToolsStrings.invitationsSent(r.sent));
+    }
+    return true;
+  }
+
   Future<void> _save() async {
     final saved = await _vm.save();
     if (!mounted) return;
@@ -250,6 +273,7 @@ class _StartupStepsScreenState extends State<StartupStepsScreen> {
       if (_vm.lostPermission) Navigator.of(context).pop();
       return;
     }
+    final told = _tellAboutInvitations();
     switch (widget.mode) {
       case StartupStepsMode.onboarding:
         await _vm.completeOnboarding(saved);
@@ -262,11 +286,13 @@ class _StartupStepsScreenState extends State<StartupStepsScreen> {
           await StartupDraftRepository.instance.clear(uid);
         }
         if (!mounted) return;
-        AppToast.show(context, FounderToolsStrings.added(saved.name));
+        if (!told) {
+          AppToast.show(context, FounderToolsStrings.added(saved.name));
+        }
         AppNav.resetStack(context, [MainScreen(), const MyStartupsScreen()]);
       case StartupStepsMode.edit:
         // "Changes saved" pop-up (a confirmation that is wanted on purpose).
-        AppToast.confirm(context, FounderToolsStrings.changesSaved);
+        if (!told) AppToast.confirm(context, FounderToolsStrings.changesSaved);
         // A plain pop: maybePop would hit this screen's own back guard (it
         // blocks leaving while there are unsaved changes) and step back to
         // the previous step instead of leaving.

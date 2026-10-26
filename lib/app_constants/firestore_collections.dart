@@ -12,6 +12,15 @@ class FirestoreCollections {
   /// Same field names as an investor's `users/{uid}` document.
   static const investors = 'investors';
 
+  /// Team invitations (id = `startupId~email`): see [InvitationFields].
+  static const invitations = 'invitations';
+
+  /// Names of the startups that invited an e-mail with no account yet.
+  static const inviteEmails = 'inviteEmails';
+
+  /// Finds an account by e-mail (id = the e-mail, lower-case).
+  static const emailIndex = 'emailIndex';
+
   /// `users/{uid}/bookmarks/{itemKey}`
   static const bookmarks = 'bookmarks';
 }

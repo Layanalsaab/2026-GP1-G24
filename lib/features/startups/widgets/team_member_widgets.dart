@@ -17,12 +17,16 @@ class TeamMemberRow extends StatelessWidget {
     required this.member,
     required this.onEdit,
     this.isYou = false,
+    this.declined = false,
     this.error,
   });
 
   final TeamMember member;
   final VoidCallback onEdit;
   final bool isYou;
+
+  /// The invited person said no (the tag reads "Declined").
+  final bool declined;
 
   /// A red line under the card (the founder's missing role / contribution).
   final String? error;
@@ -70,7 +74,7 @@ class TeamMemberRow extends StatelessWidget {
                             weight: FontWeight.w600,
                           ),
                         ),
-                        ...teamTagsOf(member, isYou: isYou),
+                        ...teamTagsOf(member, isYou: isYou, declined: declined),
                       ],
                     ),
                     if (role.isNotEmpty || member.isFounder) ...[

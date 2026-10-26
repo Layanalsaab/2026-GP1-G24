@@ -476,9 +476,7 @@ class Startup {
     revenueThisYear: revenueThisYear ?? this.revenueThisYear,
     monthlyBurn: monthlyBurn ?? this.monthlyBurn,
     businessModelText: businessModelText ?? this.businessModelText,
-    raisedInRound: clearFunding
-        ? null
-        : (raisedInRound ?? this.raisedInRound),
+    raisedInRound: clearFunding ? null : (raisedInRound ?? this.raisedInRound),
     partnerTypes: partnerTypes ?? this.partnerTypes,
     supportTypes: supportTypes ?? this.supportTypes,
     memberRoles: memberRoles ?? this.memberRoles,

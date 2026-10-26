@@ -61,6 +61,8 @@ class ValidationStrings {
       'Enter a valid email, like name@example.com';
   static const memberRoleRequired = 'Please enter the role.';
   static const memberContributionRequired = 'Please describe the contribution.';
+  static const memberIsInvestor =
+      'This email belongs to an investor account, which can’t join a team.';
   static const memberDuplicate = 'This person is already on the team.';
   static const founderRowIncomplete =
       'Add your role and contribution: tap the pencil.';

@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import '../../../app_constants/founder_tools_strings.dart';
 import '../../../helpers/startup_validators.dart';
 import '../../../helpers/app_session.dart';
+import '../../../models/invitation.dart';
 import '../../../models/startup.dart';
 import '../../../models/startup_enums.dart';
 import '../../../models/team_member.dart';
@@ -722,7 +723,8 @@ class _Team extends StatelessWidget {
       if (!context.mounted) return;
     }
     if (result == MemberSave.invited) {
-      AppToast.confirm(context, FounderToolsStrings.invitationSent);
+      // The e-mail goes out when the startup is saved (it has to exist first).
+      AppToast.confirm(context, FounderToolsStrings.invitationQueued);
     }
   }
 
@@ -755,6 +757,9 @@ class _Team extends StatelessWidget {
                   TeamMemberRow(
                     member: vm.team[i],
                     isYou: _isMe(vm.team[i]),
+                    declined:
+                        vm.inviteStatus[vm.team[i].email] ==
+                        InvitationStatus.declined,
                     error: vm.team[i].isFounder && vm.founderRowError
                         ? ValidationStrings.founderRowIncomplete
                         : null,

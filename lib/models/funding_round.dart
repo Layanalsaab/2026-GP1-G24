@@ -4,7 +4,11 @@ import 'startup_enums.dart';
 /// One investor of a funding round, as stored in the round document:
 /// `{name, investorId, isLead}`.
 class RoundInvestor {
-  const RoundInvestor({required this.name, this.investorId, this.isLead = false});
+  const RoundInvestor({
+    required this.name,
+    this.investorId,
+    this.isLead = false,
+  });
 
   final String name;
 

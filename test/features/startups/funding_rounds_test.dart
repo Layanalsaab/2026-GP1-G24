@@ -48,44 +48,50 @@ void main() {
     expect(vm.openRound!.number, 2);
   });
 
-  test('Close round removes Funding and its answers from the startup', () async {
-    final saved = <Startup>[];
-    final vm = await loaded(saved: saved);
-    addTearDown(vm.dispose);
-    expect(await vm.closeOpenRound(), isTrue);
-    expect(vm.openRound, isNull);
-    // A closed round keeps what it raised (the sample: 200K of 500K).
-    expect(vm.rounds.first.raised, 200000);
-    expect(vm.rounds.first.isOpen, isFalse);
-    final s = startups.startups.single;
-    expect(s.seeksFunding, isFalse);
-    expect(s.lookingFor, {LookingFor.talent});
-    expect(s.fundingRequirement, isNull);
-    expect(s.wantsLeadInvestor, isNull);
-    expect(s.raisedInRound, isNull);
-    expect(saved.single.seeksFunding, isFalse);
-  });
+  test(
+    'Close round removes Funding and its answers from the startup',
+    () async {
+      final saved = <Startup>[];
+      final vm = await loaded(saved: saved);
+      addTearDown(vm.dispose);
+      expect(await vm.closeOpenRound(), isTrue);
+      expect(vm.openRound, isNull);
+      // A closed round keeps what it raised (the sample: 200K of 500K).
+      expect(vm.rounds.first.raised, 200000);
+      expect(vm.rounds.first.isOpen, isFalse);
+      final s = startups.startups.single;
+      expect(s.seeksFunding, isFalse);
+      expect(s.lookingFor, {LookingFor.talent});
+      expect(s.fundingRequirement, isNull);
+      expect(s.wantsLeadInvestor, isNull);
+      expect(s.raisedInRound, isNull);
+      expect(saved.single.seeksFunding, isFalse);
+    },
+  );
 
-  test('Add round ticks Funding and moves the Stage to the round type', () async {
-    final vm = await loaded();
-    addTearDown(vm.dispose);
-    await vm.closeOpenRound();
-    vm.openForm();
-    // Never earlier than the last round (Seed).
-    expect(vm.allowedTypes.first, StartupStage.seed);
-    vm.setType(StartupStage.seriesA);
-    vm.amount.text = '10,000,000';
-    vm.raised.text = '0';
-    vm.setLead(false);
-    expect(await vm.addRound(), isTrue);
-    expect(vm.openRound!.number, 3);
-    final s = startups.startups.single;
-    expect(s.seeksFunding, isTrue);
-    expect(s.fundingRequirement, 10000000);
-    expect(s.raisedInRound, 0);
-    expect(s.wantsLeadInvestor, isFalse);
-    expect(s.stage, StartupStage.seriesA);
-  });
+  test(
+    'Add round ticks Funding and moves the Stage to the round type',
+    () async {
+      final vm = await loaded();
+      addTearDown(vm.dispose);
+      await vm.closeOpenRound();
+      vm.openForm();
+      // Never earlier than the last round (Seed).
+      expect(vm.allowedTypes.first, StartupStage.seed);
+      vm.setType(StartupStage.seriesA);
+      vm.amount.text = '10,000,000';
+      vm.raised.text = '0';
+      vm.setLead(false);
+      expect(await vm.addRound(), isTrue);
+      expect(vm.openRound!.number, 3);
+      final s = startups.startups.single;
+      expect(s.seeksFunding, isTrue);
+      expect(s.fundingRequirement, 10000000);
+      expect(s.raisedInRound, 0);
+      expect(s.wantsLeadInvestor, isFalse);
+      expect(s.stage, StartupStage.seriesA);
+    },
+  );
 
   test('a failed save leaves the round as it was', () async {
     final vm = RoundsViewModel(

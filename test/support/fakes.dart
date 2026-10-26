@@ -9,6 +9,9 @@ import 'package:startsa/models/app_user.dart';
 import 'package:startsa/models/auth_failure.dart';
 import 'package:startsa/models/investor_criteria.dart';
 import 'package:startsa/models/startup.dart';
+import 'package:startsa/models/invitation.dart';
+import 'package:startsa/models/team_member.dart';
+import 'package:startsa/data_access/repositories/invitation_repository.dart';
 
 /// In-memory stand-in for [AuthService]. Set the fields to script behaviour,
 /// and read [calls] to see what the code under test did.
@@ -37,6 +40,9 @@ class FakeAuthService implements AuthService {
 
   @override
   bool get signedInRecently => recentlySignedIn;
+
+  @override
+  Future<String?> idToken() async => signedIn == null ? null : 'test-token';
 
   @override
   AuthAccount? get currentAccount => signedIn;
@@ -449,6 +455,13 @@ class FakeStartupRepository implements StartupRepository {
   /// Startups the user left (to check Leave removes only their membership).
   final List<String> left = [];
 
+  final List<(String, List<TeamMember>)> teamsSet = [];
+
+  @override
+  Future<void> setTeam(String startupId, List<TeamMember> team) async {
+    teamsSet.add((startupId, team));
+  }
+
   @override
   Future<Startup?> fetchById(String id) async =>
       [...startups, ...memberOf].where((s) => s.id == id).firstOrNull;
@@ -492,4 +505,111 @@ class FakeStartupRepository implements StartupRepository {
     if (deleteFails != null) throw AuthException(deleteFails!);
     startups.removeWhere((s) => s.id == startup.id);
   }
+}
+
+/// An in-memory [InvitationRepository] (no Firebase, no e-mail).
+class FakeInvitationRepository implements InvitationRepository {
+  final Map<String, Invitation> store = {};
+  final List<String> sentEmails = [];
+  final List<String> cancelled = [];
+  final List<String> accepted = [];
+  final List<String> declined = [];
+  final Map<String, List<String>> inviteIndex = {};
+
+  /// What [sendEmail] answers.
+  InviteSendResult sendResult = InviteSendResult.sent;
+
+  /// The e-mail of the signed-in user (for [pendingForMe]).
+  String myEmail = '';
+
+  @override
+  Future<Invitation> ensure({
+    required Startup startup,
+    required TeamMember member,
+    required String invitedByName,
+  }) async {
+    final email = member.email.trim().toLowerCase();
+    final id = Invitation.idOf(startup.id, email);
+    final existing = store[id];
+    if (existing != null &&
+        (existing.status == InvitationStatus.accepted ||
+            existing.status == InvitationStatus.declined)) {
+      return existing;
+    }
+    final inv = Invitation(
+      startupId: startup.id,
+      startupName: startup.name,
+      emailLower: email,
+      role: member.coFounder ? Invitation.roleCoFounder : Invitation.roleMember,
+      roleText: member.role,
+      contribution: member.contribution,
+      invitedBy: 'uid1',
+      invitedByName: invitedByName,
+      emailSent: existing?.emailSent ?? false,
+    );
+    store[id] = inv;
+    inviteIndex.putIfAbsent(email, () => []).add(startup.name);
+    return inv;
+  }
+
+  @override
+  Future<void> cancel(String startupId, String email) async {
+    final id = Invitation.idOf(startupId, email);
+    cancelled.add(id);
+    store.remove(id);
+  }
+
+  @override
+  Future<InviteSendResult> sendEmail(Invitation invitation) async {
+    if (sendResult == InviteSendResult.sent) {
+      sentEmails.add(invitation.id);
+      final i = store[invitation.id]!;
+      store[invitation.id] = Invitation(
+        startupId: i.startupId,
+        startupName: i.startupName,
+        emailLower: i.emailLower,
+        role: i.role,
+        roleText: i.roleText,
+        contribution: i.contribution,
+        invitedBy: i.invitedBy,
+        invitedByName: i.invitedByName,
+        emailSent: true,
+      );
+    }
+    return sendResult;
+  }
+
+  @override
+  Future<List<Invitation>> sentFor(String startupId) async => [
+    for (final i in store.values)
+      if (i.startupId == startupId) i,
+  ];
+
+  @override
+  Future<Invitation?> byId(String id) async => store[id];
+
+  @override
+  Future<List<String>> invitedBy(String email) async =>
+      inviteIndex[email.trim().toLowerCase()] ?? const [];
+
+  @override
+  Future<List<Invitation>> pendingForMe() async => [
+    for (final i in store.values)
+      if (i.emailLower == myEmail.toLowerCase() && i.isPending) i,
+  ];
+
+  @override
+  Future<void> accept(Invitation invitation, {required String fullName}) async {
+    accepted.add(invitation.id);
+    store.remove(invitation.id);
+  }
+
+  @override
+  Future<void> decline(Invitation invitation) async {
+    declined.add(invitation.id);
+    store.remove(invitation.id);
+  }
+
+  @override
+  Future<List<TeamMember>?> reconcileTeam(Startup startup) async => null;
 }

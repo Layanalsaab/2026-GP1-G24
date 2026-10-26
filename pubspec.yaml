@@ -46,6 +46,7 @@ dependencies:
   image_cropper: ^12.2.1
   url_launcher: ^6.3.3
   path_drawing: ^1.0.1
+  app_links: ^7.2.2
 
 dev_dependencies:
   flutter_test:

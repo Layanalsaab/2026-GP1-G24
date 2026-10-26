@@ -7,6 +7,7 @@ import '../../../data_access/repositories/app_settings_repository.dart';
 import '../../../data_access/repositories/auth_repository.dart';
 import '../../../models/app_user.dart';
 import '../../../navigation/app_router.dart';
+import '../../../navigation/invite_links.dart';
 import '../../../shared_ui/motion/motion.dart';
 import '../../../shared_ui/navigation/app_route.dart';
 import '../../../shared_ui/theme/app_colors.dart';
@@ -53,11 +54,19 @@ class _SplashScreenState extends State<SplashScreen> {
     if (!mounted || _left) return;
     _left = true;
     if (result.user != null) {
-      AppRouter.openAfterLogin(context, result.user!);
+      // An invite link that opened the app is shown once the user is routed.
+      unawaited(
+        AppRouter.openAfterLogin(
+          context,
+          result.user!,
+        ).whenComplete(InviteLinks.appReady),
+      );
     } else if (result.introSeen) {
       AppNav.reset(context, const WelcomeScreen(), kind: RouteKind.fade);
+      InviteLinks.appReady();
     } else {
       AppNav.reset(context, const IntroScreen(), kind: RouteKind.fade);
+      InviteLinks.appReady();
     }
   }
 

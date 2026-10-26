@@ -28,18 +28,17 @@ class _MemoryFirestore extends FirestoreService {
   Future<void> setDocument(
     String collection,
     String id,
-    Map<String, Object?> data,
-  ) async => (store[collection] ??= {})[id] = {...data};
+    Map<String, Object?> data, {
+    bool merge = false,
+  }) async => (store[collection] ??= {})[id] = {...data};
 
   @override
   Future<void> updateDocument(
     String collection,
     String id,
     Map<String, Object?> data,
-  ) async => (store[collection] ??= {})[id] = {
-    ...?store[collection]?[id],
-    ...data,
-  };
+  ) async =>
+      (store[collection] ??= {})[id] = {...?store[collection]?[id], ...data};
 
   @override
   Future<void> deleteDocument(String collection, String id) async =>
@@ -221,35 +220,38 @@ void main() {
   });
 
   group('FundingRoundRepository', () {
-    test('shows the rounds in date order, without the undisclosed ones', () async {
-      db.store[path] = {
-        'a': _doc(
-          number: 1,
-          stage: 'pre_seed',
-          amount: null,
-          start: DateTime(2019),
-          end: DateTime(2019, 6),
-        ),
-        'b': _doc(
-          number: 3,
-          stage: 'seed',
-          amount: 4000000,
-          start: DateTime(2023),
-        ),
-        'c': _doc(
-          number: 2,
-          stage: 'pre_seed',
-          amount: 1500000,
-          start: DateTime(2021),
-          end: DateTime(2021, 9),
-        ),
-      };
-      final rounds = await repo.roundsOf('s1');
-      expect([for (final r in rounds) r.id], ['c', 'b']);
-      // Numbered again without the hidden round.
-      expect([for (final r in rounds) r.number], [1, 2]);
-      expect(rounds.last.isOpen, isTrue);
-    });
+    test(
+      'shows the rounds in date order, without the undisclosed ones',
+      () async {
+        db.store[path] = {
+          'a': _doc(
+            number: 1,
+            stage: 'pre_seed',
+            amount: null,
+            start: DateTime(2019),
+            end: DateTime(2019, 6),
+          ),
+          'b': _doc(
+            number: 3,
+            stage: 'seed',
+            amount: 4000000,
+            start: DateTime(2023),
+          ),
+          'c': _doc(
+            number: 2,
+            stage: 'pre_seed',
+            amount: 1500000,
+            start: DateTime(2021),
+            end: DateTime(2021, 9),
+          ),
+        };
+        final rounds = await repo.roundsOf('s1');
+        expect([for (final r in rounds) r.id], ['c', 'b']);
+        // Numbered again without the hidden round.
+        expect([for (final r in rounds) r.number], [1, 2]);
+        expect(rounds.last.isOpen, isTrue);
+      },
+    );
 
     test('Funding ticked, no round yet: Round 1 opens', () async {
       final writes = await repo.writesFor(
@@ -370,20 +372,23 @@ void main() {
       expect(db.store[FundingRoundFields.collectionOf(saved.id)], isNull);
     });
 
-    test('unticking Funding closes the round; delete removes the rounds', () async {
-      final saved = await startups.create(PrototypeSeed.rafeeq);
-      final roundsPath = FundingRoundFields.collectionOf(saved.id);
-      await startups.update(
-        saved.copyWith(lookingFor: {LookingFor.talent}, clearFunding: true),
-      );
-      expect(db.store[roundsPath]!.values.single['status'], 'completed');
-      final doc = db.store[FirestoreCollections.startups]![saved.id]!;
-      expect(doc['fundingRequirement'], isNull);
-      expect(doc['lookingFor'], ['talent']);
+    test(
+      'unticking Funding closes the round; delete removes the rounds',
+      () async {
+        final saved = await startups.create(PrototypeSeed.rafeeq);
+        final roundsPath = FundingRoundFields.collectionOf(saved.id);
+        await startups.update(
+          saved.copyWith(lookingFor: {LookingFor.talent}, clearFunding: true),
+        );
+        expect(db.store[roundsPath]!.values.single['status'], 'completed');
+        final doc = db.store[FirestoreCollections.startups]![saved.id]!;
+        expect(doc['fundingRequirement'], isNull);
+        expect(doc['lookingFor'], ['talent']);
 
-      await startups.delete(saved);
-      expect(db.store[roundsPath], isEmpty);
-      expect(db.store[FirestoreCollections.startups]![saved.id], isNull);
-    });
+        await startups.delete(saved);
+        expect(db.store[roundsPath], isEmpty);
+        expect(db.store[FirestoreCollections.startups]![saved.id], isNull);
+      },
+    );
   });
 }

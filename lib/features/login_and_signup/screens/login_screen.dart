@@ -8,24 +8,25 @@ import '../../../shared_ui/theme/app_colors.dart';
 import '../../../shared_ui/widgets/buttons/app_button.dart';
 import '../../../shared_ui/widgets/forms/app_field.dart';
 import '../../../shared_ui/widgets/forms/app_text_field.dart';
-import '../../../shared_ui/widgets/forms/form_page.dart';
 import '../../../shared_ui/widgets/headers/auth_headers.dart';
 import '../../../shared_ui/widgets/headers/overlap_layout.dart';
 import '../../../shared_ui/widgets/overlays/app_dialog.dart';
 import '../../../shared_ui/widgets/overlays/app_toast.dart';
 import '../view_models/login_view_model.dart';
 import '../widgets/auth_navigation.dart';
-import 'choose_role_screen.dart';
 import 'forgot_password_screen.dart';
 
 /// Log in (docs/05 A12): email and password; an unverified account gets the
 /// "Verify your email" dialog ending "...then log in."
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+  const LoginScreen({super.key, this.email});
+
+  /// An e-mail to start with (the one an invitation was sent to).
+  final String? email;
 
   /// Pushes Log in (Welcome, Choose role and the sign-up footers).
-  static void open(BuildContext context) =>
-      AppNav.push(context, const LoginScreen(), greenHeader: true);
+  static void open(BuildContext context, {String? email}) =>
+      AppNav.push(context, LoginScreen(email: email), greenHeader: true);
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -33,6 +34,13 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final LoginViewModel _vm = LoginViewModel();
+
+  @override
+  void initState() {
+    super.initState();
+    final start = widget.email;
+    if (start != null && _vm.email.text.isEmpty) _vm.email.text = start;
+  }
 
   @override
   void dispose() {
@@ -124,12 +132,6 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ],
                   ),
-                ),
-                FooterLink(
-                  prefix: AuthStrings.loginNoAccount,
-                  linkLabel: AuthStrings.signUp,
-                  onTap: () => ChooseRoleScreen.open(context),
-                  padding: const EdgeInsets.fromLTRB(24, 18, 24, 28),
                 ),
               ],
             ),

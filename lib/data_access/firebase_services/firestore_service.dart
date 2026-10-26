@@ -38,6 +38,9 @@ class FirestoreService {
   /// A value Firestore replaces with the server's time when writing.
   Object serverTimestamp() => FieldValue.serverTimestamp();
 
+  /// A value that adds [values] to an array field when written.
+  Object arrayUnion(List<Object> values) => FieldValue.arrayUnion(values);
+
   /// A value that removes [values] from an array field when written.
   Object arrayRemove(List<Object> values) => FieldValue.arrayRemove(values);
 
@@ -52,8 +55,14 @@ class FirestoreService {
   Future<void> setDocument(
     String collection,
     String id,
-    Map<String, Object?> data,
-  ) => _guard(() => _db.collection(collection).doc(id).set(data));
+    Map<String, Object?> data, {
+    bool merge = false,
+  }) => _guard(
+    () => _db
+        .collection(collection)
+        .doc(id)
+        .set(data, merge ? SetOptions(merge: true) : null),
+  );
 
   /// Changes only the given fields of an existing document.
   Future<void> updateDocument(
@@ -103,6 +112,21 @@ class FirestoreService {
   }) => _guard(() async {
     var query = _db.collection(collection).where(field, isEqualTo: value);
     if (limit != null) query = query.limit(limit);
+    final snapshot = await query.get(const GetOptions(source: Source.server));
+    return [
+      for (final doc in snapshot.docs) (id: doc.id, data: _toPlain(doc.data())),
+    ];
+  });
+
+  /// Every document of [collection] where every field of [where] is equal.
+  Future<List<FirestoreDocument>> queryWhereAll(
+    String collection,
+    Map<String, Object> where,
+  ) => _guard(() async {
+    Query<Map<String, dynamic>> query = _db.collection(collection);
+    for (final e in where.entries) {
+      query = query.where(e.key, isEqualTo: e.value);
+    }
     final snapshot = await query.get(const GetOptions(source: Source.server));
     return [
       for (final doc in snapshot.docs) (id: doc.id, data: _toPlain(doc.data())),
