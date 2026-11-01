@@ -4,6 +4,7 @@ import '../../../app_constants/app_strings.dart';
 import '../../../app_constants/validation_strings.dart';
 import '../../../data_access/repositories/user_repository.dart';
 import '../../../helpers/investor_draft_store.dart';
+import '../../../helpers/other_check.dart';
 import '../../../helpers/safe_notifier.dart';
 import '../../../helpers/validators.dart';
 import '../../../models/app_user.dart';
@@ -138,6 +139,15 @@ class InvestorOnboardingViewModel extends ChangeNotifier with SafeNotifier {
   static final List<String> modelOptions = [
     for (final m in BusinessModel.picks) m.label,
   ];
+
+  /// What else counts as a listed commerce model: its abbreviation ("B2B")
+  /// and its name without the brackets ("Business-to-Business").
+  static final List<String> modelAlsoCountsAs = [
+    for (final m in BusinessModel.picks) ...[
+      m.shortLabel,
+      m.label.replaceAll(RegExp(r'\s*\(.*\)'), ''),
+    ],
+  ];
   static const List<String> stageOptions = InvestorCriteria.stageOptions;
 
   /// The account that just verified its email.
@@ -227,24 +237,40 @@ class InvestorOnboardingViewModel extends ChangeNotifier with SafeNotifier {
       ? 'Tell us your other $noun — it can’t be blank.'
       : null;
 
-  String? get sectorsOtherError => _otherError(
-    step4Tried,
-    sectors.contains(otherLabel),
-    sectorsOther,
-    'sector',
-  );
+  /// The "Other" write-in repeats a listed sector / commerce model (it
+  /// can't): shown as it is typed.
+  bool get sectorsOtherRepeats =>
+      sectors.contains(otherLabel) &&
+      OtherCheck.repeats(sectorsOther.text, sectorOptions);
+  bool get modelsOtherRepeats =>
+      models.contains(otherLabel) &&
+      OtherCheck.repeats(modelsOther.text, [
+        ...modelOptions,
+        ...modelAlsoCountsAs,
+      ]);
+
+  String? get sectorsOtherError => sectorsOtherRepeats
+      ? ValidationStrings.otherRepeats
+      : _otherError(
+          step4Tried,
+          sectors.contains(otherLabel),
+          sectorsOther,
+          'sector',
+        );
   String? get stagesOtherError => _otherError(
     step4Tried,
     stages.contains(otherLabel),
     stagesOther,
     'stage',
   );
-  String? get modelsOtherError => _otherError(
-    step4Tried,
-    models.contains(otherLabel),
-    modelsOther,
-    'commerce model',
-  );
+  String? get modelsOtherError => modelsOtherRepeats
+      ? ValidationStrings.otherRepeats
+      : _otherError(
+          step4Tried,
+          models.contains(otherLabel),
+          modelsOther,
+          'commerce model',
+        );
 
   bool _groupOk(Set<String> chosen, TextEditingController text) =>
       chosen.isNotEmpty &&
@@ -252,8 +278,10 @@ class InvestorOnboardingViewModel extends ChangeNotifier with SafeNotifier {
 
   bool get step4Complete =>
       _groupOk(sectors, sectorsOther) &&
+      !sectorsOtherRepeats &&
       _groupOk(stages, stagesOther) &&
-      _groupOk(models, modelsOther);
+      _groupOk(models, modelsOther) &&
+      !modelsOtherRepeats;
 
   void toggleSector(String v) => _toggle(sectors, v);
   void toggleStage(String v) => _toggle(stages, v);

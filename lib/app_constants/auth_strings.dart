@@ -105,6 +105,7 @@ class AuthStrings {
       'Verification email sent to $email';
   static const verifyDidntGet = 'Didn’t get the email?';
   static const resendEmail = 'Resend email';
+  static const resendSent = 'Verification email sent. Check your inbox.';
   static const emailVerified = 'Email verified';
   static const alreadyVerifiedLogin =
       'Your email is already verified. You can log in.';

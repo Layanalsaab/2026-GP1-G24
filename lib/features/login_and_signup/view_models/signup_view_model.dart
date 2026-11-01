@@ -10,6 +10,7 @@ import '../../../data_access/device_services/profile_photo_picker_service.dart';
 import '../../../data_access/repositories/auth_repository.dart';
 import '../../../data_access/repositories/invitation_repository.dart';
 import '../../../helpers/safe_notifier.dart';
+import '../../../helpers/other_check.dart';
 import '../../../helpers/validators.dart';
 import '../../../models/app_user.dart';
 import '../../../models/auth_failure.dart';
@@ -32,6 +33,24 @@ class SignupViewModel extends ChangeNotifier with SafeNotifier {
       c.addListener(_changed);
     }
     passwordFocus.addListener(_passwordFocusChanged);
+    for (final c in _trackedFields) {
+      // A change of the TEXT counts as typing (a caret move or a focus
+      // change does not).
+      var last = c.text;
+      c.addListener(() {
+        if (c.text == last) return;
+        last = c.text;
+        _edited.add(c);
+      });
+    }
+    _focusOf = {
+      name: nameFocus,
+      bio: bioFocus,
+      email: emailFocus,
+      phone: phoneFocus,
+      confirm: confirmFocus,
+    };
+    _focusOf.forEach((c, f) => f.addListener(() => _focusChanged(c, f)));
     this.flow
       ..role = role
       ..form = this;
@@ -73,6 +92,44 @@ class SignupViewModel extends ChangeNotifier with SafeNotifier {
     sectorsOther,
   ];
 
+  // ---- "required" errors after leaving a field
+  //
+  // A FORMAT error shows from the first keystroke and updates on every one.
+  // A REQUIRED error (the field is empty) shows only after Continue is
+  // pressed, or after the person typed in a field and then left it. An
+  // untouched empty form is never full of red.
+
+  final nameFocus = FocusNode();
+  final bioFocus = FocusNode();
+  final emailFocus = FocusNode();
+  final phoneFocus = FocusNode();
+  final confirmFocus = FocusNode();
+
+  late final Map<TextEditingController, FocusNode> _focusOf;
+
+  /// Fields with a required message of their own.
+  late final List<TextEditingController> _trackedFields = [
+    name,
+    bio,
+    email,
+    phone,
+    confirm,
+  ];
+
+  /// Fields the person typed in at least once, and the ones they then left.
+  final Set<TextEditingController> _edited = {};
+  final Set<TextEditingController> _left = {};
+
+  void _focusChanged(TextEditingController c, FocusNode f) {
+    if (f.hasFocus || !_edited.contains(c) || _left.contains(c)) return;
+    _left.add(c);
+    notifyListeners();
+  }
+
+  /// True when an empty [c] may show its "required" message now.
+  bool _requiredShown(TextEditingController c) =>
+      attempted || _left.contains(c);
+
   /// Focus of the password field: its rule checklist stays hidden until the
   /// user has tapped into the field once.
   final passwordFocus = FocusNode();
@@ -92,7 +149,7 @@ class SignupViewModel extends ChangeNotifier with SafeNotifier {
   File? photo;
 
   /// Whether the email / phone are shown on the profile. Private by default;
-  /// the Private / Public pill switches them with one tap.
+  /// the Private / Public switch flips them with one tap.
   bool emailPublic = false;
   bool phonePublic = false;
 
@@ -127,6 +184,8 @@ class SignupViewModel extends ChangeNotifier with SafeNotifier {
     emailPublic = false;
     phonePublic = false;
     attempted = false;
+    _edited.clear();
+    _left.clear();
     passwordTouched = false;
     formError = null;
     _serverEmailError = null;
@@ -158,7 +217,7 @@ class SignupViewModel extends ChangeNotifier with SafeNotifier {
   /// last name; after a submit also when empty.
   String? get nameError =>
       Validators.fullNameLive(name.text) ??
-      (attempted ? Validators.fullName(name.text) : null);
+      (_requiredShown(name) ? Validators.fullName(name.text) : null);
 
   /// Live once something is typed; after a submit also when empty. The
   /// domain must be a common provider (.com) or a university address; a
@@ -166,19 +225,21 @@ class SignupViewModel extends ChangeNotifier with SafeNotifier {
   String? get emailError {
     if (_serverEmailError != null) return _serverEmailError;
     final v = email.text.trim();
-    if (v.isEmpty) return attempted ? ValidationStrings.emailRequired : null;
+    if (v.isEmpty) {
+      return _requiredShown(email) ? ValidationStrings.emailRequired : null;
+    }
     return Validators.isSignupEmail(v) ? null : ValidationStrings.emailLive;
   }
 
   String? get phoneError =>
       Validators.phoneLive(phone.text) ??
-      (attempted ? Validators.phone(phone.text) : null);
+      (_requiredShown(phone) ? Validators.phone(phone.text) : null);
 
   String? get linkedinError => Validators.linkedinLive(linkedin.text);
 
   /// "Passwords don’t match", live once the confirmation has text.
   String? get confirmError {
-    if (confirm.text.isEmpty && !attempted) return null;
+    if (confirm.text.isEmpty && !_requiredShown(confirm)) return null;
     return confirm.text == password.text
         ? null
         : ValidationStrings.confirmMismatch;
@@ -189,16 +250,23 @@ class SignupViewModel extends ChangeNotifier with SafeNotifier {
   String? get sectorsError =>
       attempted && isFounder ? Validators.sectors(sectors) : null;
 
-  String? get sectorsOtherError =>
-      attempted &&
-          isFounder &&
-          sectors.contains(otherLabel) &&
-          !Validators.isOtherText(sectorsOther.text)
-      ? AuthStrings.sectorsOtherEmpty
-      : null;
+  /// The "Other" write-in repeats a listed sector: shown as it is typed.
+  bool get sectorsOtherRepeats =>
+      sectors.contains(otherLabel) &&
+      OtherCheck.repeats(sectorsOther.text, sectorOptions);
+
+  String? get sectorsOtherError {
+    if (isFounder && sectorsOtherRepeats) return ValidationStrings.otherRepeats;
+    return attempted &&
+            isFounder &&
+            sectors.contains(otherLabel) &&
+            !Validators.isOtherText(sectorsOther.text)
+        ? AuthStrings.sectorsOtherEmpty
+        : null;
+  }
 
   /// The bio is required.
-  String? get bioError => attempted && bio.text.trim().isEmpty
+  String? get bioError => _requiredShown(bio) && bio.text.trim().isEmpty
       ? ValidationStrings.bioRequired
       : null;
 
@@ -217,7 +285,8 @@ class SignupViewModel extends ChangeNotifier with SafeNotifier {
     final founderOk =
         sectors.isNotEmpty &&
         (!sectors.contains(otherLabel) ||
-            Validators.isOtherText(sectorsOther.text));
+            (Validators.isOtherText(sectorsOther.text) &&
+                !sectorsOtherRepeats));
     return Validators.isFullName(name.text) &&
         Validators.isSignupEmail(email.text) &&
         Validators.isPhone(phone.text) &&
@@ -494,6 +563,11 @@ class SignupViewModel extends ChangeNotifier with SafeNotifier {
     passwordFocus
       ..removeListener(_passwordFocusChanged)
       ..dispose();
+    nameFocus.dispose();
+    bioFocus.dispose();
+    emailFocus.dispose();
+    phoneFocus.dispose();
+    confirmFocus.dispose();
     if (flow.form == this) flow.form = null;
     super.dispose();
   }

@@ -12,7 +12,6 @@ class StartupValidators {
   static const descriptionMax = 150;
   static const longTextMax = 1000;
   static const websiteMax = 100;
-  static const firstFoundedYear = 1900;
   static const maxMoneyDigits = 13;
 
   static String? name(String v) =>
@@ -25,18 +24,15 @@ class StartupValidators {
   static String? selected(Object? value, String message) =>
       value == null || (value is String && value.isEmpty) ? message : null;
 
-  /// Required, 1900 up to the current year. [now] is injectable for tests.
+  /// Required: four digits starting with 2 (2000-2999). A future year is
+  /// fine. Anything typed that is not (yet) such a year is an error from the
+  /// first keystroke, e.g. a leading 0 or 1, or fewer than four digits.
   static String? foundedYear(String value, {DateTime? now}) {
     final text = value.trim();
     if (text.isEmpty) return ValidationStrings.foundedRequired;
-    final last = (now ?? DateTime.now()).year;
-    final year = int.tryParse(text);
-    if (text.length == 4 &&
-        (year == null || year < firstFoundedYear || year > last)) {
-      return ValidationStrings.foundedRange(last);
-    }
-    if (text.length < 4) return ValidationStrings.foundedRange(last);
-    return null;
+    return RegExp(r'^2\d{3}$').hasMatch(text)
+        ? null
+        : ValidationStrings.foundedInvalid;
   }
 
   /// True when [value] is a complete, valid year (for the green check).
@@ -58,7 +54,57 @@ class StartupValidators {
     return isWebsite(value) ? null : ValidationStrings.websiteInvalid;
   }
 
-  static bool isWebsite(String value) => _website.hasMatch(value.trim());
+  static bool isWebsite(String value) {
+    final text = value.trim();
+    if (!_website.hasMatch(text)) return false;
+    // The ending must be a real top-level domain (.com, .sa, .org ...), not
+    // just any letters (.iii).
+    var host = text.replaceFirst(
+      RegExp(r'^https?:\/\/', caseSensitive: false),
+      '',
+    );
+    host = host.split(RegExp(r'[\/:]')).first.toLowerCase();
+    return realTlds.contains(host.split('.').last);
+  }
+
+  /// Top-level domains accepted in a website: the common generic ones and
+  /// every country code.
+  static const Set<String> realTlds = {
+    // generic
+    'com', 'org', 'net', 'edu', 'gov', 'mil', 'int', 'info', 'biz', 'name',
+    'pro', 'app', 'dev', 'tech', 'online', 'store', 'shop', 'site',
+    'website', 'xyz', 'club', 'cloud', 'digital', 'agency', 'company',
+    'group', 'ventures', 'capital', 'finance', 'fund', 'money', 'bank',
+    'health', 'care', 'clinic', 'academy', 'school', 'university',
+    'education', 'training', 'life', 'live', 'world', 'global', 'network',
+    'systems', 'solutions', 'services', 'software', 'studio', 'design',
+    'media', 'news', 'blog', 'space', 'ltd', 'inc', 'llc', 'work', 'works',
+    'team', 'tools', 'today', 'zone', 'link', 'page', 'email', 'energy',
+    'green', 'eco', 'bio', 'farm', 'food', 'market', 'marketing',
+    'consulting', 'partners', 'foundation', 'ngo', 'one', 'top', 'vip',
+    'art', 'game', 'games', 'tv', 'fm', 'ly', 'sh',
+    // country codes
+    'ac', 'ad', 'ae', 'af', 'ag', 'ai', 'al', 'am', 'ao', 'aq', 'ar', 'as',
+    'at', 'au', 'aw', 'ax', 'az', 'ba', 'bb', 'bd', 'be', 'bf', 'bg', 'bh',
+    'bi', 'bj', 'bm', 'bn', 'bo', 'br', 'bs', 'bt', 'bw', 'by', 'bz', 'ca',
+    'cd', 'cf', 'cg', 'ch', 'ci', 'ck', 'cl', 'cm', 'cn', 'co', 'cr', 'cu',
+    'cv', 'cw', 'cx', 'cy', 'cz', 'de', 'dj', 'dk', 'dm', 'do', 'dz', 'ec',
+    'ee', 'eg', 'er', 'es', 'et', 'eu', 'fi', 'fj', 'fk', 'fo', 'fr', 'ga',
+    'gd', 'ge', 'gf', 'gg', 'gh', 'gi', 'gl', 'gm', 'gn', 'gp', 'gq', 'gr',
+    'gt', 'gu', 'gw', 'gy', 'hk', 'hn', 'hr', 'ht', 'hu', 'id', 'ie', 'il',
+    'im', 'in', 'io', 'iq', 'ir', 'is', 'it', 'je', 'jm', 'jo', 'jp', 'ke',
+    'kg', 'kh', 'ki', 'km', 'kn', 'kp', 'kr', 'kw', 'ky', 'kz', 'la', 'lb',
+    'lc', 'li', 'lk', 'lr', 'ls', 'lt', 'lu', 'lv', 'ma', 'mc', 'md', 'me',
+    'mg', 'mh', 'mk', 'ml', 'mm', 'mn', 'mo', 'mp', 'mq', 'mr', 'ms', 'mt',
+    'mu', 'mv', 'mw', 'mx', 'my', 'mz', 'na', 'nc', 'ne', 'nf', 'ng', 'ni',
+    'nl', 'no', 'np', 'nr', 'nu', 'nz', 'om', 'pa', 'pe', 'pf', 'pg', 'ph',
+    'pk', 'pl', 'pm', 'pn', 'pr', 'ps', 'pt', 'pw', 'py', 'qa', 're', 'ro',
+    'rs', 'ru', 'rw', 'sa', 'sb', 'sc', 'sd', 'se', 'sg', 'si', 'sk', 'sl',
+    'sm', 'sn', 'so', 'sr', 'ss', 'st', 'su', 'sv', 'sx', 'sy', 'sz', 'tc',
+    'td', 'tg', 'th', 'tj', 'tk', 'tl', 'tm', 'tn', 'to', 'tr', 'tt', 'tw',
+    'tz', 'ua', 'ug', 'uk', 'us', 'uy', 'uz', 'va', 'vc', 've', 'vg', 'vi',
+    'vn', 'vu', 'wf', 'ws', 'ye', 'yt', 'za', 'zm', 'zw',
+  };
 
   /// The trimmed address as saved, or null when it is not a valid website.
   /// (Opening it adds https:// when there is no scheme.)
@@ -115,9 +161,6 @@ class StartupValidators {
 
   static String? businessModelText(String v) =>
       v.trim().isEmpty ? ValidationStrings.businessModel : null;
-
-  static String? leadInvestor(bool? answer) =>
-      answer == null ? ValidationStrings.chooseOne : null;
 
   /// "How much are you raising?": required, and inside the limits of the
   /// round type ([stage]).

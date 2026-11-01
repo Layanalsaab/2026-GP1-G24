@@ -4,7 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:startsa/shared_ui/widgets/forms/app_field.dart';
 import 'package:startsa/shared_ui/widgets/forms/app_text_field.dart';
 import 'package:startsa/shared_ui/widgets/forms/select_field.dart';
-import 'package:startsa/shared_ui/widgets/forms/visibility_pill.dart';
+import 'package:startsa/shared_ui/widgets/forms/visibility_switch.dart';
 
 /// The spacing rule of every form: label -> control 8 px, control -> next
 /// label 28 px, whatever sits in the helper line (counter, hint, error, link)
@@ -108,7 +108,7 @@ void main() {
         builder: (context, setState) => LabeledTextField(
           label: 'With Pill',
           controller: b,
-          labelTrailing: VisibilityPill(
+          labelTrailing: VisibilitySwitch(
             isPublic: isPublic,
             fieldName: 'email',
             onChanged: (v) => setState(() => isPublic = v),

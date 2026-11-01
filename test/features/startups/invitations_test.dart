@@ -149,30 +149,36 @@ void main() {
       expect(invites.sentEmails, isEmpty);
     });
 
-    test('an e-mail with no account is a "create your account" invite', () async {
-      final vm = formWithTeam();
-      addTearDown(vm.dispose);
-      await addInvited(vm);
-      await vm.save();
-      expect(invites.store.values.single.newUser, isTrue);
-    });
+    test(
+      'an e-mail with no account is a "create your account" invite',
+      () async {
+        final vm = formWithTeam();
+        addTearDown(vm.dispose);
+        await addInvited(vm);
+        await vm.save();
+        expect(invites.store.values.single.newUser, isTrue);
+      },
+    );
 
-    test('an invitation to a registered person is not a new-user one', () async {
-      TeamLookup.instance = const _Sara();
-      addTearDown(() => TeamLookup.instance = const TeamLookup());
-      final vm = formWithTeam();
-      addTearDown(vm.dispose);
-      vm.openMemberEditor();
-      vm.memberName.text = 'Sara';
-      vm.memberEmail.text = 'sara@gmail.com';
-      vm.memberRole.text = 'COO';
-      vm.memberContribution.text = 'Operations';
-      await vm.saveMember();
-      // Their account name replaces the typed one straight away.
-      expect(vm.team.last.name, 'Sara Alswailem');
-      await vm.save();
-      expect(invites.store.values.single.newUser, isFalse);
-    });
+    test(
+      'an invitation to a registered person is not a new-user one',
+      () async {
+        TeamLookup.instance = const _Sara();
+        addTearDown(() => TeamLookup.instance = const TeamLookup());
+        final vm = formWithTeam();
+        addTearDown(vm.dispose);
+        vm.openMemberEditor();
+        vm.memberName.text = 'Sara';
+        vm.memberEmail.text = 'sara@gmail.com';
+        vm.memberRole.text = 'COO';
+        vm.memberContribution.text = 'Operations';
+        await vm.saveMember();
+        // Their account name replaces the typed one straight away.
+        expect(vm.team.last.name, 'Sara Alswailem');
+        await vm.save();
+        expect(invites.store.values.single.newUser, isFalse);
+      },
+    );
 
     test('the name and e-mail of a joined member are locked', () async {
       final vm = formWithTeam();

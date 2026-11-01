@@ -206,10 +206,10 @@ void main() {
       // A higher score comes first.
       final worse = startup({'id': 'r', 'name': 'Aaa', 'businessModel': 'b2c'});
       final better = startup({'id': 'b', 'name': 'Zzz'});
-      expect(
-        matchesForInvestor(investor(), [worse, better]).map((m) => m.id),
-        ['b', 'r'],
-      );
+      expect(matchesForInvestor(investor(), [worse, better]).map((m) => m.id), [
+        'b',
+        'r',
+      ]);
     });
 
     test('the city changes nothing; amounts round half up', () {
@@ -297,11 +297,9 @@ void main() {
   });
 
   group('same results as the Python reference (real data)', () {
-    final fixture =
-        jsonDecode(
-              File('test/recommender/matching_fixture.json').readAsStringSync(),
-            )
-            as Map<String, dynamic>;
+    final fixture = jsonDecode(
+      File('test/recommender/matching_fixture.json').readAsStringSync(),
+    ) as Map<String, dynamic>;
     final startups = [
       for (final s in fixture['startups'] as List)
         MatchStartup.fromMap(s['id'] as String, s as Map<String, dynamic>),
@@ -313,11 +311,9 @@ void main() {
     final byId = {for (final s in startups) s.id: s};
 
     void same(List<MatchResult> got, List<dynamic> want, String who) {
-      expect(
-        got.map((m) => m.id).toList(),
-        [for (final w in want) w['id']],
-        reason: 'order for $who',
-      );
+      expect(got.map((m) => m.id).toList(), [
+        for (final w in want) w['id'],
+      ], reason: 'order for $who');
       for (var n = 0; n < want.length; n++) {
         final w = want[n] as Map<String, dynamic>;
         expect(got[n].percent, w['percent'], reason: 'percent for $who #$n');

@@ -93,7 +93,6 @@ class FundingRoundRepository {
         amount: amount,
         raised: startup.raisedInRound ?? 0,
         start: when,
-        wantsLeadInvestor: startup.wantsLeadInvestor,
       );
       return [
         FirestoreWrite.set(collection, db.newDocumentId(collection), {
@@ -113,8 +112,6 @@ class FundingRoundRepository {
           FundingRoundFields.stage: type.value,
           FundingRoundFields.stageOther: null,
         },
-        if (open.wantsLeadInvestor != startup.wantsLeadInvestor)
-          FundingRoundFields.wantsLeadInvestor: startup.wantsLeadInvestor,
       };
       if (changes.isEmpty) return const [];
       return [

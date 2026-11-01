@@ -161,6 +161,11 @@ await check('logoData of 1000 chars is allowed', true, () => updateDoc(doc(found
 await check('logoData of 140000 chars (a ~100 KB picture) is allowed', true, () => updateDoc(doc(founder, 'startups', 'S3'), touch({ logoData: pic(140000) })));
 await check('logoData over 150000 chars is refused', false, () => updateDoc(doc(founder, 'startups', 'S3'), touch({ logoData: pic(150001) })));
 await check('logoData that is not text is refused', false, () => updateDoc(doc(founder, 'startups', 'S3'), touch({ logoData: 42 })));
+await check('a future founded year (2030) is allowed', true, () => updateDoc(doc(founder, 'startups', 'S3'), touch({ foundedYear: 2030 })));
+await check('founded year 2999 is allowed', true, () => updateDoc(doc(founder, 'startups', 'S3'), touch({ foundedYear: 2999 })));
+await check('founded year 3000 is refused', false, () => updateDoc(doc(founder, 'startups', 'S3'), touch({ foundedYear: 3000 })));
+await check('founded year 1850 is refused', false, () => updateDoc(doc(founder, 'startups', 'S3'), touch({ foundedYear: 1850 })));
+await check('an older saved year (1995) still saves', true, () => updateDoc(doc(founder, 'startups', 'S3'), touch({ foundedYear: 1995 })));
 await check('a stranger cannot set logoData', false, () => updateDoc(doc(stranger, 'startups', 'S3'), touch({ logoData: pic(10) })));
 await check('removing the logo (deleting the field) is allowed', true, () => updateDoc(doc(founder, 'startups', 'S3'), touch({ logoData: deleteField() })));
 

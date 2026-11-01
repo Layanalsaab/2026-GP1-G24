@@ -11,7 +11,11 @@ void main() {
   setUpAll(() => GoogleFonts.config.allowRuntimeFetching = false);
 
   Future<void> show(WidgetTester t, Widget child) async {
-    await t.pumpWidget(MaterialApp(home: Scaffold(body: Center(child: child))));
+    await t.pumpWidget(
+      MaterialApp(
+        home: Scaffold(body: Center(child: child)),
+      ),
+    );
     await t.pump();
     await t.pump(const Duration(milliseconds: 50));
   }
@@ -71,8 +75,10 @@ void main() {
     test('a startup card item carries the logo', () {
       final s = PrototypeSeed.rafeeq.copyWith(logoUrl: 'https://x.test/l.png');
       expect(HomeItem.fromStartup(s).imageUrl, 'https://x.test/l.png');
-      expect(HomeItem.fromStartup(s).withJoined('Joined today').imageUrl,
-          'https://x.test/l.png');
+      expect(
+        HomeItem.fromStartup(s).withJoined('Joined today').imageUrl,
+        'https://x.test/l.png',
+      );
     });
 
     test('a team member keeps the photo through copyWith, not in the map', () {

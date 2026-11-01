@@ -42,98 +42,105 @@ class ResendRow extends StatelessWidget {
       children: [
         if (divider)
           const Divider(height: 1, thickness: 1, color: Color(0xFFEFECE6)),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 14, 16, 18),
-          child: Column(
-            children: [
-              AnimatedSwitcher(
-                duration: Motion.dur(
-                  context,
-                  const Duration(milliseconds: 200),
-                ),
-                child: waiting
-                    ? Semantics(
-                        key: const ValueKey('waiting'),
-                        label:
-                            '${AuthStrings.verifyDidntGet} Resend in ${_clock(seconds)}',
-                        excludeSemantics: true,
-                        child: Text.rich(
-                          textAlign: TextAlign.center,
-                          TextSpan(
-                            style: base,
-                            children: [
-                              TextSpan(
-                                text:
-                                    '${AuthStrings.verifyDidntGet} Resend in ',
-                              ),
-                              TextSpan(
-                                text: _clock(seconds),
-                                style: AppText.sans(
-                                  size: 14,
-                                  height: 20,
-                                  weight: FontWeight.w600,
-                                  color: AppColors.grey,
-                                  tabular: true,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      )
-                    : Semantics(
-                        key: const ValueKey('ready'),
-                        button: true,
-                        label: AuthStrings.resendEmail,
-                        excludeSemantics: true,
-                        child: GestureDetector(
-                          behavior: HitTestBehavior.opaque,
-                          onTap: busy ? null : onResend,
+        // The row's own padding counts as the button too (it looks the same,
+        // but a tap just above, below or beside the words still works).
+        GestureDetector(
+          key: const ValueKey('resend-area'),
+          behavior: HitTestBehavior.opaque,
+          onTap: (waiting || busy) ? null : onResend,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 18),
+            child: Column(
+              children: [
+                AnimatedSwitcher(
+                  duration: Motion.dur(
+                    context,
+                    const Duration(milliseconds: 200),
+                  ),
+                  child: waiting
+                      ? Semantics(
+                          key: const ValueKey('waiting'),
+                          label:
+                              '${AuthStrings.verifyDidntGet} Resend in ${_clock(seconds)}',
+                          excludeSemantics: true,
                           child: Text.rich(
                             textAlign: TextAlign.center,
                             TextSpan(
-                              style: AppText.sans(
-                                size: 14,
-                                height: 20,
-                                color: AppColors.grey,
-                              ),
+                              style: base,
                               children: [
                                 TextSpan(
-                                  text: '${AuthStrings.verifyDidntGet} ',
+                                  text:
+                                      '${AuthStrings.verifyDidntGet} Resend in ',
                                 ),
                                 TextSpan(
-                                  text: AuthStrings.resendEmail,
+                                  text: _clock(seconds),
                                   style: AppText.sans(
                                     size: 14,
                                     height: 20,
                                     weight: FontWeight.w600,
-                                    color: AppColors.moss600,
+                                    color: AppColors.grey,
+                                    tabular: true,
                                   ),
                                 ),
                               ],
                             ),
                           ),
+                        )
+                      : Semantics(
+                          key: const ValueKey('ready'),
+                          button: true,
+                          label: AuthStrings.resendEmail,
+                          excludeSemantics: true,
+                          child: GestureDetector(
+                            behavior: HitTestBehavior.opaque,
+                            onTap: busy ? null : onResend,
+                            child: Text.rich(
+                              textAlign: TextAlign.center,
+                              TextSpan(
+                                style: AppText.sans(
+                                  size: 14,
+                                  height: 20,
+                                  color: AppColors.grey,
+                                ),
+                                children: [
+                                  TextSpan(
+                                    text: '${AuthStrings.verifyDidntGet} ',
+                                  ),
+                                  TextSpan(
+                                    text: AuthStrings.resendEmail,
+                                    style: AppText.sans(
+                                      size: 14,
+                                      height: 20,
+                                      weight: FontWeight.w600,
+                                      color: AppColors.moss600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
                         ),
-                      ),
-              ),
-              if (error != null) ...[
-                const SizedBox(height: 8),
-                Semantics(
-                  liveRegion: true,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      AppIcon.filled(
-                        AppIcons.error,
-                        size: 14,
-                        color: AppColors.error,
-                      ),
-                      const SizedBox(width: 4),
-                      Flexible(child: Text(error!, style: AppText.error)),
-                    ],
-                  ),
                 ),
+                if (error != null) ...[
+                  const SizedBox(height: 8),
+                  Semantics(
+                    liveRegion: true,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        AppIcon.filled(
+                          AppIcons.error,
+                          size: 14,
+                          color: AppColors.error,
+                        ),
+                        const SizedBox(width: 4),
+                        Flexible(child: Text(error!, style: AppText.error)),
+                      ],
+                    ),
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ],

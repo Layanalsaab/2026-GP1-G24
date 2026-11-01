@@ -81,14 +81,14 @@ void main() {
       vm.setType(StartupStage.seriesA);
       vm.amount.text = '10,000,000';
       vm.raised.text = '0';
-      vm.setLead(false);
       expect(await vm.addRound(), isTrue);
       expect(vm.openRound!.number, 3);
       final s = startups.startups.single;
       expect(s.seeksFunding, isTrue);
       expect(s.fundingRequirement, 10000000);
       expect(s.raisedInRound, 0);
-      expect(s.wantsLeadInvestor, isFalse);
+      // The lead-investor question is gone: nothing is written for it.
+      expect(s.wantsLeadInvestor, isNull);
       expect(s.stage, StartupStage.seriesA);
     },
   );
@@ -145,7 +145,7 @@ void main() {
     test('a new startup must pick at least one', () {
       final vm = StartupStepsViewModel();
       addTearDown(vm.dispose);
-      vm.step = 4;
+      vm.step = StartupStepsViewModel.askStep;
       vm.next();
       expect(vm.errorOf(StartupField.lookingFor), 'Select at least one.');
     });
@@ -155,10 +155,10 @@ void main() {
         initial: startup.copyWith(lookingFor: {}, clearFunding: true),
       );
       addTearDown(vm.dispose);
-      vm.step = 4;
+      vm.step = StartupStepsViewModel.askStep;
       vm.next();
       expect(vm.errorOf(StartupField.lookingFor), isNull);
-      expect(vm.stepComplete(4), isTrue);
+      expect(vm.stepComplete(StartupStepsViewModel.askStep), isTrue);
     });
   });
 }

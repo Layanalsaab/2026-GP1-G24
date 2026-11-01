@@ -526,7 +526,7 @@ class _AppFieldState extends State<AppField> {
               ),
             )
           else
-            // The trailing widget (the Private / Public pill) is taller than
+            // The trailing widget (the Private / Public switch) is taller than
             // the 20 px label line, so it hangs over it: the row stays 20 px
             // high and the spacing between fields never changes.
             SizedBox(

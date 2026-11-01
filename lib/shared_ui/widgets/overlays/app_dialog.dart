@@ -225,4 +225,3 @@ Future<bool> showDiscardDialog(
   );
   return result ?? false;
 }
-

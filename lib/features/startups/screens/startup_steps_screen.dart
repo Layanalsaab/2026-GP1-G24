@@ -50,7 +50,7 @@ class StartupStepsScreen extends StatefulWidget {
   final Startup? startup;
 
   /// Edit just this Details section (0-based: Overview, Startup Description,
-  /// Target Market, Finance and Growth, Startup Ask, Startup Team) of a saved
+  /// Target Market, Finance and Growth, Startup Team, Startup Ask) of a saved
   /// startup: no progress bar, a "Save" button, Back asks before discarding.
   final int? onlySection;
 

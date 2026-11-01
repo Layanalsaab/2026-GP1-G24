@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../../app_constants/validation_strings.dart';
+import '../../../helpers/other_check.dart';
+
 import '../../icons/app_icons.dart';
 import '../../motion/motion.dart';
 import '../../theme/app_colors.dart';
@@ -28,6 +31,7 @@ Future<void> showMultiPickerSheet(
   ValueChanged<String>? onOtherChanged,
   VoidCallback? onUndoOther,
   int otherMax = 40,
+  List<String> alsoCountsAs = const [],
 }) {
   // The same bottom sheet as the Sector / Stage / Commerce model pickers.
   return showAppBottomSheet<void>(
@@ -46,6 +50,7 @@ Future<void> showMultiPickerSheet(
       onOtherChanged: onOtherChanged,
       onUndoOther: onUndoOther,
       otherMax: otherMax,
+      alsoCountsAs: alsoCountsAs,
     ),
   );
 }
@@ -69,6 +74,7 @@ class MultiPickerSheet extends StatefulWidget {
     this.onOtherChanged,
     this.onUndoOther,
     this.otherMax = 40,
+    this.alsoCountsAs = const [],
   });
 
   final String title;
@@ -84,6 +90,10 @@ class MultiPickerSheet extends StatefulWidget {
   final ValueChanged<String>? onOtherChanged;
   final VoidCallback? onUndoOther;
   final int otherMax;
+
+  /// Other texts that mean a listed option (e.g. "B2B"): the "Other"
+  /// write-in can't repeat them either.
+  final List<String> alsoCountsAs;
 
   @override
   State<MultiPickerSheet> createState() => _MultiPickerSheetState();
@@ -107,6 +117,14 @@ class _MultiPickerSheetState extends State<MultiPickerSheet> {
   bool get _otherOpen => _hasOther && _selected.contains(widget.otherLabel);
   bool get _otherBlank => _other.text.trim().isEmpty;
 
+  /// The write-in repeats a listed option (it can't).
+  bool get _repeats =>
+      _otherOpen &&
+      OtherCheck.repeats(_other.text, [
+        ...widget.options,
+        ...widget.alsoCountsAs,
+      ]);
+
   @override
   void dispose() {
     _other.dispose();
@@ -123,6 +141,7 @@ class _MultiPickerSheetState extends State<MultiPickerSheet> {
   }
 
   void _done() {
+    if (_repeats) return;
     if (_otherOpen && _otherBlank) {
       setState(() => _showError = true);
       return;
@@ -190,9 +209,11 @@ class _MultiPickerSheetState extends State<MultiPickerSheet> {
                             widget.otherHint ??
                             'Describe your other ${widget.otherNoun}',
                         max: widget.otherMax,
-                        error: _showError && _otherBlank
-                            ? 'Please type your ${widget.otherNoun} — it can’t be blank.'
-                            : null,
+                        error: _repeats
+                            ? ValidationStrings.otherRepeats
+                            : (_showError && _otherBlank
+                                  ? 'Please type your ${widget.otherNoun} — it can’t be blank.'
+                                  : null),
                         onChanged: (v) {
                           setState(() {});
                           widget.onOtherChanged?.call(v);
@@ -204,7 +225,10 @@ class _MultiPickerSheetState extends State<MultiPickerSheet> {
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
-              child: AppButton(label: 'Done', onPressed: _done),
+              child: AppButton(
+                label: 'Done',
+                onPressed: _repeats ? null : _done,
+              ),
             ),
           ],
         ),

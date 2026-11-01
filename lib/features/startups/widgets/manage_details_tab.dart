@@ -17,7 +17,7 @@ import '../../../helpers/startup_finance.dart';
 
 /// Manage startup -> Details: ONE white card holding the six sections of the
 /// add-startup form as an accordion, in this order: Overview, Startup
-/// Description, Target Market, Finance and Growth, Startup Ask, Startup Team.
+/// Description, Target Market, Finance and Growth, Startup Team, Startup Ask.
 ///
 /// A section row shows an icon tile, the title, a one-line summary and a
 /// chevron. Tapping it opens it in place (one at a time). While a section is
@@ -77,6 +77,9 @@ class ManageDetailsTab extends StatelessWidget {
         ];
         return parts.isEmpty ? _notAdded : parts.join(' · ');
       case 4:
+        final n = s.team.length;
+        return n == 0 ? _notAdded : (n == 1 ? '1 member' : '$n members');
+      default:
         final parts = [
           if (s.seeksFunding && _money(s.fundingRequirement).isNotEmpty)
             'Funding ${_money(s.fundingRequirement)}',
@@ -84,28 +87,25 @@ class ManageDetailsTab extends StatelessWidget {
           if (StartupAsk.supportSelected(s)) 'Support',
         ];
         return parts.isEmpty ? _notAdded : parts.join(' · ');
-      default:
-        final n = s.team.length;
-        return n == 0 ? _notAdded : (n == 1 ? '1 member' : '$n members');
     }
   }
 
   /// The six section titles (also the headers of the single-section editor).
   static const titles = [
-    'Overview',
+    'Startup Overview',
     'Startup Description',
     'Target Market',
     'Finance and Growth',
-    'Startup Ask',
     'Startup Team',
+    'Startup Ask',
   ];
   static const _icons = [
     AppIcons.info,
     AppIcons.bulb,
     AppIcons.search,
     AppIcons.wallet,
-    AppIcons.target,
     AppIcons.people,
+    AppIcons.target,
   ];
 
   @override
@@ -145,9 +145,9 @@ class ManageDetailsTab extends StatelessWidget {
       case 3:
         return _Finance(startup);
       case 4:
-        return _Ask(startup);
-      default:
         return _Team(startup, myRole);
+      default:
+        return _Ask(startup);
     }
   }
 }
@@ -528,7 +528,7 @@ class _Finance extends StatelessWidget {
               ],
             ),
           ),
-        _QA(FounderToolsStrings.modelTextLabel, s.businessModelText),
+        _QA(FounderToolsStrings.revenueModelTitle, s.businessModelText),
       ],
     );
   }

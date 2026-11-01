@@ -441,7 +441,7 @@ service cloud.firestore {
     function validFoundedYear(d) {
       return !('foundedYear' in d) || d.foundedYear == null
         || (d.foundedYear is int && d.foundedYear >= 1900
-            && d.foundedYear <= request.time.year());
+            && d.foundedYear <= 2999);
     }
 
     // The funding amount: a positive whole number, or null (imported rows

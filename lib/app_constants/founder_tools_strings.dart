@@ -43,14 +43,14 @@ class FounderToolsStrings {
 
   // ---- Steps ----
   static const stepTitles = [
-    'Overview',
+    'Startup Overview',
     'Startup Description',
     'Target Market',
     'Finance and Growth',
-    'Startup Ask',
     'Startup Team',
+    'Startup Ask',
   ];
-  static const onboardingFirstTitle = 'Overview';
+  static const onboardingFirstTitle = 'Startup Overview';
   static const next = 'Next';
   static const create = 'Create startup';
   static const saveChanges = 'Save changes';
@@ -106,12 +106,13 @@ class FounderToolsStrings {
   static const customersHint =
       'e.g. families caring for elderly parents in Riyadh';
   static const advantageLabel = 'What makes your startup unique?';
-  static const advantageHint = 'What you do better or differently than others';
+  static const advantageHint =
+      'What you do better or differently than your competitors';
 
   // Step 3
   static const marketLabel = 'Target market size';
   static const marketInfo =
-      'The total amount customers in your target market spend per year on products like yours. Enter it in SAR.';
+      'Your SAM (serviceable available market): the total amount the customers you can realistically reach spend per year on products like yours. Enter it in SAR.';
   static const teamLabel = 'Team members';
   static const teamSub = 'Including you as a founder';
   static const teamInfo =
@@ -175,14 +176,14 @@ class FounderToolsStrings {
   static const valuationLabel = 'Current company valuation';
   static const valuationInfo =
       'What your whole company is worth today. If you’ve raised money before, use the valuation from that round.';
-  static const modelTextLabel = 'Explain your business model';
+  static const modelTextLabel = 'Explain your revenue model';
+
+  /// The title of the answer in Manage -> Details and on the startup page.
+  static const revenueModelTitle = 'Revenue model';
   static const modelTextHint = 'Describe how your startup makes money';
   static const modelTextInfo =
       'How your startup makes money. For example: who pays you, what you charge, and how often.';
   static const modelTextMax = 250;
-  static const leadLabel = 'Are you looking for a lead investor?';
-  static const leadInfo =
-      'A lead investor sets the terms of your round and brings other investors in.';
   static const fundingLabel = 'How much are you raising?';
   static const fundingInfo =
       'The total amount you want to raise in this funding round.';
@@ -198,31 +199,29 @@ class FounderToolsStrings {
   static const partnerTitle = 'Select partner types';
   static const supportTitle = 'Select support types';
   static const partnerOptions = [
-    'Distribution',
-    'Technology',
+    'Co-founder',
+    'Distributor',
+    'Technology development',
     'Supplier',
-    'Marketing',
-    'Government',
-    'Corporate',
+    'Marketing specialist',
+    'Legal and accounting',
     'Other',
   ];
   static const supportOptions = [
     'Mentorship',
-    'Advisors',
-    'Co-founder',
     'Hiring',
-    'Marketing',
-    'Tech development',
-    'Legal and accounting',
+    'Incubator',
+    'Accelerator',
+    'Support Studios',
     'Other',
   ];
   static const visibilityLabel = 'Visibility';
   static const visibilityPublicTitle = 'Public';
   static const visibilityPublicText =
-      'Anyone can find this startup in the Hub, Explore, Trending, and Matches, and can send you requests.';
+      'Anyone on Start.sa can find this startup in the Hub and Explore.';
   static const visibilityPrivateTitle = 'Private';
   static const visibilityPrivateText =
-      'Only you can see this startup. It won’t appear in the Hub, Explore, Trending, or Matches.';
+      'Only your team can see this startup. It won’t appear in the Hub or Explore.';
   static const yes = 'Yes';
   static const no = 'No';
   static const required = 'Required';
@@ -276,8 +275,9 @@ class FounderToolsStrings {
   static const interestAllEmpty = 'No expressions of interest yet.';
   static const replyLabel = 'Reply';
   static const publicProfile = 'Public profile';
-  static const publicProfileOn = 'Visible in Hub, Explore and Matches';
-  static const publicProfileOff = 'Only your team can see this startup';
+  // Manage -> Settings shows the same two texts as the Startup Overview step.
+  static const publicProfileOn = visibilityPublicText;
+  static const publicProfileOff = visibilityPrivateText;
   static const nowPublic = 'Startup is now public';
   static const nowPrivate = 'Startup is now private';
   static const deleteStartup = 'Delete startup';

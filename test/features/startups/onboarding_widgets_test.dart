@@ -60,7 +60,7 @@ void main() {
       'Monthly burn rate',
       'Current company valuation',
       'Expected revenue, next 3 years (SAR)',
-      'Explain your business model',
+      'Explain your revenue model',
     ]) {
       expect(
         find.textContaining(label, findRichText: true),
@@ -77,7 +77,7 @@ void main() {
   });
 
   testWidgets('Startup Ask: boxes reveal their own questions', (t) async {
-    await _pump(t, 4, size: const Size(360, 1400));
+    await _pump(t, StartupStepsViewModel.askStep, size: const Size(360, 1400));
     expect(find.text('Funding'), findsOneWidget);
     expect(find.text('Partnership'), findsOneWidget);
     expect(find.text('Support'), findsOneWidget);
@@ -104,8 +104,31 @@ void main() {
     await t.pump(const Duration(milliseconds: 400));
     await t.pump(const Duration(milliseconds: 600));
     expect(find.text('Select partner types'), findsNWidgets(2));
-    expect(find.text('Distribution'), findsOneWidget);
-    expect(find.text('Corporate'), findsOneWidget);
+    // The partner list, in this order.
+    final names = [
+      'Co-founder',
+      'Distributor',
+      'Technology development',
+      'Supplier',
+      'Marketing specialist',
+      'Legal and accounting',
+      'Other',
+    ];
+    var lastY = -1.0;
+    for (final n in names) {
+      expect(find.text(n), findsOneWidget, reason: n);
+      final y = t.getTopLeft(find.text(n)).dy;
+      expect(y, greaterThan(lastY), reason: n);
+      lastY = y;
+    }
+    for (final gone in [
+      'Distribution',
+      'Technology',
+      'Government',
+      'Corporate',
+    ]) {
+      expect(find.text(gone), findsNothing, reason: gone);
+    }
     // Like the Stage / Commerce model pickers: as tall as its options (not
     // a whole page), growing by the text box when Other is ticked.
     final height = t.getSize(find.byType(AppSheetScaffold)).height;
@@ -121,7 +144,7 @@ void main() {
   });
 
   testWidgets('Startup Ask: each question opens under its own card', (t) async {
-    final vm = await _pump(t, 4);
+    final vm = await _pump(t, 5);
     double y(String text) =>
         t.getTopLeft(find.textContaining(text, findRichText: true).first).dy;
     // Tick in a "wrong" order: Support, then Funding, then Partnership.
@@ -135,7 +158,6 @@ void main() {
       y('Funding'),
       y('How much are you raising?'),
       y('already raised'),
-      y('lead investor'),
       y('Partnership'),
       y('What type of partner'),
       y('Support'),
@@ -157,7 +179,7 @@ void main() {
   });
 
   testWidgets('Startup Team: founder card first with its tag', (t) async {
-    await _pump(t, 5);
+    await _pump(t, 4);
     expect(find.text('Shahad Alabdulkarim'), findsOneWidget);
     expect(find.text('You · Founder'), findsOneWidget);
     expect(find.text('Add team member'), findsOneWidget);
@@ -180,7 +202,7 @@ void main() {
   });
 
   testWidgets('Startup Team: card, tags, editor and invite dialog', (t) async {
-    final vm = await _pump(t, 5, size: const Size(360, 1400));
+    final vm = await _pump(t, 4, size: const Size(360, 1400));
     // My card: tag, "Add your role" until it is filled in, pencil label.
     expect(find.text('You · Founder'), findsOneWidget);
     expect(find.text('Add your role'), findsOneWidget);

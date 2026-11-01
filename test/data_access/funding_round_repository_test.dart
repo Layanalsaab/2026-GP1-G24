@@ -269,7 +269,12 @@ void main() {
       expect(w.data['stage'], 'pre_seed');
       expect(w.data['amount'], 500000);
       expect(w.data['raised'], 100000);
-      expect(w.data['wantsLeadInvestor'], isTrue);
+      // The lead-investor question is gone: a new round doesn't carry it.
+      expect(
+        w.data.containsKey('wantsLeadInvestor') &&
+            w.data['wantsLeadInvestor'] != null,
+        isFalse,
+      );
       expect(w.data['startDate'], now);
     });
 

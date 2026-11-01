@@ -29,18 +29,15 @@ class StartupAsk {
   /// The support types the founder picked ("Other" is the typed text).
   static List<String> support(Startup s) => s.supportTypes;
 
-  /// "Raising SAR 500,000 · SAR 200,000 raised so far · Looking for a lead
-  /// investor" (or "· No lead investor needed"), full amounts with commas.
+  /// "Raising SAR 500,000 · SAR 200,000 raised so far", full amounts with
+  /// commas.
   static String fundingDetail(Startup s) {
     final amount = s.fundingRequirement ?? 0;
     final raised = s.raisedInRound;
-    final lead = s.wantsLeadInvestor;
     return [
       if (amount > 0) 'Raising ${Formatters.sar(amount)}',
       if (raised != null && raised > 0)
         '${Formatters.sar(raised)} raised so far',
-      if (lead != null)
-        lead ? 'Looking for a lead investor' : 'No lead investor needed',
     ].join(' · ');
   }
 }

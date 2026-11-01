@@ -294,6 +294,7 @@ class TeamMemberEditor extends StatelessWidget {
     required this.onCancel,
     required this.onSave,
     required this.onRemove,
+    this.focusOf,
   });
 
   /// "Your details" / "Edit team member" / "New team member" / "Edit founder".
@@ -322,6 +323,10 @@ class TeamMemberEditor extends StatelessWidget {
   final VoidCallback onSave;
   final VoidCallback onRemove;
 
+  /// The focus node of a field, so leaving it after typing can show its
+  /// "required" message.
+  final FocusNode? Function(TextEditingController)? focusOf;
+
   Widget _field(
     String label,
     TextEditingController c,
@@ -337,6 +342,7 @@ class TeamMemberEditor extends StatelessWidget {
     placeholder: hint,
     maxLength: max,
     error: errorOf(c),
+    focusNode: focusOf?.call(c),
     keyboardType: keyboard,
     textCapitalization: caps,
   );
@@ -418,6 +424,7 @@ class TeamMemberEditor extends StatelessWidget {
             required: true,
             sentenceCase: true,
             controller: contribution,
+            focusNode: focusOf?.call(contribution),
             placeholder: FounderToolsStrings.memberContributionHint,
             maxLength: TeamMember.contributionMax,
             multiline: true,

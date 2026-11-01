@@ -95,7 +95,6 @@ class StartupProfileViewModel extends ChangeNotifier with SafeNotifier {
         type: open.typeLabel,
         goal: open.amount,
         raised: base > accepted ? base : accepted,
-        wantsLead: open.wantsLeadInvestor ?? startup.wantsLeadInvestor,
       );
     }
     final goal = startup.fundingRequirement ?? 0;
@@ -105,7 +104,6 @@ class StartupProfileViewModel extends ChangeNotifier with SafeNotifier {
         type: startup.stageLabel,
         goal: goal,
         raised: base > accepted ? base : accepted,
-        wantsLead: startup.wantsLeadInvestor,
       );
     }
     return null;
@@ -206,15 +204,8 @@ class StartupProfileViewModel extends ChangeNotifier with SafeNotifier {
   // ---- Financials ----
   /// The non-empty cells of "Funding and financials", in prototype order.
   List<(String, String)> get financials {
-    final lead = startup.wantsLeadInvestor;
     return [
       (ProfileStrings.kvRaising, _money(startup.fundingRequirement) ?? ''),
-      (
-        ProfileStrings.kvLead,
-        lead == null
-            ? ''
-            : (lead ? ProfileStrings.kvLeadYes : ProfileStrings.kvLeadNo),
-      ),
       (ProfileStrings.kvValuation, _money(startup.valuation) ?? ''),
       (ProfileStrings.kvCapital, _money(startup.capital) ?? ''),
       (ProfileStrings.kvModel, startup.businessModelLabel),
@@ -244,14 +235,12 @@ class CurrentRound {
     required this.type,
     required this.goal,
     required this.raised,
-    required this.wantsLead,
   });
 
   /// "Pre-seed", "Seed"...
   final String type;
   final int goal;
   final int raised;
-  final bool? wantsLead;
 
   /// 40 for 200,000 of 500,000 (can go past 100; the bar stops at 100).
   int get percent => goal <= 0 ? 0 : (raised * 100 / goal).round();

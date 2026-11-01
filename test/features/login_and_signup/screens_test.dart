@@ -437,9 +437,15 @@ void main() {
     await t.pump();
     await t.pump(const Duration(milliseconds: 600));
     expect(auth.resendCalls, 1);
-    // The countdown restarts, and no toast is shown.
+    // The countdown restarts and a toast says the email was sent.
     expect(find.textContaining('1:00'), findsOneWidget);
-    expect(find.text('Verification email sent'), findsNothing);
+    expect(
+      find.text('Verification email sent. Check your inbox.'),
+      findsOneWidget,
+    );
+    // Let the toast go away.
+    await t.pump(const Duration(seconds: 3));
+    await t.pump(const Duration(seconds: 1));
   });
 
   testWidgets('login: empty submit shows both errors', (t) async {
