@@ -2,26 +2,59 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../app_constants/founder_tools_strings.dart';
+import '../../../models/funding_round.dart';
 import '../../../models/startup.dart';
 import '../../startups/widgets/founder_ui.dart';
 import '../../startups/widgets/manage_card.dart';
 import '../view_models/valuation_calculator_view_model.dart';
 
 /// Valuation calculator (docs/05 D4): inputs card, green result card,
-/// "Ownership after this raise" card and the note. Opened from Manage with
-/// empty funding and equity (the ownership keeps its last value), or from a
-/// request with [funding] and [equityPercent] pre-filled.
+/// "Ownership after this raise" card and the note. From Manage the boxes
+/// are filled from the open round and the startup's valuation, from a
+/// request they are filled from the request. Nothing is saved.
 class ValuationCalculatorScreen extends StatefulWidget {
   const ValuationCalculatorScreen({
     super.key,
     required this.startup,
     this.funding,
     this.equityPercent,
+    this.round,
+    this.valuation,
+    this.ownershipUnknown = false,
   });
 
   final Startup startup;
   final int? funding;
   final double? equityPercent;
+
+  // the open round (shown under the funding box)
+  final FundingRound? round;
+
+  // current company valuation from onboarding
+  final int? valuation;
+
+  // true if there are co-founders or older rounds
+  final bool ownershipUnknown;
+
+  // opened from the dashboard, filled from the startup and its open round
+  static void openForStartup(
+    BuildContext context, {
+    required Startup startup,
+    FundingRound? round,
+    bool ownershipUnknown = false,
+  }) {
+    AppNav.push(
+      context,
+      ValuationCalculatorScreen(
+        startup: startup,
+        funding: round?.amount ?? startup.fundingRequirement,
+        valuation: startup.valuation,
+        round: round,
+        ownershipUnknown: ownershipUnknown,
+      ),
+      greenHeader: true,
+    );
+  }
 
   /// Pushes the calculator (forward transition).
   static void open(
@@ -29,6 +62,7 @@ class ValuationCalculatorScreen extends StatefulWidget {
     required Startup startup,
     int? funding,
     double? equityPercent,
+    FundingRound? round,
   }) {
     AppNav.push(
       context,
@@ -36,6 +70,7 @@ class ValuationCalculatorScreen extends StatefulWidget {
         startup: startup,
         funding: funding,
         equityPercent: equityPercent,
+        round: round,
       ),
       greenHeader: true,
     );
@@ -50,6 +85,8 @@ class _ValuationCalculatorScreenState extends State<ValuationCalculatorScreen> {
   late final ValuationCalculatorViewModel _vm = ValuationCalculatorViewModel(
     funding: widget.funding,
     equityPercent: widget.equityPercent,
+    valuation: widget.valuation,
+    ownershipUnknown: widget.ownershipUnknown,
   );
 
   @override
@@ -82,7 +119,12 @@ class _ValuationCalculatorScreenState extends State<ValuationCalculatorScreen> {
               builder: (context, _) => OverlapList(
                 gap: 12,
                 children: [
-                  _InputsCard(vm: _vm, startup: s, onInfo: _info),
+                  _InputsCard(
+                    vm: _vm,
+                    startup: s,
+                    round: widget.round,
+                    onInfo: _info,
+                  ),
                   _ResultCard(vm: _vm, onInfo: _info),
                   if (_vm.isValid) _OwnershipCard(vm: _vm, onInfo: _info),
                   Padding(
@@ -111,10 +153,12 @@ class _InputsCard extends StatelessWidget {
     required this.vm,
     required this.startup,
     required this.onInfo,
+    this.round,
   });
 
   final ValuationCalculatorViewModel vm;
   final Startup startup;
+  final FundingRound? round;
   final void Function(String key) onInfo;
 
   Widget _field({
@@ -122,6 +166,7 @@ class _InputsCard extends StatelessWidget {
     required String infoKey,
     required Widget input,
     required String? error,
+    String? hint,
   }) {
     final hasError = error != null;
     return Column(
@@ -137,7 +182,7 @@ class _InputsCard extends StatelessWidget {
         ),
         const SizedBox(height: 6),
         input,
-        FieldHelperRow(error: error),
+        FieldHelperRow(error: error, hint: hint),
       ],
     );
   }
@@ -198,6 +243,15 @@ class _InputsCard extends StatelessWidget {
             label: FounderToolsStrings.fundingToRaise,
             infoKey: 'f',
             error: vm.fundingError,
+            hint: round == null
+                ? null
+                : FounderToolsStrings.calcRoundHint(
+                    round!.number,
+                    round!.typeLabel,
+                    ValuationCalculatorViewModel.sar(
+                      round!.raised.toDouble(),
+                    ),
+                  ),
             input: MoneyField(
               controller: vm.funds,
               maxDigits: 12,
@@ -227,6 +281,7 @@ class _InputsCard extends StatelessWidget {
             label: FounderToolsStrings.currentOwnership,
             infoKey: 'o',
             error: vm.ownershipError,
+            hint: vm.ownershipHint,
             input: AppTextField(
               controller: vm.ownership,
               suffix: '%',

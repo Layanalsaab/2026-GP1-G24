@@ -318,6 +318,11 @@ class FounderToolsStrings {
   static const otherOwners = 'Other existing owners';
   static const newInvestors = 'New investors';
   static const equityGivenUp = 'Equity given up';
+  // shown under the funding box
+  static String calcRoundHint(int number, String type, String raised) =>
+      'Round $number · $type · $raised raised so far';
+  static const calcOwnershipHint =
+      'You had earlier rounds or have co-founders, so you probably own less than 100%. Enter your share.';
   static const calcNote =
       'This is the valuation your chosen terms imply, not a market valuation of your startup.';
 
@@ -325,15 +330,15 @@ class FounderToolsStrings {
   static const calcInfo = <String, (String, String)>{
     'f': (
       'Funding to raise',
-      'The total money you want investors to put into your startup in this raise.',
+      'The total money you want investors to put into your startup in this raise. It starts at your open round’s amount; change it to test another amount.',
     ),
     'e': (
       'Equity to give up',
-      'The share of your company the new investors will own in return for their money.',
+      'The share of your company the new investors will own in return for their money. It starts at what your round costs at your current company valuation and follows the funding you type; type an investor’s offer here to test it.',
     ),
     'o': (
       'Your current ownership',
-      'How much of the company you own today, before this raise. If nobody else owns part of your startup yet, leave it at 100%.',
+      'How much of the company you own today, before this raise. It starts at 100% when you have no co-founders and no earlier rounds. Investors in this round are not counted here: they are the new investors.',
     ),
     'post': (
       'Post-money valuation',

@@ -100,7 +100,6 @@ void main() {
     DiscoveryRepository.instance = DiscoveryRepository.sample();
     FundingRoundRepository.instance = FundingRoundRepository.sample();
     AppSession.instance = AppSession();
-    ValuationCalculatorViewModel.lastOwnership = '100';
   });
 
   group('StartupStepsViewModel', () {
@@ -231,6 +230,91 @@ void main() {
   });
 
   group('ValuationCalculatorViewModel', () {
+    test('starts from the round and the current valuation', () {
+      // 2M at an 8M valuation = 20%
+      expect(
+        ValuationCalculatorViewModel.equityAt(
+          funding: 2000000,
+          valuation: 8000000,
+        ),
+        20,
+      );
+      final vm = ValuationCalculatorViewModel(
+        funding: 2000000,
+        valuation: 8000000,
+      );
+      addTearDown(vm.dispose);
+      expect(vm.funds.text, '2,000,000');
+      expect(vm.equity.text, '20');
+      expect(vm.ownership.text, '100');
+      expect(vm.ownershipHint, isNull);
+      expect(vm.postText, 'SAR 10,000,000');
+      expect(vm.preText, 'SAR 8,000,000');
+      // no valuation, nothing to work out
+      expect(
+        ValuationCalculatorViewModel.equityAt(funding: 1, valuation: 0),
+        isNull,
+      );
+    });
+
+    test('more funding costs more equity; the valuation stays', () {
+      final vm = ValuationCalculatorViewModel(
+        funding: 2000000,
+        valuation: 8000000,
+      );
+      addTearDown(vm.dispose);
+      vm.funds.text = '3,000,000';
+      expect(vm.equity.text, '27.27');
+      expect(vm.preText, 'SAR 8,000,000');
+      expect(vm.postText, 'SAR 11,000,000');
+      expect(vm.equityError, isNull);
+      // typed equity stays even if funding changes
+      vm.equity.text = '25';
+      expect(vm.preText, 'SAR 9,000,000');
+      vm.funds.text = '2,000,000';
+      expect(vm.equity.text, '25');
+      expect(vm.preText, 'SAR 6,000,000');
+    });
+
+    test('an uneven equity keeps the pre-money exactly the valuation', () {
+      final vm = ValuationCalculatorViewModel(
+        funding: 2000000,
+        valuation: 7000000,
+      );
+      addTearDown(vm.dispose);
+      expect(vm.equity.text, '22.22');
+      expect(vm.preText, 'SAR 7,000,000');
+      expect(vm.workText, 'SAR 2,000,000 ÷ 22.22%');
+    });
+
+    test('co-founders or earlier rounds: ownership asks, with a hint', () {
+      final vm = ValuationCalculatorViewModel(
+        funding: 2000000,
+        valuation: 8000000,
+        ownershipUnknown: true,
+      );
+      addTearDown(vm.dispose);
+      expect(vm.ownership.text, '');
+      expect(vm.ownershipHint, isNotNull);
+      expect(vm.ownershipError, isNull, reason: 'not typed yet');
+      expect(vm.isValid, isFalse);
+      vm.ownership.text = '50';
+      expect(vm.ownershipHint, isNull);
+      expect(vm.isValid, isTrue);
+      expect(ValuationCalculatorViewModel.pct(vm.you), '40%');
+    });
+
+    test('ownership starts fresh each time, and 1.2.3 is not a number', () {
+      final a = ValuationCalculatorViewModel();
+      a.ownership.text = '60';
+      a.dispose();
+      final b = ValuationCalculatorViewModel();
+      addTearDown(b.dispose);
+      expect(b.ownership.text, '100');
+      expect(ValuationCalculatorViewModel.parse('1.2.3').isNaN, isTrue);
+      expect(ValuationCalculatorViewModel.parse('12.5'), 12.5);
+    });
+
     test('math matches the prototype example', () {
       final vm = ValuationCalculatorViewModel(
         funding: 500000,
@@ -269,7 +353,7 @@ void main() {
       vm.dispose();
       vm = ValuationCalculatorViewModel();
       addTearDown(vm.dispose);
-      expect(vm.ownership.text, '60');
+      expect(vm.ownership.text, '100');
       vm.ownership.text = '120';
       expect(vm.ownershipError, 'Enter a percentage between 0 and 100.');
     });

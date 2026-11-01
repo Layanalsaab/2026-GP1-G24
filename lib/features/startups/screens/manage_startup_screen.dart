@@ -183,8 +183,20 @@ class _ManageStartupScreenState extends State<ManageStartupScreen> {
   void _preview() =>
       StartupProfileScreen.open(context, startup: _vm.startup, preview: true);
 
-  void _calculator() =>
-      ValuationCalculatorScreen.open(context, startup: _vm.startup);
+  // if there are co-founders or older rounds we can't assume 100% ownership
+  void _calculator() {
+    final s = _vm.startup;
+    final coFounders =
+        s.team.any((m) => m.coFounder) ||
+        s.memberRoles.values.contains('coFounder');
+    final earlierRound = _rounds.rounds.any((r) => !r.isOpen);
+    ValuationCalculatorScreen.openForStartup(
+      context,
+      startup: s,
+      round: _rounds.openRound,
+      ownershipUnknown: coFounders || earlierRound,
+    );
+  }
 
   Future<void> _setPublic(bool value) async {
     if (!_role.canManage) return;

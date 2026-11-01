@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 
+import '../../../app_constants/founder_tools_strings.dart';
 import '../../../app_constants/validation_strings.dart';
 import '../../../helpers/safe_notifier.dart';
 
@@ -10,12 +11,22 @@ import '../../../helpers/safe_notifier.dart';
 /// others = (100 − ownership) × (100 − equity) / 100;
 /// value of your share = post × you / 100. Errors are live.
 class ValuationCalculatorViewModel extends ChangeNotifier with SafeNotifier {
-  ValuationCalculatorViewModel({int? funding, double? equityPercent}) {
+  // valuation = the startup's current valuation, used as the pre-money.
+  // if it's there, equity is worked out from it until the user types one.
+  ValuationCalculatorViewModel({
+    int? funding,
+    double? equityPercent,
+    int? valuation,
+    bool ownershipUnknown = false,
+  }) : _valuation = valuation != null && valuation > 0 ? valuation : null,
+       _fixedEquity = equityPercent,
+       _ownershipUnknown = ownershipUnknown {
     funds.text = funding == null ? '' : _group(funding);
-    equity.text = equityPercent == null ? '' : formatNumber(equityPercent);
-    ownership.text = lastOwnership;
+    equity.text = _equityText(_autoEquity ?? equityPercent);
+    _shownEquity = equity.text;
+    // starts fresh every time, nothing is saved
+    ownership.text = ownershipUnknown ? '' : '100';
     _startFunds = funds.text;
-    _startEquity = equity.text;
     _startOwnership = ownership.text;
     for (final c in [funds, equity, ownership]) {
       c.addListener(_changed);
@@ -23,8 +34,11 @@ class ValuationCalculatorViewModel extends ChangeNotifier with SafeNotifier {
   }
 
   late final String _startFunds;
-  late final String _startEquity;
   late final String _startOwnership;
+
+  // last equity text we filled in ourselves
+  String _shownEquity = '';
+  bool _syncing = false;
 
   // A field only shows its error once the founder has typed in it: opening
   // the calculator with empty boxes must not look like a mistake.
@@ -32,19 +46,55 @@ class ValuationCalculatorViewModel extends ChangeNotifier with SafeNotifier {
   bool _equityTouched = false;
   bool _ownershipTouched = false;
 
-  /// The ownership typed last, kept for the next time the calculator opens
-  /// from Manage (default 100).
-  static String lastOwnership = '100';
+  final int? _valuation;
+  final double? _fixedEquity;
+  final bool _ownershipUnknown;
+
+  // equity % = funding / (valuation + funding)
+  static double? equityAt({int? funding, int? valuation}) {
+    if (funding == null || valuation == null || valuation <= 0) return null;
+    return _equityFor(funding.toDouble(), valuation);
+  }
+
+  static double? _equityFor(double funding, int valuation) =>
+      funding.isNaN || funding <= 0
+      ? null
+      : funding * 100 / (valuation + funding);
+
+  // 2 decimals max in the box
+  static String _equityText(double? e) =>
+      e == null ? '' : formatNumber((e * 100).round() / 100);
+
+  double? get _autoEquity {
+    final v = _valuation;
+    return v == null ? null : _equityFor(fundingValue, v);
+  }
 
   final funds = TextEditingController();
   final equity = TextEditingController();
   final ownership = TextEditingController();
 
+  // hint under the ownership box when it's empty
+  String? get ownershipHint =>
+      _ownershipUnknown && ownership.text.trim().isEmpty
+      ? FounderToolsStrings.calcOwnershipHint
+      : null;
+
   void _changed() {
-    lastOwnership = ownership.text;
+    if (_syncing) return;
     if (funds.text != _startFunds) _fundsTouched = true;
-    if (equity.text != _startEquity) _equityTouched = true;
+    if (equity.text != _shownEquity) _equityTouched = true;
     if (ownership.text != _startOwnership) _ownershipTouched = true;
+    // user hasn't typed an equity yet, so keep it matching the funding
+    if (!_equityTouched && _valuation != null) {
+      final text = _equityText(_autoEquity);
+      if (text != equity.text) {
+        _syncing = true;
+        equity.text = text;
+        _syncing = false;
+        _shownEquity = text;
+      }
+    }
     notifyListeners();
   }
 
@@ -52,12 +102,17 @@ class ValuationCalculatorViewModel extends ChangeNotifier with SafeNotifier {
   /// there is nothing to read.
   static double parse(String text) {
     final clean = text.replaceAll(RegExp(r'[^0-9.]'), '');
-    final m = RegExp(r'^\d*\.?\d*').firstMatch(clean)?.group(0) ?? '';
-    return double.tryParse(m) ?? double.nan;
+    // more than one dot isn't a number
+    if ('.'.allMatches(clean).length > 1) return double.nan;
+    return double.tryParse(clean) ?? double.nan;
   }
 
   double get fundingValue => parse(funds.text);
-  double get equityValue => parse(equity.text);
+  double get equityValue {
+    if (_equityTouched) return parse(equity.text);
+    if (_valuation != null) return _autoEquity ?? double.nan;
+    return _fixedEquity ?? parse(equity.text);
+  }
   double get ownershipValue => parse(ownership.text);
 
   bool get _fundingBad => !(fundingValue > 0);
@@ -120,14 +175,17 @@ class ValuationCalculatorViewModel extends ChangeNotifier with SafeNotifier {
 
   String get postText => isValid ? sar(post) : 'SAR —';
   String get workText => isValid
-      ? '${sar(fundingValue)} ÷ ${formatNumber(equityValue)}%'
+      ? '${sar(fundingValue)} ÷ ${_two(equityValue)}%'
       : 'Fill in the fields above';
   String get preText => isValid ? sar(pre) : 'SAR —';
   String get shareText => isValid ? sar(shareValue) : 'SAR —';
   String get youWork =>
-      '${formatNumber(ownershipValue)}% × ${formatNumber(100 - equityValue)}%';
+      '${_two(ownershipValue)}% × ${_two(100 - equityValue)}%';
   String get othersWork =>
-      '${formatNumber(100 - ownershipValue)}% × ${formatNumber(100 - equityValue)}%';
+      '${_two(100 - ownershipValue)}% × ${_two(100 - equityValue)}%';
+
+  // round to 2 decimals so it doesn't show 33.400000000000006
+  static String _two(double v) => formatNumber((v * 100).round() / 100);
 
   @override
   void dispose() {
