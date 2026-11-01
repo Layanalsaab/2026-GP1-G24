@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import '../../../app_constants/founder_tools_strings.dart';
 import '../../../models/funding_round.dart';
@@ -71,6 +70,8 @@ class ValuationCalculatorScreen extends StatefulWidget {
         funding: funding,
         equityPercent: equityPercent,
         round: round,
+        // so a request's terms can be compared with the startup's valuation
+        valuation: startup.valuation,
       ),
       greenHeader: true,
     );
@@ -189,7 +190,7 @@ class _InputsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final decimal = [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))];
+    final decimal = [ValuationCalculatorViewModel.percentInput];
     return ManageCard(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -267,7 +268,6 @@ class _InputsCard extends StatelessWidget {
             input: AppTextField(
               controller: vm.equity,
               suffix: '%',
-              maxLength: 5,
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
               ),
@@ -285,7 +285,6 @@ class _InputsCard extends StatelessWidget {
             input: AppTextField(
               controller: vm.ownership,
               suffix: '%',
-              maxLength: 5,
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
               ),
@@ -389,6 +388,35 @@ class _ResultCard extends StatelessWidget {
               ),
             ],
           ),
+          if (vm.valuationNote != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 14),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    vm.valuationLower! ? '↓' : '↑',
+                    style: AppText.sans(
+                      size: 15,
+                      height: 19,
+                      weight: FontWeight.w700,
+                      color: AppColors.gold,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      vm.valuationNote!,
+                      style: AppText.sans(
+                        size: 13,
+                        height: 19,
+                        color: AppColors.onGreenMuted,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
         ],
       ),
     );

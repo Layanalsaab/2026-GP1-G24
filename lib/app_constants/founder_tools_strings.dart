@@ -323,6 +323,18 @@ class FounderToolsStrings {
       'Round $number · $type · $raised raised so far';
   static const calcOwnershipHint =
       'You had earlier rounds or have co-founders, so you probably own less than 100%. Enter your share.';
+  // under the green card when the terms don't match the startup's valuation
+  static String calcValuationNote({
+    required bool lower,
+    required String valuation,
+    required String funding,
+    required String own,
+    required String shown,
+  }) =>
+      '${lower ? 'Lower' : 'Higher'} than your valuation ($valuation). '
+      'At your valuation, $funding would cost $own of your company, '
+      'not $shown, so you\'d ${lower ? 'give away more' : 'keep more'}.';
+
   static const calcNote =
       'This is the valuation your chosen terms imply, not a market valuation of your startup.';
 
@@ -346,7 +358,7 @@ class FounderToolsStrings {
     ),
     'pre': (
       'Pre-money valuation',
-      'What your company is worth just before the investment. Post-money valuation − funding.',
+      'What your company is worth just before the investment. Post-money valuation − funding. If it’s different from your current valuation, a note under the result shows what the same money would cost at your own valuation.',
     ),
     'val': (
       'Value of your share',

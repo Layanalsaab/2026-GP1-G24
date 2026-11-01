@@ -122,6 +122,7 @@ class ValidationStrings {
 
   // ---- Valuation calculator ----
   static const calcFunding = 'Enter the amount you want to raise.';
+  static const calcFundingMin = 'The amount must be at least SAR 1,000.';
   static const calcEquity = 'Enter a percentage above 0 and below 100.';
-  static const calcOwnership = 'Enter a percentage between 0 and 100.';
+  static const calcOwnership = 'Enter a percentage above 0 and up to 100.';
 }

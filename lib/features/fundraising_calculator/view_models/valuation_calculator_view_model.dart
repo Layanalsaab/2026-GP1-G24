@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
 import '../../../app_constants/founder_tools_strings.dart';
@@ -13,6 +14,7 @@ import '../../../helpers/safe_notifier.dart';
 class ValuationCalculatorViewModel extends ChangeNotifier with SafeNotifier {
   // valuation = the startup's current valuation, used as the pre-money.
   // if it's there, equity is worked out from it until the user types one.
+  // from a request the equity is the investor's, so it doesn't follow.
   ValuationCalculatorViewModel({
     int? funding,
     double? equityPercent,
@@ -20,9 +22,10 @@ class ValuationCalculatorViewModel extends ChangeNotifier with SafeNotifier {
     bool ownershipUnknown = false,
   }) : _valuation = valuation != null && valuation > 0 ? valuation : null,
        _fixedEquity = equityPercent,
+       _follow = equityPercent == null,
        _ownershipUnknown = ownershipUnknown {
     funds.text = funding == null ? '' : _group(funding);
-    equity.text = _equityText(_autoEquity ?? equityPercent);
+    equity.text = _equityText(_follow ? _autoEquity : equityPercent);
     _shownEquity = equity.text;
     // starts fresh every time, nothing is saved
     ownership.text = ownershipUnknown ? '' : '100';
@@ -48,6 +51,7 @@ class ValuationCalculatorViewModel extends ChangeNotifier with SafeNotifier {
 
   final int? _valuation;
   final double? _fixedEquity;
+  final bool _follow;
   final bool _ownershipUnknown;
 
   // equity % = funding / (valuation + funding)
@@ -86,7 +90,7 @@ class ValuationCalculatorViewModel extends ChangeNotifier with SafeNotifier {
     if (equity.text != _shownEquity) _equityTouched = true;
     if (ownership.text != _startOwnership) _ownershipTouched = true;
     // user hasn't typed an equity yet, so keep it matching the funding
-    if (!_equityTouched && _valuation != null) {
+    if (!_equityTouched && _follow && _valuation != null) {
       final text = _equityText(_autoEquity);
       if (text != equity.text) {
         _syncing = true;
@@ -97,6 +101,20 @@ class ValuationCalculatorViewModel extends ChangeNotifier with SafeNotifier {
     }
     notifyListeners();
   }
+
+  // percent boxes: a number from 0 to 100, one dot, 2 decimals at most
+  // (same as shown), no extra zeros in front. anything else can't be typed.
+  static final percentInput = TextInputFormatter.withFunction((
+    oldValue,
+    newValue,
+  ) {
+    final t = newValue.text;
+    if (!RegExp(r'^(0|[1-9]\d{0,2})?(\.\d{0,2})?$').hasMatch(t)) {
+      return oldValue;
+    }
+    final v = double.tryParse(t);
+    return v != null && v > 100 ? oldValue : newValue;
+  });
 
   /// JavaScript-like `parseFloat` of the digits and dots in [text]; NaN when
   /// there is nothing to read.
@@ -110,21 +128,26 @@ class ValuationCalculatorViewModel extends ChangeNotifier with SafeNotifier {
   double get fundingValue => parse(funds.text);
   double get equityValue {
     if (_equityTouched) return parse(equity.text);
-    if (_valuation != null) return _autoEquity ?? double.nan;
+    if (_follow && _valuation != null) return _autoEquity ?? double.nan;
     return _fixedEquity ?? parse(equity.text);
   }
   double get ownershipValue => parse(ownership.text);
 
-  bool get _fundingBad => !(fundingValue > 0);
+  // same minimum as the other money boxes in the app
+  static const minFunding = 1000;
+
+  bool get _fundingBad => !(fundingValue >= minFunding);
   bool get _equityBad => !(equityValue > 0 && equityValue < 100);
-  bool get _ownershipBad =>
-      ownershipValue.isNaN || ownershipValue < 0 || ownershipValue > 100;
+  // a founder can't own 0%
+  bool get _ownershipBad => !(ownershipValue > 0 && ownershipValue <= 100);
 
   /// The messages shown under the boxes: only for a box the founder has
   /// typed in (an untouched, empty box is not red).
   String? get fundingError =>
       _fundingBad && (_fundsTouched || funds.text.isNotEmpty)
-      ? ValidationStrings.calcFunding
+      ? (fundingValue > 0
+            ? ValidationStrings.calcFundingMin
+            : ValidationStrings.calcFunding)
       : null;
 
   String? get equityError =>
@@ -147,6 +170,31 @@ class ValuationCalculatorViewModel extends ChangeNotifier with SafeNotifier {
       isValid ? (100 - ownershipValue) * (100 - equityValue) / 100 : 0;
   double get newInvestors => isValid ? equityValue : 0;
   double get shareValue => post * you / 100;
+
+  // the note under the green card when these terms don't match the
+  // startup's own valuation. null when they match or there's no valuation.
+  bool? get valuationLower {
+    final v = _valuation;
+    if (v == null || !isValid) return null;
+    final own = _equityFor(fundingValue, v);
+    // compare what's shown (2 decimals) so rounding never makes a note
+    if (own == null || _two(own) == _two(equityValue)) return null;
+    return equityValue > own;
+  }
+
+  String? get valuationNote {
+    final lower = valuationLower;
+    final v = _valuation;
+    if (lower == null || v == null) return null;
+    final own = _equityFor(fundingValue, v)!;
+    return FounderToolsStrings.calcValuationNote(
+      lower: lower,
+      valuation: sar(v.toDouble()),
+      funding: sar(fundingValue),
+      own: '${_two(own)}%',
+      shown: '${_two(equityValue)}%',
+    );
+  }
 
   /// The "Other existing owners" row only shows below 100 % ownership.
   bool get hasOthers => isValid && ownershipValue < 100;

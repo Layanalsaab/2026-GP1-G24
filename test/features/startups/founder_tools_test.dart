@@ -287,6 +287,96 @@ void main() {
       expect(vm.workText, 'SAR 2,000,000 ÷ 22.22%');
     });
 
+    test('a note when the terms don\'t match the valuation', () {
+      final vm = ValuationCalculatorViewModel(
+        funding: 3000000,
+        valuation: 9000000,
+      );
+      addTearDown(vm.dispose);
+      // just opened: same as the valuation, no note
+      expect(vm.valuationNote, isNull);
+      vm.funds.text = '4,000,000';
+      expect(vm.valuationNote, isNull, reason: 'equity followed the funding');
+      vm.funds.text = '3,000,000';
+      vm.equity.text = '30';
+      expect(vm.preText, 'SAR 7,000,000');
+      expect(vm.valuationLower, isTrue);
+      expect(
+        vm.valuationNote,
+        'Lower than your valuation (SAR 9,000,000). At your valuation, '
+        'SAR 3,000,000 would cost 25% of your company, not 30%, so you\'d '
+        'give away more.',
+      );
+      vm.equity.text = '20';
+      expect(vm.valuationLower, isFalse);
+      expect(vm.valuationNote, startsWith('Higher than your valuation'));
+      expect(vm.valuationNote, endsWith('so you\'d keep more.'));
+      vm.equity.text = '25';
+      expect(vm.valuationNote, isNull);
+      vm.equity.text = '';
+      expect(vm.valuationNote, isNull, reason: 'no result, no note');
+    });
+
+    test('a request keeps its equity and is compared too', () {
+      final vm = ValuationCalculatorViewModel(
+        funding: 1000000,
+        equityPercent: 12.5,
+        valuation: 9000000,
+      );
+      addTearDown(vm.dispose);
+      expect(vm.equity.text, '12.5');
+      expect(vm.preText, 'SAR 7,000,000');
+      expect(vm.valuationNote, contains('would cost 10% of your company'));
+      vm.funds.text = '2,000,000';
+      expect(vm.equity.text, '12.5', reason: 'the investor\'s equity stays');
+    });
+
+    test('funding at least 1,000, ownership above 0, 2 decimals', () {
+      final vm = ValuationCalculatorViewModel(funding: 3000000, valuation: 9000000);
+      addTearDown(vm.dispose);
+      vm.funds.text = '500';
+      expect(vm.fundingError, 'The amount must be at least SAR 1,000.');
+      expect(vm.isValid, isFalse);
+      vm.funds.text = '';
+      expect(vm.fundingError, 'Enter the amount you want to raise.');
+      vm.funds.text = '1,000';
+      expect(vm.fundingError, isNull);
+      vm.ownership.text = '0';
+      expect(vm.ownershipError, 'Enter a percentage above 0 and up to 100.');
+      vm.ownership.text = '100';
+      expect(vm.ownershipError, isNull);
+      // the percent boxes take one dot and 2 decimals at most
+      String type(String old, String next) => ValuationCalculatorViewModel
+          .percentInput
+          .formatEditUpdate(
+            TextEditingValue(text: old),
+            TextEditingValue(text: next),
+          )
+          .text;
+      expect(type('25.7', '25.75'), '25.75');
+      expect(type('25.75', '25.755'), '25.75');
+      expect(type('2.5', '2.5.'), '2.5');
+      expect(type('', 'a'), '');
+      // nothing above 100, no extra zeros in front
+      expect(type('100', '1000'), '100');
+      expect(type('10', '101'), '10');
+      expect(type('100', '100.5'), '100');
+      expect(type('0', '00'), '0');
+      expect(type('0', '05'), '0');
+      expect(type('0', '0.5'), '0.5');
+      expect(type('99.9', '99.99'), '99.99');
+    });
+
+    test('rounding never makes a note', () {
+      final vm = ValuationCalculatorViewModel(
+        funding: 2000000,
+        valuation: 7000000,
+      );
+      addTearDown(vm.dispose);
+      vm.equity.text = '22.22';
+      expect(vm.valuationNote, isNull);
+    });
+
     test('co-founders or earlier rounds: ownership asks, with a hint', () {
       final vm = ValuationCalculatorViewModel(
         funding: 2000000,
@@ -355,7 +445,7 @@ void main() {
       addTearDown(vm.dispose);
       expect(vm.ownership.text, '100');
       vm.ownership.text = '120';
-      expect(vm.ownershipError, 'Enter a percentage between 0 and 100.');
+      expect(vm.ownershipError, 'Enter a percentage above 0 and up to 100.');
     });
   });
 
