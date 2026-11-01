@@ -38,13 +38,22 @@ class Recommender {
     final sector =
         criteria.sectors.contains(startup.sectorLabel) ||
         criteria.sectors.contains(startup.sector.label);
+    // One of the OTHER sectors of the startup: a weaker match.
+    final otherSector =
+        !sector && startup.otherSectors.any(criteria.sectors.contains);
     final stage =
         criteria.stages.contains(startup.stageLabel) ||
         criteria.stages.contains(startup.stage.label);
     final model = criteria.commerceModels.contains(startup.businessModel.label);
     final region =
         investorCity != null && investorCity == startup.location.label;
-    return _result(sector: sector, stage: stage, model: model, region: region);
+    return _result(
+      sector: sector,
+      otherSector: otherSector,
+      stage: stage,
+      model: model,
+      region: region,
+    );
   }
 
   /// A [startup] looking for investors against an [investor] profile. Null
@@ -54,9 +63,17 @@ class Recommender {
     InvestorProfile investor,
   ) {
     final sector = investor.sectors.contains(startup.sectorLabel);
+    final otherSector =
+        !sector && startup.otherSectors.any(investor.sectors.contains);
     final stage = investor.stages.contains(startup.stageLabel);
     final region = investor.city == startup.location.label;
-    return _result(sector: sector, stage: stage, model: false, region: region);
+    return _result(
+      sector: sector,
+      otherSector: otherSector,
+      stage: stage,
+      model: false,
+      region: region,
+    );
   }
 
   static MatchResult? _result({
@@ -64,17 +81,18 @@ class Recommender {
     required bool stage,
     required bool model,
     required bool region,
+    bool otherSector = false,
   }) {
-    if (!sector && !stage) return null;
+    if (!sector && !otherSector && !stage) return null;
     final score =
-        (sector ? sectorWeight : 0) +
+        (sector ? sectorWeight : (otherSector ? sectorWeight / 2 : 0)) +
         (stage ? stageWeight : 0) +
         (model ? modelWeight : 0) +
         (region ? regionWeight : 0);
     // Spread 0..1 over 50..99 so a weak match never reads as "12%".
     final percent = (50 + score * 49).round().clamp(50, 99);
     final parts = [
-      if (sector) 'sector',
+      if (sector) 'sector' else if (otherSector) 'secondary sector',
       if (stage) 'stage',
       if (region) 'region',
     ];

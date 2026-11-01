@@ -14,39 +14,56 @@
             padding:28px 24px; text-align:center; }
     .logo { width:56px; height:56px; border-radius:16px; margin:0 auto 16px; background:linear-gradient(145deg,#faf3e3,#f2e6c9);
             display:flex; align-items:center; justify-content:center; color:#7a5a12; font-weight:700; font-size:20px; }
-    h1 { font-size:21px; margin:0 0 10px; }
+    h1 { font-size:21px; margin:0 0 14px; }
     p { font-size:15px; line-height:22px; color:var(--grey); margin:0 0 12px; }
-    .steps { text-align:left; margin:18px 0 0; padding:14px 16px; background:#f2f7f3; border-radius:14px; color:var(--ink); }
-    .steps ol { margin:6px 0 0; padding-left:20px; }
-    .steps li { margin:6px 0; font-size:14.5px; line-height:21px; }
+    /* Shown on Android only (see the script below). */
+    .open { display:none; align-items:center; justify-content:center; width:100%; min-height:56px;
+            margin:6px 0 18px; padding:14px 18px; border-radius:14px; background:#1e7a3c; color:#fff;
+            font-size:17px; font-weight:700; text-decoration:none; }
+    .open:active { background:#17622f; }
+    .android .open { display:flex; }
   </style>
 </head>
 <body>
   <main class="card">
     <div class="logo">S</div>
     <h1>You’re invited to join a team on Start.sa</h1>
-    <p>This link opens the Start.sa app. It looks like the app isn’t installed on this phone yet.</p>
-    <div class="steps">
-      <strong>To join, install the Start.sa app:</strong>
-      <ol>
-        <li>Install the Start.sa app.</li>
-        <li>Come back to your email and tap the button again.</li>
-        <li id="last">Sign in or create your account <strong>using the email the invitation was sent to</strong>.</li>
-      </ol>
-    </div>
+
+    <!-- Android only: opens THIS invite link in the Start.sa app, addressed to
+         the app by its package name. That works even when Android has not
+         verified the App Link (verification only decides who opens a plain
+         https link, not an intent sent straight to the app). The script below
+         adds the invitation id and a way back to this page. -->
+    <a id="open" class="open"
+       href="intent://startsa-ea49e.web.app/invite#Intent;scheme=https;package=com.example.startsa;end">Open the Start.sa app</a>
+
+    <p id="how">Sign up or log in with the email this invitation was sent to, and you’ll be added to the team automatically. Don’t have the app yet? Install it, then come back to this email.</p>
   </main>
   <script>
-    // Somebody with no Start.sa account yet is only told to create one.
     (function () {
+      // The button is for Android phones. On an iPhone or a computer only the
+      // text shows.
+      if (/Android/i.test(navigator.userAgent)) {
+        document.documentElement.className += ' android';
+      }
       var id = new URLSearchParams(location.search).get('i');
+      // The button opens this same invite link in the app (package
+      // com.example.startsa). If the app is not installed, Chrome comes back
+      // to this page instead of going to the Play Store.
+      document.getElementById('open').href =
+        'intent://startsa-ea49e.web.app/invite' +
+        (id ? '?i=' + encodeURIComponent(id) : '') +
+        '#Intent;scheme=https;package=com.example.startsa;' +
+        'S.browser_fallback_url=' + encodeURIComponent(location.href) + ';end';
+      // Somebody with no Start.sa account yet is only told to sign up.
       if (!id) return;
       fetch('https://firestore.googleapis.com/v1/projects/startsa-ea49e/databases/(default)/documents/invitations/' + encodeURIComponent(id))
         .then(function (r) { return r.ok ? r.json() : null; })
         .then(function (d) {
           var f = d && d.fields;
           if (f && f.newUser && f.newUser.booleanValue) {
-            document.getElementById('last').innerHTML =
-              'Create your account <strong>using the email the invitation was sent to</strong>.';
+            document.getElementById('how').textContent =
+              'Sign up with the email this invitation was sent to, and you’ll be added to the team automatically. Don’t have the app yet? Install it, then come back to this email.';
           }
         })
         .catch(function () {});

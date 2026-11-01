@@ -74,8 +74,8 @@ class FounderToolsStrings {
   static const descriptionLabel = 'Brief description';
   static const descriptionHint = 'Describe your startup';
   static const sectorLabel = 'Sector';
-  static const sectorHint = 'Select a sector';
-  static const sectorTitle = 'Select sector';
+  static const sectorHint = 'Select sectors';
+  static const sectorTitle = 'Select sectors';
   static const sectorSearch = 'Search sectors';
   static const sectorNoResults = 'No sectors found';
   static const sectorNoun = 'sector';

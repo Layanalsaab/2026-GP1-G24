@@ -520,7 +520,6 @@ void main() {
     void answerStep3(InvestorOnboardingViewModel vm) {
       vm.pickYears('1–3 years');
       vm.pickDeals('1–3');
-      vm.pickLed('No');
       vm.roundSize.min.text = '1,000';
       vm.roundSize.max.text = '5,000';
     }
@@ -536,7 +535,6 @@ void main() {
       final vm = make();
       vm.pickYears('1–3 years');
       vm.pickDeals('0');
-      vm.pickLed('Yes');
       expect(vm.showRoundSize, isFalse);
       expect(vm.step3Complete, isTrue);
       vm.roundSize.min.text = '10';
@@ -551,14 +549,12 @@ void main() {
       expect(vm.dealsError, isNull);
       expect(vm.tryStep3(), isFalse);
       expect(vm.dealsError, ValidationStrings.selectOne);
-      expect(vm.ledError, ValidationStrings.chooseOne);
     });
 
     test('size errors show one at a time, in order', () {
       final vm = make();
       vm.pickYears('1–3 years');
       vm.pickDeals('4–6');
-      vm.pickLed('Yes');
       expect(vm.roundSizeError, isNull);
       expect(vm.tryStep3(), isFalse);
       expect(vm.roundSizeError, ValidationStrings.roundMinEmpty);
@@ -629,7 +625,8 @@ void main() {
       expect(users.onboardingSaves, 1);
       final c = users.savedInvestorCriteria!;
       expect(c.dealsCount, '1–3');
-      expect(c.hasLedRound, isFalse);
+      // "Have you ever led an investment round?" is no longer asked.
+      expect(c.hasLedRound, isNull);
       expect(c.roundMin, 1000000);
       expect(c.roundMax, 5000000);
       expect(c.yearsInvesting, '1–3 years');

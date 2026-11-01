@@ -54,7 +54,6 @@ class ProfileStrings {
   static const yearsOfInvesting = 'Years of investing';
   static const startupsInvested = 'Startups Invested';
   static const roundSize = 'Round Size';
-  static const ledARound = 'Led a round';
   static const yes = 'Yes';
   static const no = 'No';
   static const interests = 'Investment Interests';

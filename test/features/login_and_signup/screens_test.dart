@@ -507,7 +507,8 @@ void main() {
     await t.tap(find.text('Next'));
     await t.pump(const Duration(milliseconds: 300));
     expect(find.text('Enter the minimum amount.'), findsOneWidget);
-    expect(find.text('Please choose one.'), findsOneWidget);
+    // No "led a round" question any more, so no "choose one" message.
+    expect(find.text('Please choose one.'), findsNothing);
     await t.tap(find.text('1–3'));
     await t.pumpAndSettle();
     await t.tap(find.text('0').last);

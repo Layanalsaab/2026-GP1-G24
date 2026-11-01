@@ -324,6 +324,7 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
   /// The startup fields matching reads (lib/recommender/knowledge_filter).
   static const _startupMatchFields = [
     'sector',
+    'otherSectors',
     'stage',
     'businessModel',
     'lookingFor',

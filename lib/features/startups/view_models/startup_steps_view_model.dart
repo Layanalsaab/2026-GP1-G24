@@ -145,7 +145,7 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
     'description': description.text,
     'founded': founded.text,
     'website': website.text,
-    'sector': sector?.value,
+    'sectors': sectorPicks,
     'sectorOther': sectorOther.text,
     'stage': stage?.value,
     'model': model?.value,
@@ -203,7 +203,16 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
         : t('pitch');
     founded.text = t('founded');
     website.text = t('website');
-    sector = Sector.fromValue(d['sector']);
+    sectorPicks.clear();
+    if (d['sectors'] is List) {
+      sectorPicks.addAll([
+        for (final v in d['sectors'] as List)
+          if (v is String && !sectorPicks.contains(v)) v,
+      ]);
+    } else if (Sector.fromValue(d['sector']) case final old?) {
+      // A draft saved when only one sector could be picked.
+      sectorPicks.add(old.label);
+    }
     sectorOther.text = t('sectorOther');
     final draftStage = StartupStage.fromValue(d['stage']);
     stage = StartupStage.picks.contains(draftStage) ? draftStage : null;
@@ -379,7 +388,14 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
   final website = TextEditingController();
   final sectorOther = TextEditingController();
   final modelOther = TextEditingController();
-  Sector? sector;
+
+  /// The sectors picked, in the order they were picked (the labels; "Other"
+  /// stands for the typed [sectorOther]). The FIRST one is the main sector.
+  final List<String> sectorPicks = [];
+
+  /// The main sector: the first one picked.
+  Sector? get sector =>
+      sectorPicks.isEmpty ? null : Sector.fromLabel(sectorPicks.first);
   StartupStage? stage;
   BusinessModel? model;
   StartupLocation? city;
@@ -498,7 +514,10 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
         ...modelAlsoCountsAs,
       ]);
 
-  bool get isSectorOther => sector == Sector.other;
+  /// "Other" is ticked (in any position).
+  bool get isSectorOther => sectorPicks.contains(_other);
+
+  static const _other = 'Other';
   bool get isModelOther => model == BusinessModel.other;
   bool get wantsFunding => lookingFor.contains(LookingFor.funding);
   bool get wantsPartner => lookingFor.contains(LookingFor.partnership);
@@ -553,10 +572,7 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
       case StartupField.description:
         return StartupValidators.description(description.text);
       case StartupField.sector:
-        return StartupValidators.selected(
-          sector,
-          ValidationStrings.startupSector,
-        );
+        return sectorPicks.isEmpty ? ValidationStrings.startupSector : null;
       case StartupField.sectorOther:
         if (sectorOtherRepeats) return ValidationStrings.otherRepeats;
         return isSectorOther && _blank(sectorOther)
@@ -772,8 +788,20 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
     notifyListeners();
   }
 
+  /// Ticks / unticks one sector (the first one ticked is the main one).
+  void toggleSector(String label) => _touch(() {
+    if (!sectorPicks.remove(label)) {
+      sectorPicks.add(label);
+    } else if (label == _other) {
+      sectorOther.clear();
+    }
+  });
+
+  /// Sets ONE sector (and the typed text for "Other").
   void selectSector(String label, String? other) => _touch(() {
-    sector = Sector.fromLabel(label);
+    sectorPicks
+      ..clear()
+      ..add(label);
     sectorOther.text = other ?? '';
   });
 
@@ -1376,7 +1404,16 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
       name: name.text.trim(),
       description: description.text.trim(),
       sector: sector ?? initial!.sector,
-      sectorOther: isSectorOther ? sectorOther.text.trim() : null,
+      // The typed text belongs to the main sector only when "Other" is it.
+      sectorOther: sector == Sector.other ? sectorOther.text.trim() : null,
+      // The other picks, in order ("Other" replaced by what was typed).
+      otherSectors: [
+        for (final p in sectorPicks.skip(1))
+          if (p != _other)
+            p
+          else if (sectorOther.text.trim().isNotEmpty)
+            sectorOther.text.trim(),
+      ],
       stage: stage ?? initial!.stage,
       businessModel: model ?? initial!.businessModel,
       businessModelOther: isModelOther ? modelOther.text.trim() : null,
@@ -1511,8 +1548,19 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
     description.text = s.briefDescription;
     founded.text = s.foundedYear?.toString() ?? '';
     website.text = s.websiteUrl ?? '';
-    sector = s.sector;
-    sectorOther.text = s.sectorOther ?? '';
+    sectorPicks
+      ..clear()
+      ..add(s.sector.label);
+    sectorOther.text = s.sector == Sector.other ? (s.sectorOther ?? '') : '';
+    for (final o in s.otherSectors) {
+      if (Sector.fromLabel(o) != null) {
+        if (!sectorPicks.contains(o)) sectorPicks.add(o);
+      } else if (!sectorPicks.contains(_other)) {
+        // A typed "Other" sector.
+        sectorPicks.add(_other);
+        sectorOther.text = o;
+      }
+    }
     // A stage or commerce model that is no longer offered stays empty, so
     // the founder picks a real one the next time.
     stage = StartupStage.picks.contains(s.stage) ? s.stage : null;

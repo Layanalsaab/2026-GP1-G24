@@ -105,6 +105,10 @@ class StartupFields {
   static const description = 'description';
   static const sector = 'sector';
   static const sectorOther = 'sectorOther';
+
+  /// The sectors after the main one (`sector`): their display labels, the
+  /// typed text for "Other". Older startups don't have it.
+  static const otherSectors = 'otherSectors';
   static const stage = 'stage';
   static const stageOther = 'stageOther';
   static const businessModel = 'businessModel';

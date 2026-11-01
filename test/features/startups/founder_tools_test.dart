@@ -399,7 +399,10 @@ void main() {
     });
 
     test('funding at least 1,000, ownership above 0, 2 decimals', () {
-      final vm = ValuationCalculatorViewModel(funding: 3000000, valuation: 9000000);
+      final vm = ValuationCalculatorViewModel(
+        funding: 3000000,
+        valuation: 9000000,
+      );
       addTearDown(vm.dispose);
       vm.funds.text = '500';
       expect(vm.fundingError, 'The amount must be at least SAR 1,000.');

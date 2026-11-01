@@ -329,7 +329,8 @@ service cloud.firestore {
                               'stage', 'businessModel', 'location',
                               'lookingFor', 'isPublic'])
         && d.keys().hasOnly(['founderId', 'name', 'oneLinePitch', 'description',
-                             'sector', 'sectorOther', 'stage', 'stageOther',
+                             'sector', 'sectorOther', 'otherSectors', 'stage',
+                             'stageOther',
                              'businessModel', 'businessModelOther',
                              'location', 'foundedYear', 'websiteUrl',
                              'lookingFor', 'lookingForOther',
@@ -348,7 +349,6 @@ service cloud.firestore {
                              'partnerTypes', 'supportTypes'])
         && d.name is string && d.name.size() >= 1 && d.name.size() <= 40
         // The one-line pitch: at most 120.
-        && optionalString(d, 'oneLinePitch', 120)
         && d.description is string && d.description.size() <= 1500
         && d.sector is string && d.sector.matches('^(healthtech|fintech|edtech|ecommerce|logistics|agritech|proptech|cleantech|tourism|saas|ai|cybersecurity|gaming|media|foodtech|mobility|retail|energy|insurtech|legaltech|hr_tech|biotech|manufacturing|sports|other|hrtech|ecommerce_retail|logistics_transport|food_beverage|software_cloud)$')
         && d.stage is string && d.stage.matches('^(pre_seed|seed|series_a|series_b|series_c|other|idea|mvp|early_revenue|growth)$')
@@ -368,19 +368,19 @@ service cloud.firestore {
         && validOther(d, 'stageOther', d.stage)
         && validOther(d, 'businessModelOther', d.businessModel)
         && optionalString(d, 'lookingForOther', 40)
+        // The sectors after the main one (any number, at most all 25).
+        && (!('otherSectors' in d) || (d.otherSectors is list && d.otherSectors.size() <= 30))
         && (!('other' in d.lookingFor)
             || ('lookingForOther' in d && d.lookingForOther is string
                 && d.lookingForOther.size() >= 1))
         && validFoundedYear(d)
         && optionalString(d, 'websiteUrl', 2048)
-        && optionalString(d, 'logoUrl', 2048)
         // The logo: a small compressed picture saved as base64 text.
         && optionalString(d, 'logoData', 150000)
         && optionalString(d, 'problem', 1000)
         && optionalString(d, 'solution', 1000)
         && optionalString(d, 'targetCustomers', 1000)
         && optionalString(d, 'differentiation', 1000)
-        && optionalString(d, 'expectedGrowth', 1000)
         && optionalMoney(d, 'marketSizeTam')
         && optionalMoney(d, 'marketSizeSam')
         && optionalMoney(d, 'marketSizeSom')

@@ -157,11 +157,6 @@ class InvestorProfileBody extends StatelessWidget {
         (ProfileStrings.startupsInvested, d.startupsInvested),
       if (d.startupsInvested != '0' && d.roundSize.isNotEmpty)
         (ProfileStrings.roundSize, d.roundSize),
-      if (d.ledRound != null)
-        (
-          ProfileStrings.ledARound,
-          d.ledRound! ? ProfileStrings.yes : ProfileStrings.no,
-        ),
     ];
     final hasInterests =
         d.sectors.isNotEmpty ||

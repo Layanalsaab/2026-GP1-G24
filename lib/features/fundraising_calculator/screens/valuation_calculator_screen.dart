@@ -249,9 +249,7 @@ class _InputsCard extends StatelessWidget {
                 : FounderToolsStrings.calcRoundHint(
                     round!.number,
                     round!.typeLabel,
-                    ValuationCalculatorViewModel.sar(
-                      round!.raised.toDouble(),
-                    ),
+                    ValuationCalculatorViewModel.sar(round!.raised.toDouble()),
                   ),
             input: MoneyField(
               controller: vm.funds,

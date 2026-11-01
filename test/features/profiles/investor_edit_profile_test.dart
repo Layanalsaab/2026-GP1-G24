@@ -60,7 +60,6 @@ void main() {
       'What are you looking for in startups?',
       'How many years have you been investing?',
       'How many startups have you invested in so far?',
-      'Have you ever led an investment round?',
       'Which sectors are you interested in?',
       'Which stages do you invest in?',
       'Which commerce models do you invest in?',

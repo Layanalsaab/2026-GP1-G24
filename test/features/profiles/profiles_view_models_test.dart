@@ -273,7 +273,6 @@ void main() {
         expect(c.dealsError, isNotNull);
         c.pickYears('1–3 years');
         c.pickDeals('0');
-        c.pickLed('No');
         c.toggleSector('HealthTech');
         c.toggleStage('Seed');
         c.toggleModel('Business-to-Business (B2B)');

@@ -83,6 +83,10 @@ class MatchStartup {
   MatchStartup.fromMap(this.id, Map<String, dynamic> data)
     : name = (data['name'] as String?) ?? '',
       sector = data['sector'] as String?,
+      otherSectors = {
+        for (final v in (data['otherSectors'] as List?) ?? const [])
+          if (v is String && sectorValue[v] != null) sectorValue[v]!,
+      },
       stage = data['stage'] as String?,
       businessModel = data['businessModel'] as String?,
       lookingFor = [
@@ -97,7 +101,13 @@ class MatchStartup {
 
   final String id;
   final String name;
+
+  /// The main sector (the first one the founder picked), as a stored value.
   final String? sector;
+
+  /// The sectors picked after the main one (stored values; a typed "Other"
+  /// sector can't be matched). They count as a WEAKER match than [sector].
+  final Set<String> otherSectors;
   final String? stage;
   final String? businessModel;
   final List<String> lookingFor;
@@ -168,6 +178,11 @@ bool? roundSizeFits(MatchInvestor investor, MatchStartup startup) {
   final need = startup.fundingRequirement!;
   return (lo == null || need >= lo) && (hi == null || need <= hi);
 }
+
+/// True when one of the startup's other (not main) sectors is one the
+/// investor invests in.
+bool sharesOtherSector(MatchInvestor investor, MatchStartup startup) =>
+    startup.otherSectors.any(investor.sectors.contains);
 
 /// The hard filters a pair fails; empty = the pair can match.
 List<String> failedFilters(MatchInvestor investor, MatchStartup startup) => [

@@ -69,7 +69,10 @@ class StartupProfilePane extends StatelessWidget {
     final s = viewModel.startup;
     final facts = <(String, String)>[
       ('Website', viewModel.website),
-      ('Sector', s.sectorLabel),
+      (
+        s.sectorLabels.length > 1 ? 'Sectors' : 'Sector',
+        s.sectorLabels.join(', '),
+      ),
       ('Stage', s.stageLabel),
       ('Commerce model', s.businessModelLabel),
       ('Headquarters', s.location.label),
@@ -119,7 +122,12 @@ class StartupProfilePane extends StatelessWidget {
                 ),
               ),
             if (facts.isNotEmpty)
-              BoxGrid(items: facts, accent: const {'Website'}, page: true),
+              BoxGrid(
+                items: facts,
+                accent: const {'Website'},
+                wrap: const {'Sectors'},
+                page: true,
+              ),
           ],
         ),
       ),

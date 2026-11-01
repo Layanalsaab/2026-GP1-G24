@@ -83,8 +83,9 @@ void main() {
         expect(find.text('Investment Background'), findsOneWidget);
         expect(find.text('Years of investing'), findsOneWidget);
         expect(find.text('Round Size'), findsOneWidget);
-        expect(find.text('Led a round'), findsOneWidget);
-        expect(find.text('Yes'), findsOneWidget);
+        // "Led a round" is no longer shown, even for an old answer.
+        expect(find.text('Led a round'), findsNothing);
+        expect(find.text('Yes'), findsNothing);
         expect(find.text('Investment Interests'), findsOneWidget);
         expect(find.text('SportsTech'), findsWidgets);
         expect(find.text('Marketplace'), findsOneWidget);

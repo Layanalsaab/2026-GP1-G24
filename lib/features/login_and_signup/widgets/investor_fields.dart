@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../../../app_constants/auth_strings.dart';
 import '../../../models/investor_criteria.dart';
 import '../../../models/startup_enums.dart';
-import '../../../shared_ui/widgets/chips/chip_group.dart';
 import '../../../shared_ui/widgets/forms/app_field.dart';
 import '../../../shared_ui/widgets/forms/money_field.dart';
 import '../../../shared_ui/widgets/forms/select_field.dart';
@@ -32,7 +31,7 @@ class InvestorFields {
 
   // ------------------------------------------------------- investment background
 
-  /// Startups invested in, round size (hidden for "0") and "led a round".
+  /// Years investing, startups invested in and round size (hidden for "0").
   static List<Widget> background(
     BuildContext context,
     InvestorOnboardingViewModel vm,
@@ -105,17 +104,6 @@ class InvestorFields {
             ],
           ),
         ),
-      ChipGroupField(
-        label: AuthStrings.ledQuestion,
-        required: true,
-        info: AuthStrings.ledTip,
-        options: const ['Yes', 'No'],
-        selected: vm.hasLedRound == null
-            ? const []
-            : [vm.hasLedRound! ? 'Yes' : 'No'],
-        onTap: vm.pickLed,
-        error: vm.ledError,
-      ),
     ];
   }
 
