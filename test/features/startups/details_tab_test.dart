@@ -19,12 +19,12 @@ import 'package:startsa/shared_ui/widgets/overlays/app_toast.dart';
 import '../../support/fakes.dart';
 
 const _sections = [
-  'Overview',
+  'Startup Overview',
   'Startup Description',
   'Target Market',
   'Finance and Growth',
-  'Startup Ask',
   'Startup Team',
+  'Startup Ask',
 ];
 
 Future<void> _openDetails(
@@ -171,7 +171,7 @@ void main() {
   testWidgets('a team member sees the sections but no Edit pill', (t) async {
     await _openDetails(t, role: StartupRole.member);
     expect(find.text('Edit'), findsNothing);
-    await t.tap(find.text('Overview'));
+    await t.tap(find.text('Startup Overview'));
     await t.pumpAndSettle();
     expect(find.text('Sector'), findsOneWidget);
   });
@@ -218,7 +218,7 @@ void main() {
       'Monthly burn rate',
       'Runway',
       'Current company valuation',
-      'Explain your business model',
+      'Revenue model',
     ]) {
       expect(find.text(label), findsOneWidget, reason: label);
     }
@@ -253,7 +253,7 @@ void main() {
     expect(find.text('Startup Ask'), findsOneWidget);
     expect(
       find.textContaining('lead investor', findRichText: true),
-      findsOneWidget,
+      findsNothing,
     );
     expect(
       find.textContaining('Current available capital', findRichText: true),

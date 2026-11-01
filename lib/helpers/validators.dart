@@ -55,8 +55,12 @@ class Validators {
     return words.length >= 2 && words.every(_nameWord.hasMatch);
   }
 
-  static String? fullName(String? value) =>
-      isFullName(value) ? null : ValidationStrings.fullName;
+  static String? fullName(String? value) => hasDigit(value)
+      ? ValidationStrings.nameNoNumbers
+      : (isFullName(value) ? null : ValidationStrings.fullName);
+
+  /// True when [value] has a digit (names can't contain numbers).
+  static bool hasDigit(String? value) => RegExp(r'\d').hasMatch(value ?? '');
 
   // ---------------------------------------------------------------- email
 
@@ -110,10 +114,11 @@ class Validators {
 
   /// Live (while typing) full-name message: shown as soon as something is
   /// typed and it is not yet a first and last name.
-  static String? fullNameLive(String? value) =>
-      (value ?? '').trim().isEmpty || isFullName(value)
-      ? null
-      : ValidationStrings.fullName;
+  static String? fullNameLive(String? value) => hasDigit(value)
+      ? ValidationStrings.nameNoNumbers
+      : ((value ?? '').trim().isEmpty || isFullName(value)
+            ? null
+            : ValidationStrings.fullName);
 
   /// Live phone message: once something is typed and it is not yet valid.
   static String? phoneLive(String? value) =>

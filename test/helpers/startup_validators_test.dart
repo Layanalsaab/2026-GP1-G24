@@ -18,20 +18,21 @@ void main() {
   });
 
   group('founded year', () {
-    test('required, 1900 up to this year', () {
+    test('required; 4 digits starting with 2; a future year is fine', () {
       expect(
         StartupValidators.foundedYear('', now: now),
         ValidationStrings.foundedRequired,
       );
-      expect(StartupValidators.foundedYear('2024', now: now), isNull);
-      expect(
-        StartupValidators.foundedYear('1899', now: now),
-        'Enter a year between 1900 and 2026.',
-      );
-      expect(
-        StartupValidators.foundedYear('2027', now: now),
-        'Enter a year between 1900 and 2026.',
-      );
+      for (final ok in ['2000', '2024', '2026', '2027', '2999']) {
+        expect(StartupValidators.foundedYear(ok, now: now), isNull, reason: ok);
+      }
+      for (final bad in ['1899', '1999', '0000', '0999', '20', '2', '12345']) {
+        expect(
+          StartupValidators.foundedYear(bad, now: now),
+          'Enter a 4-digit year starting with 2, like 2024.',
+          reason: bad,
+        );
+      }
     });
   });
 

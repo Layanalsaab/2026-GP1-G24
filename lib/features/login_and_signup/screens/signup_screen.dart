@@ -15,7 +15,7 @@ import '../../../shared_ui/widgets/forms/form_page.dart';
 import '../../../shared_ui/widgets/forms/password_rules.dart';
 import '../../../shared_ui/widgets/forms/photo_pickers.dart';
 import '../../../shared_ui/widgets/forms/select_field.dart';
-import '../../../shared_ui/widgets/forms/visibility_pill.dart';
+import '../../../shared_ui/widgets/forms/visibility_switch.dart';
 import '../../../shared_ui/widgets/headers/auth_headers.dart';
 import '../../../shared_ui/widgets/headers/overlap_layout.dart';
 import '../../../shared_ui/widgets/overlays/app_dialog.dart';
@@ -258,6 +258,7 @@ class _SignupScreenState extends State<SignupScreen> {
                           label: AuthStrings.fullName,
                           required: true,
                           controller: vm.name,
+                          focusNode: vm.nameFocus,
                           placeholder: AuthStrings.fullNamePlaceholder,
                           maxLength: Validators.maxFullName,
                           valid: vm.nameValid,
@@ -274,6 +275,7 @@ class _SignupScreenState extends State<SignupScreen> {
                           label: AuthStrings.bio,
                           required: true,
                           controller: vm.bio,
+                          focusNode: vm.bioFocus,
                           placeholder: AuthStrings.bioPlaceholder,
                           maxLength: vm.bioMax,
                           multiline: true,
@@ -286,12 +288,13 @@ class _SignupScreenState extends State<SignupScreen> {
                           label: AuthStrings.email,
                           required: true,
                           controller: vm.email,
+                          focusNode: vm.emailFocus,
                           placeholder: AuthStrings.emailPlaceholder,
                           maxLength: Validators.maxEmail,
                           keyboardType: TextInputType.emailAddress,
                           valid: vm.emailValid,
                           error: vm.emailError,
-                          labelTrailing: VisibilityPill(
+                          labelTrailing: VisibilitySwitch(
                             isPublic: vm.emailPublic,
                             onChanged: vm.setEmailPublic,
                             fieldName: 'email',
@@ -301,7 +304,7 @@ class _SignupScreenState extends State<SignupScreen> {
                         AppField(
                           label: AuthStrings.phone,
                           required: true,
-                          labelTrailing: VisibilityPill(
+                          labelTrailing: VisibilitySwitch(
                             isPublic: vm.phonePublic,
                             onChanged: vm.setPhonePublic,
                             fieldName: 'phone',
@@ -309,6 +312,7 @@ class _SignupScreenState extends State<SignupScreen> {
                           error: vm.phoneError,
                           child: AppTextField(
                             controller: vm.phone,
+                            focusNode: vm.phoneFocus,
                             hint: AuthStrings.phonePlaceholder,
                             semanticLabel: AuthStrings.phone,
                             prefix: AuthStrings.phonePrefix,
@@ -358,6 +362,7 @@ class _SignupScreenState extends State<SignupScreen> {
                           label: AuthStrings.confirmPassword,
                           required: true,
                           controller: vm.confirm,
+                          focusNode: vm.confirmFocus,
                           placeholder: AuthStrings.confirmPlaceholder,
                           password: true,
                           inputFormatters: [

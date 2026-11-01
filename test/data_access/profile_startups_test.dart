@@ -50,10 +50,10 @@ void main() {
         ..add(_startup('a', roles: {'p1': 'member'}))
         ..add(_startup('b', roles: {'p1': 'coFounder'}));
       final list = await repo.startupsOf(_person(['a', 'b']));
-      expect({for (final r in list) r.id: r.role}, {
-        'a': 'member',
-        'b': 'coFounder',
-      });
+      expect(
+        {for (final r in list) r.id: r.role},
+        {'a': 'member', 'b': 'coFounder'},
+      );
       expect(list.every((r) => r.startup != null), isTrue);
     });
 

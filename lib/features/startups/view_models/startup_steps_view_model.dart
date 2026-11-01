@@ -12,6 +12,7 @@ import '../../../data_access/repositories/startup_repository.dart';
 import '../../../data_access/repositories/team_lookup.dart';
 import '../../../data_access/repositories/user_repository.dart';
 import '../../../helpers/app_session.dart';
+import '../../../helpers/other_check.dart';
 import '../../../helpers/safe_notifier.dart';
 import '../../../helpers/round_limits.dart';
 import '../../../helpers/startup_finance.dart';
@@ -50,7 +51,6 @@ enum StartupField {
   lookingFor,
   funding,
   raised,
-  lead,
   partnerTypes,
   supportTypes,
 }
@@ -177,7 +177,6 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
       for (final l in LookingFor.values)
         if (lookingFor.contains(l)) l.value,
     ],
-    'wantsLead': wantsLead,
     'isPublic': isPublic,
   };
 
@@ -186,7 +185,12 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
       newLogo != null || removeLogo || _signature() != _baseline;
 
   /// The form as a draft (the logo is not kept).
-  Map<String, Object?> toDraft() => {..._state(), 'step': furthestStep};
+  Map<String, Object?> toDraft() => {
+    ..._state(),
+    'step': furthestStep,
+    // 2 = Startup Team before Startup Ask (older drafts have no marker).
+    'order': 2,
+  };
 
   /// Fills the form from [toDraft] output and makes that the new starting
   /// point, so opening a draft and leaving at once asks nothing.
@@ -242,10 +246,19 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
       if (d['lookingFor'] is List)
         for (final raw in d['lookingFor'] as List) ?LookingFor.fromValue(raw),
     };
-    wantsLead = d['wantsLead'] as bool?;
     isPublic = d['isPublic'] != false;
     _ensureFounder();
-    step = ((d['step'] as num?)?.toInt() ?? 0).clamp(0, stepCount - 1);
+    var savedStep = (d['step'] as num?)?.toInt() ?? 0;
+    // A draft from before the two last steps swapped places: Startup Ask was
+    // step 4 and Startup Team step 5.
+    if (d['order'] != 2) {
+      if (savedStep == 4) {
+        savedStep = 5;
+      } else if (savedStep == 5) {
+        savedStep = 4;
+      }
+    }
+    step = savedStep.clamp(0, stepCount - 1);
     furthestStep = step;
     _openFounderIfNeeded();
     _baseline = _signature();
@@ -256,15 +269,15 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
 
   /// Editing ONE section of a saved startup (Manage -> Details -> Edit): the
   /// section number is its position in the Details tab (0 Overview, 1 Startup
-  /// Description, 2 Target Market, 3 Finance and Growth, 4 Startup Ask, 5
-  /// Startup Team). Only that section's fields are shown, with a "Save"
+  /// Description, 2 Target Market, 3 Finance and Growth, 4 Startup Team, 5
+  /// Startup Ask). Only that section's fields are shown, with a "Save"
   /// button instead of Next. Null = the normal form. The onboarding steps
   /// themselves are not changed by this.
   final int? onlySection;
   bool get isSectionEdit => onlySection != null;
 
   /// The form step that holds each Details section (each section is its own
-  /// step: Finance and Growth is step 3, Startup Ask step 4).
+  /// step: Finance and Growth is step 3, Startup Team step 4, Startup Ask 5).
   static const sectionSteps = [0, 1, 2, 3, 4, 5];
   int? get onlyStep => onlySection == null ? null : sectionSteps[onlySection!];
   final StartupRepository _repository;
@@ -279,13 +292,17 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
 
   bool get isEditing => initial != null;
 
-  /// One step per title: Overview, Startup Description, Target Market,
-  /// Finance and Growth, Startup Ask, Startup Team. Built from the list so a new step only
-  /// needs a new title.
+  /// One step per title: Startup Overview, Startup Description, Target
+  /// Market, Finance and Growth, Startup Team, Startup Ask. Built from the
+  /// list so a new step only needs a new title.
   static int get stepCount => FounderToolsStrings.stepTitles.length;
 
-  /// The step that holds the team member list and editor (the last one).
-  static int get teamStep => stepCount - 1;
+  /// The step that holds the team member list and editor (the one before
+  /// the last).
+  static int get teamStep => stepCount - 2;
+
+  /// The Startup Ask: the last step ("Create startup" / "Save changes").
+  static int get askStep => stepCount - 1;
 
   /// The current step, 0-based.
   int step = 0;
@@ -294,6 +311,66 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
   /// saved draft should reopen where they got to).
   int furthestStep = 0;
   final Set<int> _tried = {};
+
+  // ---- "Required" errors after leaving a field
+  //
+  // A FORMAT error shows from the first keystroke. A REQUIRED error (the field
+  // is empty) shows after Next / Save is pressed, or after the person typed in
+  // the field and then left it. A form nobody touched is never full of red.
+
+  final Map<StartupField, FocusNode> _focus = {};
+  final Map<StartupField, String> _lastText = {};
+  final Set<StartupField> _edited = {};
+  final Set<StartupField> _left = {};
+
+  /// The text controller behind a plain text field (null for the others).
+  TextEditingController? _textOf(StartupField f) => switch (f) {
+    StartupField.name => name,
+    StartupField.description => description,
+    StartupField.founded => founded,
+    StartupField.website => website,
+    StartupField.problem => problem,
+    StartupField.solution => solution,
+    StartupField.customers => customers,
+    StartupField.advantage => advantage,
+    StartupField.marketSize => tam,
+    StartupField.modelText => modelText,
+    StartupField.revenueNow => revenueNow,
+    StartupField.capital => capital,
+    StartupField.burn => burn,
+    StartupField.valuation => valuation,
+    StartupField.funding => funding,
+    StartupField.raised => raised,
+    _ => null,
+  };
+
+  /// The focus node of a text field: give it to the field, so leaving it
+  /// after typing can show its "required" message.
+  FocusNode focusOf(StartupField f) {
+    final existing = _focus[f];
+    if (existing != null) return existing;
+    final node = FocusNode();
+    final c = _textOf(f);
+    _lastText[f] = c?.text ?? '';
+    node.addListener(() {
+      final text = c?.text ?? '';
+      // A change of the TEXT counts as typing (a caret move does not).
+      if (text != _lastText[f]) {
+        _lastText[f] = text;
+        _edited.add(f);
+      }
+      if (!node.hasFocus && _edited.contains(f) && _left.add(f)) {
+        notifyListeners();
+      }
+    });
+    c?.addListener(() {
+      if (c.text != _lastText[f]) {
+        _lastText[f] = c.text;
+        _edited.add(f);
+      }
+    });
+    return _focus[f] = node;
+  }
 
   // ---- Step 1
   final name = TextEditingController();
@@ -348,7 +425,6 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
   final rev3 = TextEditingController();
   final valuation = TextEditingController();
   final funding = TextEditingController();
-  bool? wantsLead;
 
   /// Funding / Partnership / Support. Nothing is ticked by default.
   Set<LookingFor> lookingFor = {};
@@ -395,11 +471,47 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
     funding,
   ];
 
+  /// The labels the Sector and Commerce model pickers list (the "Other"
+  /// write-in can't repeat one of them).
+  static final List<String> _sectorLabels = [
+    for (final s in Sector.values) s.label,
+  ];
+  static final List<String> _modelLabels = [
+    for (final m in BusinessModel.picks) ...[m.label, m.shortLabel],
+  ];
+
+  /// What else counts as a listed commerce model: its abbreviation ("B2B")
+  /// and its name without the brackets ("Business-to-Business").
+  static final List<String> modelAlsoCountsAs = [
+    for (final m in BusinessModel.picks) ...[
+      m.shortLabel,
+      m.label.replaceAll(RegExp(r'\s*\(.*\)'), ''),
+    ],
+  ];
+
+  bool get sectorOtherRepeats =>
+      isSectorOther && OtherCheck.repeats(sectorOther.text, _sectorLabels);
+  bool get modelOtherRepeats =>
+      isModelOther &&
+      OtherCheck.repeats(modelOther.text, [
+        ..._modelLabels,
+        ...modelAlsoCountsAs,
+      ]);
+
   bool get isSectorOther => sector == Sector.other;
   bool get isModelOther => model == BusinessModel.other;
   bool get wantsFunding => lookingFor.contains(LookingFor.funding);
   bool get wantsPartner => lookingFor.contains(LookingFor.partnership);
   bool get wantsSupport => lookingFor.contains(LookingFor.support);
+
+  /// The "Other" write-in repeats a listed type (it can't).
+  bool get partnerOtherRepeats =>
+      partnerSel.contains('Other') &&
+      OtherCheck.repeats(partnerOther.text, FounderToolsStrings.partnerOptions);
+  bool get supportOtherRepeats =>
+      supportSel.contains('Other') &&
+      OtherCheck.repeats(supportOther.text, FounderToolsStrings.supportOptions);
+
   bool get isPartnerOther => partnerSel.contains('Other');
   bool get isSupportOther => supportSel.contains('Other');
 
@@ -446,6 +558,7 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
           ValidationStrings.startupSector,
         );
       case StartupField.sectorOther:
+        if (sectorOtherRepeats) return ValidationStrings.otherRepeats;
         return isSectorOther && _blank(sectorOther)
             ? ValidationStrings.otherSelect(FounderToolsStrings.sectorNoun)
             : null;
@@ -460,6 +573,7 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
           ValidationStrings.startupModel,
         );
       case StartupField.modelOther:
+        if (modelOtherRepeats) return ValidationStrings.otherRepeats;
         return isModelOther && _blank(modelOther)
             ? ValidationStrings.otherSelect(FounderToolsStrings.modelNoun)
             : null;
@@ -491,8 +605,6 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
         return StartupValidators.revenue(rev1.text, rev2.text, rev3.text);
       case StartupField.valuation:
         return StartupValidators.valuation(valuation.text);
-      case StartupField.lead:
-        return StartupValidators.leadInvestor(wantsLead);
       case StartupField.funding:
         return StartupValidators.funding(funding.text, roundStage);
       case StartupField.raised:
@@ -503,6 +615,7 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
         // only ask): it then shows "Not raising right now".
         return isEditing ? null : StartupValidators.lookingFor(lookingFor);
       case StartupField.partnerTypes:
+        if (partnerOtherRepeats) return ValidationStrings.otherRepeats;
         return _typesError(
           partnerSel,
           partnerOther,
@@ -510,6 +623,7 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
           'partner type',
         );
       case StartupField.supportTypes:
+        if (supportOtherRepeats) return ValidationStrings.otherRepeats;
         return _typesError(
           supportSel,
           supportOther,
@@ -558,30 +672,25 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
       StartupField.revenue,
       StartupField.modelText,
     ],
-    // Startup Ask (the funding / partner / support fields only count while
-    // their box is ticked: see [_fieldsOf]).
+    // Startup Team: no required field (the member editor must be closed).
+    [],
+    // Startup Ask, the last step (the funding / partner / support fields
+    // only count while their box is ticked: see [_fieldsOf]).
     [
       StartupField.lookingFor,
       StartupField.funding,
       StartupField.raised,
-      StartupField.lead,
       StartupField.partnerTypes,
       StartupField.supportTypes,
     ],
-    // Startup Team: no required field (the member editor must be closed).
-    [],
   ];
 
   /// The fields that must be valid on step [s] right now.
   List<StartupField> _fieldsOf(int s) {
-    if (s != 4) return _stepFields[s];
+    if (s != askStep) return _stepFields[s];
     return [
       StartupField.lookingFor,
-      if (wantsFunding) ...[
-        StartupField.funding,
-        StartupField.raised,
-        StartupField.lead,
-      ],
+      if (wantsFunding) ...[StartupField.funding, StartupField.raised],
       if (wantsPartner) StartupField.partnerTypes,
       if (wantsSupport) StartupField.supportTypes,
     ];
@@ -600,9 +709,16 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
   String? errorOf(StartupField f) {
     final raw = _rawError(f);
     if (raw == null) return null;
-    if (f == StartupField.founded && founded.text.trim().length == 4) {
+    // A year that is not (yet) 4 digits starting with 2 says so from the
+    // first digit; an empty field waits for Next (or for leaving the field).
+    if (f == StartupField.founded && founded.text.trim().isNotEmpty) {
       return raw;
     }
+    // The "Other" write-in repeating a listed option says so at once.
+    if (f == StartupField.partnerTypes && partnerOtherRepeats) return raw;
+    if (f == StartupField.supportTypes && supportOtherRepeats) return raw;
+    if (f == StartupField.sectorOther && sectorOtherRepeats) return raw;
+    if (f == StartupField.modelOther && modelOtherRepeats) return raw;
     // The range error shows as soon as a number is entered (and follows the
     // Stage if it changes); an empty field waits for Next.
     if (f == StartupField.funding &&
@@ -618,12 +734,12 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
     if (f == StartupField.marketSize && tam.text.trim().isNotEmpty) {
       return raw;
     }
-    // The website waits until the text looks like a domain (has a dot) or
-    // Next is pressed.
-    if (f == StartupField.website && website.text.contains('.')) {
+    // The website is checked from the first character (it is optional, so
+    // an empty one is never an error).
+    if (f == StartupField.website && website.text.trim().isNotEmpty) {
       return raw;
     }
-    return _tried.contains(_stepOf(f)) ? raw : null;
+    return _tried.contains(_stepOf(f)) || _left.contains(f) ? raw : null;
   }
 
   /// True when [f] should be drawn in the error style.
@@ -646,7 +762,7 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
 
   /// The fields of Details section [section] (see [sectionSteps]).
   List<StartupField> _sectionFields(int section) =>
-      section == 5 ? const [] : _fieldsOf(section);
+      section == teamStep ? const [] : _fieldsOf(section);
 
   // --------------------------------------------------------------- changes
 
@@ -673,8 +789,6 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
   void selectCity(String label) => _touch(() {
     city = StartupLocation.values.firstWhere((c) => c.label == label);
   });
-
-  void setLead(bool value) => _touch(() => wantsLead = value);
 
   /// Toggles a Looking for chip by its label.
   void toggleLookingFor(String label) => _touch(() {
@@ -795,7 +909,7 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
     if (i >= 0) openMemberEditor(i);
   }
 
-    TeamMember? get founderMember {
+  TeamMember? get founderMember {
     final i = team.indexWhere((m) => m.isFounder);
     return i < 0 ? null : team[i];
   }
@@ -833,6 +947,35 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
 
   bool _validName(String v) => Validators.isFullName(v);
 
+  // ---- the editor's "required" messages after leaving a field (the same
+  // rule as the steps: a format error shows from the first keystroke, an
+  // empty field only after "Add member" or after typing in it and leaving).
+  final Map<TextEditingController, FocusNode> _memberFocus = {};
+  final Set<TextEditingController> _memberEdited = {};
+  final Set<TextEditingController> _memberLeft = {};
+
+  /// The focus node of an editor field (give it to the field).
+  FocusNode memberFocusOf(TextEditingController c) {
+    final existing = _memberFocus[c];
+    if (existing != null) return existing;
+    var last = c.text;
+    c.addListener(() {
+      if (c.text == last) return;
+      last = c.text;
+      _memberEdited.add(c);
+    });
+    final node = FocusNode();
+    node.addListener(() {
+      if (!node.hasFocus && _memberEdited.contains(c) && _memberLeft.add(c)) {
+        notifyListeners();
+      }
+    });
+    return _memberFocus[c] = node;
+  }
+
+  bool _memberRequiredShown(TextEditingController c) =>
+      memberTried || _memberLeft.contains(c);
+
   /// The same e-mail rule as sign-up: a common provider or a university
   /// address, with its real extension.
   bool get _emailValid => Validators.isSignupEmail(memberEmail.text);
@@ -851,9 +994,13 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
   /// Every field of the editor is filled and valid (the founder's own row
   /// only needs the role and the contribution).
   bool get memberComplete {
-    final roleOk = !_blank(memberRole) && !_blank(memberContribution);
+    final roleOk =
+        !_blank(memberRole) &&
+        !Validators.hasDigit(memberRole.text) &&
+        !_blank(memberContribution);
     if (editingFounder || editingLinked) return roleOk;
     return _validName(memberName.text) &&
+        !Validators.hasDigit(memberName.text) &&
         _emailValid &&
         !memberDuplicate &&
         roleOk;
@@ -868,9 +1015,12 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
     }
     if (c == memberName) {
       if (_blank(c)) {
-        return memberTried ? ValidationStrings.memberNameRequired : null;
+        return _memberRequiredShown(c)
+            ? ValidationStrings.memberNameRequired
+            : null;
       }
-      // Live: a team member needs a first and last name.
+      // Live: no numbers, and a first and last name.
+      if (Validators.hasDigit(c.text)) return ValidationStrings.nameNoNumbers;
       return _validName(c.text) ? null : ValidationStrings.fullName;
     }
     if (c == memberEmail) {
@@ -879,17 +1029,23 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
         return ValidationStrings.memberIsInvestor;
       }
       if (_blank(c)) {
-        return memberTried ? ValidationStrings.memberEmailRequired : null;
+        return _memberRequiredShown(c)
+            ? ValidationStrings.memberEmailRequired
+            : null;
       }
       if (!_emailValid) return ValidationStrings.memberEmailInvalid;
       return memberDuplicate ? ValidationStrings.memberDuplicate : null;
     }
     if (c == memberRole) {
-      return memberTried && _blank(c)
+      // Live: no numbers.
+      if (Validators.hasDigit(c.text)) {
+        return ValidationStrings.memberRoleNoNumbers;
+      }
+      return _memberRequiredShown(c) && _blank(c)
           ? ValidationStrings.memberRoleRequired
           : null;
     }
-    return memberTried && _blank(c)
+    return _memberRequiredShown(c) && _blank(c)
         ? ValidationStrings.memberContributionRequired
         : null;
   }
@@ -898,6 +1054,8 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
     editorOpen = true;
     editingIndex = index;
     memberTried = false;
+    _memberEdited.clear();
+    _memberLeft.clear();
     final m = index == null ? null : team[index];
     memberName.text = m?.name ?? '';
     memberEmail.text = m?.email ?? '';
@@ -912,6 +1070,8 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
     editorOpen = false;
     editingIndex = null;
     memberTried = false;
+    _memberEdited.clear();
+    _memberLeft.clear();
   });
 
   /// E-mails found to be registered accounts while adding members: their
@@ -944,7 +1104,9 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
     // Somebody who already joined: only the role, the contribution and the
     // Co-founder box change (their name and e-mail are theirs).
     if (old != null && !old.invited && old.uid != null) {
-      if (_blank(memberRole) || _blank(memberContribution)) {
+      if (_blank(memberRole) ||
+          Validators.hasDigit(memberRole.text) ||
+          _blank(memberContribution)) {
         _touch(() => memberTried = true);
         return MemberSave.invalid;
       }
@@ -958,7 +1120,10 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
       return MemberSave.saved;
     }
     final emailOk = _emailValid && !memberDuplicate;
-    final rest = !_blank(memberRole) && !_blank(memberContribution);
+    final rest =
+        !_blank(memberRole) &&
+        !Validators.hasDigit(memberRole.text) &&
+        !_blank(memberContribution);
     if (!emailOk || !rest) {
       _touch(() => memberTried = true);
       return MemberSave.invalid;
@@ -988,7 +1153,7 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
       );
       return alreadyInvited ? MemberSave.saved : MemberSave.invited;
     }
-    if (!_validName(memberName.text)) {
+    if (!_validName(memberName.text) || Validators.hasDigit(memberName.text)) {
       _touch(() => memberTried = true);
       return MemberSave.invalid;
     }
@@ -1018,6 +1183,8 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
     editorOpen = false;
     editingIndex = null;
     memberTried = false;
+    _memberEdited.clear();
+    _memberLeft.clear();
   });
 
   void removeMember() {
@@ -1259,7 +1426,9 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
       revenueYear2: StartupValidators.money(rev2.text),
       revenueYear3: StartupValidators.money(rev3.text),
       valuation: StartupValidators.money(valuation.text),
-      wantsLeadInvestor: wantsFunding ? wantsLead : null,
+      // The old lead-investor answer is no longer asked; what an existing
+      // startup already saved stays as it is.
+      wantsLeadInvestor: initial?.wantsLeadInvestor,
       // Editing a startup keeps its co-founders and team members.
       memberRoles: _roles(),
     );
@@ -1286,16 +1455,18 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
     List<String> order,
   ) {
     final picked = <String>{};
-    var other = '';
+    final typed = <String>[];
     for (final v in saved) {
       if (order.contains(v) && v != 'Other') {
         picked.add(v);
       } else {
         picked.add('Other');
-        other = v == 'Other' ? other : v;
+        // An older value that is not in the list any more is shown under
+        // "Other" (all of them, not only the last one).
+        if (v != 'Other') typed.add(v);
       }
     }
-    return (picked, other);
+    return (picked, typed.join(', '));
   }
 
   /// Who has access: the startup's current members, updated by the team list.
@@ -1381,7 +1552,6 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
     valuation.text = _money(s.valuation);
     funding.text = _money(s.fundingRequirement);
     lookingFor = {...s.lookingFor};
-    wantsLead = s.wantsLeadInvestor;
     isPublic = s.isPublic;
   }
 
@@ -1390,6 +1560,12 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
     for (final c in _controllers) {
       c.removeListener(notifyListeners);
       c.dispose();
+    }
+    for (final n in _focus.values) {
+      n.dispose();
+    }
+    for (final n in _memberFocus.values) {
+      n.dispose();
     }
     super.dispose();
   }

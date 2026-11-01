@@ -108,7 +108,7 @@ void main() {
   testWidgets('Business: model card, no growth plan', (t) async {
     await pump(t, _startup());
     await goTo(t, 'Business');
-    expect(find.text('Business model'), findsOneWidget);
+    expect(find.text('Revenue model'), findsOneWidget);
     expect(find.text('Families pay per visit'), findsOneWidget);
     expect(find.textContaining('rowth'), findsNothing);
   });
@@ -147,7 +147,8 @@ void main() {
     expect(find.text('Funding goal'), findsOneWidget);
     expect(find.text('SAR 200,000 raised'), findsOneWidget);
     expect(find.text('40%'), findsWidgets);
-    expect(find.text('Looking for a lead investor'), findsOneWidget);
+    // The lead-investor line is gone, even though this startup saved one.
+    expect(find.textContaining('lead investor'), findsNothing);
     expect(find.text('Key numbers'), findsOneWidget);
     expect(find.text('SAR 0'), findsOneWidget, reason: 'revenue 0');
     expect(find.text('About 7 months'), findsOneWidget);

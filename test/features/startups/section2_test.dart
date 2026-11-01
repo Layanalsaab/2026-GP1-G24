@@ -104,9 +104,10 @@ void main() {
     );
 
     test('funding line and partner / support rows', () {
+      // No lead-investor part any more, even when an old answer is saved.
       expect(
         StartupAsk.fundingDetail(s),
-        'Raising SAR 500,000 · SAR 200,000 raised so far · Looking for a lead investor',
+        'Raising SAR 500,000 · SAR 200,000 raised so far',
       );
       expect(StartupAsk.partners(s), ['Technology', 'Distribution']);
       expect(StartupAsk.support(s), ['Mentorship']);
@@ -114,7 +115,7 @@ void main() {
       expect(StartupAsk.supportSelected(s), isTrue);
       expect(
         StartupAsk.fundingDetail(s.copyWith(wantsLeadInvestor: false)),
-        endsWith('No lead investor needed'),
+        isNot(contains('lead investor')),
       );
     });
   });

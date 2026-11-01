@@ -677,16 +677,6 @@ class _AddRoundForm extends StatelessWidget {
               semanticLabel: FounderToolsStrings.raisedLabel,
             ),
           ),
-          const SizedBox(height: FieldHelperRow.gapAfter),
-          ChipGroupField(
-            label: FounderToolsStrings.leadLabel,
-            required: true,
-            sentenceCase: true,
-            options: const ['Yes', 'No'],
-            selected: [if (vm.wantsLead != null) vm.wantsLead! ? 'Yes' : 'No'],
-            onTap: (label) => vm.setLead(label == 'Yes'),
-            error: vm.leadError,
-          ),
           const SizedBox(height: 14),
           Row(
             children: [

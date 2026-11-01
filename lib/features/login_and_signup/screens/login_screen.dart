@@ -157,7 +157,7 @@ class _LoginResend extends StatelessWidget {
     if (!context.mounted) return;
     switch (outcome) {
       case ResendOutcome.sent:
-        break; // the countdown starting is the feedback
+        AppToast.confirm(context, AuthStrings.resendSent);
       case ResendOutcome.alreadyVerified:
         AppToast.show(context, AuthStrings.alreadyVerifiedLogin);
       case ResendOutcome.failed:

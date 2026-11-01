@@ -32,7 +32,9 @@ void main() {
         home: StartupStepsScreen(
           mode: StartupStepsMode.add,
           draft: {
-            'step': 5,
+            // Startup Team is step 4 now (the Startup Ask is the last one).
+            'step': 4,
+            'order': 2,
             'team': [
               {
                 'fullName': 'Shahad Alabdulkarim',
@@ -56,9 +58,11 @@ void main() {
       ),
     );
     await t.pumpAndSettle();
-    // The primary button is on screen at the bottom.
-    expect(find.text('Create startup'), findsOneWidget);
-    final button = t.getRect(find.text('Create startup'));
+    // The primary button is on screen at the bottom ("Next": the Startup Ask
+    // is the last step now).
+    expect(find.text('Next'), findsOneWidget);
+    expect(find.text('Create startup'), findsNothing);
+    final button = t.getRect(find.text('Next'));
     expect(button.bottom, lessThanOrEqualTo(892));
     // Tags hug their text (never full width) and sit on the name's line.
     for (final label in ['Co-founder', 'Invited']) {
@@ -78,8 +82,8 @@ void main() {
     await t.pumpAndSettle();
     t.view.viewInsets = const FakeViewPadding(bottom: 300);
     await t.pumpAndSettle();
-    expect(find.text('Create startup'), findsOneWidget);
-    expect(t.getRect(find.text('Create startup')).bottom, lessThan(892 - 300));
+    expect(find.text('Next'), findsOneWidget);
+    expect(t.getRect(find.text('Next')).bottom, lessThan(892 - 300));
     expect(t.takeException(), isNull);
   });
 }

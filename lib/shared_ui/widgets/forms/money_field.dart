@@ -82,11 +82,15 @@ class MoneyField extends StatelessWidget {
     this.hasError = false,
     this.semanticLabel,
     this.dense = false,
+    this.focusNode,
   });
 
   final TextEditingController? controller;
   final String? value;
   final ValueChanged<String>? onChanged;
+
+  /// Lets the form know when the person leaves the box.
+  final FocusNode? focusNode;
 
   /// Null removes the prefix (trio boxes).
   final String? prefix;
@@ -102,6 +106,7 @@ class MoneyField extends StatelessWidget {
   Widget build(BuildContext context) {
     return AppTextField(
       controller: controller,
+      focusNode: focusNode,
       value: value,
       onChanged: onChanged,
       hint: hint,

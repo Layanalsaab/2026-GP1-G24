@@ -50,15 +50,13 @@ void main() {
   tearDown(() => TeamLookup.instance = const TeamLookup());
 
   group('Part 3: Overview, description and market', () {
-    test('website message waits for a dot or Next', () {
+    test('website message shows from the first character', () {
       final vm = _vm();
       addTearDown(vm.dispose);
       vm.website.text = 'exa';
-      expect(vm.errorOf(StartupField.website), isNull);
-      vm.website.text = 'exa.';
       expect(
         vm.errorOf(StartupField.website),
-        'Enter a valid website, like example.com or https://example.com',
+        'Enter a valid website, like example.com',
       );
       vm.website.text = 'example.com';
       expect(vm.errorOf(StartupField.website), isNull);
@@ -118,7 +116,7 @@ void main() {
       );
       expect(
         vm.errorOf(StartupField.modelText),
-        'Please explain your business model.',
+        'Please explain your revenue model.',
       );
       vm.revenueNow.text = '0';
       vm.capital.text = '1';
@@ -171,7 +169,7 @@ void main() {
     test('nothing is ticked; only the ticked boxes ask questions', () {
       final vm = _vm();
       addTearDown(vm.dispose);
-      vm.step = 4;
+      vm.step = StartupStepsViewModel.askStep;
       expect(vm.lookingFor, isEmpty);
       expect(vm.currentComplete, isFalse);
       vm.next();
@@ -182,7 +180,7 @@ void main() {
         vm.errorOf(StartupField.partnerTypes),
         'Select at least one partner type.',
       );
-      vm.togglePartner('Technology');
+      vm.togglePartner('Technology development');
       expect(vm.currentComplete, isTrue, reason: 'no funding questions');
       vm.toggleLookingFor('Support');
       expect(
@@ -199,7 +197,7 @@ void main() {
       final vm = _vm(stage: StartupStage.seed);
       addTearDown(vm.dispose);
       vm.toggleLookingFor('Funding');
-      vm.step = 4;
+      vm.step = StartupStepsViewModel.askStep;
       expect(vm.fundingHint, 'Seed: over SAR 2,000,000 to 7,500,000');
       vm.funding.text = '5,000';
       expect(
@@ -219,7 +217,6 @@ void main() {
         'This can’t be more than the amount you’re raising.',
       );
       vm.raised.text = '0';
-      vm.setLead(false);
       expect(vm.currentComplete, isTrue);
     });
 
@@ -235,8 +232,7 @@ void main() {
       vm.toggleLookingFor('Partnership');
       vm.funding.text = '1,000,000';
       vm.raised.text = '200,000';
-      vm.setLead(true);
-      vm.togglePartner('Technology');
+      vm.togglePartner('Technology development');
       vm.togglePartner('Other');
       vm.partnerOther.text = 'Banks';
       vm.revenueNow.text = '10';
@@ -248,7 +244,7 @@ void main() {
       expect(saved.revenueThisYear, 10);
       expect(saved.monthlyBurn, 5);
       expect(saved.businessModelText, 'Fees per payment');
-      expect(saved.partnerTypes, ['Technology', 'Banks']);
+      expect(saved.partnerTypes, ['Technology development', 'Banks']);
       expect(saved.supportTypes, isEmpty);
       expect(saved.lookingFor, {LookingFor.funding, LookingFor.partnership});
     });

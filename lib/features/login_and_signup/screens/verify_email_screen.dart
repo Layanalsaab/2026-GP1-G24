@@ -130,14 +130,14 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen>
     );
   }
 
-  /// Sends the email again. No toast when it works: the countdown restarting
-  /// is the feedback. "Too many attempts" shows under the resend row.
+  /// Sends the email again: "Sending the email…" shows at once, then a toast
+  /// and the countdown. "Too many attempts" shows under the resend row.
   Future<void> _resend() async {
     final outcome = await _vm.resend();
     if (!mounted) return;
     switch (outcome) {
       case ResendOutcome.sent:
-        break;
+        AppToast.confirm(context, AuthStrings.resendSent);
       case ResendOutcome.alreadyVerified:
         AppToast.show(context, AuthStrings.alreadyVerified);
       case ResendOutcome.failed:

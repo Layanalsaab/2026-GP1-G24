@@ -9,6 +9,7 @@ import '../../../app_constants/validation_strings.dart';
 import '../../../data_access/repositories/startup_repository.dart';
 import '../../../data_access/repositories/team_lookup.dart';
 import '../../../data_access/repositories/user_repository.dart';
+import '../../../helpers/other_check.dart';
 import '../../../helpers/safe_notifier.dart';
 import '../../../helpers/validators.dart';
 import '../../../models/app_user.dart';
@@ -93,7 +94,7 @@ class EditAccountViewModel extends ChangeNotifier with SafeNotifier {
   final UserRepository _users;
   final StartupRepository _startups;
 
-  /// Who sees the email / phone (the Private / Public pills).
+  /// Who sees the email / phone (the Private / Public switches).
   bool emailPublic;
   bool phonePublic;
 
@@ -142,10 +143,19 @@ class EditAccountViewModel extends ChangeNotifier with SafeNotifier {
       phone.isNotEmpty || attempted ? Validators.phoneEdit(phone) : null;
   String? get cityError => attempted ? Validators.city(city) : null;
   String? get sectorsError => attempted ? Validators.sectors(_chosen) : null;
-  String? get otherError =>
-      attempted && otherSelected && otherSector.trim().isEmpty
-      ? ValidationStrings.otherSelect('sector')
-      : null;
+
+  /// The "Other" write-in repeats a listed sector: shown as it is typed.
+  bool get otherRepeats =>
+      !user.isInvestor &&
+      otherSelected &&
+      OtherCheck.repeats(otherSector, sectorOptions);
+
+  String? get otherError {
+    if (otherRepeats) return ValidationStrings.otherRepeats;
+    return attempted && otherSelected && otherSector.trim().isEmpty
+        ? ValidationStrings.otherSelect('sector')
+        : null;
+  }
 
   /// The bio is required for founders and investors.
   String? get bioError => attempted
@@ -165,7 +175,8 @@ class EditAccountViewModel extends ChangeNotifier with SafeNotifier {
       Validators.city(city) == null &&
       (user.isInvestor ||
           (Validators.sectors(_chosen) == null &&
-              !(otherSelected && otherSector.trim().isEmpty))) &&
+              !(otherSelected && otherSector.trim().isEmpty) &&
+              !otherRepeats)) &&
       Validators.linkedin(linkedin) == null &&
       (!user.isFounder || bio.trim().isNotEmpty) &&
       (!user.isInvestor ||

@@ -490,6 +490,7 @@ class LabeledTextField extends StatelessWidget {
     this.error,
     this.hint,
     this.showCounter = true,
+    this.showOverflowMessage = true,
     this.counterFrom,
     this.below,
     this.linkLabel,
@@ -525,7 +526,7 @@ class LabeledTextField extends StatelessWidget {
   final bool sentenceCase;
   final bool required;
 
-  /// At the right end of the label row (the Private / Public pill).
+  /// At the right end of the label row (the Private / Public switch).
   final Widget? labelTrailing;
 
   /// A soft amber note (not an error) shown in the helper line when there is
@@ -542,6 +543,10 @@ class LabeledTextField extends StatelessWidget {
   /// Grey helper text shown when there is no error.
   final String? hint;
   final bool showCounter;
+
+  /// False: typing past [maxLength] just stops (no red "Maximum N characters"
+  /// line), e.g. the founded year.
+  final bool showOverflowMessage;
 
   /// Computes the counted length from the text (default: its length).
   final int Function(String text)? counterFrom;
@@ -578,7 +583,7 @@ class LabeledTextField extends StatelessWidget {
     // Going past the character limit (a long paste) is an error too.
     final shownError = (error != null && error!.isNotEmpty)
         ? error
-        : (over && maxLength != null
+        : (over && maxLength != null && showOverflowMessage
               ? 'Maximum $maxLength characters allowed.'
               : null);
     Widget inner(String text) => AppField(

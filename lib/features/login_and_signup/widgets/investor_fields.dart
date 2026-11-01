@@ -170,6 +170,7 @@ class InvestorFields {
         otherHint: AuthStrings.modelOtherHint,
         otherText: vm.modelsOther.text,
         onOtherChanged: (v) => vm.modelsOther.text = v,
+        alsoCountsAs: InvestorOnboardingViewModel.modelAlsoCountsAs,
         onUndoOther: () =>
             vm.toggleModel(InvestorOnboardingViewModel.otherLabel),
       );

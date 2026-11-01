@@ -33,9 +33,6 @@ class ProfileStrings {
   static const sarPerYear = 'SAR per year';
   static const raising = 'Raising';
   static const kvRaising = 'Raising';
-  static const kvLead = 'Lead investor';
-  static const kvLeadYes = 'Looking for one';
-  static const kvLeadNo = 'Not needed';
   static const kvValuation = 'Valuation';
   static const kvCapital = 'Current capital';
   static const kvFounded = 'Founded';

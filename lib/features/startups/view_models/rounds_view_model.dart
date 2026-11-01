@@ -136,7 +136,6 @@ class RoundsViewModel extends ChangeNotifier with SafeNotifier {
   StartupStage? type;
   final amount = TextEditingController();
   final raised = TextEditingController();
-  bool? wantsLead;
 
   /// True after the first tap on "Add round" with something missing.
   bool tried = false;
@@ -183,7 +182,6 @@ class RoundsViewModel extends ChangeNotifier with SafeNotifier {
     type = defaultType;
     amount.clear();
     raised.clear();
-    wantsLead = null;
     tried = false;
     notifyListeners();
   }
@@ -200,11 +198,6 @@ class RoundsViewModel extends ChangeNotifier with SafeNotifier {
 
   void setAmount(String _) => notifyListeners();
   void setRaised(String _) => notifyListeners();
-
-  void setLead(bool value) {
-    wantsLead = value;
-    notifyListeners();
-  }
 
   int? get amountValue => Formatters.parseMoney(amount.text);
 
@@ -232,19 +225,14 @@ class RoundsViewModel extends ChangeNotifier with SafeNotifier {
     return f != null && r > f ? ValidationStrings.raisedTooMuch : null;
   }
 
-  /// "Please choose one." until Yes or No is picked.
-  String? get leadError =>
-      tried && wantsLead == null ? 'Please choose one.' : null;
-
-  /// The round type, the amount and the lead-investor answer are all there.
+  /// The round type, the amount and what is already raised are all there.
   bool get formValid =>
       type != null &&
       StartupValidators.money(amount.text) != null &&
       (amountValue ?? 0) > 0 &&
       RoundLimits.allows(type, amountValue!) &&
       raisedValue != null &&
-      raisedValue! <= amountValue! &&
-      wantsLead != null;
+      raisedValue! <= amountValue!;
 
   /// Adds the round (opening it) when the form is valid; otherwise marks the
   /// errors. Returns true when it was added (and saved, with a startup).
@@ -262,7 +250,6 @@ class RoundsViewModel extends ChangeNotifier with SafeNotifier {
       // The new open round starts at what is already raised.
       raised: raisedValue!,
       start: _today,
-      wantsLeadInvestor: wantsLead,
     );
     final s = _latest;
     if (s != null) {
@@ -273,7 +260,6 @@ class RoundsViewModel extends ChangeNotifier with SafeNotifier {
           lookingFor: {...s.lookingFor, LookingFor.funding},
           fundingRequirement: round.amount,
           raisedInRound: round.raised,
-          wantsLeadInvestor: round.wantsLeadInvestor,
           stage: round.type,
         ),
       );

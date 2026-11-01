@@ -178,7 +178,8 @@ class Startup {
   /// Money lost each month: monthly costs minus monthly revenue (0 allowed).
   final int? monthlyBurn;
 
-  /// "Explain your business model": how the startup makes money.
+  /// "Explain your revenue model": how the startup makes money (the stored
+  /// field is still called businessModelExplanation).
   final String businessModelText;
 
   /// The part of the funding round already committed (0 allowed).
@@ -211,7 +212,6 @@ class Startup {
   static const descriptionMax = 150;
   static const nameMax = 40;
   static const websiteMax = 100;
-  static const firstFoundedYear = 1900;
 
   /// The three years of expected revenue, oldest first (null when unset).
   List<int?> get expectedRevenue => [revenueYear1, revenueYear2, revenueYear3];

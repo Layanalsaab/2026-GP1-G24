@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+
+import '../../../app_constants/validation_strings.dart';
+import '../../../helpers/other_check.dart';
+
 import 'package:flutter/services.dart';
 
 import '../../icons/app_icons.dart';
@@ -42,6 +46,7 @@ Future<PickerResult?> showPickerSheet(
   int otherMax = 40,
   VoidCallback? onUndoOther,
   bool tall = false,
+  List<String> alsoCountsAs = const [],
 }) {
   return showAppBottomSheet<PickerResult>(
     context,
@@ -56,6 +61,7 @@ Future<PickerResult?> showPickerSheet(
       otherLabel: otherLabel,
       otherMax: otherMax,
       onUndoOther: onUndoOther,
+      alsoCountsAs: alsoCountsAs,
       tall: tall,
     ),
   );
@@ -80,6 +86,7 @@ class PickerSheet extends StatefulWidget {
     this.otherMax = 40,
     this.onUndoOther,
     this.tall = false,
+    this.alsoCountsAs = const [],
   });
 
   final String title;
@@ -93,6 +100,10 @@ class PickerSheet extends StatefulWidget {
   final int otherMax;
   final VoidCallback? onUndoOther;
   final bool tall;
+
+  /// Other texts that mean a listed option (e.g. "B2B" for "Business-to-
+  /// Business (B2B)"): the "Other" write-in can't repeat them either.
+  final List<String> alsoCountsAs;
 
   @override
   State<PickerSheet> createState() => _PickerSheetState();
@@ -109,6 +120,14 @@ class _PickerSheetState extends State<PickerSheet> {
 
   bool get _hasOther => widget.otherNoun != null;
   bool get _otherOpen => _hasOther && _selected == widget.otherLabel;
+
+  /// The write-in repeats a listed option (it can't).
+  bool get _repeats =>
+      _otherOpen &&
+      OtherCheck.repeats(_other.text, [
+        ...widget.options,
+        ...widget.alsoCountsAs,
+      ]);
 
   @override
   void dispose() {
@@ -127,6 +146,7 @@ class _PickerSheetState extends State<PickerSheet> {
   }
 
   void _done() {
+    if (_repeats) return;
     if (_other.text.trim().isEmpty) {
       setState(() => _showError = true);
       return;
@@ -201,9 +221,11 @@ class _PickerSheetState extends State<PickerSheet> {
                         controller: _other,
                         placeholder: 'Describe your other ${widget.otherNoun}',
                         max: widget.otherMax,
-                        error: _showError && _other.text.trim().isEmpty
-                            ? 'Please type your ${widget.otherNoun} — it can’t be blank.'
-                            : null,
+                        error: _repeats
+                            ? ValidationStrings.otherRepeats
+                            : (_showError && _other.text.trim().isEmpty
+                                  ? 'Please type your ${widget.otherNoun} — it can’t be blank.'
+                                  : null),
                         onChanged: (_) => setState(() {}),
                       ),
                     ),
@@ -213,7 +235,10 @@ class _PickerSheetState extends State<PickerSheet> {
             if (_otherOpen)
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
-                child: AppButton(label: 'Done', onPressed: _done),
+                child: AppButton(
+                  label: 'Done',
+                  onPressed: _repeats ? null : _done,
+                ),
               ),
           ],
         ),

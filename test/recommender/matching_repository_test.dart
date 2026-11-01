@@ -90,10 +90,7 @@ void main() {
       'startups': [
         (id: 'exact', data: _startup({'name': 'Exact'})),
         (id: 'close', data: _startup({'name': 'Close', 'stage': 'series_a'})),
-        (
-          id: 'none',
-          data: _startup({'sector': 'media', 'stage': 'series_b'}),
-        ),
+        (id: 'none', data: _startup({'sector': 'media', 'stage': 'series_b'})),
         (id: 'private', data: _startup({'isPublic': false})),
         (id: 'broken', data: _startup({'sector': 'not-a-sector'})),
       ],
@@ -187,27 +184,38 @@ void main() {
     expect(profile.title, 'Angel Investor');
   });
 
-  test('founder: a long bio is cut on the card, whole on the profile', () async {
-    final long =
-        'A seasoned entrepreneur with over 20 years of experience in the '
-        'technology industry, with a passion for innovation and growth. '
-        'I founded a savings platform and mentored more than 150 startups.';
-    firestore.collections['investors']![0] = (
-      id: 'ANG-1',
-      data: _investor({'bio': long}),
-    );
-    final mine = Startup.fromMap('mine', _startup({'founderId': 'u9'}))!;
-    final card = (await repo.investorsForStartup(mine)).first;
-    expect(card.line.length, lessThanOrEqualTo(MatchingRepository.cardBioMax + 1));
-    expect(card.line, endsWith('…'));
-    // Cut after a full sentence still ends with "…"; a short bio is whole.
-    expect(
-      MatchingRepository.cardPreview('${'Word ' * 20}ends here. More text follows.'),
-      endsWith('…'),
-    );
-    expect(MatchingRepository.cardPreview('Backs early teams.'), 'Backs early teams.');
-    expect(repo.investorById('ANG-1')!.profileBio, long);
-  });
+  test(
+    'founder: a long bio is cut on the card, whole on the profile',
+    () async {
+      final long =
+          'A seasoned entrepreneur with over 20 years of experience in the '
+          'technology industry, with a passion for innovation and growth. '
+          'I founded a savings platform and mentored more than 150 startups.';
+      firestore.collections['investors']![0] = (
+        id: 'ANG-1',
+        data: _investor({'bio': long}),
+      );
+      final mine = Startup.fromMap('mine', _startup({'founderId': 'u9'}))!;
+      final card = (await repo.investorsForStartup(mine)).first;
+      expect(
+        card.line.length,
+        lessThanOrEqualTo(MatchingRepository.cardBioMax + 1),
+      );
+      expect(card.line, endsWith('…'));
+      // Cut after a full sentence still ends with "…"; a short bio is whole.
+      expect(
+        MatchingRepository.cardPreview(
+          '${'Word ' * 20}ends here. More text follows.',
+        ),
+        endsWith('…'),
+      );
+      expect(
+        MatchingRepository.cardPreview('Backs early teams.'),
+        'Backs early teams.',
+      );
+      expect(repo.investorById('ANG-1')!.profileBio, long);
+    },
+  );
 
   group('Explore -> Matches (HomeViewModel)', () {
     test('investor: loads in the background, then shows the cards', () async {
@@ -274,32 +282,35 @@ void main() {
 
     tearDown(() => liveRepo.clear());
 
-    test('a founder edits a startup: the investor list updates by itself', () async {
-      final vm = HomeViewModel(
-        role: SessionRole.investor,
-        user: investorUser,
-        matching: liveRepo,
-      );
-      vm.matches;
-      live.send('startups', [
-        (id: 'a', data: _startup({'name': 'Alpha'})),
-      ]);
-      await _settle();
-      expect(vm.matches.map((i) => i.id), ['a']);
-      var notified = 0;
-      vm.addListener(() => notified++);
-      // Another founder makes their startup fit (no new query is made).
-      live.send('startups', [
-        (id: 'a', data: _startup({'name': 'Alpha'})),
-        (id: 'b', data: _startup({'name': 'Beta'})),
-      ]);
-      await _settle();
-      expect(vm.matches.map((i) => i.id), ['a', 'b']);
-      expect(vm.matchesLoading, isFalse); // no spinner for an update
-      expect(notified, greaterThan(0));
-      expect(live.listens, ['startups']); // one listener, started once
-      vm.dispose();
-    });
+    test(
+      'a founder edits a startup: the investor list updates by itself',
+      () async {
+        final vm = HomeViewModel(
+          role: SessionRole.investor,
+          user: investorUser,
+          matching: liveRepo,
+        );
+        vm.matches;
+        live.send('startups', [
+          (id: 'a', data: _startup({'name': 'Alpha'})),
+        ]);
+        await _settle();
+        expect(vm.matches.map((i) => i.id), ['a']);
+        var notified = 0;
+        vm.addListener(() => notified++);
+        // Another founder makes their startup fit (no new query is made).
+        live.send('startups', [
+          (id: 'a', data: _startup({'name': 'Alpha'})),
+          (id: 'b', data: _startup({'name': 'Beta'})),
+        ]);
+        await _settle();
+        expect(vm.matches.map((i) => i.id), ['a', 'b']);
+        expect(vm.matchesLoading, isFalse); // no spinner for an update
+        expect(notified, greaterThan(0));
+        expect(live.listens, ['startups']); // one listener, started once
+        vm.dispose();
+      },
+    );
 
     test('the founder edits their startup: Matches for it reloads', () async {
       final a = Startup.fromMap('a', _startup({'founderId': 'u9'}))!;
@@ -369,25 +380,28 @@ void main() {
       vm.dispose();
     });
 
-    test('a listener error: the error state, and a new listener next time', () async {
-      final vm = HomeViewModel(
-        role: SessionRole.investor,
-        user: investorUser,
-        matching: liveRepo,
-      );
-      vm.matches;
-      live.fail('startups');
-      await _settle();
-      expect(vm.matchesFailed, isTrue);
-      final retry = vm.refreshMatches();
-      live.send('startups', [
-        (id: 'a', data: _startup({'name': 'Alpha'})),
-      ]);
-      await retry;
-      expect(vm.matches.map((i) => i.id), ['a']);
-      expect(live.listens, ['startups', 'startups']);
-      vm.dispose();
-    });
+    test(
+      'a listener error: the error state, and a new listener next time',
+      () async {
+        final vm = HomeViewModel(
+          role: SessionRole.investor,
+          user: investorUser,
+          matching: liveRepo,
+        );
+        vm.matches;
+        live.fail('startups');
+        await _settle();
+        expect(vm.matchesFailed, isTrue);
+        final retry = vm.refreshMatches();
+        live.send('startups', [
+          (id: 'a', data: _startup({'name': 'Alpha'})),
+        ]);
+        await retry;
+        expect(vm.matches.map((i) => i.id), ['a']);
+        expect(live.listens, ['startups', 'startups']);
+        vm.dispose();
+      },
+    );
   });
 }
 

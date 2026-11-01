@@ -6,6 +6,7 @@ class ValidationStrings {
 
   // Names, email, phone
   static const fullName = 'Enter your first and last name.';
+  static const nameNoNumbers = "Names can't contain numbers.";
   static const emailRequired = 'Enter a valid email';
   static const emailInvalid = 'Enter a valid email, like name@example.com';
   static const emailLive = 'Enter a valid email, like name@example.com';
@@ -60,6 +61,7 @@ class ValidationStrings {
   static const memberEmailInvalid =
       'Enter a valid email, like name@example.com';
   static const memberRoleRequired = 'Please enter the role.';
+  static const memberRoleNoNumbers = "The role can't contain numbers.";
   static const memberContributionRequired = 'Please describe the contribution.';
   static const memberIsInvestor =
       'This email belongs to an investor account, which can’t join a team.';
@@ -72,6 +74,10 @@ class ValidationStrings {
   /// Under a chip group.
   static String otherChips(String noun) =>
       'Please type your other $noun — it can’t be blank.';
+
+  /// The "Other" write-in repeats an option that is already in the list.
+  static const otherRepeats =
+      'This option is already in the list. Select it instead.';
 
   /// Under a select field.
   static String otherSelect(String noun) =>
@@ -92,10 +98,9 @@ class ValidationStrings {
   static const startupModel = 'Please select a commerce model.';
   static const startupCity = 'Please select your headquarters.';
   static const foundedRequired = 'Please enter the year you were founded.';
-  static String foundedRange(int last) =>
-      'Enter a year between 1900 and $last.';
-  static const websiteInvalid =
-      'Enter a valid website, like example.com or https://example.com';
+  static const foundedInvalid =
+      'Enter a 4-digit year starting with 2, like 2024.';
+  static const websiteInvalid = 'Enter a valid website, like example.com';
   static const problem = 'Please describe the problem.';
   static const solution = 'Please describe your solution.';
   static const targetCustomers = 'Please describe your target customers.';
@@ -112,7 +117,7 @@ class ValidationStrings {
       'Please enter your revenue. Enter 0 if you haven’t made any yet.';
   static const burn =
       'Please enter your monthly burn rate. Enter 0 if you earn more than you spend.';
-  static const businessModel = 'Please explain your business model.';
+  static const businessModel = 'Please explain your revenue model.';
   static const raisedEmpty =
       'Please enter an amount. Enter 0 if you haven’t raised anything yet.';
   static const raisedTooMuch =

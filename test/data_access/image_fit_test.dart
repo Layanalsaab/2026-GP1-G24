@@ -36,7 +36,9 @@ void main() {
   test('a 256 x 256 JPEG at 70 % is far under 100 KB', () async {
     final bytes = img.encodeJpg(_photo(256), quality: 70);
     // ignore: avoid_print
-    print('256x256, quality 70: ${(bytes.length / 1024).toStringAsFixed(1)} KB');
+    print(
+      '256x256, quality 70: ${(bytes.length / 1024).toStringAsFixed(1)} KB',
+    );
     expect(bytes.length, lessThan(ImageFit.maxBytes));
     final file = write('a.jpg', bytes);
     expect(await ImageFit.bytesUnder(file), hasLength(bytes.length));
@@ -50,7 +52,9 @@ void main() {
     final file = write('b.jpg', big);
     final out = await ImageFit.bytesUnder(file);
     // ignore: avoid_print
-    print('after compressing again: ${(out.length / 1024).toStringAsFixed(1)} KB');
+    print(
+      'after compressing again: ${(out.length / 1024).toStringAsFixed(1)} KB',
+    );
     expect(out.length, lessThanOrEqualTo(ImageFit.maxBytes));
     // The file itself was replaced with the smaller version.
     expect(file.lengthSync(), out.length);
@@ -62,15 +66,18 @@ void main() {
     expect(ImageFit.bytesUnder(file), throwsA(isA<ImageTooLarge>()));
   });
 
-  test('the base64 text stays under the 150000 characters the rules allow', () async {
-    final file = write('d.jpg', img.encodeJpg(_photo(256), quality: 70));
-    final text = await ImageFit.base64Of(file);
-    // ignore: avoid_print
-    print('base64 length: ${text.length} characters');
-    expect(text.length, lessThan(150000));
-    // And it comes back as the same picture.
-    expect(PictureData.bytes(text), isNotNull);
-  });
+  test(
+    'the base64 text stays under the 150000 characters the rules allow',
+    () async {
+      final file = write('d.jpg', img.encodeJpg(_photo(256), quality: 70));
+      final text = await ImageFit.base64Of(file);
+      // ignore: avoid_print
+      print('base64 length: ${text.length} characters');
+      expect(text.length, lessThan(150000));
+      // And it comes back as the same picture.
+      expect(PictureData.bytes(text), isNotNull);
+    },
+  );
 
   test('PictureData decodes once and ignores bad text', () {
     final text = 'AAAA';

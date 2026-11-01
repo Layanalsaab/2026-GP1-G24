@@ -93,41 +93,42 @@ void main() {
       expect(r.percent, 110);
     });
 
-    test('Add round needs an amount and a lead-investor answer', () async {
-      final vm = RoundsViewModel(now: DateTime(2026, 10, 25));
-      addTearDown(vm.dispose);
-      await vm.closeOpenRound();
-      vm.openForm();
-      expect(vm.formValid, isFalse);
-      expect(await vm.addRound(), isFalse);
-      expect(vm.amountError, 'Please enter the amount you’re raising.');
-      expect(
-        vm.raisedError,
-        'Please enter an amount. Enter 0 if you haven’t raised anything yet.',
-      );
-      expect(vm.leadError, 'Please choose one.');
-      // Series A: over 7,500,000 up to 55,000,000.
-      expect(vm.amountHint, 'Series A: over SAR 7,500,000 to 55,000,000');
-      vm.amount.text = '1,000,000';
-      expect(
-        vm.amountError,
-        'That amount isn’t in the Series A range. Enter more than SAR 7,500,000 and up to SAR 55,000,000.',
-      );
-      vm.amount.text = '10,000,000';
-      vm.raised.text = '12,000,000';
-      expect(
-        vm.raisedError,
-        'This can’t be more than the amount you’re raising.',
-      );
-      vm.raised.text = '2,000,000';
-      vm.setLead(true);
-      expect(await vm.addRound(), isTrue);
-      expect(vm.openRound!.number, 3);
-      expect(vm.openRound!.type, StartupStage.seriesA);
-      expect(vm.openRound!.amount, 10000000);
-      // The new open round starts at what is already raised.
-      expect(vm.openRound!.raised, 2000000);
-    });
+    test(
+      'Add round needs the round type, the amount and what is raised',
+      () async {
+        final vm = RoundsViewModel(now: DateTime(2026, 10, 25));
+        addTearDown(vm.dispose);
+        await vm.closeOpenRound();
+        vm.openForm();
+        expect(vm.formValid, isFalse);
+        expect(await vm.addRound(), isFalse);
+        expect(vm.amountError, 'Please enter the amount you’re raising.');
+        expect(
+          vm.raisedError,
+          'Please enter an amount. Enter 0 if you haven’t raised anything yet.',
+        );
+        // Series A: over 7,500,000 up to 55,000,000.
+        expect(vm.amountHint, 'Series A: over SAR 7,500,000 to 55,000,000');
+        vm.amount.text = '1,000,000';
+        expect(
+          vm.amountError,
+          'That amount isn’t in the Series A range. Enter more than SAR 7,500,000 and up to SAR 55,000,000.',
+        );
+        vm.amount.text = '10,000,000';
+        vm.raised.text = '12,000,000';
+        expect(
+          vm.raisedError,
+          'This can’t be more than the amount you’re raising.',
+        );
+        vm.raised.text = '2,000,000';
+        expect(await vm.addRound(), isTrue);
+        expect(vm.openRound!.number, 3);
+        expect(vm.openRound!.type, StartupStage.seriesA);
+        expect(vm.openRound!.amount, 10000000);
+        // The new open round starts at what is already raised.
+        expect(vm.openRound!.raised, 2000000);
+      },
+    );
   });
 
   group('Rounds tab', () {
@@ -225,7 +226,8 @@ void main() {
         find.text('Please enter the amount you’re raising.'),
         findsOneWidget,
       );
-      expect(find.text('Please choose one.'), findsOneWidget);
+      // No lead-investor question any more.
+      expect(find.text('Please choose one.'), findsNothing);
       await t.pump(const Duration(seconds: 4));
       final fields = find.byType(TextField);
       await t.enterText(fields.at(fields.evaluate().length - 2), '1200000');
@@ -240,8 +242,8 @@ void main() {
       await t.enterText(fields.last, '0');
       await t.pump();
       await t.pumpAndSettle();
-      await t.tap(find.text('Yes'));
-      await t.pump();
+      // (There is no lead-investor Yes / No to answer any more.)
+      expect(find.text('Yes'), findsNothing);
       await t.ensureVisible(find.text('Add round').last);
       await t.pumpAndSettle();
       await t.tap(find.text('Add round').last);

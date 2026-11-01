@@ -45,8 +45,8 @@ class StartupStepBody extends StatelessWidget {
         1 => _ProblemSolution(vm: vm),
         2 => _TargetMarket(vm: vm),
         3 => _Finance(vm: vm),
-        4 => _Ask(vm: vm),
-        _ => _Team(vm: vm),
+        4 => _Team(vm: vm),
+        _ => _Ask(vm: vm),
       },
     );
   }
@@ -71,6 +71,7 @@ Widget _text(
   multiline: multiline,
   rows: rows,
   sentenceCase: sentenceCase,
+  focusNode: vm.focusOf(field),
   error: vm.errorOf(field),
 );
 
@@ -91,6 +92,7 @@ Widget _money(
   error: vm.errorOf(field),
   child: MoneyField(
     controller: controller,
+    focusNode: vm.focusOf(field),
     hasError: vm.hasError(field),
     semanticLabel: label,
   ),
@@ -136,6 +138,7 @@ class _Basics extends StatelessWidget {
       selected: vm.model?.label,
       otherText: vm.modelOther.text,
       otherNoun: FounderToolsStrings.modelNoun,
+      alsoCountsAs: StartupStepsViewModel.modelAlsoCountsAs,
     );
     if (r != null) vm.selectModel(r.value, r.otherText);
   }
@@ -262,9 +265,11 @@ class _Basics extends StatelessWidget {
               label: FounderToolsStrings.foundedLabel,
               required: true,
               controller: vm.founded,
+              focusNode: vm.focusOf(StartupField.founded),
               placeholder: FounderToolsStrings.foundedHint,
               maxLength: 4,
               showCounter: false,
+              showOverflowMessage: false,
               keyboardType: TextInputType.number,
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
               valid: foundedError == null && vm.founded.text.length == 4,
@@ -273,6 +278,7 @@ class _Basics extends StatelessWidget {
             LabeledTextField(
               label: FounderToolsStrings.websiteLabel,
               controller: vm.website,
+              focusNode: vm.focusOf(StartupField.website),
               placeholder: FounderToolsStrings.websiteHint,
               maxLength: Startup.websiteMax,
               valid:
@@ -383,6 +389,7 @@ class _TargetMarket extends StatelessWidget {
           error: vm.errorOf(StartupField.marketSize),
           child: MoneyField(
             controller: vm.tam,
+            focusNode: vm.focusOf(StartupField.marketSize),
             hasError: vm.hasError(StartupField.marketSize),
             semanticLabel: FounderToolsStrings.marketLabel,
           ),
@@ -464,6 +471,7 @@ class _Finance extends StatelessWidget {
           required: true,
           sentenceCase: true,
           controller: vm.modelText,
+          focusNode: vm.focusOf(StartupField.modelText),
           placeholder: FounderToolsStrings.modelTextHint,
           maxLength: FounderToolsStrings.modelTextMax,
           multiline: true,
@@ -599,21 +607,6 @@ class _Ask extends StatelessWidget {
             controller: vm.raised,
             field: StartupField.raised,
             info: FounderToolsStrings.raisedInfo,
-          ),
-          ChipGroupField(
-            label: FounderToolsStrings.leadLabel,
-            required: true,
-            sentenceCase: true,
-            info: FounderToolsStrings.leadInfo,
-            options: const [FounderToolsStrings.yes, FounderToolsStrings.no],
-            selected: [
-              if (vm.wantsLead != null)
-                vm.wantsLead!
-                    ? FounderToolsStrings.yes
-                    : FounderToolsStrings.no,
-            ],
-            onTap: (label) => vm.setLead(label == FounderToolsStrings.yes),
-            error: vm.errorOf(StartupField.lead),
           ),
         ],
       ),
@@ -794,6 +787,7 @@ class _Team extends StatelessWidget {
       editing: member != null,
       lockedIdentity: locked,
       lockedNameEmail: !locked && member != null && vm.isLinkedMember(member),
+      focusOf: vm.memberFocusOf,
       name: vm.memberName,
       email: vm.memberEmail,
       role: vm.memberRole,

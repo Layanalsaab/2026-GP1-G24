@@ -82,7 +82,6 @@ void _fillAll(StartupStepsViewModel vm) {
   vm.toggleLookingFor('Funding');
   vm.funding.text = '3,000,000';
   vm.raised.text = '0';
-  vm.setLead(true);
 }
 
 void main() {
@@ -119,33 +118,101 @@ void main() {
       expect(vm.next(), StepAdvance.advanced);
       expect(vm.step, 3);
       expect(vm.next(), StepAdvance.advanced);
-      expect(vm.step, 4);
-      expect(vm.next(), StepAdvance.advanced);
       expect(vm.step, StartupStepsViewModel.teamStep);
+      expect(vm.next(), StepAdvance.advanced);
+      // The Startup Ask is the last step.
+      expect(vm.step, StartupStepsViewModel.askStep);
       expect(vm.next(), StepAdvance.readyToSave);
       expect(vm.previous(), isTrue);
     });
 
-    test('Finance and Growth and Startup Ask are two real steps', () {
+    test('Startup Team comes before the Startup Ask (the last step)', () {
       expect(StartupStepsViewModel.stepCount, 6);
       expect(StartupStepsViewModel.sectionSteps, [0, 1, 2, 3, 4, 5]);
-      expect(FounderToolsStrings.stepTitles[3], 'Finance and Growth');
-      expect(FounderToolsStrings.stepTitles[4], 'Startup Ask');
-      final vm = StartupStepsViewModel(onlySection: 4);
-      addTearDown(vm.dispose);
-      expect(vm.step, 4);
+      expect(FounderToolsStrings.stepTitles, [
+        'Startup Overview',
+        'Startup Description',
+        'Target Market',
+        'Finance and Growth',
+        'Startup Team',
+        'Startup Ask',
+      ]);
+      expect(StartupStepsViewModel.teamStep, 4);
+      expect(StartupStepsViewModel.askStep, 5);
+      // Each Details section still opens its own step.
+      final team = StartupStepsViewModel(onlySection: 4);
+      addTearDown(team.dispose);
+      expect(team.step, 4);
+      final ask = StartupStepsViewModel(onlySection: 5);
+      addTearDown(ask.dispose);
+      expect(ask.step, 5);
     });
 
-    test('founded year error shows as soon as 4 digits are typed', () {
-      final vm = StartupStepsViewModel(now: DateTime(2026, 10, 19));
+    test('a draft saved before the swap reopens on the same step', () {
+      final old = StartupStepsViewModel();
+      addTearDown(old.dispose);
+      // Before the swap the Startup Ask was step 4 and the Team step 5.
+      final draft = {...old.toDraft()}
+        ..remove('order')
+        ..['step'] = 4;
+      final restored = StartupStepsViewModel()..loadDraft(draft);
+      addTearDown(restored.dispose);
+      expect(restored.step, StartupStepsViewModel.askStep);
+    });
+
+    test(
+      'founded year: 4 digits starting with 2, error from the first key',
+      () {
+        final vm = StartupStepsViewModel(now: DateTime(2026, 10, 19));
+        addTearDown(vm.dispose);
+        const msg = 'Enter a 4-digit year starting with 2, like 2024.';
+        expect(vm.errorOf(StartupField.founded), isNull, reason: 'untouched');
+        for (final bad in ['1', '2', '20', '202', '1800', '0999', '1999']) {
+          vm.founded.text = bad;
+          expect(vm.errorOf(StartupField.founded), msg, reason: bad);
+        }
+        // A future year is fine.
+        for (final good in ['2000', '2024', '2026', '2099', '2500']) {
+          vm.founded.text = good;
+          expect(vm.errorOf(StartupField.founded), isNull, reason: good);
+        }
+      },
+    );
+
+    test('website is checked from the first character; empty is fine', () {
+      final vm = StartupStepsViewModel();
       addTearDown(vm.dispose);
-      vm.founded.text = '1800';
-      expect(
-        vm.errorOf(StartupField.founded),
-        'Enter a year between 1900 and 2026.',
-      );
-      vm.founded.text = '20';
-      expect(vm.errorOf(StartupField.founded), isNull);
+      const msg = 'Enter a valid website, like example.com';
+      expect(vm.errorOf(StartupField.website), isNull);
+      vm.website.text = 'e';
+      expect(vm.errorOf(StartupField.website), msg);
+      vm.website.text = 'example';
+      expect(vm.errorOf(StartupField.website), msg);
+      vm.website.text = 'example.com';
+      expect(vm.errorOf(StartupField.website), isNull);
+      vm.website.text = 'www.example.sa';
+      expect(vm.errorOf(StartupField.website), isNull);
+      vm.website.text = 'https://example.com';
+      expect(vm.errorOf(StartupField.website), isNull);
+      vm.website.text = '';
+      expect(vm.errorOf(StartupField.website), isNull);
+    });
+
+    test('Other cannot repeat a listed sector or commerce model', () {
+      final vm = StartupStepsViewModel();
+      addTearDown(vm.dispose);
+      const msg = 'This option is already in the list. Select it instead.';
+      vm.selectSector('Other', 'fintechs');
+      expect(vm.errorOf(StartupField.sectorOther), msg);
+      expect(vm.stepComplete(0), isFalse);
+      vm.sectorOther.text = 'Fin Tech';
+      expect(vm.errorOf(StartupField.sectorOther), msg);
+      vm.sectorOther.text = 'Beekeeping';
+      expect(vm.errorOf(StartupField.sectorOther), isNull);
+      vm.selectModel('Other', 'b2b');
+      expect(vm.errorOf(StartupField.modelOther), msg);
+      vm.modelOther.text = 'Subscription boxes';
+      expect(vm.errorOf(StartupField.modelOther), isNull);
     });
 
     test('valuation 0 is allowed; empty shows its message', () {
@@ -425,7 +492,7 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(find.text('STEP 1 OF 6'), findsOneWidget);
-      expect(find.text('Overview'), findsOneWidget);
+      expect(find.text('Startup Overview'), findsOneWidget);
       await tester.tap(find.text('Next'));
       await tester.pump(const Duration(milliseconds: 300));
       expect(find.text('Please fix the highlighted fields'), findsOneWidget);
@@ -483,7 +550,7 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(find.text('STEP 3 OF 8'), findsOneWidget);
-      expect(find.text('Overview'), findsOneWidget);
+      expect(find.text('Startup Overview'), findsOneWidget);
     });
 
     testWidgets('Back on onboarding step 3 returns to the Verify step', (

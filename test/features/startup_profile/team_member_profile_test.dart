@@ -18,8 +18,7 @@ class _FakeProfiles implements PublicProfileRepository {
   Future<List<ProfileStartupRef>> startupsOf(
     PublicProfile profile, {
     String? alsoCheck,
-  }) async =>
-      profile.startups;
+  }) async => profile.startups;
 
   @override
   dynamic noSuchMethod(Invocation invocation) => null;

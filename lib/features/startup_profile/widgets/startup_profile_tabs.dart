@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../app_constants/founder_tools_strings.dart';
 import '../../../app_constants/profile_strings.dart';
 import '../../../helpers/app_session.dart';
 import '../../../helpers/formatters.dart';
@@ -195,7 +196,7 @@ class StartupProfilePane extends StatelessWidget {
       if (hasModel)
         _SectionCard(
           icon: AppIcons.wallet,
-          title: 'Business model',
+          title: FounderToolsStrings.revenueModelTitle,
           tone: _Tone.gold,
           child: Text(
             s.businessModelText.trim(),
@@ -820,7 +821,6 @@ class _CurrentRoundCard extends StatelessWidget {
       );
     }
     final fill = (r.percent / 100).clamp(0.0, 1.0);
-    final lead = r.wantsLead;
     return ManageCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -905,20 +905,6 @@ class _CurrentRoundCard extends StatelessWidget {
               ),
             ],
           ),
-          if (lead != null) ...[
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 10),
-              child: Divider(
-                height: 1,
-                thickness: 1,
-                color: StartupProfilePane._divider,
-              ),
-            ),
-            Text(
-              lead ? 'Looking for a lead investor' : 'No lead investor needed',
-              style: AppText.sans(size: 14, color: AppColors.paragraph),
-            ),
-          ],
         ],
       ),
     );

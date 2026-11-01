@@ -12,7 +12,7 @@ void main() {
       expect(Validators.fullName('محمد أحمد'), isNull);
       expect(Validators.fullName('Mohammed'), ValidationStrings.fullName);
       expect(Validators.fullName('A B'), ValidationStrings.fullName);
-      expect(Validators.fullName('Sara 2'), ValidationStrings.fullName);
+      expect(Validators.fullName('Sara 2'), ValidationStrings.nameNoNumbers);
       expect(Validators.fullName(''), ValidationStrings.fullName);
     });
   });
