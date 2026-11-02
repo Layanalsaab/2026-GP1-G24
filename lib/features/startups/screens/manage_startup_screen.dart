@@ -495,6 +495,7 @@ class _ManageStartupScreenState extends State<ManageStartupScreen> {
             onTransfer: _transfer,
             onClose: _close,
             onReopen: _reopen,
+            isFounder: s.originalFounderId == _uid,
           ),
         };
         return Scaffold(

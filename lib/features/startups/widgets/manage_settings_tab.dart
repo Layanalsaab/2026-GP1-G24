@@ -34,6 +34,7 @@ class ManageSettingsTab extends StatelessWidget {
     this.onTransfer,
     this.onClose,
     this.onReopen,
+    this.isFounder = false,
   });
 
   /// What the user may do here ([StartupRole.founder] is the owner).
@@ -47,6 +48,10 @@ class ManageSettingsTab extends StatelessWidget {
   final VoidCallback? onTransfer;
   final VoidCallback? onClose;
   final VoidCallback? onReopen;
+
+  /// The user created this startup (the Founder title), whether or not they
+  /// still own it.
+  final bool isFounder;
 
   @override
   Widget build(BuildContext context) {
@@ -118,6 +123,8 @@ class ManageSettingsTab extends StatelessWidget {
           title: FounderToolsStrings.leaveStartup,
           text: owner
               ? FounderToolsStrings.leaveClosedOwnerText
+              : isFounder
+              ? FounderToolsStrings.leaveFounderText
               : role == StartupRole.coFounder
               ? FounderToolsStrings.leaveCoFounderText
               : FounderToolsStrings.leaveMemberText,
