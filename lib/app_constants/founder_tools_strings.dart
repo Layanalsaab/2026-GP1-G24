@@ -319,7 +319,7 @@ class FounderToolsStrings {
   static const otherOwners = 'Other existing owners';
   static const newInvestors = 'New investors';
   static const equityGivenUp = 'Equity given up';
-  static const yourOwnership = 'Your ownership';
+  static const yourDilution = 'Your dilution';
   // shown under the funding box
   static String calcRoundHint(int number, String type, String raised) =>
       'Round $number · $type · $raised raised so far';
@@ -367,8 +367,8 @@ class FounderToolsStrings {
       'What your share of the company is worth at this valuation.',
     ),
     'change': (
-      'Your ownership',
-      'Your ownership before this round and after it.',
+      'Your dilution',
+      'How much your ownership drops in this round.',
     ),
     'own': (
       'Ownership after this raise',

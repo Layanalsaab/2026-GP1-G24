@@ -555,7 +555,7 @@ class _OwnershipCard extends StatelessWidget {
                 ],
               ),
             ),
-          // before → after for the founder
+          // the founder's dilution in points, and before → after
           Container(
             margin: const EdgeInsets.only(top: 8),
             padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
@@ -570,7 +570,7 @@ class _OwnershipCard extends StatelessWidget {
                   children: [
                     Flexible(
                       child: Text(
-                        FounderToolsStrings.yourOwnership,
+                        FounderToolsStrings.yourDilution,
                         style: AppText.sans(size: 13, color: AppColors.metaText),
                       ),
                     ),
@@ -579,31 +579,22 @@ class _OwnershipCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Expanded(
-                      child: Text(
-                        vm.ownershipChangeText,
-                        style: _tabular(
-                          AppText.sans(size: 20, weight: FontWeight.w700),
-                        ),
+                    Text(
+                      vm.dilutionText,
+                      style: _tabular(
+                        AppText.sans(size: 20, weight: FontWeight.w700),
                       ),
                     ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 3,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.errorFill,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        vm.ownershipDropText,
-                        style: _tabular(
-                          AppText.sans(
-                            size: 13,
-                            weight: FontWeight.w700,
-                            color: AppColors.error,
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.only(bottom: 2),
+                        child: Text(
+                          vm.ownershipChangeText,
+                          style: _tabular(
+                            AppText.sans(size: 13, color: AppColors.metaText),
                           ),
                         ),
                       ),

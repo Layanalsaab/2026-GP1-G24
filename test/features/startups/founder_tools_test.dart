@@ -437,21 +437,21 @@ void main() {
       expect(type('99.9', '99.99'), '99.99');
     });
 
-    test('your ownership before and after, in points', () {
+    test('dilution in points, with before and after', () {
       final vm = ValuationCalculatorViewModel(
         funding: 3000000,
         valuation: 9000000,
       );
       addTearDown(vm.dispose);
+      expect(vm.dilutionText, '25 pts');
       expect(vm.ownershipChangeText, '100% → 75%');
-      expect(vm.ownershipDropText, '−25 pts');
       vm.ownership.text = '60';
+      expect(vm.dilutionText, '15 pts');
       expect(vm.ownershipChangeText, '60% → 45%');
-      expect(vm.ownershipDropText, '−15 pts');
       vm.funds.text = '4,000,000';
       // 60% × (9M ÷ 13M) = 41.5%
+      expect(vm.dilutionText, '18.5 pts');
       expect(vm.ownershipChangeText, '60% → 41.5%');
-      expect(vm.ownershipDropText, '−18.5 pts');
     });
 
     test('rounding never makes a note', () {
