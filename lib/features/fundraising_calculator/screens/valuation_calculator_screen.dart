@@ -555,6 +555,55 @@ class _OwnershipCard extends StatelessWidget {
                 ],
               ),
             ),
+          // the founder's dilution in points, and before → after
+          Container(
+            margin: const EdgeInsets.only(top: 8),
+            padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
+            decoration: BoxDecoration(
+              color: AppColors.cream,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        FounderToolsStrings.yourDilution,
+                        style: AppText.sans(size: 13, color: AppColors.metaText),
+                      ),
+                    ),
+                    InfoButton(onTap: () => onInfo('change')),
+                  ],
+                ),
+                const SizedBox(height: 2),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      vm.dilutionText,
+                      style: _tabular(
+                        AppText.sans(size: 20, weight: FontWeight.w700),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.only(bottom: 2),
+                        child: Text(
+                          vm.ownershipChangeText,
+                          style: _tabular(
+                            AppText.sans(size: 13, color: AppColors.metaText),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );

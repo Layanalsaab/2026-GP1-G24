@@ -197,6 +197,11 @@ class ValuationCalculatorViewModel extends ChangeNotifier with SafeNotifier {
     );
   }
 
+  // dilution box under the ownership card: "15 pts" and "60% → 45%"
+  String get dilutionText =>
+      '${formatNumber(((ownershipValue - you) * 10).round() / 10)} pts';
+  String get ownershipChangeText => '${pct(ownershipValue)} → ${pct(you)}';
+
   /// The "Other existing owners" row only shows below 100 % ownership.
   bool get hasOthers => isValid && ownershipValue < 100;
 

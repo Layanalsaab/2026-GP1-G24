@@ -437,6 +437,23 @@ void main() {
       expect(type('99.9', '99.99'), '99.99');
     });
 
+    test('dilution in points, with before and after', () {
+      final vm = ValuationCalculatorViewModel(
+        funding: 3000000,
+        valuation: 9000000,
+      );
+      addTearDown(vm.dispose);
+      expect(vm.dilutionText, '25 pts');
+      expect(vm.ownershipChangeText, '100% → 75%');
+      vm.ownership.text = '60';
+      expect(vm.dilutionText, '15 pts');
+      expect(vm.ownershipChangeText, '60% → 45%');
+      vm.funds.text = '4,000,000';
+      // 60% × (9M ÷ 13M) = 41.5%
+      expect(vm.dilutionText, '18.5 pts');
+      expect(vm.ownershipChangeText, '60% → 41.5%');
+    });
+
     test('rounding never makes a note', () {
       final vm = ValuationCalculatorViewModel(
         funding: 2000000,
@@ -604,7 +621,7 @@ void main() {
       // Dashboard: the two tiles, the calculator and the investors card.
       expect(find.text('Raising'), findsOneWidget);
       expect(find.text('Valuation'), findsOneWidget);
-      expect(find.text('Valuation calculator'), findsOneWidget);
+      expect(find.text('Valuation Calculator'), findsOneWidget);
       expect(find.text('Associated investors'), findsOneWidget);
       expect(find.text('128'), findsOneWidget);
       expect(find.text('Ahmad Hassan'), findsOneWidget);
