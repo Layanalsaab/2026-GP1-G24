@@ -164,7 +164,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 value: _vm.linkedin,
                 onChanged: _vm.setLinkedin,
                 placeholder: AuthStrings.linkedinPlaceholder,
-                maxLength: Validators.maxLinkedin,
                 keyboardType: TextInputType.url,
                 inputFormatters: noEmoji,
                 valid:
@@ -404,7 +403,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 value: _vm.linkedin,
                 onChanged: _vm.setLinkedin,
                 placeholder: AuthStrings.linkedinPlaceholder,
-                maxLength: Validators.maxLinkedin,
                 keyboardType: TextInputType.url,
                 valid:
                     _vm.linkedin.trim().isNotEmpty &&

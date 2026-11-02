@@ -332,7 +332,6 @@ class _SignupScreenState extends State<SignupScreen> {
                           label: AuthStrings.linkedin,
                           controller: vm.linkedin,
                           placeholder: AuthStrings.linkedinPlaceholder,
-                          maxLength: Validators.maxLinkedin,
                           keyboardType: TextInputType.url,
                           inputFormatters: founder
                               ? null

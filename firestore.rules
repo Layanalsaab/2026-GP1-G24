@@ -68,7 +68,7 @@ service cloud.firestore {
           && (!('sectorsOfInterest' in d)
               || (d.sectorsOfInterest is list && d.sectorsOfInterest.size() <= 25))
           && optionalString(d, 'sectorsOther', 40)
-          && optionalString(d, 'linkedinUrl', 120)
+          && (!('linkedinUrl' in d) || d.linkedinUrl is string)
           && optionalString(d, 'gain', 1000)
           && optionalString(d, 'offer', 1000)
           && optionalString(d, 'lookingFor', 1000)

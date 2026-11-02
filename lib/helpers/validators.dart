@@ -17,7 +17,6 @@ class Validators {
   static const maxFullName = 50;
   static const maxEmail = 100;
   static const maxPassword = 32;
-  static const maxLinkedin = 120;
   static const maxBio = 1000;
 
   /// Founder sign-up bio (required).
