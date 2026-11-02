@@ -333,9 +333,6 @@ class _SignupScreenState extends State<SignupScreen> {
                           controller: vm.linkedin,
                           placeholder: AuthStrings.linkedinPlaceholder,
                           keyboardType: TextInputType.url,
-                          inputFormatters: founder
-                              ? null
-                              : const [NoEmojiFormatter()],
                           valid: vm.linkedinValid,
                           error: vm.linkedinError,
                         ),
