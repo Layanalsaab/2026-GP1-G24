@@ -171,6 +171,23 @@ class AppRouter {
     return joined;
   }
 
+  /// Pull to refresh: checks the invitations that arrived since the last
+  /// log in, the same way a log in does (a founder joins the team, an
+  /// investor's are declined). Returns the startups joined; tells the person.
+  static Future<List<String>> checkInvitations(BuildContext context) async {
+    final user = AppSession.instance.user;
+    if (user == null || AppSession.instance.isGuest) return const [];
+    try {
+      final joined = await _handleInvitations(context, user);
+      if (joined.isNotEmpty) {
+        AppToast.showGlobal(InvitationClaimer.addedMessage(joined));
+      }
+      return joined;
+    } catch (_) {
+      return const [];
+    }
+  }
+
   /// "Continue as guest": Home as a guest (reset, "up").
   static void openGuest(BuildContext context) {
     AppSession.instance.signInAsGuest();

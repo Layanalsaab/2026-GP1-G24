@@ -84,6 +84,14 @@ class BookmarksViewModel extends ChangeNotifier {
 
   void resetFilter() => setType(BookmarkType.all);
 
+  /// Pull to refresh: the list is replaced by the freshly read bookmarks.
+  void replaceAll(List<SavedBookmark> items) {
+    _all
+      ..clear()
+      ..addAll(items);
+    notifyListeners();
+  }
+
   void remove(SavedBookmark bookmark) {
     if (_all.remove(bookmark)) {
       onRemove?.call(bookmark);
