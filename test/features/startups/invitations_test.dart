@@ -467,6 +467,103 @@ void main() {
     });
   });
 
+  group('who may change the team after a transfer', () {
+    // Noura created the startup and handed it to Layan; Huda is another
+    // co-founder and Reem a member.
+    Startup handedOver() => Startup.fromMap('S10', {
+      'founderId': 'layan',
+      'foundedBy': 'noura',
+      'name': 'Nova',
+      'description': 'd',
+      'sector': 'fintech',
+      'stage': 'seed',
+      'businessModel': 'b2b',
+      'location': 'riyadh',
+      'lookingFor': ['partnership'],
+      'memberIds': ['noura', 'huda', 'reem'],
+      'memberRoles': {'noura': 'coFounder', 'huda': 'coFounder', 'reem': 'member'},
+      'teamMembers': [
+        {
+          'fullName': 'Noura',
+          'email': 'noura@gmail.com',
+          'role': 'CEO',
+          'contribution': 'x',
+          'isFounder': true,
+          'uid': 'noura',
+        },
+        {
+          'fullName': 'Layan',
+          'email': 'layan@gmail.com',
+          'role': 'CTO',
+          'contribution': 'x',
+          'coFounder': true,
+          'uid': 'layan',
+        },
+        {
+          'fullName': 'Huda',
+          'email': 'huda@gmail.com',
+          'role': 'COO',
+          'contribution': 'x',
+          'coFounder': true,
+          'uid': 'huda',
+        },
+        {
+          'fullName': 'Reem',
+          'email': 'reem@gmail.com',
+          'role': 'Designer',
+          'contribution': 'x',
+          'uid': 'reem',
+        },
+      ],
+    })!;
+
+    TeamMember card(StartupStepsViewModel vm, String uid) =>
+        vm.team.firstWhere((m) => m.uid == uid);
+
+    AppUser person(String uid) => AppUser(
+      uid: uid,
+      role: AccountRole.founder,
+      fullName: uid,
+      email: '$uid@gmail.com',
+    );
+
+    test('a co-founder removes members, not co-founders or the owner', () {
+      AppSession.instance = AppSession()..signIn(person('huda'));
+      final vm = formWithTeam(initial: handedOver());
+      addTearDown(vm.dispose);
+      expect(vm.canRemoveMember(card(vm, 'reem')), isTrue);
+      expect(vm.canRemoveMember(card(vm, 'noura')), isFalse);
+      expect(vm.canRemoveMember(card(vm, 'layan')), isFalse);
+      expect(vm.canChangeCoFounder(card(vm, 'reem')), isFalse);
+    });
+
+    test('the owner removes a co-founder and the founder', () {
+      AppSession.instance = AppSession()..signIn(person('layan'));
+      final vm = formWithTeam(initial: handedOver());
+      addTearDown(vm.dispose);
+      expect(vm.canRemoveMember(card(vm, 'huda')), isTrue);
+      expect(vm.canRemoveMember(card(vm, 'noura')), isTrue);
+      expect(vm.canChangeCoFounder(card(vm, 'huda')), isTrue);
+      // The owner doesn't get a Founder card of their own.
+      expect(vm.team.where((m) => m.isFounder).single.uid, 'noura');
+    });
+
+    test('saving keeps the founder a co-founder, and her name if removed', () {
+      AppSession.instance = AppSession()..signIn(person('layan'));
+      final vm = formWithTeam(initial: handedOver());
+      addTearDown(vm.dispose);
+      final kept = vm.startupToSave();
+      expect(kept.memberRoles['noura'], 'coFounder');
+      expect(kept.foundedBy, 'noura');
+      expect(kept.formerFounderId, isNull);
+      vm.openMemberEditor(vm.team.indexWhere((m) => m.uid == 'noura'));
+      vm.removeMember();
+      final removed = vm.startupToSave();
+      expect(removed.memberRoles.containsKey('noura'), isFalse);
+      expect(removed.formerFounderId, 'noura');
+    });
+  });
+
   test('TeamMember keeps the invited flag in its map', () {
     const m = TeamMember(
       name: 'Sara',

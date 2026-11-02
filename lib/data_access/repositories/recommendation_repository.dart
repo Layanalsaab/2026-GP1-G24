@@ -126,7 +126,7 @@ class RecommendationRepository {
     final criteria = investor.investorCriteria;
     final scored = <HomeItem>[];
     for (final s in _d.allStartups) {
-      if (!s.isPublic) continue;
+      if (!s.isListed) continue;
       if (criteria == null) {
         final fixed = _d.sample ? PrototypeSeed.startupMatches[s.id] : null;
         if (fixed != null) {

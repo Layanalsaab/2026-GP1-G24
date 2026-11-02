@@ -60,8 +60,8 @@ class MyStartupsViewModel extends ChangeNotifier with SafeNotifier {
   /// The user left [startupId] (co-founder / team member): it disappears from
   /// the list. A real startup also drops the user's membership in Firestore
   /// (only their own entry). The sample startups (ids starting `mock-`) stay
-  /// local.
-  Future<void> leave(String startupId) async {
+  /// local. [alreadyLeft]: Manage already left it (only the list changes).
+  Future<void> leave(String startupId, {bool alreadyLeft = false}) async {
     final entry = [
       ...teamStartups,
       ...memberStartups,
@@ -73,7 +73,9 @@ class MyStartupsViewModel extends ChangeNotifier with SafeNotifier {
     ];
     _publishMemberIds();
     notifyListeners();
-    if (entry != null && !PrototypeSeed.isSampleStartup(startupId)) {
+    if (entry != null &&
+        !alreadyLeft &&
+        !PrototypeSeed.isSampleStartup(startupId)) {
       try {
         await _repository.leave(entry.startup);
       } catch (_) {
@@ -126,6 +128,10 @@ class MyStartupsViewModel extends ChangeNotifier with SafeNotifier {
     ...teamStartups,
   ];
 
+  /// The user's title in [e] (what its capsule says).
+  StartupRole titleOf(MyStartupEntry e) =>
+      StartupRole.titleOf(e.startup, AppSession.instance.user?.uid) ?? e.role;
+
   /// There is nothing at all (no own startup and no membership).
   bool get isEmpty => !isLoading && error == null && entries.isEmpty;
 
@@ -174,15 +180,18 @@ class MyStartupsViewModel extends ChangeNotifier with SafeNotifier {
       case VisibilityFilter.private:
         if (e.startup.isPublic) return false;
     }
+    // "My role" filters on the title (the person who created a startup stays
+    // its Founder after handing it over).
+    final title = titleOf(e);
     switch (role) {
       case RoleFilter.all:
         return true;
       case RoleFilter.founder:
-        return e.role == StartupRole.founder;
+        return title == StartupRole.founder;
       case RoleFilter.coFounder:
-        return e.role == StartupRole.coFounder;
+        return title == StartupRole.coFounder;
       case RoleFilter.member:
-        return e.role == StartupRole.member;
+        return title == StartupRole.member;
     }
   }
 

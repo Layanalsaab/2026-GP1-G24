@@ -80,9 +80,10 @@ await check('accept while unverified is refused', false, async () => {
 });
 await check('stranger cannot join without an invitation', false, () => updateDoc(doc(stranger, 'startups', 'S1'), { memberIds: ['c1', 'x1'], memberRoles: { c1: 'coFounder', x1: 'member' }, teamMembers: [], updatedAt: serverTimestamp() }));
 await check('accept ALSO adding someone else is refused', false, () => updateDoc(doc(sara, 'startups', 'S1'), { memberIds: ['c1', 's1', 'evil'], memberRoles: { c1: 'coFounder', s1: 'coFounder', evil: 'coFounder' }, teamMembers: [], updatedAt: serverTimestamp() }));
+await check('a co-founder accepting WITHOUT joining coFounderIds is refused', false, () => updateDoc(doc(sara, 'startups', 'S1'), { memberIds: ['c1', 's1'], memberRoles: { c1: 'coFounder', s1: 'coFounder' }, teamMembers: [], updatedAt: serverTimestamp() }));
 await check('accept with the right role works', true, async () => {
   const b = writeBatch(sara);
-  b.update(doc(sara, 'startups', 'S1'), { memberIds: ['c1', 's1'], memberRoles: { c1: 'coFounder', s1: 'coFounder' }, teamMembers: [{ fullName: 'Sara', role: 'CTO' }], updatedAt: serverTimestamp() });
+  b.update(doc(sara, 'startups', 'S1'), { memberIds: ['c1', 's1'], memberRoles: { c1: 'coFounder', s1: 'coFounder' }, coFounderIds: ['s1'], teamMembers: [{ fullName: 'Sara', role: 'CTO' }], updatedAt: serverTimestamp() });
   b.update(doc(sara, 'invitations', 'S1~sara@gmail.com'), { status: 'accepted', respondedAt: serverTimestamp() });
   await b.commit();
 });
@@ -190,6 +191,30 @@ await check('a startup without otherSectors (an older one) still saves', true, a
   const d = maxStartup(); delete d.otherSectors;
   await setDoc(doc(founder, 'startups', 'M4'), d);
 });
+
+// Ownership, closing and transfer (deleting a startup)
+await check('a new startup as the app writes it (foundedBy, status, empty coFounderIds) can be created', true, () => setDoc(doc(founder, 'startups', 'O1'), maxStartup({ foundedBy: 'f1', status: 'active', coFounderIds: [] })));
+await check('creating a startup that names someone else as its founder is refused', false, () => setDoc(doc(founder, 'startups', 'O2'), maxStartup({ foundedBy: 'x1' })));
+await check('creating an already closed startup is refused', false, () => setDoc(doc(founder, 'startups', 'O3'), maxStartup({ status: 'closed' })));
+await check('creating a startup with co-founders already listed is refused', false, () => setDoc(doc(founder, 'startups', 'O4'), maxStartup({ coFounderIds: ['c1'] })));
+await check('creating a startup with a "Founder (former)" name is refused', false, () => setDoc(doc(founder, 'startups', 'O5'), maxStartup({ formerFounderId: 'f1' })));
+
+await check('an unknown status is refused', false, () => updateDoc(doc(founder, 'startups', 'S3'), touch({ status: 'paused' })));
+await check('the owner closes a startup with no co-founder', true, () => updateDoc(doc(founder, 'startups', 'S3'), touch({ status: 'closed' })));
+await check('a closed startup cannot reopen as Public', false, () => updateDoc(doc(founder, 'startups', 'S3'), touch({ status: 'active', isPublic: true })));
+await check('a closed startup reopens as Private', true, () => updateDoc(doc(founder, 'startups', 'S3'), touch({ status: 'active', isPublic: false })));
+
+await env.withSecurityRulesDisabled((ctx) => setDoc(doc(ctx.firestore(), 'startups', 'S4'), {
+  founderId: 'f1', foundedBy: 'f1', status: 'active', name: 'Nova', description: 'd', sector: 'fintech', stage: 'seed',
+  businessModel: 'b2b', location: 'riyadh', lookingFor: ['funding'], isPublic: true, createdAt: new Date(0),
+  memberIds: ['c1', 'm1'], memberRoles: { c1: 'coFounder', m1: 'member' }, coFounderIds: ['c1'],
+  teamMembers: [{ fullName: 'Founder', uid: 'f1', isFounder: true }, { fullName: 'Omar', uid: 'c1' }, { fullName: 'Mona', uid: 'm1' }],
+}));
+await check('the owner cannot close while a co-founder is on it', false, () => updateDoc(doc(founder, 'startups', 'S4'), touch({ status: 'closed' })));
+await check('a co-founder cannot change who created the startup', false, () => updateDoc(doc(coFounder, 'startups', 'S4'), touch({ foundedBy: 'c1' })));
+await check('a co-founder edits the startup', true, () => updateDoc(doc(coFounder, 'startups', 'S4'), touch({ problem: 'x' })));
+await check('ownership cannot go to a member (only a joined co-founder)', false, () => updateDoc(doc(founder, 'startups', 'S4'), touch({ founderId: 'm1', memberIds: ['c1', 'f1'], memberRoles: { c1: 'coFounder', f1: 'coFounder' }, coFounderIds: ['c1', 'f1'] })));
+await check('the owner hands the startup to a joined co-founder', true, () => updateDoc(doc(founder, 'startups', 'S4'), touch({ founderId: 'c1', memberIds: ['m1', 'f1'], memberRoles: { m1: 'member', f1: 'coFounder' }, coFounderIds: ['f1'] })));
 
 console.log(fails === 0 ? 'ALL PASSED' : fails + ' FAILED');
 await env.cleanup();

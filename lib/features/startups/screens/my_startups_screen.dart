@@ -83,7 +83,7 @@ class _MyStartupsScreenState extends State<MyStartupsScreen> {
       context,
       s,
       role: role,
-      onLeave: () => unawaited(_vm.leave(s.id)),
+      onLeave: () => unawaited(_vm.leave(s.id, alreadyLeft: true)),
     );
     if (mounted) _vm.load();
   }
@@ -195,8 +195,14 @@ class _MyStartupsScreenState extends State<MyStartupsScreen> {
                               index: i,
                               bookmarkable: false,
                               badges: [
-                                RoleTag(shown[i].role),
-                                if (!shown[i].startup.isPublic)
+                                RoleTag.forStartup(
+                                  shown[i].startup,
+                                  AppSession.instance.user?.uid,
+                                  fallback: shown[i].role,
+                                ),
+                                if (shown[i].startup.isClosed)
+                                  const GreyTag(FounderToolsStrings.closedPill)
+                                else if (!shown[i].startup.isPublic)
                                   const PrivateTag(),
                               ],
                               actionLabel: shown[i].role.canManage

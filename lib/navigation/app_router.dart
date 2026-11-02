@@ -53,10 +53,16 @@ class AppRouter {
   /// with no startup goes to the onboarding "Add your startup" steps, an
   /// investor who did not finish the investor steps to step 3; everyone else
   /// to Home. [welcomeBack] shows "Welcome back" with the first name.
+  ///
+  /// [lostStartup]: the founder just deleted or left their last startup, so
+  /// "Add your startup" explains why it opened. A founder who had a startup
+  /// before ([AppUser.onboardingCompleted]) gets the same note at log in
+  /// (e.g. after the owner removed them from their only team).
   static Future<void> openAfterLogin(
     BuildContext context,
     AppUser user, {
     bool welcomeBack = false,
+    bool lostStartup = false,
   }) async {
     AppSession.instance.signIn(user);
     // The saved bookmarks load in the background (icons fill when ready).
@@ -88,7 +94,11 @@ class AppRouter {
     if (needsStartup) {
       // A verified founder who never created a startup continues where they
       // stopped: the first "Add your startup" step (no second verification).
-      StartupStepsScreen.openOnboarding(context);
+      // One who HAD a startup is told why they are here.
+      StartupStepsScreen.openOnboarding(
+        context,
+        lostStartup: lostStartup || user.onboardingCompleted,
+      );
       return;
     }
     if (user.role == AccountRole.investor && !user.onboardingCompleted) {
@@ -103,6 +113,24 @@ class AppRouter {
     } else if (welcomeBack) {
       AppToast.showGlobal('Welcome back, ${user.firstName}');
     }
+  }
+
+  /// After the user deleted or left a startup in the app: when it was their
+  /// last one, the same steps as a log in run at once (pending invitations
+  /// first, then "Add your startup" with a note). Returns true when it
+  /// navigated; false when they still have a startup (or it can't tell:
+  /// offline, then the next log in checks).
+  static Future<bool> openIfNoStartupLeft(BuildContext context) async {
+    final user = AppSession.instance.user;
+    if (user == null || user.role != AccountRole.founder) return false;
+    try {
+      if (await StartupRepository.instance.hasAnyStartup()) return false;
+    } catch (_) {
+      return false;
+    }
+    if (!context.mounted) return false;
+    await openAfterLogin(context, user, lostStartup: true);
+    return true;
   }
 
   /// Invitations to a team that wait for this account's e-mail: a founder

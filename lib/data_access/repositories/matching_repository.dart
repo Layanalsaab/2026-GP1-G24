@@ -100,7 +100,8 @@ class MatchingRepository {
     for (final d in docs) {
       // A document the app can't show is never matched.
       final s = Startup.fromMap(d.id, d.data);
-      if (s == null) continue;
+      // A closed startup is not raising and not listed.
+      if (s == null || s.isClosed) continue;
       startups[d.id] = s;
       pool.add(MatchStartup.fromMap(d.id, d.data));
     }

@@ -176,9 +176,17 @@ service cloud.firestore {
 
     // ------------------------------------------------------------- startups
     // - Anyone, signed in or not, can read a startup where isPublic == true.
-    // - A private startup can be read only by its founder and its members
+    // - A private startup can be read only by its owner and its members
     //   (co-founders and team members, listed in `memberIds`).
-    // - A founder can create, update and delete only their own startups.
+    // - `founderId` is the OWNER (final control). It can move to a joined
+    //   co-founder (Transfer ownership); `foundedBy`, who created the
+    //   startup (the "Founder" title), never changes.
+    // - The owner deletes a startup only when nobody else is on it; with
+    //   co-founders it is transferred, with only members it is closed.
+    // - A closed startup (`status` == 'closed') is read only: its owner can
+    //   only reopen it (as private) or leave it; members can leave it.
+    // - A co-founder can't remove or demote another co-founder (the joined
+    //   co-founders are listed in `coFounderIds`).
     // - A member can change ONE thing: remove themself (Leave startup).
     match /startups/{startupId} {
       allow read: if resource.data.isPublic == true
@@ -188,36 +196,79 @@ service cloud.firestore {
 
       allow create: if request.auth != null
                     && request.resource.data.founderId == request.auth.uid
+                    // New: created by its owner, active, no co-founder and
+                    // no "Founder (former)" yet.
+                    && request.resource.data.get('foundedBy', request.auth.uid) == request.auth.uid
+                    && request.resource.data.get('status', 'active') == 'active'
+                    && request.resource.data.get('coFounderIds', []) == []
+                    && !('formerFounderId' in request.resource.data)
                     && request.resource.data.createdAt == request.time
                     && request.resource.data.updatedAt == request.time
                     && validStartup(request.resource.data);
 
+      // The owner: everything except the owner, who created it and the
+      // creation time. A closed startup can only be reopened (as private);
+      // closing needs no co-founder on it.
       allow update: if request.auth != null
                     && resource.data.founderId == request.auth.uid
-                    // Ownership and creation time can never change.
                     && request.resource.data.founderId == resource.data.founderId
+                    && request.resource.data.createdAt == resource.data.createdAt
+                    && request.resource.data.updatedAt == request.time
+                    && keepsFoundedBy()
+                    && ownerStatusOk()
+                    && request.resource.data.get('coFounderIds', []) is list
+                    && request.resource.data.get('formerFounderId', '') is string
+                    && validStartup(request.resource.data);
+
+      // Transfer ownership: the owner gives the startup to a JOINED
+      // co-founder and stays on the team as a co-founder.
+      allow update: if request.auth != null
+                    && resource.data.founderId == request.auth.uid
+                    && statusOf(resource.data) == 'active'
+                    && statusOf(request.resource.data) == 'active'
+                    && request.resource.data.founderId != request.auth.uid
+                    && resource.data.get('memberRoles', {})
+                         .get(request.resource.data.founderId, '') == 'coFounder'
+                    && !(request.resource.data.founderId
+                         in request.resource.data.get('memberIds', []))
+                    && request.resource.data.get('memberRoles', {})
+                         .get(request.auth.uid, '') == 'coFounder'
+                    && request.auth.uid in request.resource.data.get('memberIds', [])
+                    && request.auth.uid in request.resource.data.get('coFounderIds', [])
+                    && request.resource.data.get('foundedBy', '') == foundedByOf(resource.data)
+                    && request.resource.data.get('formerFounderId', '')
+                         == resource.data.get('formerFounderId', '')
                     && request.resource.data.createdAt == resource.data.createdAt
                     && request.resource.data.updatedAt == request.time
                     && validStartup(request.resource.data);
 
-      // A co-founder can do everything the founder can (edit, members,
-      // visibility); only the owner and the creation time stay fixed.
+      // A co-founder can edit, manage members (not co-founders) and the
+      // visibility of an active startup; the owner, who created it, the
+      // creation time and the "Founder (former)" name stay fixed.
       allow update: if request.auth != null
                     && resource.data.get('memberRoles', {}).get(request.auth.uid, '') == 'coFounder'
                     && request.resource.data.founderId == resource.data.founderId
                     && request.resource.data.createdAt == resource.data.createdAt
                     && request.resource.data.updatedAt == request.time
+                    && statusOf(resource.data) == 'active'
+                    && statusOf(request.resource.data) == 'active'
+                    && keepsFoundedBy()
+                    && keepsCoFounders()
+                    && request.resource.data.get('formerFounderId', '')
+                         == resource.data.get('formerFounderId', '')
                     && validStartup(request.resource.data);
 
       // Accepting an invitation: a person with a VERIFIED email that has a
-      // pending invitation to this startup adds ONLY themselves, with the
-      // role the invitation gave (invitation id = startupId~email).
+      // pending invitation to this ACTIVE startup adds ONLY themselves, with
+      // the role the invitation gave (invitation id = startupId~email); a
+      // co-founder is added to coFounderIds too.
       allow update: if request.auth != null
                     && request.auth.token.email_verified == true
+                    && statusOf(resource.data) == 'active'
                     && !(request.auth.uid in resource.data.get('memberIds', []))
                     && request.resource.data.diff(resource.data).affectedKeys()
                          .hasOnly(['memberIds', 'memberRoles', 'teamMembers',
-                                   'updatedAt'])
+                                   'coFounderIds', 'updatedAt'])
                     && request.resource.data.memberIds.toSet()
                          == resource.data.get('memberIds', []).toSet()
                               .union([request.auth.uid].toSet())
@@ -227,30 +278,62 @@ service cloud.firestore {
                     && request.resource.data.get('teamMembers', []).size() <= 20
                     && invitationFor(startupId).status == 'pending'
                     && request.resource.data.memberRoles[request.auth.uid]
-                         == invitationFor(startupId).role;
+                         == invitationFor(startupId).role
+                    && request.resource.data.get('coFounderIds', []).toSet()
+                         == (invitationFor(startupId).role == 'coFounder'
+                               ? resource.data.get('coFounderIds', []).toSet()
+                                   .union([request.auth.uid].toSet())
+                               : resource.data.get('coFounderIds', []).toSet());
 
-      // Leave startup: a member removes only their own uid from memberIds
-      // and their own entry from memberRoles, and their card from the team
-      // list (teamMembers: the new list only drops entries, nothing is added
-      // or edited); nothing else may change.
+      // Leave startup: a member removes only their own uid from memberIds,
+      // memberRoles and coFounderIds, and their card from the team list
+      // (teamMembers: the new list only drops entries, nothing is added or
+      // edited). The person who created the startup may keep her name as
+      // "Founder (former)" (formerFounderId = herself). Nothing else changes.
       allow update: if request.auth != null
                     && request.auth.uid in resource.data.get('memberIds', [])
                     && request.resource.data.diff(resource.data).affectedKeys()
-                         .hasOnly(['memberIds', 'memberRoles', 'teamMembers'])
-                    && (!('teamMembers' in request.resource.data.diff(resource.data).affectedKeys())
-                        || (resource.data.get('teamMembers', []).toSet()
-                              .hasAll(request.resource.data.teamMembers)
-                            && request.resource.data.teamMembers.size()
-                                 < resource.data.get('teamMembers', []).size()))
+                         .hasOnly(['memberIds', 'memberRoles', 'teamMembers',
+                                   'coFounderIds', 'formerFounderId'])
+                    && onlyDropsTeamCards()
+                    && formerFounderOk()
                     && !(request.auth.uid in request.resource.data.memberIds)
                     && request.resource.data.memberIds.toSet()
                          == resource.data.memberIds.toSet()
+                              .difference([request.auth.uid].toSet())
+                    && request.resource.data.get('coFounderIds', []).toSet()
+                         == resource.data.get('coFounderIds', []).toSet()
                               .difference([request.auth.uid].toSet());
 
-      allow delete: if request.auth != null
-                    && resource.data.founderId == request.auth.uid;
+      // The owner leaves a CLOSED startup: nobody owns it afterwards (it
+      // can't be reopened) and the team keeps it.
+      allow update: if request.auth != null
+                    && resource.data.founderId == request.auth.uid
+                    && statusOf(resource.data) == 'closed'
+                    && request.resource.data.founderId == ''
+                    && request.resource.data.diff(resource.data).affectedKeys()
+                         .hasOnly(['founderId', 'teamMembers', 'foundedBy',
+                                   'formerFounderId'])
+                    && request.resource.data.get('foundedBy', '') == foundedByOf(resource.data)
+                    && onlyDropsTeamCards()
+                    && formerFounderOk();
 
-      // ------------------------------------------------ funding rounds
+      // "Remove my name": the former founder removes her "Founder (former)"
+      // name (she is no longer on the team, so this is all she can change).
+      allow update: if request.auth != null
+                    && resource.data.get('formerFounderId', '') == request.auth.uid
+                    && request.resource.data.diff(resource.data).affectedKeys()
+                         .hasOnly(['formerFounderId'])
+                    && !('formerFounderId' in request.resource.data);
+
+      // The owner, when nobody else is on the startup; or the last person on
+      // a closed startup that nobody owns.
+      allow delete: if request.auth != null
+                    && ((resource.data.founderId == request.auth.uid
+                         && resource.data.get('memberIds', []).size() == 0)
+                        || lastOnOwnerless(resource.data));
+
+      // ------------------------------------------------ funding rounds      // ------------------------------------------------ funding rounds
       // startups/{startupId}/fundingRounds/{roundId}. Readable by everyone.
       // Written by the founder or a co-founder, always in the
       // same batch as the startup (StartupRepository), so the rules read the
@@ -275,6 +358,7 @@ service cloud.firestore {
         allow read: if true;
 
         allow create: if canEdit(startupAfter())
+                      && statusOf(startupAfter()) == 'active'
                       && request.resource.data.isDataset == false
                       && validRound(request.resource.data, startupAfter(), startupId);
 
@@ -283,10 +367,76 @@ service cloud.firestore {
                       && request.resource.data.startupId == resource.data.startupId
                       && validRound(request.resource.data, startupAfter(), startupId);
 
-        // With the startup (only its founder can delete it).
+        // With the startup (only its owner can delete it, or the last
+        // person on a closed startup that nobody owns).
         allow delete: if request.auth != null
-                      && startupNow().founderId == request.auth.uid;
+                      && (startupNow().founderId == request.auth.uid
+                          || lastOnOwnerless(startupNow()));
       }
+    }
+
+    // ----------------------------------------------- startup ownership
+    // Who created the startup (older startups: the owner).
+    function foundedByOf(d) {
+      return d.get('foundedBy', d.founderId);
+    }
+
+    function statusOf(d) {
+      return d.get('status', 'active');
+    }
+
+    // `foundedBy` never changes (an older startup may get it written once,
+    // with the right value).
+    function keepsFoundedBy() {
+      return request.resource.data.get('foundedBy', foundedByOf(resource.data))
+          == foundedByOf(resource.data);
+    }
+
+    // The owner's status changes: a closed startup can only be reopened as
+    // private; an active one can be closed only with no co-founder on it.
+    function ownerStatusOk() {
+      let oldStatus = statusOf(resource.data);
+      let newStatus = statusOf(request.resource.data);
+      return newStatus == 'active'
+          ? (oldStatus == 'active' || request.resource.data.isPublic == false)
+          : (newStatus == 'closed' && oldStatus == 'active'
+             && resource.data.get('coFounderIds', []).size() == 0);
+    }
+
+    // A co-founder can't remove or demote a joined co-founder. Older
+    // startups without coFounderIds get the list written once.
+    function keepsCoFounders() {
+      let before = resource.data.get('coFounderIds', null);
+      return before == null
+          || (request.resource.data.get('coFounderIds', []).toSet() == before.toSet()
+              && request.resource.data.get('memberIds', []).toSet().hasAll(before)
+              && !request.resource.data.get('memberRoles', {})
+                    .diff(resource.data.get('memberRoles', {}))
+                    .affectedKeys().hasAny(before));
+    }
+
+    // The team list only loses entries (nothing is added or edited).
+    function onlyDropsTeamCards() {
+      return !('teamMembers' in request.resource.data.diff(resource.data).affectedKeys())
+          || (resource.data.get('teamMembers', []).toSet()
+                .hasAll(request.resource.data.teamMembers)
+              && request.resource.data.teamMembers.size()
+                   < resource.data.get('teamMembers', []).size());
+    }
+
+    // Only the person who created the startup can keep her own name on it
+    // as "Founder (former)" when she leaves.
+    function formerFounderOk() {
+      return !('formerFounderId' in request.resource.data.diff(resource.data).affectedKeys())
+          || (request.resource.data.get('formerFounderId', '') == request.auth.uid
+              && foundedByOf(resource.data) == request.auth.uid);
+    }
+
+    // The last person on a closed startup that nobody owns.
+    function lastOnOwnerless(d) {
+      return d.founderId == ''
+          && statusOf(d) == 'closed'
+          && d.get('memberIds', []) == [request.auth.uid];
     }
 
     // A funding round document (lib/models/funding_round.dart). [s] is the
@@ -323,12 +473,14 @@ service cloud.firestore {
     // contain, so those startups can be updated without being rewritten first.
     // The four enum fields use ONE regular-expression check each (a long
     // `in [...]` list costs one expression per value, and a request may
-    // evaluate at most 1000 expressions).
+    // evaluate at most 1000 expressions: over it, Firestore refuses the
+    // write). The ownership fields (coFounderIds, foundedBy, formerFounderId,
+    // status) are checked by the create / update rules, not here, to stay
+    // under that limit.
     function validStartup(d) {
-      return d.keys().hasAll(['founderId', 'name', 'description', 'sector',
-                              'stage', 'businessModel', 'location',
-                              'lookingFor', 'isPublic'])
-        && d.keys().hasOnly(['founderId', 'name', 'oneLinePitch', 'description',
+      // The required fields need no hasAll(): each one is read below, and a
+      // missing field makes the rule fail.
+      return d.keys().hasOnly(['founderId', 'name', 'oneLinePitch', 'description',
                              'sector', 'sectorOther', 'otherSectors', 'stage',
                              'stageOther',
                              'businessModel', 'businessModelOther',
@@ -343,6 +495,9 @@ service cloud.firestore {
                              'expectedRevenueYear1', 'expectedRevenueYear2',
                              'expectedRevenueYear3', 'valuation',
                              'wantsLeadInvestor', 'memberIds', 'memberRoles',
+                             // Ownership and closing
+                             'coFounderIds', 'foundedBy', 'formerFounderId',
+                             'status',
                              // Finance and Growth / Startup Ask answers
                              'revenueThisYear', 'monthlyBurnRate',
                              'businessModelExplanation', 'raisedInRound',
@@ -350,10 +505,10 @@ service cloud.firestore {
         && d.name is string && d.name.size() >= 1 && d.name.size() <= 40
         // The one-line pitch: at most 120.
         && d.description is string && d.description.size() <= 1500
-        && d.sector is string && d.sector.matches('^(healthtech|fintech|edtech|ecommerce|logistics|agritech|proptech|cleantech|tourism|saas|ai|cybersecurity|gaming|media|foodtech|mobility|retail|energy|insurtech|legaltech|hr_tech|biotech|manufacturing|sports|other|hrtech|ecommerce_retail|logistics_transport|food_beverage|software_cloud)$')
-        && d.stage is string && d.stage.matches('^(pre_seed|seed|series_a|series_b|series_c|other|idea|mvp|early_revenue|growth)$')
-        && d.businessModel is string && d.businessModel.matches('^(b2g|b2b|b2b2c|d2c|b2c|c2c|b2e|c2b|g2c|g2g|other|marketplace)$')
-        && d.location is string && d.location.matches('^(abha|al_ahsa|al_baha|al_jubail|al_kharj|al_khobar|al_qatif|arar|buraydah|dammam|dhahran|hafar_al_batin|hail|jazan|jeddah|khamis_mushait|makkah|madinah|najran|riyadh|sakaka|tabuk|taif|unaizah|yanbu|khobar|mecca|medina|other)$')
+        && d.sector.matches('^(healthtech|fintech|edtech|ecommerce|logistics|agritech|proptech|cleantech|tourism|saas|ai|cybersecurity|gaming|media|foodtech|mobility|retail|energy|insurtech|legaltech|hr_tech|biotech|manufacturing|sports|other|hrtech|ecommerce_retail|logistics_transport|food_beverage|software_cloud)$')
+        && d.stage.matches('^(pre_seed|seed|series_a|series_b|series_c|other|idea|mvp|early_revenue|growth)$')
+        && d.businessModel.matches('^(b2g|b2b|b2b2c|d2c|b2c|c2c|b2e|c2b|g2c|g2g|other|marketplace)$')
+        && d.location.matches('^(abha|al_ahsa|al_baha|al_jubail|al_kharj|al_khobar|al_qatif|arar|buraydah|dammam|dhahran|hafar_al_batin|hail|jazan|jeddah|khamis_mushait|makkah|madinah|najran|riyadh|sakaka|tabuk|taif|unaizah|yanbu|khobar|mecca|medina|other)$')
         // May be empty: a startup whose only ask was Funding has none
         // after its round closes ("Not raising right now").
         && d.lookingFor is list
@@ -431,10 +586,11 @@ service cloud.firestore {
       return v == null || (v is list && v.size() <= 10);
     }
 
-    // A SAR amount: a whole number, 0 or more, at most 13 digits.
+    // A SAR amount: a whole number, 0 or more (the app limits the digits;
+    // no upper bound here, to keep the rules under the expression limit).
     function optionalMoney(d, field) {
       let v = d.get(field, null);
-      return v == null || (v is int && v >= 0 && v < 10000000000000);
+      return v == null || (v is int && v >= 0);
     }
 
     // The founded year runs from 1900 to the current year.
@@ -466,10 +622,13 @@ service cloud.firestore {
       return get(/databases/$(database)/documents/invitations/$(startupId + '~' + request.auth.token.email.lower())).data;
     }
 
+    // The owner or a co-founder of an ACTIVE startup (nobody joins a closed
+    // one; its invitations are cancelled before it closes).
     function canInvite(startupId) {
       let s = get(/databases/$(database)/documents/startups/$(startupId)).data;
-      return s.founderId == request.auth.uid
-          || s.get('memberRoles', {}).get(request.auth.uid, '') == 'coFounder';
+      return (s.founderId == request.auth.uid
+              || s.get('memberRoles', {}).get(request.auth.uid, '') == 'coFounder')
+          && s.get('status', 'active') == 'active';
     }
 
     function myVerifiedEmail(d) {

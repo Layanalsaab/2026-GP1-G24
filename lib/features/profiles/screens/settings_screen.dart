@@ -1,13 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../app_constants/account_strings.dart';
-import '../../../app_constants/app_strings.dart';
 import '../../../app_constants/profile_strings.dart';
-import '../../../data_access/repositories/auth_repository.dart';
-import '../../../helpers/app_session.dart';
-import '../../../models/app_user.dart';
-import '../../../models/auth_failure.dart';
-import '../../../navigation/app_router.dart';
 import '../../../shared_ui/icons/app_icons.dart';
 import '../../../shared_ui/navigation/app_route.dart';
 import '../../../shared_ui/theme/app_colors.dart';
@@ -17,10 +10,9 @@ import '../../../shared_ui/theme/theme_controller.dart';
 import '../../../shared_ui/widgets/forms/app_switch.dart';
 import '../../../shared_ui/widgets/headers/header_buttons.dart';
 import '../../../shared_ui/widgets/lists/press_surface.dart';
-import '../../../shared_ui/widgets/overlays/app_bottom_sheet.dart';
 import '../../../shared_ui/widgets/overlays/app_toast.dart';
 import 'change_password_screen.dart';
-import 'delete_account_dialog.dart';
+import 'delete_account_flow.dart';
 
 /// Settings (docs/05 C6, screenshot 42): Display (Dark mode), Notifications
 /// (not designed yet: toast) and Account (Change password, Delete account).
@@ -36,46 +28,8 @@ class SettingsScreen extends StatelessWidget {
     AppToast.show(context, on ? ProfileStrings.darkOn : ProfileStrings.darkOff);
   }
 
-  Future<void> _deleteAccount(BuildContext context) async {
-    final role = AppSession.instance.user?.role ?? AccountRole.founder;
-    final sure = await showConfirmSheet(
-      context,
-      title: ProfileStrings.deleteTitle,
-      message:
-          '${role == AccountRole.founder ? AccountStrings.deleteWarningFounder : AccountStrings.deleteWarningInvestor} '
-          '${AccountStrings.cannotBeUndone}',
-      confirmLabel: ProfileStrings.deleteConfirm,
-      cancelLabel: ProfileStrings.cancel,
-    );
-    if (!sure || !context.mounted) return;
-
-    var deleted = false;
-    try {
-      await AuthRepository.instance.deleteAccount();
-      deleted = true;
-    } on AuthException catch (e) {
-      if (!context.mounted) return;
-      if (e.failure == AuthFailure.requiresRecentLogin) {
-        // Firebase wants a fresh sign-in: ask for the password this once.
-        deleted = await showDeleteAccountDialog(context, role: role) == true;
-      } else {
-        AppToast.error(
-          context,
-          e.failure == AuthFailure.network
-              ? AppStrings.networkError
-              : AppStrings.genericError,
-        );
-        return;
-      }
-    } catch (_) {
-      if (context.mounted) AppToast.error(context, AppStrings.genericError);
-      return;
-    }
-    if (!deleted || !context.mounted) return;
-    // The account is gone and signed out: back to Welcome with no way back.
-    AppSession.instance.signOut();
-    AppRouter.openStart(context);
-  }
+  Future<void> _deleteAccount(BuildContext context) =>
+      startAccountDeletion(context);
 
   @override
   Widget build(BuildContext context) {

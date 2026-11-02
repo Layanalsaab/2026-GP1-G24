@@ -771,6 +771,7 @@ class _Team extends StatelessWidget {
                   TeamMemberRow(
                     member: vm.team[i],
                     isYou: _isMe(vm.team[i]),
+                    ownerId: vm.initial?.founderId,
                     declined:
                         vm.inviteStatus[vm.team[i].email] ==
                         InvitationStatus.declined,
@@ -827,6 +828,10 @@ class _Team extends StatelessWidget {
       },
       onSave: () => _save(context),
       onRemove: vm.removeMember,
+      canRemove: member == null ? null : vm.canRemoveMember(member),
+      canChangeCoFounder: member == null
+          ? null
+          : vm.canChangeCoFounder(member),
     );
   }
 }

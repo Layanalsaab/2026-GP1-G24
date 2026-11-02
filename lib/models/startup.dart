@@ -53,6 +53,9 @@ class Startup {
     this.partnerTypes = const [],
     this.supportTypes = const [],
     this.memberRoles = const {},
+    this.foundedBy,
+    this.formerFounderId,
+    this.isClosed = false,
   });
 
   final String id;
@@ -210,6 +213,81 @@ class Startup {
   /// The uids in [memberRoles] (what "My startups" queries on).
   List<String> get memberIds => memberRoles.keys.toList();
 
+  /// The joined co-founders (stored as `coFounderIds` too, for the rules).
+  List<String> get coFounderIds => [
+    for (final e in memberRoles.entries)
+      if (e.value == 'coFounder') e.key,
+  ];
+
+  // ---- Ownership (docs: Deleting, Closing and Transferring a Startup) ----
+  //
+  // [founderId] is the OWNER: the one account with final control (delete,
+  // close, transfer). The title "Founder" belongs to whoever created the
+  // startup ([originalFounderId]) and never moves. They are the same person
+  // until the owner transfers the startup to a co-founder.
+
+  /// Who created the startup. Null on startups saved before ownership could
+  /// move: the owner is then the founder.
+  final String? foundedBy;
+
+  /// The founder after she left and chose to keep her name on the team as
+  /// "Founder (former)". Null otherwise.
+  final String? formerFounderId;
+
+  /// A closed startup: hidden from Start.sa, read only, kept for its team.
+  final bool isClosed;
+
+  /// The person with the title "Founder".
+  String get originalFounderId {
+    final by = (foundedBy ?? '').trim();
+    return by.isNotEmpty ? by : founderId;
+  }
+
+  /// False once the owner left a closed startup (nobody can reopen it).
+  bool get hasOwner => founderId.isNotEmpty;
+
+  /// Listed on Start.sa (Hub, Explore, Matches, search): public and not
+  /// closed.
+  bool get isListed => isPublic && !isClosed;
+
+  /// What the owner can do to end the startup (one option only):
+  /// - [OwnerOption.delete]: nobody else is on it;
+  /// - [OwnerOption.transfer]: a co-founder joined (co-owners are never
+  ///   wiped out by one person);
+  /// - [OwnerOption.close]: only members (or, later, accepted investments).
+  ///
+  /// Accepted investments are not stored yet (requests live in memory), so
+  /// only the team decides for now.
+  OwnerOption get ownerOption {
+    if (coFounderIds.isNotEmpty) return OwnerOption.transfer;
+    if (memberRoles.isNotEmpty) return OwnerOption.close;
+    return OwnerOption.delete;
+  }
+
+  /// The joined co-founders in the order of the team list (the first one is
+  /// who takes over when the owner deletes their account), then any whose
+  /// card is missing.
+  List<String> get coFoundersInTeamOrder {
+    final ids = coFounderIds.toSet();
+    final ordered = <String>[
+      for (final m in team)
+        if (m.uid != null && ids.contains(m.uid)) m.uid!,
+    ];
+    return [
+      ...ordered.toSet(),
+      for (final id in coFounderIds)
+        if (!ordered.contains(id)) id,
+    ];
+  }
+
+  /// The name on [uid]'s team card ([fallback] when there is none).
+  String nameOf(String uid, {String fallback = ''}) {
+    for (final m in team) {
+      if (m.uid == uid && m.name.trim().isNotEmpty) return m.name.trim();
+    }
+    return fallback;
+  }
+
   /// Longest text in the Problem / solution / growth fields and team bios.
   static const longTextMax = 1000;
 
@@ -329,6 +407,16 @@ class Startup {
     StartupFields.supportTypes: supportTypes,
     StartupFields.memberIds: memberIds,
     StartupFields.memberRoles: memberRoles,
+    StartupFields.coFounderIds: coFounderIds,
+    // Written on every save (an older startup gets it then); the rules make
+    // sure it never changes.
+    if (originalFounderId.isNotEmpty)
+      StartupFields.foundedBy: originalFounderId,
+    if (formerFounderId != null)
+      StartupFields.formerFounderId: formerFounderId,
+    StartupFields.status: isClosed
+        ? StartupFields.statusClosed
+        : StartupFields.statusActive,
   };
 
   /// Returns null when a required field is missing or holds an unknown value,
@@ -409,6 +497,9 @@ class Startup {
       partnerTypes: _strings(data[StartupFields.partnerTypes]),
       supportTypes: _strings(data[StartupFields.supportTypes]),
       memberRoles: _roles(data[StartupFields.memberRoles]),
+      foundedBy: _otherFromMap(data[StartupFields.foundedBy]),
+      formerFounderId: _otherFromMap(data[StartupFields.formerFounderId]),
+      isClosed: data[StartupFields.status] == StartupFields.statusClosed,
     );
   }
 
@@ -461,6 +552,10 @@ class Startup {
     List<String>? partnerTypes,
     List<String>? supportTypes,
     Map<String, String>? memberRoles,
+    String? foundedBy,
+    String? formerFounderId,
+    bool clearFormerFounder = false,
+    bool? isClosed,
   }) => Startup(
     id: id ?? this.id,
     founderId: founderId ?? this.founderId,
@@ -511,6 +606,11 @@ class Startup {
     partnerTypes: partnerTypes ?? this.partnerTypes,
     supportTypes: supportTypes ?? this.supportTypes,
     memberRoles: memberRoles ?? this.memberRoles,
+    foundedBy: foundedBy ?? this.foundedBy,
+    formerFounderId: clearFormerFounder
+        ? null
+        : (formerFounderId ?? this.formerFounderId),
+    isClosed: isClosed ?? this.isClosed,
   );
 
   static List<String> _strings(Object? raw) => [
@@ -518,4 +618,16 @@ class Startup {
       for (final v in raw)
         if (v is String && v.trim().isNotEmpty) v,
   ];
+}
+
+/// What the owner can do to end a startup (see [Startup.ownerOption]).
+enum OwnerOption {
+  /// Nobody else is on it: delete it for good.
+  delete,
+
+  /// A co-founder joined: hand the startup over first.
+  transfer,
+
+  /// Only members: close it (hidden, read only, kept for the team).
+  close,
 }

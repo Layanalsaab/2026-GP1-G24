@@ -11,6 +11,7 @@ class TeamMember {
     this.isFounder = false,
     this.uid,
     this.photoData,
+    this.former = false,
   });
 
   static const nameMax = 50;
@@ -47,6 +48,10 @@ class TeamMember {
   /// shown. Never stored on the startup (null: the default picture).
   final String? photoData;
 
+  /// The founder after she left the startup and kept her name on the team
+  /// ("Founder (former)"). Built for the Team tab only, never stored.
+  final bool former;
+
   TeamMember copyWith({
     String? name,
     String? email,
@@ -57,6 +62,7 @@ class TeamMember {
     bool? isFounder,
     String? uid,
     String? photoData,
+    bool? former,
   }) => TeamMember(
     name: name ?? this.name,
     email: email ?? this.email,
@@ -67,6 +73,7 @@ class TeamMember {
     isFounder: isFounder ?? this.isFounder,
     uid: uid ?? this.uid,
     photoData: photoData ?? this.photoData,
+    former: former ?? this.former,
   );
 
   /// The sub-line on a team row: the role.

@@ -101,8 +101,11 @@ class InvitationRepository {
     }
     // A joined person stays; a declined one is not invited again behind the
     // founder's back (removing the card and adding it again does that).
-    if (existing.status == InvitationStatus.accepted ||
-        existing.status == InvitationStatus.declined) {
+    // Somebody who joined and then LEFT (or was removed) can be invited
+    // again: their old "accepted" invitation turns pending.
+    if (existing.status == InvitationStatus.declined ||
+        (existing.status == InvitationStatus.accepted &&
+            _stillOnTeam(existing, startup))) {
       return existing;
     }
     // Pending, cancelled or declined: pending again with the current words.
@@ -130,6 +133,33 @@ class InvitationRepository {
           : false,
       lastSentAt: existing.lastSentAt,
     );
+  }
+
+  /// The person who accepted [invitation] is still on [startup]'s team.
+  static bool _stillOnTeam(Invitation invitation, Startup startup) {
+    final uid = invitation.acceptedBy;
+    if (uid != null && uid.isNotEmpty) {
+      return uid == startup.founderId || startup.memberRoles.containsKey(uid);
+    }
+    // Older invitations don't say who accepted: a joined card with that
+    // e-mail means they are still there.
+    return startup.team.any(
+      (m) => !m.invited && m.email == invitation.emailLower,
+    );
+  }
+
+  /// Cancels the invitation of everybody invited to [startup] who hasn't
+  /// joined yet (before the startup is deleted or closed), so nobody is asked
+  /// to join a startup they can't join. Best effort per person.
+  Future<void> cancelAllFor(Startup startup) async {
+    for (final m in startup.team) {
+      if (!m.invited || m.email.trim().isEmpty) continue;
+      try {
+        await cancel(startup.id, m.email);
+      } catch (e) {
+        debugPrint('Could not cancel the invitation of ${m.email}: $e');
+      }
+    }
   }
 
   /// The team removed the person before they joined.
@@ -253,6 +283,8 @@ class InvitationRepository {
         {
           'memberIds': _firestore.arrayUnion([uid]),
           'memberRoles.$uid': invitation.role,
+          // The rules protect the joined co-founders through this list.
+          if (invitation.isCoFounder) 'coFounderIds': _firestore.arrayUnion([uid]),
           'teamMembers': ?team,
           'updatedAt': _firestore.serverTimestamp(),
         },

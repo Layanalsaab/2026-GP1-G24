@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import '../../app_constants/firestore_collections.dart';
 import '../../models/app_user.dart';
 import '../../models/public_profile.dart';
+import '../../models/startup.dart';
 import '../../models/team_member.dart';
 import 'startup_repository.dart';
 import '../firebase_services/firestore_service.dart';
@@ -106,15 +107,25 @@ class PublicProfileRepository {
       for (final m in s.team) {
         if (m.uid == personId) card = m;
       }
+      // The title, not the access: whoever created the startup is its
+      // founder (also after handing it over), and an owner who didn't create
+      // it is a co-founder.
+      final onTeam =
+          s.founderId == personId ||
+          s.memberRoles.containsKey(personId) ||
+          (card != null && !card.invited);
       final String? role;
-      if (s.founderId == personId || (card?.isFounder ?? false)) {
+      if (onTeam &&
+          (s.originalFounderId == personId || (card?.isFounder ?? false))) {
         role = 'founder';
-      } else if (s.memberRoles[personId] == 'coFounder' ||
+      } else if (s.founderId == personId ||
+          s.memberRoles[personId] == 'coFounder' ||
           ((card?.coFounder ?? false) && !(card?.invited ?? false))) {
         role = 'coFounder';
-      } else if (s.memberRoles.containsKey(personId) ||
-          (card != null && !card.invited)) {
+      } else if (onTeam) {
         role = 'member';
+      } else if (s.formerFounderId == personId) {
+        role = ProfileStartupRef.formerFounder;
       } else {
         role = null;
       }
@@ -131,16 +142,30 @@ class PublicProfileRepository {
   /// only updates a profile that exists (it never brings a deleted one back).
   Future<void> refreshMyStartups(String uid) async {
     try {
-      final mine = await StartupRepository.instance.fetchMyStartups();
-      final joined = await StartupRepository.instance.fetchMemberStartups();
+      final repo = StartupRepository.instance;
+      final mine = await repo.fetchMyStartups();
+      final joined = await repo.fetchMemberStartups();
+      var former = const <Startup>[];
+      try {
+        former = await repo.fetchFormerStartups();
+      } catch (_) {
+        // Only the "Founder (former)" entries are missing.
+      }
+      // The title: whoever created a startup is its founder, also after
+      // handing it over; an owner who didn't create it is a co-founder.
+      String titleIn(Startup s) => s.originalFounderId == uid
+          ? 'founder'
+          : (s.founderId == uid || s.memberRoles[uid] == 'coFounder')
+          ? 'coFounder'
+          : 'member';
       final refs = <ProfileStartupRef>[
-        for (final s in mine)
-          ProfileStartupRef(id: s.id, name: s.name, role: 'founder'),
-        for (final s in joined)
+        for (final s in [...mine, ...joined])
+          ProfileStartupRef(id: s.id, name: s.name, role: titleIn(s)),
+        for (final s in former)
           ProfileStartupRef(
             id: s.id,
             name: s.name,
-            role: s.memberRoles[uid] == 'coFounder' ? 'coFounder' : 'member',
+            role: ProfileStartupRef.formerFounder,
           ),
       ];
       await _firestore.updateDocument(_col, uid, {

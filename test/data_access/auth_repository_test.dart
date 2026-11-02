@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:startsa/data_access/firebase_services/auth_service.dart';
 import 'package:startsa/data_access/repositories/auth_repository.dart';
+import 'package:startsa/data_access/repositories/startup_repository.dart';
 import 'package:startsa/models/app_user.dart';
 import 'package:startsa/models/auth_failure.dart';
 
@@ -10,10 +11,13 @@ void main() {
   late FakeAuthService auth;
   late FakeUserRepository users;
   late AuthRepository repo;
+  late FakeStartupRepository startups;
 
   setUp(() {
     auth = FakeAuthService();
     users = FakeUserRepository();
+    startups = FakeStartupRepository();
+    StartupRepository.instance = startups;
     repo = AuthRepository(authService: auth, userRepository: users);
   });
 
@@ -278,6 +282,16 @@ void main() {
       expect(auth.calls, isNot(contains('reauth')));
       expect(auth.calls, contains('delete'));
       expect(users.deletedProfiles, contains('uid1'));
+      // The startups were handed over, closed or deleted first.
+      expect(startups.handedOver, isTrue);
+    });
+
+    test('when handing the startups over fails, nothing is deleted', () async {
+      auth.signedIn = verified();
+      startups.handOverFails = AuthFailure.network;
+      expect(await failureOf(() => repo.deleteAccount()), AuthFailure.network);
+      expect(auth.calls, isNot(contains('delete')));
+      expect(users.deletedProfiles, isEmpty);
     });
 
     test('an old sign-in removes nothing and asks for the password', () async {
