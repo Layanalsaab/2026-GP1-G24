@@ -239,6 +239,18 @@ class _StartupStepsScreenState extends State<StartupStepsScreen> {
       case StepAdvance.memberOpen:
         AppToast.error(context, FounderToolsStrings.saveMemberFirst);
       case StepAdvance.readyToSave:
+        // Editing an existing startup (one section or the full edit) asks
+        // first; creating one (sign-up, Create startup) does not. The role
+        // is checked again inside _vm.save(), right before the write.
+        if (_edit) {
+          final go = await showSaveConfirmDialog(
+            context,
+            title: FounderToolsStrings.saveConfirmTitle,
+            message: FounderToolsStrings.saveStartupMessage,
+            confirmLabel: FounderToolsStrings.saveConfirmButton,
+          );
+          if (!go || !mounted) return;
+        }
         await _save();
     }
   }

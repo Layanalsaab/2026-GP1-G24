@@ -588,13 +588,12 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(find.text('Rafeeq Health'), findsOneWidget);
-      // Header: role label above the name, six tabs, eye + share icons.
+      // Header: role label above the name, five tabs, eye + share icons.
       expect(find.text('FOUNDER'), findsOneWidget);
       for (final tab in [
         'Dashboard',
         'Details',
         'Rounds',
-        'Requests',
         'Interest',
         'Settings',
       ]) {
@@ -620,19 +619,6 @@ void main() {
         of: find.byType(ScrollableHeaderTabBar),
         matching: find.text(label),
       );
-      await tester.ensureVisible(tab('Requests'));
-      await tester.pumpAndSettle();
-      await tester.tap(tab('Requests'));
-      await tester.pumpAndSettle();
-      expect(find.text('Pending · 1'), findsOneWidget);
-      expect(find.text('SAR 300,000 for 15%'), findsOneWidget);
-      await tester.tap(find.text('Accept'));
-      await tester.pumpAndSettle();
-      // Confirmations show no pop-up any more; the request just leaves the list.
-      expect(find.text('No pending requests.'), findsOneWidget);
-      await tester.pump(const Duration(seconds: 3));
-      await tester.pumpAndSettle();
-
       await tester.ensureVisible(tab('Interest'));
       await tester.pumpAndSettle();
       await tester.tap(tab('Interest'));
@@ -650,13 +636,21 @@ void main() {
       expect(find.text('Delete Rafeeq Health?'), findsOneWidget);
     });
 
-    testWidgets('the share icon copies the link and says so', (tester) async {
+    testWidgets('the share icon opens the share sheet; Copy link says so', (
+      tester,
+    ) async {
       _bigScreen(tester);
       await tester.pumpWidget(
         _app(ManageStartupScreen(startup: PrototypeSeed.rafeeq)),
       );
       await tester.pumpAndSettle();
       await tester.tap(find.bySemanticsLabel('Share'));
+      await tester.pumpAndSettle();
+      // The sheet lists the apps, not just "Link copied".
+      expect(find.text('WhatsApp'), findsOneWidget);
+      expect(find.text('Copy link'), findsOneWidget);
+      expect(find.text('Link copied'), findsNothing);
+      await tester.tap(find.text('Copy link'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 400));
       expect(find.text('Link copied'), findsOneWidget);
@@ -871,6 +865,14 @@ void main() {
       }
       expect(find.text('Save changes'), findsOneWidget);
       await tester.tap(find.text('Save changes'));
+      await tester.pumpAndSettle();
+      // The confirm comes first.
+      expect(find.text('Save changes?'), findsOneWidget);
+      expect(
+        find.text('Your changes will be saved to this startup.'),
+        findsOneWidget,
+      );
+      await tester.tap(find.text('Save changes').last);
       await tester.pumpAndSettle();
       expect(find.text('Save changes'), findsNothing, reason: 'left the form');
       expect(find.text('edit'), findsOneWidget);

@@ -4,7 +4,11 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:startsa/data_access/mock_data/prototype_seed.dart';
 import 'package:startsa/data_access/repositories/activity_repository.dart';
 import 'package:startsa/data_access/repositories/discovery_repository.dart';
+import 'package:startsa/data_access/firebase_services/firestore_service.dart';
 import 'package:startsa/data_access/repositories/funding_round_repository.dart';
+import 'package:startsa/data_access/repositories/matching_repository.dart';
+import 'package:startsa/features/profiles/screens/investor_profile_screen.dart';
+import 'package:startsa/features/startups/widgets/manage_rounds_tab.dart';
 import 'package:startsa/data_access/repositories/interest_repository.dart';
 import 'package:startsa/data_access/repositories/request_repository.dart';
 import 'package:startsa/data_access/repositories/startup_repository.dart';
@@ -21,6 +25,24 @@ import 'package:startsa/shared_ui/widgets/overlays/app_toast.dart';
 import 'package:startsa/shared_ui/widgets/overlays/picker_sheet.dart';
 
 import '../../support/fakes.dart';
+
+/// Serves fixed documents instead of Firestore (the matching pools).
+class _FakeFirestore extends FirestoreService {
+  _FakeFirestore(this.collections);
+
+  final Map<String, List<FirestoreDocument>> collections;
+
+  @override
+  Future<List<FirestoreDocument>> queryWhereEqual(
+    String collection,
+    String field,
+    Object value, {
+    int? limit,
+  }) async => [
+    for (final d in collections[collection] ?? const <FirestoreDocument>[])
+      if (d.data[field] == value) d,
+  ];
+}
 
 Future<void> _openRounds(
   WidgetTester t, {
@@ -57,6 +79,10 @@ void main() {
     ActivityRepository.instance = ActivityRepository(sample: true);
     DiscoveryRepository.instance = DiscoveryRepository.sample();
     FundingRoundRepository.instance = FundingRoundRepository.sample();
+    MatchingRepository.instance = MatchingRepository(
+      firestore: _FakeFirestore(const {}),
+      live: false,
+    );
     AppSession.instance = AppSession();
   });
 
@@ -248,9 +274,64 @@ void main() {
       await t.pumpAndSettle();
       await t.tap(find.text('Add round').last);
       await t.pumpAndSettle();
+      // The confirm comes first; Cancel keeps the form, nothing is added.
+      expect(find.text('Add round?'), findsOneWidget);
+      expect(
+        find.text('This round will be added to your startup.'),
+        findsOneWidget,
+      );
+      await t.tap(find.text('Cancel').last);
+      await t.pumpAndSettle();
+      expect(find.text('Add round?'), findsNothing);
+      expect(find.text('New round · Round 3'), findsOneWidget);
+      await t.tap(find.text('Add round').last);
+      await t.pumpAndSettle();
+      await t.tap(find.text('Add round').last);
+      await t.pumpAndSettle();
       expect(find.text('Round 3'), findsOneWidget);
       expect(find.text('60M'), findsOneWidget);
       expect(find.text('Close round'), findsOneWidget);
+    });
+
+    testWidgets('Cancel asks "Discard changes?" only after a change', (
+      t,
+    ) async {
+      t.view.physicalSize = const Size(800, 2400);
+      t.view.devicePixelRatio = 1;
+      addTearDown(t.view.reset);
+      await _openRounds(t);
+      await t.tap(find.text('Close round'));
+      await t.pumpAndSettle();
+      await t.tap(find.text('Close round').last);
+      await t.pumpAndSettle();
+      await t.tap(find.text('Add round'));
+      await t.pumpAndSettle();
+      // Nothing changed: Cancel closes the form at once.
+      await t.tap(find.text('Cancel'));
+      await t.pumpAndSettle();
+      expect(find.text('Discard changes?'), findsNothing);
+      expect(find.text('New round · Round 3'), findsNothing);
+      // Typed an amount: Cancel asks; "Keep editing" keeps it.
+      await t.tap(find.text('Add round'));
+      await t.pumpAndSettle();
+      final fields = find.byType(TextField);
+      await t.enterText(fields.at(fields.evaluate().length - 2), '1200000');
+      await t.pump();
+      await t.tap(find.text('Cancel'));
+      await t.pumpAndSettle();
+      expect(find.text('Discard changes?'), findsOneWidget);
+      expect(
+        find.text('If you go back now, your changes will be lost.'),
+        findsOneWidget,
+      );
+      await t.tap(find.text('Keep editing'));
+      await t.pumpAndSettle();
+      expect(find.text('New round · Round 3'), findsOneWidget);
+      await t.tap(find.text('Cancel'));
+      await t.pumpAndSettle();
+      await t.tap(find.text('Discard'));
+      await t.pumpAndSettle();
+      expect(find.text('New round · Round 3'), findsNothing);
     });
 
     testWidgets('the dashboard Raising tile follows the open round', (t) async {
@@ -265,6 +346,295 @@ void main() {
       await t.pumpAndSettle();
       expect(find.text('SAR 500K'), findsOneWidget);
       expect(find.text('Round 2 · Open'), findsOneWidget);
+    });
+
+    testWidgets('rows show Open / Closed, a hint, and the plain table stays', (
+      t,
+    ) async {
+      await _openRounds(t);
+      expect(find.text('Open'), findsOneWidget);
+      expect(find.text('Closed'), findsOneWidget);
+      expect(find.text('Tap a round to see its details.'), findsOneWidget);
+      // Nothing is open yet: no page.
+      expect(find.text('All rounds'), findsNothing);
+    });
+
+    testWidgets('an open round page: card, investors and matches', (t) async {
+      await _openRounds(t);
+      await t.tap(find.text('Round 2'));
+      await t.pumpAndSettle();
+      expect(find.text('All rounds'), findsOneWidget);
+      expect(find.text('Round 2'), findsOneWidget);
+      expect(find.text('Open'), findsOneWidget);
+      expect(find.text('Seed · Aug 2026 – now'), findsOneWidget);
+      expect(find.text('Amount'), findsOneWidget);
+      expect(find.text('SAR 500,000'), findsOneWidget);
+      expect(find.text('SAR 200,000'), findsOneWidget);
+      expect(find.text('40% of the target raised'), findsOneWidget);
+      expect(find.text('Investors'), findsOneWidget);
+      expect(find.text('Who is in this round'), findsOneWidget);
+      expect(find.text('Ahmad Hassan'), findsOneWidget);
+      expect(find.text('Matches'), findsOneWidget);
+      expect(find.text('Investors that fit this round'), findsOneWidget);
+      expect(find.text('Edit round'), findsOneWidget);
+      // The list is gone; the back link returns to it.
+      expect(find.text('Funding rounds'), findsNothing);
+      await t.tap(find.text('All rounds'));
+      await t.pumpAndSettle();
+      expect(find.text('Funding rounds'), findsOneWidget);
+      expect(find.text('All rounds'), findsNothing);
+    });
+
+    testWidgets('a closed round page: no Matches, no Edit round', (t) async {
+      await _openRounds(t);
+      await t.tap(find.text('Round 1'));
+      await t.pumpAndSettle();
+      expect(find.text('Closed'), findsOneWidget);
+      expect(find.text('SAR 250,000'), findsNWidgets(2));
+      expect(find.text('100% of the target raised'), findsOneWidget);
+      expect(find.text('Layan Alsaab'), findsOneWidget);
+      expect(find.text('Matches'), findsNothing);
+      expect(find.text('Edit round'), findsNothing);
+      // The investor opens their profile.
+      await t.tap(find.text('Layan Alsaab'));
+      await t.pumpAndSettle();
+      expect(find.byType(InvestorProfileScreen), findsOneWidget);
+    });
+
+    testWidgets('a round with no investors says so (open and closed)', (
+      t,
+    ) async {
+      FundingRoundRepository.instance = FundingRoundRepository.sample();
+      final vm = RoundsViewModel(
+        rounds: [
+          FundingRound(
+            number: 2,
+            type: StartupStage.seed,
+            amount: 100000,
+            start: DateTime(2026, 8, 1),
+          ),
+          FundingRound(
+            number: 1,
+            type: StartupStage.preSeed,
+            amount: 50000,
+            start: DateTime(2026, 1, 1),
+            end: DateTime(2026, 2, 1),
+          ),
+        ],
+      );
+      addTearDown(vm.dispose);
+      t.view.physicalSize = const Size(1236, 2676);
+      t.view.devicePixelRatio = 3;
+      addTearDown(t.view.reset);
+      await t.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.light,
+          navigatorKey: AppToast.navigatorKey,
+          home: Scaffold(body: SingleChildScrollView(child: ManageRoundsTab(vm: vm))),
+        ),
+      );
+      await t.tap(find.text('Round 2'));
+      await t.pumpAndSettle();
+      expect(find.text('No investors yet'), findsOneWidget);
+      await t.tap(find.text('All rounds'));
+      await t.pumpAndSettle();
+      await t.tap(find.text('Round 1'));
+      await t.pumpAndSettle();
+      expect(find.text('No investors recorded'), findsOneWidget);
+    });
+
+    testWidgets('Matches: the top five investors with percent and reason', (
+      t,
+    ) async {
+      Map<String, dynamic> investor(int n) => {
+        'role': 'investor',
+        'fullName': 'Matched Investor $n',
+        'title': 'Angel Investor',
+        'city': 'Riyadh',
+        'preferredSectors': ['HealthTech'],
+        'preferredStages': ['Seed'],
+        'preferredCommerceModels': <String>[],
+        'ticketSize': 'SAR 100K – 500K',
+      };
+      MatchingRepository.instance = MatchingRepository(
+        firestore: _FakeFirestore({
+          'investors': [
+            for (var n = 1; n <= 7; n++) (id: 'ANG-$n', data: investor(n)),
+          ],
+        }),
+        live: false,
+      );
+      await _openRounds(t);
+      await t.tap(find.text('Round 2'));
+      await t.pumpAndSettle();
+      // Seven fit; only five are shown.
+      expect(find.textContaining('Matched Investor'), findsNWidgets(5));
+      expect(find.text('100% match'), findsNWidgets(5));
+      expect(find.text('Same sector & stage'), findsNWidgets(5));
+      expect(find.text('Angel Investor · Riyadh'), findsAtLeastNWidgets(5));
+      // Tapping one opens that investor.
+      await t.ensureVisible(find.text('Matched Investor 1'));
+      await t.pumpAndSettle();
+      await t.tap(find.text('Matched Investor 1'));
+      await t.pumpAndSettle();
+      expect(find.byType(InvestorProfileScreen), findsOneWidget);
+    });
+
+    testWidgets('Edit round: pre-filled, confirm, then the round is updated', (
+      t,
+    ) async {
+      await _openRounds(t);
+      await t.tap(find.text('Round 2'));
+      await t.pumpAndSettle();
+      await t.ensureVisible(find.text('Edit round'));
+      await t.pumpAndSettle();
+      await t.tap(find.text('Edit round'));
+      await t.pumpAndSettle();
+      expect(find.text('Edit round · Round 2'), findsOneWidget);
+      // Pre-filled with the current values; the button is hidden meanwhile.
+      expect(find.text('500,000'), findsOneWidget);
+      expect(find.text('200,000'), findsOneWidget);
+      expect(find.text('Edit round'), findsNothing);
+      final fields = find.byType(TextField);
+      // (The sample's SAR 500,000 Seed is below the real Seed range, so the
+      // range error shows until the amount is fixed.)
+      expect(find.textContaining('isn’t in the Seed range'), findsOneWidget);
+      await t.enterText(fields.at(fields.evaluate().length - 2), '3000000');
+      await t.enterText(fields.last, '300000');
+      await t.pump();
+      await t.ensureVisible(find.text('Save changes'));
+      await t.pumpAndSettle();
+      await t.tap(find.text('Save changes'));
+      await t.pumpAndSettle();
+      expect(find.text('Save changes?'), findsOneWidget);
+      expect(
+        find.text('Your changes will be saved to this round.'),
+        findsOneWidget,
+      );
+      await t.tap(find.text('Save changes').last);
+      await t.pump();
+      await t.pump(const Duration(milliseconds: 600));
+      expect(find.text('Round updated'), findsOneWidget);
+      await t.pumpAndSettle(const Duration(seconds: 5));
+      expect(find.text('Edit round · Round 2'), findsNothing);
+      expect(find.text('SAR 3,000,000'), findsOneWidget);
+      expect(find.text('SAR 300,000'), findsOneWidget);
+      expect(find.text('10% of the target raised'), findsOneWidget);
+      final repo = StartupRepository.instance as FakeStartupRepository;
+      expect(repo.startups.single.raisedInRound, 300000);
+      expect(repo.startups.single.fundingRequirement, 3000000);
+    });
+
+    testWidgets('Edit round: Cancel asks only after a change', (t) async {
+      await _openRounds(t);
+      await t.tap(find.text('Round 2'));
+      await t.pumpAndSettle();
+      await t.ensureVisible(find.text('Edit round'));
+      await t.pumpAndSettle();
+      await t.tap(find.text('Edit round'));
+      await t.pumpAndSettle();
+      // No change: Cancel closes the form at once.
+      await t.ensureVisible(find.text('Cancel'));
+      await t.pumpAndSettle();
+      await t.tap(find.text('Cancel'));
+      await t.pumpAndSettle();
+      expect(find.text('Discard changes?'), findsNothing);
+      expect(find.text('Edit round · Round 2'), findsNothing);
+      await t.ensureVisible(find.text('Edit round'));
+      await t.pumpAndSettle();
+      await t.tap(find.text('Edit round'));
+      await t.pumpAndSettle();
+      await t.enterText(find.byType(TextField).last, '250000');
+      await t.pump();
+      await t.ensureVisible(find.text('Cancel'));
+      await t.pumpAndSettle();
+      await t.tap(find.text('Cancel'));
+      await t.pumpAndSettle();
+      expect(find.text('Discard changes?'), findsOneWidget);
+      await t.tap(find.text('Discard'));
+      await t.pumpAndSettle();
+      expect(find.text('Edit round · Round 2'), findsNothing);
+      // The round is unchanged.
+      expect(find.text('SAR 200,000'), findsOneWidget);
+    });
+
+    testWidgets('a view-only member opens the page but cannot edit', (
+      t,
+    ) async {
+      await _openRounds(t, role: StartupRole.member);
+      await t.tap(find.text('Round 2'));
+      await t.pumpAndSettle();
+      expect(find.text('Matches'), findsOneWidget);
+      expect(find.text('Edit round'), findsNothing);
+    });
+
+    testWidgets('switching Manage tabs comes back to the rounds list', (
+      t,
+    ) async {
+      await _openRounds(t);
+      await t.tap(find.text('Round 2'));
+      await t.pumpAndSettle();
+      expect(find.text('All rounds'), findsOneWidget);
+      final tabs = find.byType(ScrollableHeaderTabBar);
+      final dashboard = find.descendant(
+        of: tabs,
+        matching: find.text('Dashboard'),
+      );
+      await t.ensureVisible(dashboard);
+      await t.pumpAndSettle();
+      await t.tap(dashboard);
+      await t.pumpAndSettle();
+      expect(find.text('All rounds'), findsNothing);
+      final rounds = find.descendant(of: tabs, matching: find.text('Rounds'));
+      await t.ensureVisible(rounds);
+      await t.pumpAndSettle();
+      await t.tap(rounds);
+      await t.pumpAndSettle();
+      expect(find.text('All rounds'), findsNothing);
+      expect(find.text('Funding rounds'), findsOneWidget);
+    });
+
+    testWidgets('Investment requests live on the open round page', (t) async {
+      await _openRounds(t);
+      // Not a tab of Manage startup any more.
+      expect(
+        find.descendant(
+          of: find.byType(ScrollableHeaderTabBar),
+          matching: find.text('Requests'),
+        ),
+        findsNothing,
+      );
+      await t.tap(find.text('Round 2'));
+      await t.pumpAndSettle();
+      expect(find.text('Investment Requests'), findsOneWidget);
+      expect(find.text('Investors asking to join this round'), findsOneWidget);
+      expect(find.text('Pending · 1'), findsOneWidget);
+      expect(find.text('SAR 300,000 for 15%'), findsOneWidget);
+      await t.ensureVisible(find.text('Accept'));
+      await t.pumpAndSettle();
+      await t.tap(find.text('Accept'));
+      await t.pumpAndSettle();
+      expect(find.text('No pending requests.'), findsOneWidget);
+      await t.pump(const Duration(seconds: 4));
+    });
+
+    testWidgets('a closed round has no investment requests', (t) async {
+      await _openRounds(t);
+      await t.tap(find.text('Round 1'));
+      await t.pumpAndSettle();
+      expect(find.text('Investment Requests'), findsNothing);
+    });
+
+    testWidgets('a view-only member sees the requests without the buttons', (
+      t,
+    ) async {
+      await _openRounds(t, role: StartupRole.member);
+      await t.tap(find.text('Round 2'));
+      await t.pumpAndSettle();
+      expect(find.text('Investment Requests'), findsOneWidget);
+      expect(find.text('Pending · 1'), findsOneWidget);
+      expect(find.text('Accept'), findsNothing);
+      expect(find.text('Decline'), findsNothing);
     });
 
     testWidgets('a team member only reads the rounds', (t) async {

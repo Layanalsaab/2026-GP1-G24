@@ -370,6 +370,18 @@ class FounderToolsStrings {
     ),
   };
 
+  // ---- Confirm before saving ----
+  static const saveConfirmTitle = 'Save changes?';
+  static const saveConfirmButton = 'Save changes';
+  static const saveProfileMessage = 'Your changes will be saved to your profile.';
+  static const saveStartupMessage =
+      'Your changes will be saved to this startup.';
+  static const saveRoundMessage = 'Your changes will be saved to this round.';
+  static const addRoundTitle = 'Add round?';
+  static const addRoundMessage = 'This round will be added to your startup.';
+  static const addRoundButton = 'Add round';
+  static const roundUpdated = 'Round updated';
+
   // ---- Leaving the form / drafts ----
   static const discard = 'Discard';
   static const keepEditing = 'Keep editing';

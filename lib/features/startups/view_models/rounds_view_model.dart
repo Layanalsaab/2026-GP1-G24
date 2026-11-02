@@ -1,15 +1,21 @@
+import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/material.dart';
 
 import '../../../app_constants/founder_tools_strings.dart';
 import '../../../data_access/mock_data/prototype_seed.dart';
 import '../../../app_constants/validation_strings.dart';
 import '../../../data_access/repositories/funding_round_repository.dart';
+import '../../../data_access/repositories/matching_repository.dart';
 import '../../../data_access/repositories/startup_repository.dart';
+import '../../../helpers/app_session.dart';
 import '../../../helpers/formatters.dart';
 import '../../../helpers/round_limits.dart';
 import '../../../helpers/safe_notifier.dart';
 import '../../../helpers/startup_validators.dart';
 import '../../../models/funding_round.dart';
+import '../../../models/home_item.dart';
+import '../../../models/investor_profile.dart';
+import '../../../models/list_entries.dart';
 import '../../../models/startup.dart';
 import '../../../models/startup_enums.dart';
 
@@ -31,10 +37,12 @@ class RoundsViewModel extends ChangeNotifier with SafeNotifier {
     List<FundingRound>? rounds,
     FundingRoundRepository? repository,
     StartupRepository? startups,
+    MatchingRepository? matching,
     this.onStartupSaved,
     this.canManage = true,
     DateTime? now,
   }) : _startup = startup,
+       _matchingOverride = matching,
        _currentStartupOf = currentStartup,
        _rounds = [
          ...(rounds ??
@@ -176,15 +184,131 @@ class RoundsViewModel extends ChangeNotifier with SafeNotifier {
     return from > all.indexOf(next) ? all[from] : next;
   }
 
+  // ----------------------------------------------------------- edit form
+
+  /// The open round being edited (the Edit round form on the round page), or
+  /// null. The form uses the same fields, limits and errors as Add round.
+  FundingRound? editing;
+
+  bool get editOpen => editing != null;
+
+  /// Back on the rounds list: forgets an Edit round form without telling the
+  /// screen (called when the Rounds tab is built again, so switching Manage
+  /// tabs always shows the list and no half-open edit).
+  void resetView() => editing = null;
+
+  /// Opens "Edit round" for the OPEN round, pre-filled with its current
+  /// values. Closed rounds can't be edited; a view-only member can't either.
+  void openEdit() {
+    if (!canManage || formOpen || editing != null) return;
+    final open = openRound;
+    if (open == null) return;
+    editing = open;
+    type = open.type;
+    amount.text = Formatters.thousands(open.amount);
+    raised.text = Formatters.thousands(open.raised);
+    tried = false;
+    _formBaseline = _formSignature();
+    notifyListeners();
+  }
+
+  void cancelEdit() {
+    editing = null;
+    notifyListeners();
+  }
+
+  /// Saves the edited open round: the new type, amount and "already raised"
+  /// go to the startup (Funding ask + Stage), and the repository updates the
+  /// round in the same write (the same path as Add round / Close round), after
+  /// the role was read again. Returns true when it was saved.
+  Future<bool> saveEdit() async {
+    if (!canManage || isSaving) return false;
+    final edited = editing;
+    if (edited == null) return false;
+    tried = true;
+    if (!formValid || openRound?.number != edited.number) {
+      notifyListeners();
+      return false;
+    }
+    final s = _latest;
+    if (s != null) {
+      final saved = await _save(
+        s.copyWith(
+          lookingFor: {...s.lookingFor, LookingFor.funding},
+          fundingRequirement: amountValue!,
+          raisedInRound: raisedValue!,
+          stage: type!,
+        ),
+      );
+      if (saved == null) return false;
+    }
+    final i = _rounds.indexWhere((r) => r.number == edited.number);
+    if (i >= 0) {
+      _rounds[i] = _rounds[i].copyWith(
+        type: type!,
+        amount: amountValue!,
+        raised: raisedValue!,
+      );
+    }
+    editing = null;
+    notifyListeners();
+    return true;
+  }
+
+  // -------------------------------------------------------------- matches
+
+  /// How many investors the Matches section of a round shows.
+  static const matchesShown = 5;
+
+  final MatchingRepository? _matchingOverride;
+  MatchingRepository get _matching =>
+      _matchingOverride ?? MatchingRepository.instance;
+
+  /// Bumps when the investors or startups changed (the list is computed again).
+  ValueListenable<int> get matchChanges => _matching.changes;
+
+  /// The top [matchesShown] investors for an OPEN [round]: the startup with
+  /// the round's type as its stage and the round's amount as its ask, against
+  /// the investors' interests, with the same score as the rest of matching
+  /// (sector 0.41, stage 0.29, commerce model 0.18). Works for a private
+  /// startup too. Throws AuthException when the investors can't be read.
+  Future<List<HomeItem>> matchesFor(FundingRound round) async {
+    final s = _latest;
+    if (s == null || !round.isOpen) return const [];
+    final target = s.copyWith(
+      stage: round.type,
+      fundingRequirement: round.amount,
+    );
+    final all = await _matching.investorsForStartup(target);
+    return all.take(matchesShown).toList();
+  }
+
+  /// The profile of a matched investor shown in [matchesFor].
+  InvestorProfile? matchedInvestor(String id) => _matching.investorById(id);
+
+  /// The startup as the screen has it now.
+  Startup? get startup => _latest;
+
   void openForm() {
-    if (!canManage) return;
+    if (!canManage || editing != null) return;
     formOpen = true;
     type = defaultType;
     amount.clear();
     raised.clear();
     tried = false;
+    _formBaseline = _formSignature();
     notifyListeners();
   }
+
+  /// The form's values when it opened (to tell real changes from none).
+  String _formBaseline = '';
+
+  String _formSignature() => '${type?.value}|${amount.text}|${raised.text}';
+
+  /// True when a value differs from how the form opened: the Cancel button
+  /// asks "Discard changes?" only then.
+  bool get formDirty =>
+      (formOpen || editing != null) && _formSignature() != _formBaseline;
 
   void cancelForm() {
     formOpen = false;
@@ -297,11 +421,29 @@ class RoundsViewModel extends ChangeNotifier with SafeNotifier {
     return true;
   }
 
+  /// The founder's / co-founder's CURRENT role, read again right before a
+  /// write (not only when the screen opened). Offline: the rules decide.
+  Future<bool> _stillAllowed(Startup s) async {
+    final uid = AppSession.instance.user?.uid;
+    if (uid == null) return true;
+    try {
+      final fresh = await _startupRepo.fetchById(s.id);
+      if (fresh == null) return false;
+      return StartupRole.of(fresh, uid)?.canManage ?? false;
+    } catch (_) {
+      return true;
+    }
+  }
+
   Future<Startup?> _save(Startup updated) async {
     isSaving = true;
     error = null;
     notifyListeners();
     try {
+      if (!await _stillAllowed(updated)) {
+        error = FounderToolsStrings.noPermissionAnymore;
+        return null;
+      }
       final saved = await _startupRepo.update(updated);
       _startup = saved;
       onStartupSaved?.call(saved);

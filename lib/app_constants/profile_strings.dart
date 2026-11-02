@@ -125,6 +125,15 @@ class ProfileStrings {
   static const deleteAccount = 'Delete account';
   static const deleteAccountHint = 'Permanently remove your account and data';
 
+  // ---- Share sheet ----
+  static const shareTitle = 'Share';
+  static const copyLink = 'Copy link';
+  static const shareEmail = 'Email';
+  static const shareMore = 'More';
+  static const shareCantOpen = 'Couldn’t open that app.';
+  static String shareMessage(String name) => '$name on Start.sa';
+  static const shareMessagePlain = 'Take a look on Start.sa';
+
   // ---- Toasts ----
   static const linkCopied = 'Link copied';
   static const addedToBookmarks = 'Added to bookmarks';

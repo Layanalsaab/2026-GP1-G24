@@ -154,20 +154,27 @@ void main() {
     });
   });
 
-  group('Requests and Interest', () {
-    testWidgets('a founder sees Accept and Decline', (t) async {
-      await _open(t, tab: 'Requests');
-      expect(find.text('Accept'), findsOneWidget);
-      expect(find.text('Decline'), findsOneWidget);
-    });
-
-    testWidgets('a team member sees the requests without the buttons', (
-      t,
-    ) async {
-      await _open(t, role: StartupRole.member, tab: 'Requests');
-      expect(find.text('Pending · 1'), findsOneWidget);
-      expect(find.text('Accept'), findsNothing);
-      expect(find.text('Decline'), findsNothing);
+  group('Interest (Requests moved into the round)', () {
+    testWidgets('there is no Requests tab in Manage startup', (t) async {
+      await _open(t);
+      final tabs = find.byType(ScrollableHeaderTabBar);
+      for (final label in [
+        'Dashboard',
+        'Details',
+        'Rounds',
+        'Interest',
+        'Settings',
+      ]) {
+        expect(
+          find.descendant(of: tabs, matching: find.text(label)),
+          findsOneWidget,
+          reason: label,
+        );
+      }
+      expect(
+        find.descendant(of: tabs, matching: find.text('Requests')),
+        findsNothing,
+      );
     });
 
     testWidgets('a team member sees interest without the reply button', (
