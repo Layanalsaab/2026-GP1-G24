@@ -605,7 +605,7 @@ void main() {
       expect(find.text('Raising'), findsOneWidget);
       expect(find.text('Valuation'), findsOneWidget);
       expect(find.text('Valuation calculator'), findsOneWidget);
-      expect(find.text('Associated investors'), findsOneWidget);
+      expect(find.text('Associated Investors'), findsOneWidget);
       expect(find.text('128'), findsOneWidget);
       expect(find.text('Ahmad Hassan'), findsOneWidget);
 

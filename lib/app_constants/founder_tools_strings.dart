@@ -243,7 +243,7 @@ class FounderToolsStrings {
   static const views = 'Views';
   static const bookmarks = 'Bookmarks';
   static const requests = 'Requests';
-  static const associatedTitle = 'Associated investors';
+  static const associatedTitle = 'Associated Investors';
   static const raisingLabel = 'Raising';
   static const valuationTile = 'Valuation';
   static const notRaisingValue = 'Not raising';
