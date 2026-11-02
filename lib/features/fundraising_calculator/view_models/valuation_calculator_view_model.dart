@@ -172,8 +172,11 @@ class ValuationCalculatorViewModel extends ChangeNotifier with SafeNotifier {
   /// All three boxes are valid (the result card uses this, not the messages).
   bool get isValid => !_fundingBad && !_equityBad && !_ownershipBad;
 
-  double get post => isValid ? fundingValue / (equityValue / 100) : 0;
-  double get pre => post - (isValid ? fundingValue : 0);
+  // pre and post money only need funding and equity, not your ownership
+  bool get dealValid => !_fundingBad && !_equityBad;
+
+  double get post => dealValid ? fundingValue / (equityValue / 100) : 0;
+  double get pre => post - (dealValid ? fundingValue : 0);
   double get you => isValid ? ownershipValue * (100 - equityValue) / 100 : 0;
   double get others =>
       isValid ? (100 - ownershipValue) * (100 - equityValue) / 100 : 0;
@@ -184,7 +187,7 @@ class ValuationCalculatorViewModel extends ChangeNotifier with SafeNotifier {
   // startup's own valuation. null when they match or there's no valuation.
   bool? get valuationLower {
     final v = _valuation;
-    if (v == null || !isValid) return null;
+    if (v == null || !dealValid) return null;
     final own = _equityFor(fundingValue, v);
     // compare what's shown (2 decimals) so rounding never makes a note
     if (own == null || _two(own) == _two(equityValue)) return null;
@@ -235,11 +238,11 @@ class ValuationCalculatorViewModel extends ChangeNotifier with SafeNotifier {
   /// 72 -> "72%", 17.55 -> "17.6%" (one decimal, no trailing ".0").
   static String pct(double n) => '${formatNumber((n * 10).round() / 10)}%';
 
-  String get postText => isValid ? sar(post) : 'SAR —';
-  String get workText => isValid
+  String get postText => dealValid ? sar(post) : 'SAR —';
+  String get workText => dealValid
       ? '${sar(fundingValue)} ÷ ${_two(equityValue)}%'
       : 'Fill in the fields above';
-  String get preText => isValid ? sar(pre) : 'SAR —';
+  String get preText => dealValid ? sar(pre) : 'SAR —';
   String get shareText => isValid ? sar(shareValue) : 'SAR —';
   String get youWork =>
       '${_two(ownershipValue)}% × ${_two(100 - equityValue)}%';

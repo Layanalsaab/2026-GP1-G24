@@ -346,7 +346,7 @@ class _ResultCardState extends State<_ResultCard> {
   @override
   Widget build(BuildContext context) {
     final vm = widget.vm;
-    final dim = vm.isValid ? 1.0 : 0.4;
+    final dim = vm.dealValid ? 1.0 : 0.4;
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
@@ -403,7 +403,8 @@ class _ResultCardState extends State<_ResultCard> {
                 child: _Two(
                   label: _label(FounderToolsStrings.valueOfShare, 'val'),
                   value: vm.shareText,
-                  opacity: dim,
+                  // this one needs your ownership too
+                  opacity: vm.isValid ? 1.0 : 0.4,
                 ),
               ),
             ],

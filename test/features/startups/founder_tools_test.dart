@@ -527,6 +527,24 @@ void main() {
       expect(vm.hasOthers, isTrue);
     });
 
+    test('pre and post money show before ownership is filled', () {
+      final vm = ValuationCalculatorViewModel(
+        funding: 1000000,
+        valuation: 4000000,
+        ownershipUnknown: true,
+      );
+      addTearDown(vm.dispose);
+      expect(vm.equity.text, '20');
+      expect(vm.isValid, isFalse);
+      expect(vm.postText, 'SAR 5,000,000');
+      expect(vm.preText, 'SAR 4,000,000');
+      expect(vm.shareText, 'SAR —', reason: 'needs your ownership');
+      vm.equity.text = '25';
+      expect(vm.valuationLower, isTrue);
+      vm.ownership.text = '100';
+      expect(vm.shareText, 'SAR 3,000,000');
+    });
+
     test('empty start shows no errors; they appear once you type', () {
       var vm = ValuationCalculatorViewModel();
       expect(vm.fundingError, isNull, reason: 'just opened: nothing is red');
