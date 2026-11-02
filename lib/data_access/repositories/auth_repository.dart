@@ -266,6 +266,10 @@ class AuthRepository {
   /// The profile is deleted first because the security rules only let a
   /// signed-in user delete their own document. If any step fails, the steps
   /// after it don't run, so a wrong password deletes nothing.
+  ///
+  /// The founder's startups are handed over or deleted
+  /// (StartupRepository.handOverAllMine), and a team member leaves the teams
+  /// they belong to.
   // TODO(Sprint 2+): also delete the founder's requests and Investment
   // Associations once those collections exist (PBI 13).
   ///

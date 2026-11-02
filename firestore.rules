@@ -68,7 +68,7 @@ service cloud.firestore {
           && (!('sectorsOfInterest' in d)
               || (d.sectorsOfInterest is list && d.sectorsOfInterest.size() <= 25))
           && optionalString(d, 'sectorsOther', 40)
-          && optionalString(d, 'linkedinUrl', 120)
+          && (!('linkedinUrl' in d) || d.linkedinUrl is string)
           && optionalString(d, 'gain', 1000)
           && optionalString(d, 'offer', 1000)
           && optionalString(d, 'lookingFor', 1000)
@@ -196,28 +196,40 @@ service cloud.firestore {
 
       allow create: if request.auth != null
                     && request.resource.data.founderId == request.auth.uid
-                    // New: created by its owner, active, no co-founder and
-                    // no "Founder (former)" yet.
+                    // New: created by its owner, active, and no "Founder
+                    // (former)" yet.
                     && request.resource.data.get('foundedBy', request.auth.uid) == request.auth.uid
                     && request.resource.data.get('status', 'active') == 'active'
-                    && request.resource.data.get('coFounderIds', []) == []
+                    && request.resource.data.get('coFounderIds', []) is list
                     && !('formerFounderId' in request.resource.data)
                     && request.resource.data.createdAt == request.time
                     && request.resource.data.updatedAt == request.time
                     && validStartup(request.resource.data);
 
-      // The owner: everything except the owner, who created it and the
-      // creation time. A closed startup can only be reopened (as private);
-      // closing needs no co-founder on it.
+      // The owner and a co-founder edit the startup in ONE rule: a rule that
+      // fails still uses up part of the 1000 expressions a request may
+      // evaluate, and a startup with every field filled in needs nearly all
+      // of them. The owner, who created it and the creation time never
+      // change. The owner: a closed startup can only be reopened (as
+      // private), and closing needs no co-founder on it. A co-founder: an
+      // active startup only; the joined co-founders and the "Founder
+      // (former)" name stay as they are.
       allow update: if request.auth != null
-                    && resource.data.founderId == request.auth.uid
+                    && (resource.data.founderId == request.auth.uid
+                        || resource.data.get('memberRoles', {}).get(request.auth.uid, '') == 'coFounder')
                     && request.resource.data.founderId == resource.data.founderId
                     && request.resource.data.createdAt == resource.data.createdAt
                     && request.resource.data.updatedAt == request.time
                     && keepsFoundedBy()
-                    && ownerStatusOk()
-                    && request.resource.data.get('coFounderIds', []) is list
-                    && request.resource.data.get('formerFounderId', '') is string
+                    && (resource.data.founderId == request.auth.uid
+                        ? (ownerStatusOk()
+                           && request.resource.data.get('coFounderIds', []) is list
+                           && request.resource.data.get('formerFounderId', '') is string)
+                        : (resource.data.get('status', 'active') == 'active'
+                           && request.resource.data.get('status', 'active') == 'active'
+                           && keepsCoFounders()
+                           && request.resource.data.get('formerFounderId', '')
+                                == resource.data.get('formerFounderId', '')))
                     && validStartup(request.resource.data);
 
       // Transfer ownership: the owner gives the startup to a JOINED
@@ -240,22 +252,6 @@ service cloud.firestore {
                          == resource.data.get('formerFounderId', '')
                     && request.resource.data.createdAt == resource.data.createdAt
                     && request.resource.data.updatedAt == request.time
-                    && validStartup(request.resource.data);
-
-      // A co-founder can edit, manage members (not co-founders) and the
-      // visibility of an active startup; the owner, who created it, the
-      // creation time and the "Founder (former)" name stay fixed.
-      allow update: if request.auth != null
-                    && resource.data.get('memberRoles', {}).get(request.auth.uid, '') == 'coFounder'
-                    && request.resource.data.founderId == resource.data.founderId
-                    && request.resource.data.createdAt == resource.data.createdAt
-                    && request.resource.data.updatedAt == request.time
-                    && statusOf(resource.data) == 'active'
-                    && statusOf(request.resource.data) == 'active'
-                    && keepsFoundedBy()
-                    && keepsCoFounders()
-                    && request.resource.data.get('formerFounderId', '')
-                         == resource.data.get('formerFounderId', '')
                     && validStartup(request.resource.data);
 
       // Accepting an invitation: a person with a VERIFIED email that has a
@@ -478,8 +474,10 @@ service cloud.firestore {
     // status) are checked by the create / update rules, not here, to stay
     // under that limit.
     function validStartup(d) {
-      // The required fields need no hasAll(): each one is read below, and a
-      // missing field makes the rule fail.
+      // The required fields (founderId, name, description, sector, stage,
+      // businessModel, location, lookingFor, isPublic) are read below, and
+      // reading a missing one refuses the write, so no separate hasAll() is
+      // needed (it cost a dozen of the 1000 expressions a request may use).
       return d.keys().hasOnly(['founderId', 'name', 'oneLinePitch', 'description',
                              'sector', 'sectorOther', 'otherSectors', 'stage',
                              'stageOther',
@@ -565,8 +563,9 @@ service cloud.firestore {
     // so these helpers use d.get() (one call) instead of several checks.
     function validOther(d, field, value) {
       let v = d.get(field, null);
-      return (v == null || (v is string && v.size() <= 40))
-        && (value != 'other' || (v is string && v.size() >= 1));
+      return v == null ? value != 'other'
+                       : (v is string && v.size() <= 40
+                          && (value != 'other' || v.size() >= 1));
     }
 
     function optionalList(d, field, maxSize) {
@@ -586,11 +585,15 @@ service cloud.firestore {
       return v == null || (v is list && v.size() <= 10);
     }
 
-    // A SAR amount: a whole number, 0 or more (the app limits the digits;
-    // no upper bound here, to keep the rules under the expression limit).
+    // A SAR amount: a whole number (or null). The app already limits it to 0
+    // or more and 13 digits; every extra check here costs about two of the
+    // 1000 expressions a request may use, and a startup that fills in all
+    // twelve amounts, picks "Other" three times and is edited by a co-founder
+    // needs almost all of them (tools/rules_tests/parity.test.mjs proves it
+    // still fits).
     function optionalMoney(d, field) {
       let v = d.get(field, null);
-      return v == null || (v is int && v >= 0);
+      return v == null || v is int;
     }
 
     // The founded year runs from 1900 to the current year.

@@ -1119,6 +1119,8 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
   }
 
   void openMemberEditor([int? index]) => _touch(() {
+    // A team is full at 20 people (the rules allow no more).
+    if (index == null && team.length >= TeamMember.teamMax) return;
     editorOpen = true;
     editingIndex = index;
     memberTried = false;

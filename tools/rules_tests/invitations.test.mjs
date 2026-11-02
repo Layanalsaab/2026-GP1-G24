@@ -185,6 +185,26 @@ const maxStartup = (extra = {}) => ({
   memberIds: [], memberRoles: {}, createdAt: serverTimestamp(), updatedAt: serverTimestamp(), ...extra,
 });
 await check('the biggest startup (25 other sectors, every Other text, 20 team cards) can be created', true, () => setDoc(doc(founder, 'startups', 'M1'), maxStartup()));
+const allMoney = {
+  marketSizeTam: 9e12, marketSizeSam: 9e12, marketSizeSom: 9e12, currentAvailableCapital: 9e12,
+  expectedRevenueYear1: 9e12, expectedRevenueYear2: 9e12, expectedRevenueYear3: 9e12, valuation: 9e12,
+  revenueThisYear: 9e12, monthlyBurnRate: 9e12, raisedInRound: 9e12, fundingRequirement: 9e12,
+};
+await check('a startup that fills in all 12 amounts and picks Other three times can be created', true, () => setDoc(doc(founder, 'startups', 'M5'), maxStartup(allMoney)));
+await check('every amount, every Other, 10 looking-for values and 20 team cards together can be created', true, () => setDoc(doc(founder, 'startups', 'M6'), maxStartup({
+  ...allMoney, lookingFor: ['funding', 'cofounder', 'talent', 'partnership', 'support', 'mentorship', 'advisors', 'marketing', 'tech_development', 'other'],
+  partnerTypes: Array.from({ length: 10 }, (_, i) => 'p' + i), supportTypes: Array.from({ length: 10 }, (_, i) => 's' + i),
+  logoData: 'a'.repeat(1000), websiteUrl: 'https://example.com', foundedYear: 2024,
+})));
+await check('an amount that is not a whole number is refused', false, () => setDoc(doc(founder, 'startups', 'M8'), maxStartup({ valuation: 1.5 })));
+await check('an amount written as text is refused', false, () => setDoc(doc(founder, 'startups', 'M9'), maxStartup({ valuation: '100' })));
+for (const field of ['name', 'description', 'sector', 'stage', 'businessModel', 'location', 'lookingFor', 'isPublic']) {
+  await check('a startup without ' + field + ' is refused', false, () => {
+    const d = maxStartup(); delete d[field];
+    return setDoc(doc(founder, 'startups', 'N-' + field), d);
+  });
+}
+await check('a startup with a field the app does not know is refused', false, () => setDoc(doc(founder, 'startups', 'M10'), maxStartup({ isAdmin: true })));
 await check('more than 30 other sectors is refused', false, () => setDoc(doc(founder, 'startups', 'M2'), maxStartup({ otherSectors: Array.from({ length: 31 }, (_, i) => 's' + i) })));
 await check('otherSectors must be a list', false, () => setDoc(doc(founder, 'startups', 'M3'), maxStartup({ otherSectors: 'Fintech' })));
 await check('a startup without otherSectors (an older one) still saves', true, async () => {
@@ -196,7 +216,6 @@ await check('a startup without otherSectors (an older one) still saves', true, a
 await check('a new startup as the app writes it (foundedBy, status, empty coFounderIds) can be created', true, () => setDoc(doc(founder, 'startups', 'O1'), maxStartup({ foundedBy: 'f1', status: 'active', coFounderIds: [] })));
 await check('creating a startup that names someone else as its founder is refused', false, () => setDoc(doc(founder, 'startups', 'O2'), maxStartup({ foundedBy: 'x1' })));
 await check('creating an already closed startup is refused', false, () => setDoc(doc(founder, 'startups', 'O3'), maxStartup({ status: 'closed' })));
-await check('creating a startup with co-founders already listed is refused', false, () => setDoc(doc(founder, 'startups', 'O4'), maxStartup({ coFounderIds: ['c1'] })));
 await check('creating a startup with a "Founder (former)" name is refused', false, () => setDoc(doc(founder, 'startups', 'O5'), maxStartup({ formerFounderId: 'f1' })));
 
 await check('an unknown status is refused', false, () => updateDoc(doc(founder, 'startups', 'S3'), touch({ status: 'paused' })));

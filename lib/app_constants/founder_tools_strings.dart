@@ -118,6 +118,7 @@ class FounderToolsStrings {
   static const teamInfo =
       'Co-founders can edit this startup. Other members can only view it. Everyone you add by email gets linked to their Start.sa profile, or receives an invitation.';
   static const addMember = 'Add team member';
+  static const teamFull = 'A team can have up to 20 people.';
   static const newMember = 'New team member';
   static const editMember = 'Edit team member';
   static const memberName = 'Full name';
@@ -242,7 +243,7 @@ class FounderToolsStrings {
   static const views = 'Views';
   static const bookmarks = 'Bookmarks';
   static const requests = 'Requests';
-  static const associatedTitle = 'Associated investors';
+  static const associatedTitle = 'Associated Investors';
   static const raisingLabel = 'Raising';
   static const valuationTile = 'Valuation';
   static const notRaisingValue = 'Not raising';
@@ -252,7 +253,7 @@ class FounderToolsStrings {
   static const associatedEmpty =
       'Investors whose requests you accept appear here and on your profile.';
   static const shownOnProfile = 'Shown on profile';
-  static const calcCardTitle = 'Valuation calculator';
+  static const calcCardTitle = 'Valuation Calculator';
   static const calcCardText =
       'See what your funding ask says your startup is worth';
   static const pending = 'Pending';
@@ -375,7 +376,7 @@ class FounderToolsStrings {
   static const lostStartupMessage = 'Add a new startup to continue.';
 
   // ---- Valuation calculator ----
-  static const calcTitle = 'Valuation calculator';
+  static const calcTitle = 'Valuation Calculator';
   static const thisRaise = 'THIS RAISE';
   static const fundingToRaise = 'Funding to raise';
   static const equityToGive = 'Equity to give up';
@@ -389,6 +390,7 @@ class FounderToolsStrings {
   static const otherOwners = 'Other existing owners';
   static const newInvestors = 'New investors';
   static const equityGivenUp = 'Equity given up';
+  static const yourDilution = 'Your dilution';
   // shown under the funding box
   static String calcRoundHint(int number, String type, String raised) =>
       'Round $number · $type · $raised raised so far';
@@ -434,6 +436,10 @@ class FounderToolsStrings {
     'val': (
       'Value of your share',
       'What your share of the company is worth at this valuation.',
+    ),
+    'change': (
+      'Your dilution',
+      'How much your ownership drops in this round.',
     ),
     'own': (
       'Ownership after this raise',

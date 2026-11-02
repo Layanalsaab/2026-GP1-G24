@@ -105,7 +105,7 @@ class InvitationRepository {
     // again: their old "accepted" invitation turns pending.
     if (existing.status == InvitationStatus.declined ||
         (existing.status == InvitationStatus.accepted &&
-            _stillOnTeam(existing, startup))) {
+            await _stillOnTeam(existing, startup))) {
       return existing;
     }
     // Pending, cancelled or declined: pending again with the current words.
@@ -135,15 +135,33 @@ class InvitationRepository {
     );
   }
 
-  /// The person who accepted [invitation] is still on [startup]'s team.
-  static bool _stillOnTeam(Invitation invitation, Startup startup) {
+  /// The person who accepted [invitation] is still on the startup's team.
+  /// Read from the STORED startup: [startup] may be a copy loaded before
+  /// they joined (the editor was open), and treating them as gone would turn
+  /// their accepted invitation back into a pending one.
+  Future<bool> _stillOnTeam(Invitation invitation, Startup startup) async {
+    Startup current;
+    try {
+      current =
+          Startup.fromMap(
+            startup.id,
+            await _firestore.getDocument(
+              FirestoreCollections.startups,
+              startup.id,
+            ),
+          ) ??
+          startup;
+    } catch (_) {
+      // Can't check (offline): keep the accepted invitation as it is.
+      return true;
+    }
     final uid = invitation.acceptedBy;
     if (uid != null && uid.isNotEmpty) {
-      return uid == startup.founderId || startup.memberRoles.containsKey(uid);
+      return uid == current.founderId || current.memberRoles.containsKey(uid);
     }
     // Older invitations don't say who accepted: a joined card with that
     // e-mail means they are still there.
-    return startup.team.any(
+    return current.team.any(
       (m) => !m.invited && m.email == invitation.emailLower,
     );
   }
