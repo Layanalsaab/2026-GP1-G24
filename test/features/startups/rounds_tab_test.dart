@@ -606,7 +606,7 @@ void main() {
       );
       await t.tap(find.text('Round 2'));
       await t.pumpAndSettle();
-      expect(find.text('Investment requests'), findsOneWidget);
+      expect(find.text('Investment Requests'), findsOneWidget);
       expect(find.text('Investors asking to join this round'), findsOneWidget);
       expect(find.text('Pending · 1'), findsOneWidget);
       expect(find.text('SAR 300,000 for 15%'), findsOneWidget);
@@ -622,7 +622,7 @@ void main() {
       await _openRounds(t);
       await t.tap(find.text('Round 1'));
       await t.pumpAndSettle();
-      expect(find.text('Investment requests'), findsNothing);
+      expect(find.text('Investment Requests'), findsNothing);
     });
 
     testWidgets('a view-only member sees the requests without the buttons', (
@@ -631,7 +631,7 @@ void main() {
       await _openRounds(t, role: StartupRole.member);
       await t.tap(find.text('Round 2'));
       await t.pumpAndSettle();
-      expect(find.text('Investment requests'), findsOneWidget);
+      expect(find.text('Investment Requests'), findsOneWidget);
       expect(find.text('Pending · 1'), findsOneWidget);
       expect(find.text('Accept'), findsNothing);
       expect(find.text('Decline'), findsNothing);
