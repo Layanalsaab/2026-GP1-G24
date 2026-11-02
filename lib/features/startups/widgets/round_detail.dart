@@ -87,7 +87,7 @@ class RoundDetail extends StatelessWidget {
         if (round.isOpen && requests != null) ...[
           const SizedBox(height: 22),
           const _SectionTitle(
-            title: 'Investment requests',
+            title: 'Investment Requests',
             subtitle: 'Investors asking to join this round',
           ),
           const SizedBox(height: 10),
