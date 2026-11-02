@@ -302,7 +302,78 @@ class FounderToolsStrings {
       'This permanently removes the startup and its requests, associations, and expressions of interest. This can’t be undone.';
   static const deleteFailed =
       'We couldn’t delete the startup. Please try again.';
+
+  /// People invited to the startup who haven't accepted: they aren't on the
+  /// team, so deleting simply cancels their invitations.
+  static String deleteCancelsInvites(List<String> names) {
+    if (names.length == 1) {
+      return '${names.first} hasn’t accepted the invitation yet, so it will be cancelled.';
+    }
+    final who =
+        '${names.sublist(0, names.length - 1).join(', ')} and ${names.last}';
+    return '$who haven’t accepted their invitations yet, so they will be cancelled.';
+  }
   static const previewLabel = 'Preview';
+
+  // ---- Ownership, closing and the last startup ----
+  static const roleOwner = 'Owner';
+  static const roleOwnerCoFounder = 'Co-founder · Owner';
+  static const roleFormerFounder = 'Founder (former)';
+  static const closedPill = 'Closed';
+  static const lastStartupWarning =
+      'This is your only startup. Afterwards you’ll need to add a new one to keep using your founder account.';
+  static const transferOwnership = 'Transfer ownership';
+  static const transferOwnershipText =
+      'Hand this startup to a co-founder before you leave';
+  static const newOwnerTitle = 'Choose the new owner';
+  static String transferTitle(String person) => 'Make $person the owner?';
+  static String transferMessage(String person, String startup) =>
+      '$person will be able to delete, close or transfer $startup. You stay on the team as a co-founder with your current title, and you can leave afterwards.';
+  static String transferredToast(String person) => '$person is now the owner';
+  static const transferFailed =
+      'We couldn’t transfer the startup. Please try again.';
+  static const closeStartup = 'Close startup';
+  static const closeStartupText =
+      'Hides it from Start.sa. Its team keeps it';
+  static String closeTitle(String name) => 'Close $name?';
+  static String closeMessage(String name) =>
+      'Team members are on $name, so it can’t be deleted. Closing hides it from Start.sa, ends its open round and cancels pending invitations. The team keeps it, and you can reopen it later.';
+  static String closedToast(String name) => '$name was closed';
+  static const closeFailed =
+      'We couldn’t close the startup. Please try again.';
+  static const reopenStartup = 'Reopen startup';
+  static const reopenStartupText = 'It comes back as Private';
+  static String reopenTitle(String name) => 'Reopen $name?';
+  static const reopenMessage =
+      'It comes back as Private, so only the team sees it until you make it public. Its old round stays closed.';
+  static String reopenedToast(String name) => '$name is open again';
+  static const reopenFailed =
+      'We couldn’t reopen the startup. Please try again.';
+  static const leaveFailed =
+      'We couldn’t remove you from the startup. Please try again.';
+  static const leaveClosedOwnerText =
+      'Nobody will own it, so it can’t be reopened';
+  static const leaveMessageOwnerClosed =
+      'Nobody will own this startup any more, so it can’t be reopened. The team keeps it as closed.';
+  static const keepFounderName = 'Keep my name as Founder (former)';
+  static const keepFounderNameText =
+      'Your name stays on the team page and your profile. You can remove it later.';
+  static const closedBannerTitle = 'Closed';
+  static const closedBannerOwner =
+      'This startup is hidden from Start.sa and can’t be changed. You can reopen it from Settings.';
+  static const closedBannerOthers =
+      'This startup is hidden from Start.sa and can’t be changed. Only its owner can reopen it.';
+  static const closedBannerPublic =
+      'This startup has closed. It no longer receives requests.';
+  static String removeNameTitle(String name) => 'Remove your name from $name?';
+  static String removeNameMessage(String name) =>
+      'You’ll no longer be shown as $name’s founder (former) on its team page and on your profile.';
+  static const removeName = 'Remove my name';
+  static const nameRemoved = 'Your name was removed';
+  static const removeNameFailed =
+      'We couldn’t remove your name. Please try again.';
+  static const lostStartupTitle = 'You no longer have a startup';
+  static const lostStartupMessage = 'Add a new startup to continue.';
 
   // ---- Valuation calculator ----
   static const calcTitle = 'Valuation Calculator';

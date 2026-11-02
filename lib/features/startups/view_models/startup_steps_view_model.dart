@@ -899,7 +899,9 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
   void _ensureFounder() {
     final user = AppSession.instance.user;
     if (user == null || !user.isFounder) return;
-    if (initial != null && initial!.founderId != user.uid) return;
+    // Only the person who created the startup has the Founder card (an owner
+    // it was handed to is a co-founder).
+    if (initial != null && initial!.originalFounderId != user.uid) return;
     final list = [...team];
     var i = list.indexWhere((m) => m.isFounder);
     if (i < 0) {
@@ -966,6 +968,44 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
   /// theirs, so the founder can't edit them.
   bool isLinkedMember(TeamMember m) =>
       !m.isFounder && !m.invited && m.uid != null;
+
+  /// The signed-in user owns the startup being edited (or is creating it).
+  bool get editorIsOwner {
+    final s = initial;
+    if (s == null) return true;
+    final uid = AppSession.instance.user?.uid;
+    return uid != null && uid == s.founderId;
+  }
+
+  /// [m] joined as a co-founder.
+  bool _joinedCoFounder(TeamMember m) =>
+      !m.invited &&
+      m.uid != null &&
+      (initial?.memberRoles[m.uid] == 'coFounder' || m.coFounder);
+
+  /// "Remove this member" on [m]'s card. Nobody removes their own card (they
+  /// leave instead) or the owner's; only the owner removes a co-founder who
+  /// joined, or the founder after the startup was handed over (her card then
+  /// stays as "Founder (former)"). Co-founders can remove members.
+  bool canRemoveMember(TeamMember m) {
+    final me = AppSession.instance.user?.uid;
+    final owner = initial?.founderId;
+    if (m.uid != null && (m.uid == me || m.uid == owner)) return false;
+    if (m.isFounder) return m.uid != null && initial != null && editorIsOwner;
+    if (_joinedCoFounder(m)) return editorIsOwner;
+    return true;
+  }
+
+  /// The Co-founder box on [m]'s card. Only the owner changes it for someone
+  /// who already joined (it decides who can edit and who blocks a delete);
+  /// the founder and the owner never have one.
+  bool canChangeCoFounder(TeamMember m) {
+    if (isLockedMember(m)) return false;
+    final owner = initial?.founderId;
+    if (m.uid != null && m.uid == owner) return false;
+    if (!m.invited && m.uid != null) return editorIsOwner;
+    return true;
+  }
 
   bool get editingLinked =>
       editorOpen && editingIndex != null && isLinkedMember(team[editingIndex!]);
@@ -1231,7 +1271,7 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
 
   void removeMember() {
     final i = editingIndex;
-    if (i == null || team[i].isFounder) return;
+    if (i == null || !canRemoveMember(team[i])) return;
     _touch(() {
       team = [...team]..removeAt(i);
       editorOpen = false;
@@ -1389,7 +1429,7 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
     if (uid == null) return true;
     try {
       final fresh = await _repository.fetchById(initial!.id);
-      if (fresh == null) return false;
+      if (fresh == null || fresh.isClosed) return false;
       return StartupRole.of(fresh, uid)?.canManage ?? false;
     } catch (_) {
       // Offline: the rules still decide when the write is sent.
@@ -1409,6 +1449,9 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
       debugPrint('Could not mark onboarding as completed: $e');
     }
   }
+
+  /// What [save] would write (used by the tests).
+  Startup startupToSave() => _build();
 
   Startup _build() {
     final websiteText = website.text.trim();
@@ -1482,7 +1525,24 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
       wantsLeadInvestor: initial?.wantsLeadInvestor,
       // Editing a startup keeps its co-founders and team members.
       memberRoles: _roles(),
+      // Who created it and whether it is closed never change here.
+      foundedBy: initial?.originalFounderId,
+      formerFounderId: _formerFounderAfterSave(),
+      isClosed: initial?.isClosed ?? false,
     );
+  }
+
+  /// The owner removed the founder (after the startup was handed over): her
+  /// card stays on the team as "Founder (former)" (she can remove it from her
+  /// profile). Otherwise what was saved.
+  String? _formerFounderAfterSave() {
+    final s = initial;
+    if (s == null) return null;
+    final founder = s.originalFounderId;
+    final wasOnTeam = s.memberRoles.containsKey(founder);
+    final stillOnTeam = team.any((m) => m.uid == founder && !m.invited);
+    if (founder != s.founderId && wasOnTeam && !stillOnTeam) return founder;
+    return s.formerFounderId;
   }
 
   /// The picked types in list order, "Other" replaced by what was typed.
@@ -1525,14 +1585,17 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
   /// person removed from the list loses access.
   Map<String, String> _roles() {
     final roles = {...?initial?.memberRoles};
+    final owner = initial?.founderId;
     final inTeam = <String>{};
     for (final m in team) {
       final uid = m.uid;
-      if (uid == null || m.invited || m.isFounder) continue;
+      // The owner is never in memberRoles.
+      if (uid == null || m.invited || uid == owner) continue;
       inTeam.add(uid);
-      // Only people who already have access change role.
+      // Only people who already have access change role. The person who
+      // created the startup stays a co-founder after handing it over.
       if (roles.containsKey(uid)) {
-        roles[uid] = m.coFounder ? 'coFounder' : 'member';
+        roles[uid] = m.coFounder || m.isFounder ? 'coFounder' : 'member';
       }
     }
     final before = {

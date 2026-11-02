@@ -267,8 +267,11 @@ class AuthRepository {
   /// signed-in user delete their own document. If any step fails, the steps
   /// after it don't run, so a wrong password deletes nothing.
   ///
-  /// The founder's startups are deleted too, and a team member leaves the
-  /// teams they belong to.
+  /// The founder's startups are handed over or deleted
+  /// (StartupRepository.handOverAllMine), and a team member leaves the teams
+  /// they belong to.
+  // TODO(Sprint 2+): also delete the founder's requests and Investment
+  // Associations once those collections exist (PBI 13).
   ///
   /// Without a [password] the account is deleted straight away when the user
   /// signed in a moment ago; otherwise it throws
@@ -282,19 +285,11 @@ class AuthRepository {
     } else if (!_auth.signedInRecently) {
       throw const AuthException(AuthFailure.requiresRecentLogin);
     }
-    // A founder's startups go with the account, so none stay public.
-    try {
-      await StartupRepository.instance.deleteAllMine();
-    } catch (_) {
-      // Carry on: the account itself must still be removed.
-    }
-    // A co-founder / team member leaves the teams they belong to, so they are
-    // not listed on those startups any more.
-    try {
-      await StartupRepository.instance.leaveAll();
-    } catch (_) {
-      // Carry on: the account itself must still be removed.
-    }
+    // A founder's startups are deleted, handed to a co-founder or closed for
+    // their team, and the account leaves the teams it is on. If any of that
+    // fails, NOTHING else is deleted (the account stays and the user tries
+    // again), so a startup is never left with a deleted owner.
+    await StartupRepository.instance.handOverAllMine();
     // Nobody can find or open a person who no longer exists.
     await TeamLookup.instance.remove(uid: account.uid, email: account.email);
     // Saved bookmarks live under the user document and are not deleted

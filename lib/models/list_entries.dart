@@ -38,6 +38,25 @@ enum StartupRole {
       _ => null,
     };
   }
+
+  /// The TITLE of [uid] in [startup] (what the capsules say), which can
+  /// differ from [of] (what they may do) once ownership moved: whoever
+  /// created the startup stays "Founder", and an owner who didn't create it is
+  /// a co-founder ("Co-founder · Owner"). Null when [uid] has no role there.
+  static StartupRole? titleOf(Startup startup, String? uid) {
+    final role = of(startup, uid);
+    if (role == null || uid == null) return role;
+    if (uid == startup.originalFounderId) return StartupRole.founder;
+    return role == StartupRole.member
+        ? StartupRole.member
+        : StartupRole.coFounder;
+  }
+
+  /// [uid] owns [startup] but didn't create it (ownership was transferred).
+  static bool isTransferredOwner(Startup startup, String? uid) =>
+      uid != null &&
+      uid == startup.founderId &&
+      uid != startup.originalFounderId;
 }
 
 /// One row of My Startups: a startup the user founded, co-founds or belongs

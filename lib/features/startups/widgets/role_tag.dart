@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../app_constants/founder_tools_strings.dart';
 import '../../../models/list_entries.dart';
+import '../../../models/startup.dart';
 import '../../../models/team_member.dart';
 import '../../../shared_ui/theme/app_colors.dart';
 import '../../../shared_ui/theme/app_text.dart';
@@ -27,6 +28,32 @@ class RoleTag extends StatelessWidget {
 
   /// The dashed tag in red ("Declined").
   final bool warn;
+
+  /// The capsule of [uid] in [startup]: their title ("Founder" stays with
+  /// whoever created it) and "Co-founder · Owner" for an owner who didn't
+  /// create it. [fallback] is used when [uid] has no role there (samples).
+  static RoleTag forStartup(
+    Startup startup,
+    String? uid, {
+    required StartupRole fallback,
+  }) {
+    final title = StartupRole.titleOf(startup, uid) ?? fallback;
+    return RoleTag(
+      title,
+      label: StartupRole.isTransferredOwner(startup, uid)
+          ? FounderToolsStrings.roleOwnerCoFounder
+          : null,
+    );
+  }
+
+  /// The words of [forStartup] (the eyebrow above the name in Manage).
+  static String labelFor(
+    Startup startup,
+    String? uid, {
+    required StartupRole fallback,
+  }) => StartupRole.isTransferredOwner(startup, uid)
+      ? FounderToolsStrings.roleOwnerCoFounder
+      : labelOf(StartupRole.titleOf(startup, uid) ?? fallback);
 
   static String labelOf(StartupRole role) => switch (role) {
     StartupRole.founder => FounderToolsStrings.roleFounder,
@@ -105,9 +132,21 @@ class PrivateTag extends StatelessWidget {
   const PrivateTag({super.key});
 
   @override
+  Widget build(BuildContext context) =>
+      const GreyTag(FounderToolsStrings.privatePill);
+}
+
+/// A muted-grey capsule with the size and type of [RoleTag]: "Private",
+/// "Closed", "Founder (former)".
+class GreyTag extends StatelessWidget {
+  const GreyTag(this.label, {super.key});
+
+  final String label;
+
+  @override
   Widget build(BuildContext context) {
     return Semantics(
-      label: FounderToolsStrings.privatePill,
+      label: label,
       excludeSemantics: true,
       child: Container(
         height: 20,
@@ -119,7 +158,7 @@ class PrivateTag extends StatelessWidget {
         child: Center(
           widthFactor: 1,
           child: Text(
-            FounderToolsStrings.privatePill,
+            label,
             style: AppText.sans(
               size: 11,
               height: 20,
@@ -167,10 +206,26 @@ List<Widget> teamTagsOf(
   TeamMember member, {
   required bool isYou,
   bool declined = false,
+  String? ownerId,
 }) {
+  if (member.former) {
+    return const [GreyTag(FounderToolsStrings.roleFormerFounder)];
+  }
   final you = isYou ? 'You · ' : '';
+  // An owner who didn't create the startup (ownership was transferred).
+  final owner =
+      ownerId != null &&
+      ownerId.isNotEmpty &&
+      member.uid == ownerId &&
+      !member.isFounder &&
+      !member.invited;
   final tag = member.isFounder
       ? RoleTag(StartupRole.founder, label: '${you}Founder')
+      : owner
+      ? RoleTag(
+          StartupRole.coFounder,
+          label: '$you${FounderToolsStrings.roleOwnerCoFounder}',
+        )
       : member.coFounder
       ? RoleTag(StartupRole.coFounder, label: '${you}Co-founder')
       : RoleTag(StartupRole.member, label: '${you}Member');

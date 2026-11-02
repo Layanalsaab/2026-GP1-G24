@@ -97,8 +97,22 @@ class AccountStrings {
   static const deleteTitle = 'Delete your account?';
   static const deleteWarningFounder =
       'Your account and personal information will be permanently deleted. '
-      'Your startups, requests and Investment Associations will also be '
-      'removed, and your startups will no longer appear anywhere on Start.sa.';
+      'A startup with nobody else on it is deleted; one with a co-founder '
+      'goes to that co-founder, and one with only team members is closed '
+      'for its team.';
+
+  /// The first line of the founder's delete confirmation; one line per
+  /// startup follows.
+  static const deleteWarningFounderBase =
+      'Your account and personal information will be permanently deleted.';
+  static String deleteDeletes(String startup) => '$startup will be deleted.';
+  static String deleteTransfers(String startup, String person) =>
+      '$startup will go to $person.';
+  static String deleteCloses(String startup) =>
+      '$startup will be closed. Its team keeps it.';
+  static String deleteLeavesClosed(String startup) =>
+      'You’ll leave $startup. It stays closed for its team.';
+  static String deleteLeaves(String startup) => 'You’ll leave $startup.';
   static const deleteWarningInvestor =
       'Your account and personal information will be permanently deleted. '
       'Your requests and Investment Associations will also be removed, and '

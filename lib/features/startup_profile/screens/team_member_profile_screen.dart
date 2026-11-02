@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../app_constants/founder_tools_strings.dart';
 import '../../../app_constants/profile_strings.dart';
 import '../../../data_access/repositories/public_profile_repository.dart';
 import '../../../data_access/repositories/startup_repository.dart';
@@ -165,6 +166,8 @@ class _TeamMemberProfileScreenState extends State<TeamMemberProfileScreen> {
     };
     final st = ref.startup;
     final item = st == null ? null : HomeItem.fromStartup(st);
+    final owner =
+        st != null && StartupRole.isTransferredOwner(st, widget.member.uid);
     return HomeCard(
       name: ref.name,
       tag: item?.tag ?? '',
@@ -172,7 +175,17 @@ class _TeamMemberProfileScreenState extends State<TeamMemberProfileScreen> {
       body: item?.line ?? '',
       bodyMaxLines: 2,
       animate: false,
-      badges: [RoleTag(role)],
+      badges: [
+        if (ref.role == ProfileStartupRef.formerFounder)
+          const GreyTag(FounderToolsStrings.roleFormerFounder)
+        else
+          RoleTag(
+            role,
+            label: owner ? FounderToolsStrings.roleOwnerCoFounder : null,
+          ),
+        if (st != null && st.isClosed)
+          const GreyTag(FounderToolsStrings.closedPill),
+      ],
       imageUrl: item?.imageUrl,
       imageData: item?.imageData,
       onTap: () => _openStartup(ref),

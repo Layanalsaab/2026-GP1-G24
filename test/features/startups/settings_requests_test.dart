@@ -13,6 +13,7 @@ import 'package:startsa/features/startups/screens/manage_startup_screen.dart';
 import 'package:startsa/features/startups/screens/my_startups_screen.dart';
 import 'package:startsa/helpers/app_session.dart';
 import 'package:startsa/models/list_entries.dart';
+import 'package:startsa/models/startup.dart';
 import 'package:startsa/shared_ui/theme/app_theme.dart';
 import 'package:startsa/shared_ui/widgets/headers/tabbed_header.dart';
 import 'package:startsa/shared_ui/widgets/overlays/app_toast.dart';
@@ -24,6 +25,7 @@ Future<void> _open(
   StartupRole role = StartupRole.founder,
   VoidCallback? onLeave,
   String tab = 'Settings',
+  Startup? startup,
 }) async {
   t.view.physicalSize = const Size(1236, 2676);
   t.view.devicePixelRatio = 3;
@@ -33,7 +35,7 @@ Future<void> _open(
       theme: AppTheme.light,
       navigatorKey: AppToast.navigatorKey,
       home: ManageStartupScreen(
-        startup: PrototypeSeed.rafeeq,
+        startup: startup ?? PrototypeSeed.rafeeq,
         role: role,
         onLeave: onLeave,
       ),
@@ -111,6 +113,62 @@ void main() {
         find.text('You’ll be removed from this startup’s team'),
         findsOneWidget,
       );
+    });
+
+    testWidgets('owner with a joined co-founder: Transfer, no Delete', (
+      t,
+    ) async {
+      await _open(
+        t,
+        startup: PrototypeSeed.rafeeq.copyWith(
+          memberRoles: const {'layan': 'coFounder'},
+        ),
+      );
+      expect(find.text('Transfer ownership'), findsOneWidget);
+      expect(find.text('Delete startup'), findsNothing);
+      expect(find.text('Close startup'), findsNothing);
+      expect(find.text('Leave startup'), findsNothing);
+    });
+
+    testWidgets('owner with only team members: Close, no Delete', (t) async {
+      await _open(
+        t,
+        startup: PrototypeSeed.rafeeq.copyWith(
+          memberRoles: const {'reem': 'member'},
+        ),
+      );
+      expect(find.text('Close startup'), findsOneWidget);
+      expect(find.text('Delete startup'), findsNothing);
+      expect(find.text('Transfer ownership'), findsNothing);
+    });
+
+    testWidgets('a closed startup: Reopen and Leave for its owner', (t) async {
+      await _open(
+        t,
+        startup: PrototypeSeed.rafeeq.copyWith(
+          isClosed: true,
+          memberRoles: const {'reem': 'member'},
+        ),
+      );
+      expect(find.text('Reopen startup'), findsOneWidget);
+      expect(find.text('Leave startup'), findsOneWidget);
+      expect(find.text('Public profile'), findsNothing);
+      expect(find.text('Close startup'), findsNothing);
+      expect(
+        find.text(
+          'This startup is hidden from Start.sa and can’t be changed. You can reopen it from Settings.',
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('a closed startup with nobody else: Reopen and Delete', (
+      t,
+    ) async {
+      await _open(t, startup: PrototypeSeed.rafeeq.copyWith(isClosed: true));
+      expect(find.text('Reopen startup'), findsOneWidget);
+      expect(find.text('Delete startup'), findsOneWidget);
+      expect(find.text('Leave startup'), findsNothing);
     });
 
     testWidgets('Leave asks, then removes the user and goes back', (t) async {

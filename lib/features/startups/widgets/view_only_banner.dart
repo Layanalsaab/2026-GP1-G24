@@ -6,12 +6,30 @@ import '../../../shared_ui/theme/app_text.dart';
 /// The notice at the top of every Manage tab for a team member: light blue
 /// box (`#EEF2F8`, 1 px `#D7E1F0`, radius 16, padding 12 / 14), a white 36 px
 /// tile with a navy lock, "View only" (15.5 bold navy) and the reason.
+///
+/// The same box carries the other notices of the founder tools ("Closed",
+/// "You no longer have a startup") through [ViewOnlyBanner.notice].
 class ViewOnlyBanner extends StatelessWidget {
-  const ViewOnlyBanner({super.key});
+  const ViewOnlyBanner({super.key})
+    : title = viewOnlyTitle,
+      message = viewOnlyMessage,
+      icon = AppIcons.lock;
 
-  static const title = 'View only';
-  static const message =
+  /// A notice with its own words (and icon) in the same box.
+  const ViewOnlyBanner.notice({
+    super.key,
+    required this.title,
+    required this.message,
+    this.icon = AppIcons.info,
+  });
+
+  static const viewOnlyTitle = 'View only';
+  static const viewOnlyMessage =
       'You’re a team member. Only the founder and co-founders can make changes.';
+
+  final String title;
+  final String message;
+  final String icon;
 
   @override
   Widget build(BuildContext context) {
@@ -37,11 +55,11 @@ class ViewOnlyBanner extends StatelessWidget {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Center(
+              child: Center(
                 child: AppIcon.filled(
-                  AppIcons.lock,
+                  icon,
                   size: 18,
-                  color: Color(0xFF1F3A5F),
+                  color: const Color(0xFF1F3A5F),
                 ),
               ),
             ),
