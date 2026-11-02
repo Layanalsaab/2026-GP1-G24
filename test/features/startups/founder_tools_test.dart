@@ -29,6 +29,7 @@ import 'package:startsa/models/connection_request.dart';
 import 'package:startsa/models/startup.dart';
 import 'package:startsa/models/startup_enums.dart';
 import 'package:startsa/shared_ui/theme/app_theme.dart';
+import 'package:startsa/shared_ui/widgets/forms/app_field.dart';
 import 'package:startsa/shared_ui/widgets/headers/tabbed_header.dart';
 import 'package:startsa/shared_ui/widgets/overlays/app_toast.dart';
 
@@ -452,6 +453,21 @@ void main() {
       // 60% × (9M ÷ 13M) = 41.5%
       expect(vm.dilutionText, '18.5 pts');
       expect(vm.ownershipChangeText, '60% → 41.5%');
+    });
+
+    test('knows when something was typed (asks before leaving)', () {
+      final vm = ValuationCalculatorViewModel(
+        funding: 3000000,
+        valuation: 9000000,
+      );
+      addTearDown(vm.dispose);
+      expect(vm.hasChanges, isFalse);
+      vm.ownership.text = '90';
+      expect(vm.hasChanges, isTrue);
+      vm.ownership.text = '100';
+      expect(vm.hasChanges, isFalse);
+      vm.funds.text = '4,000,000';
+      expect(vm.hasChanges, isTrue);
     });
 
     test('rounding never makes a note', () {
@@ -943,6 +959,11 @@ void main() {
         expect(find.text('Ownership after this raise'), findsOneWidget);
         expect(find.text('You (founder)'), findsOneWidget);
         expect(find.text('Other existing owners'), findsNothing);
+
+        // the (i) opens an inline tip, like the other forms
+        await tester.tap(find.byType(InfoButton).first);
+        await tester.pumpAndSettle();
+        expect(find.byType(InfoTip), findsOneWidget);
 
         await tester.enterText(find.byType(TextField).at(1), '');
         await tester.pumpAndSettle();

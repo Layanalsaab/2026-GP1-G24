@@ -27,6 +27,7 @@ class ValuationCalculatorViewModel extends ChangeNotifier with SafeNotifier {
     funds.text = funding == null ? '' : _group(funding);
     equity.text = _equityText(_follow ? _autoEquity : equityPercent);
     _shownEquity = equity.text;
+    _startEquity = equity.text;
     // starts fresh every time, nothing is saved
     ownership.text = ownershipUnknown ? '' : '100';
     _startFunds = funds.text;
@@ -37,7 +38,14 @@ class ValuationCalculatorViewModel extends ChangeNotifier with SafeNotifier {
   }
 
   late final String _startFunds;
+  late final String _startEquity;
   late final String _startOwnership;
+
+  // something was typed since the calculator opened (asks before leaving)
+  bool get hasChanges =>
+      funds.text != _startFunds ||
+      equity.text != _startEquity ||
+      ownership.text != _startOwnership;
 
   // last equity text we filled in ourselves
   String _shownEquity = '';

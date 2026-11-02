@@ -415,7 +415,7 @@ class FounderToolsStrings {
   static const calcInfo = <String, (String, String)>{
     'f': (
       'Funding to raise',
-      'The total money you want investors to put into your startup in this raise. It starts at your open round’s amount; change it to test another amount.',
+      'The total money you want investors to put into your startup in this raise. It starts at your open round’s amount; change it to test another amount or an investor’s offer.',
     ),
     'e': (
       'Equity to give up',

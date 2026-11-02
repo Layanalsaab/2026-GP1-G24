@@ -4,6 +4,7 @@ import '../../../app_constants/founder_tools_strings.dart';
 import '../../../models/funding_round.dart';
 import '../../../models/startup.dart';
 import '../../startups/widgets/founder_ui.dart';
+import '../../../shared_ui/widgets/overlays/app_dialog.dart';
 import '../../startups/widgets/manage_card.dart';
 import '../view_models/valuation_calculator_view_model.dart';
 
@@ -96,13 +97,39 @@ class _ValuationCalculatorScreenState extends State<ValuationCalculatorScreen> {
     super.dispose();
   }
 
-  void _info(String key) {
-    final (title, text) = FounderToolsStrings.calcInfo[key]!;
-    showInfoSheet(context, title: title, text: text);
+  // back with something typed: the same "Discard changes?" dialog as the
+  // other forms in the app
+  Future<void> _leave() async {
+    if (!_vm.hasChanges) {
+      AppNav.back(context);
+      return;
+    }
+    final discard = await showDiscardDialog(
+      context,
+      title: FounderToolsStrings.discardEditTitle,
+      message: FounderToolsStrings.discardEditMessage,
+      discardLabel: FounderToolsStrings.discard,
+      keepLabel: FounderToolsStrings.keepEditing,
+    );
+    if (!mounted || !discard) return;
+    Navigator.of(context).pop();
   }
 
   @override
   Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: _vm,
+      builder: (context, _) => PopScope(
+        canPop: !_vm.hasChanges,
+        onPopInvokedWithResult: (didPop, _) {
+          if (!didPop) _leave();
+        },
+        child: _page(context),
+      ),
+    );
+  }
+
+  Widget _page(BuildContext context) {
     final s = widget.startup;
     return Scaffold(
       backgroundColor: AppColors.cream,
@@ -113,21 +140,16 @@ class _ValuationCalculatorScreenState extends State<ValuationCalculatorScreen> {
             AuthHeader(
               title: FounderToolsStrings.calcTitle,
               overlap: OverlapList.overlap,
-              onBack: () => AppNav.back(context),
+              onBack: _leave,
             ),
             ListenableBuilder(
               listenable: _vm,
               builder: (context, _) => OverlapList(
                 gap: 12,
                 children: [
-                  _InputsCard(
-                    vm: _vm,
-                    startup: s,
-                    round: widget.round,
-                    onInfo: _info,
-                  ),
-                  _ResultCard(vm: _vm, onInfo: _info),
-                  if (_vm.isValid) _OwnershipCard(vm: _vm, onInfo: _info),
+                  _InputsCard(vm: _vm, startup: s, round: widget.round),
+                  _ResultCard(vm: _vm),
+                  if (_vm.isValid) _OwnershipCard(vm: _vm),
                   Padding(
                     padding: const EdgeInsets.fromLTRB(4, 0, 4, 8),
                     child: Text(
@@ -150,43 +172,26 @@ class _ValuationCalculatorScreenState extends State<ValuationCalculatorScreen> {
 }
 
 class _InputsCard extends StatelessWidget {
-  const _InputsCard({
-    required this.vm,
-    required this.startup,
-    required this.onInfo,
-    this.round,
-  });
+  const _InputsCard({required this.vm, required this.startup, this.round});
 
   final ValuationCalculatorViewModel vm;
   final Startup startup;
   final FundingRound? round;
-  final void Function(String key) onInfo;
 
+  // same field as the other forms: label, inline (i) tip, error / hint line
   Widget _field({
     required String label,
     required String infoKey,
     required Widget input,
     required String? error,
     String? hint,
-  }) {
-    final hasError = error != null;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Align(
-          alignment: Alignment.centerLeft,
-          child: FieldLabel(
-            label,
-            hasError: hasError,
-            onInfoTap: () => onInfo(infoKey),
-          ),
-        ),
-        const SizedBox(height: 6),
-        input,
-        FieldHelperRow(error: error, hint: hint),
-      ],
-    );
-  }
+  }) => AppField(
+    label: label,
+    info: _tip(infoKey),
+    error: error,
+    hint: hint,
+    child: input,
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -258,7 +263,7 @@ class _InputsCard extends StatelessWidget {
               semanticLabel: FounderToolsStrings.fundingToRaise,
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: FieldHelperRow.gapAfter),
           _field(
             label: FounderToolsStrings.equityToGive,
             infoKey: 'e',
@@ -274,7 +279,7 @@ class _InputsCard extends StatelessWidget {
               semanticLabel: FounderToolsStrings.equityToGive,
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: FieldHelperRow.gapAfter),
           _field(
             label: FounderToolsStrings.currentOwnership,
             infoKey: 'o',
@@ -300,30 +305,47 @@ class _InputsCard extends StatelessWidget {
 TextStyle _tabular(TextStyle style) =>
     style.copyWith(fontFeatures: const [FontFeature.tabularFigures()]);
 
-class _ResultCard extends StatelessWidget {
-  const _ResultCard({required this.vm, required this.onInfo});
+class _ResultCard extends StatefulWidget {
+  const _ResultCard({required this.vm});
 
   final ValuationCalculatorViewModel vm;
-  final void Function(String key) onInfo;
 
-  Widget _label(String text, String key) => Row(
+  @override
+  State<_ResultCard> createState() => _ResultCardState();
+}
+
+class _ResultCardState extends State<_ResultCard> {
+  // the (i) tip that's open in this card, if any
+  String? _open;
+
+  void _toggle(String key) =>
+      setState(() => _open = _open == key ? null : key);
+
+  Widget _label(String text, String key) => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
-      Flexible(
-        child: Text(
-          text,
-          style: AppText.sans(
-            size: 12,
-            color: AppColors.onGreenMuted,
-            letterSpacing: 0.48,
+      Row(
+        children: [
+          Flexible(
+            child: Text(
+              text,
+              style: AppText.sans(
+                size: 12,
+                color: AppColors.onGreenMuted,
+                letterSpacing: 0.48,
+              ),
+            ),
           ),
-        ),
+          InfoButton.light(onTap: () => _toggle(key), open: _open == key),
+        ],
       ),
-      InfoButton.light(onTap: () => onInfo(key)),
+      if (_open == key) InfoTip(_tip(key)),
     ],
   );
 
   @override
   Widget build(BuildContext context) {
+    final vm = widget.vm;
     final dim = vm.isValid ? 1.0 : 0.4;
     return Container(
       padding: const EdgeInsets.all(18),
@@ -453,14 +475,24 @@ class _Two extends StatelessWidget {
   );
 }
 
-class _OwnershipCard extends StatelessWidget {
-  const _OwnershipCard({required this.vm, required this.onInfo});
+class _OwnershipCard extends StatefulWidget {
+  const _OwnershipCard({required this.vm});
 
   final ValuationCalculatorViewModel vm;
-  final void Function(String key) onInfo;
+
+  @override
+  State<_OwnershipCard> createState() => _OwnershipCardState();
+}
+
+class _OwnershipCardState extends State<_OwnershipCard> {
+  String? _open;
+
+  void _toggle(String key) =>
+      setState(() => _open = _open == key ? null : key);
 
   @override
   Widget build(BuildContext context) {
+    final vm = widget.vm;
     final rows = <(Color, String, String, double)>[
       (AppColors.moss600, FounderToolsStrings.youFounder, vm.youWork, vm.you),
       if (vm.hasOthers)
@@ -492,9 +524,10 @@ class _OwnershipCard extends StatelessWidget {
                   ),
                 ),
               ),
-              InfoButton(onTap: () => onInfo('own')),
+              InfoButton(onTap: () => _toggle('own'), open: _open == 'own'),
             ],
           ),
+          if (_open == 'own') InfoTip(_tip('own')),
           const SizedBox(height: 6),
           OwnershipBar(
             segments: [
@@ -574,9 +607,13 @@ class _OwnershipCard extends StatelessWidget {
                         style: AppText.sans(size: 13, color: AppColors.metaText),
                       ),
                     ),
-                    InfoButton(onTap: () => onInfo('change')),
+                    InfoButton(
+                      onTap: () => _toggle('change'),
+                      open: _open == 'change',
+                    ),
                   ],
                 ),
+                if (_open == 'change') InfoTip(_tip('change')),
                 const SizedBox(height: 2),
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.end,
@@ -609,3 +646,6 @@ class _OwnershipCard extends StatelessWidget {
     );
   }
 }
+
+// the (i) text for a box or result
+String _tip(String key) => FounderToolsStrings.calcInfo[key]!.$2;
