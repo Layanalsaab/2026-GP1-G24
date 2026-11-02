@@ -17,9 +17,15 @@ class InvestorProfileViewModel extends ChangeNotifier {
   }) : _session = session ?? AppSession.instance,
        _discovery = discovery ?? DiscoveryRepository.instance;
 
-  final InvestorProfile investor;
+  InvestorProfile investor;
   final AppSession _session;
   final DiscoveryRepository _discovery;
+
+  /// Pull to refresh: the profile is replaced by the latest copy.
+  void replaceInvestor(InvestorProfile fresh) {
+    investor = fresh;
+    notifyListeners();
+  }
 
   String get key => 'i-${investor.id}';
 

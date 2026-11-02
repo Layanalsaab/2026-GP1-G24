@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -20,6 +22,7 @@ import '../shared_ui/icons/app_icons.dart';
 import '../shared_ui/navigation/app_route.dart';
 import '../shared_ui/theme/app_colors.dart';
 import '../shared_ui/widgets/headers/home_header.dart';
+import '../shared_ui/widgets/lists/app_refresh.dart';
 import '../shared_ui/widgets/nav/app_bottom_nav.dart';
 import '../shared_ui/widgets/nav/app_side_drawer.dart';
 import '../shared_ui/widgets/nav/home_search_bar.dart';
@@ -62,6 +65,23 @@ class _MainScreenState extends State<MainScreen> {
     _startups.changes.addListener(_onStartupsChanged);
     if (_session.isFounder) _loadOwnStartups();
     _vm.refreshDirectory();
+  }
+
+  /// Pull down: new invitations are accepted, then the lists are read again
+  /// (the directory, the startups the person owns or belongs to, bookmarks).
+  Future<void> _refresh() async {
+    if (_session.isGuest) {
+      await _vm.refreshDirectory();
+      return;
+    }
+    await AppRouter.checkInvitations(context);
+    if (!mounted) return;
+    final uid = _session.user?.uid;
+    if (uid != null) unawaited(BookmarkRepository.instance.load(uid));
+    await Future.wait([
+      _vm.refreshDirectory(),
+      if (_session.isFounder) _loadOwnStartups(),
+    ]);
   }
 
   void _onStartupsChanged() {
@@ -246,36 +266,40 @@ class _MainScreenState extends State<MainScreen> {
                   listenable: _vm,
                   builder: (context, _) {
                     final showTabs = _vm.tab == HomeTab.explore && !guest;
-                    return SingleChildScrollView(
-                      controller: _scroll,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          HomeHeader(
-                            title: _vm.title,
-                            initials: _session.user?.initials ?? '',
-                            guest: guest,
-                            // No dot until notifications exist.
-                            hasNotification: false,
-                            menuLabel: HomeStrings.menuLabel,
-                            onAvatarTap: _openMenu,
-                            onSignUp: () => ChooseRoleScreen.open(context),
-                            tabs: showTabs
-                                ? ExploreTab.forRole(founder: _vm.isFounder)
-                                : null,
-                            selectedTab: _vm.effectiveExploreTab,
-                            onTabChanged: _vm.selectExploreTab,
-                          ),
-                          HomeSearchBar(
-                            controller: _vm.searchController,
-                            hint: 'Search',
-                            overlap: 0,
-                            activeCount: _vm.selectionCount,
-                            onChanged: _vm.setQuery,
-                            onFilterTap: _openAdvanced,
-                          ),
-                          _page(),
-                        ],
+                    return AppRefresh(
+                      onRefresh: _refresh,
+                      child: SingleChildScrollView(
+                        controller: _scroll,
+                        physics: AppRefresh.physics,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            HomeHeader(
+                              title: _vm.title,
+                              initials: _session.user?.initials ?? '',
+                              guest: guest,
+                              // No dot until notifications exist.
+                              hasNotification: false,
+                              menuLabel: HomeStrings.menuLabel,
+                              onAvatarTap: _openMenu,
+                              onSignUp: () => ChooseRoleScreen.open(context),
+                              tabs: showTabs
+                                  ? ExploreTab.forRole(founder: _vm.isFounder)
+                                  : null,
+                              selectedTab: _vm.effectiveExploreTab,
+                              onTabChanged: _vm.selectExploreTab,
+                            ),
+                            HomeSearchBar(
+                              controller: _vm.searchController,
+                              hint: 'Search',
+                              overlap: 0,
+                              activeCount: _vm.selectionCount,
+                              onChanged: _vm.setQuery,
+                              onFilterTap: _openAdvanced,
+                            ),
+                            _page(),
+                          ],
+                        ),
                       ),
                     );
                   },

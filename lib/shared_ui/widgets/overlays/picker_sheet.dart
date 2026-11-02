@@ -253,10 +253,7 @@ class _PickerSheetState extends State<PickerSheet> {
             if (_otherOpen)
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
-                child: AppButton(
-                  label: 'Done',
-                  onPressed: _done,
-                ),
+                child: AppButton(label: 'Done', onPressed: _done),
               ),
           ],
         ),

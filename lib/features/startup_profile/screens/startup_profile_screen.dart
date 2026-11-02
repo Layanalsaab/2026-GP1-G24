@@ -1,3 +1,6 @@
+import '../../../data_access/repositories/startup_repository.dart';
+import '../../../shared_ui/widgets/lists/app_refresh.dart';
+
 import 'package:flutter/material.dart';
 
 import '../../../app_constants/founder_tools_strings.dart';
@@ -57,6 +60,21 @@ class _StartupProfileScreenState extends State<StartupProfileScreen> {
     preview: widget.preview,
   );
 
+  /// Pull down: the startup and its funding rounds are read again.
+  Future<void> _refresh() async {
+    try {
+      final fresh = await StartupRepository.instance.fetchById(
+        widget.startup.id,
+      );
+      if (fresh != null && mounted) _vm.replaceStartup(fresh);
+    } catch (_) {
+      // A startup that can't be read keeps what is shown.
+    }
+    if (!mounted) return;
+    await _vm.loadRounds();
+    await _vm.loadFormerFounder();
+  }
+
   @override
   void dispose() {
     _vm.dispose();
@@ -76,7 +94,7 @@ class _StartupProfileScreenState extends State<StartupProfileScreen> {
             ? interests.value.contains(_vm.key)
             : requests.value.contains(_vm.key);
         final preview = _vm.isPreview;
-        final s = widget.startup;
+        final s = _vm.startup;
         // Same header style as Manage: back (or close in preview), the logo
         // tile, the name, ONE sub-line, and four equal tabs. No description
         // and no stat strip here: they live in the Overview tab.
@@ -123,38 +141,42 @@ class _StartupProfileScreenState extends State<StartupProfileScreen> {
             children: [
               if (preview) _PreviewBar(_vm.previewText),
               Expanded(
-                child: SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // The preview bar already covers the status bar.
-                      if (preview)
-                        MediaQuery.removePadding(
-                          context: context,
-                          removeTop: true,
-                          child: header,
-                        )
-                      else
-                        header,
-                      // A closed startup says so above its tabs.
-                      if (_vm.startup.isClosed)
-                        const Padding(
-                          padding: EdgeInsets.fromLTRB(16, 16, 16, 0),
-                          child: ViewOnlyBanner.notice(
-                            title: FounderToolsStrings.closedBannerTitle,
-                            message: FounderToolsStrings.closedBannerPublic,
-                            icon: AppIcons.lock,
+                child: AppRefresh(
+                  onRefresh: _refresh,
+                  child: SingleChildScrollView(
+                    physics: AppRefresh.physics,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // The preview bar already covers the status bar.
+                        if (preview)
+                          MediaQuery.removePadding(
+                            context: context,
+                            removeTop: true,
+                            child: header,
+                          )
+                        else
+                          header,
+                        // A closed startup says so above its tabs.
+                        if (_vm.startup.isClosed)
+                          const Padding(
+                            padding: EdgeInsets.fromLTRB(16, 16, 16, 0),
+                            child: ViewOnlyBanner.notice(
+                              title: FounderToolsStrings.closedBannerTitle,
+                              message: FounderToolsStrings.closedBannerPublic,
+                              icon: AppIcons.lock,
+                            ),
+                          ),
+                        TabPaneSlide(
+                          index: _vm.tab,
+                          child: StartupProfilePane(
+                            viewModel: _vm,
+                            onOpenInvestor: (i) =>
+                                InvestorProfileScreen.open(context, i),
                           ),
                         ),
-                      TabPaneSlide(
-                        index: _vm.tab,
-                        child: StartupProfilePane(
-                          viewModel: _vm,
-                          onOpenInvestor: (i) =>
-                              InvestorProfileScreen.open(context, i),
-                        ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),

@@ -43,6 +43,12 @@ class StartupProfileViewModel extends ChangeNotifier with SafeNotifier {
   /// none, or her account was deleted.
   TeamMember? formerFounder;
 
+  /// Pull to refresh: the startup is replaced by the latest copy.
+  void replaceStartup(Startup fresh) {
+    startup = fresh;
+    notifyListeners();
+  }
+
   Future<void> loadFormerFounder() async {
     final id = startup.formerFounderId;
     if (id == null) return;
@@ -147,7 +153,7 @@ class StartupProfileViewModel extends ChangeNotifier with SafeNotifier {
     ProfileStrings.tabFinancials,
   ];
 
-  final Startup startup;
+  Startup startup;
   final AppSession _session;
   final DiscoveryRepository _discovery;
   final bool _forcedPreview;
@@ -168,6 +174,7 @@ class StartupProfileViewModel extends ChangeNotifier with SafeNotifier {
   bool get isInvestor => _session.isInvestor;
   bool get showBookmark => !isPreview && !isGuest;
   bool get showShare => !isPreview;
+
   /// A closed startup receives no requests or interest.
   bool get showCta =>
       !isPreview && (isGuest || isInvestor) && !startup.isClosed;

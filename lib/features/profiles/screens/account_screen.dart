@@ -1,3 +1,5 @@
+import '../../../shared_ui/widgets/lists/app_refresh.dart';
+import '../../../navigation/app_router.dart';
 import '../../../helpers/open_link.dart';
 
 import 'dart:async';
@@ -56,6 +58,13 @@ class _OwnProfileScreenState extends State<OwnProfileScreen> {
   void initState() {
     super.initState();
     _vm.reload();
+  }
+
+  /// Pull down: a new invitation is accepted, then the profile and the
+  /// startups list are read again.
+  Future<void> _refresh() async {
+    await AppRouter.checkInvitations(context);
+    await _vm.reload();
   }
 
   @override
@@ -187,8 +196,7 @@ class _OwnProfileScreenState extends State<OwnProfileScreen> {
       context,
       entry.startup,
       role: entry.role,
-      onLeave: () =>
-          unawaited(_vm.leave(entry.startup.id, alreadyLeft: true)),
+      onLeave: () => unawaited(_vm.leave(entry.startup.id, alreadyLeft: true)),
     );
     if (mounted) await _vm.refreshStartups();
   }
@@ -223,105 +231,114 @@ class _OwnProfileScreenState extends State<OwnProfileScreen> {
         final about = u.bio.trim();
         return Scaffold(
           backgroundColor: AppColors.profileBg,
-          body: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                ProfileBanner.edit(
-                  onBack: () => AppNav.back(context),
-                  onEdit: _edit,
-                ),
-                ProfileHead(
-                  initials: u.initials,
-                  name: u.fullName,
-                  role: _vm.roleLabel,
-                  city: u.city,
-                  metaTail: _vm.joinedLabel,
-                  tagsLabel: u.isInvestor
-                      ? ProfileStrings.investsIn
-                      : ProfileStrings.interestedIn,
-                  tags: _vm.sectors,
-                  photoUrl: u.photoUrl,
-                  photoData: u.photoData,
-                  linkedin: _vm.linkedin,
-                  onLinkedin: () => openExternalLink(_vm.linkedin),
-                ),
-                if (u.isInvestor)
-                  InvestorProfileBody(
-                    data: InvestorProfileData.fromUser(u),
-                    associations: _vm.associations,
-                    contact: InvestorContactData(
-                      email: u.email,
-                      emailPublic: u.emailPublic,
-                      phone: _vm.phoneLabel,
-                      phonePublic: u.phonePublic,
-                      linkedin: u.linkedin ?? '',
-                    ),
-                  )
-                else
-                  ProfileSections(
-                    children: [
-                      if (about.isNotEmpty)
-                        ProfileSection(
-                          title: ProfileStrings.about,
-                          delay: stagger(),
-                          child: ProfileText(about),
-                        ),
-                      if (_vm.isFounder) _myStartups(context),
-                      if (_vm.associations.isNotEmpty)
-                        ProfileSection(
-                          title: ProfileStrings.associations,
-                          delay: stagger(),
-                          child: Column(
-                            children: [
-                              for (var i = 0; i < _vm.associations.length; i++)
-                                ListRow(
-                                  showDivider: i > 0,
-                                  leading: HueAvatar(
-                                    name: _vm.associations[i].name,
-                                    size: 44,
-                                    imageUrl: _vm.associations[i].logoUrl,
-                                    imageData: _vm.associations[i].logoData,
-                                  ),
-                                  title: _vm.associations[i].name,
-                                  subtitle:
-                                      '${_vm.associations[i].sectorLabel} · ${_vm.associations[i].location.label}',
-                                  onTap: () => StartupProfileScreen.open(
-                                    context,
-                                    startup: _vm.associations[i],
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ),
-                      // On my own profile both are listed, each with a pill that
-                      // says who sees it (Public or Only you).
-                      if (_vm.contactRows().isNotEmpty)
-                        ProfileSection(
-                          title: ProfileStrings.contact,
-                          delay: stagger(),
-                          child: Column(
-                            children: [
-                              for (final (i, row) in _vm.contactRows().indexed)
-                                InfoRow(
-                                  icon: row.kind == ContactKind.email
-                                      ? AppIcons.mail
-                                      : AppIcons.phone,
-                                  label: row.kind == ContactKind.email
-                                      ? ProfileStrings.email
-                                      : ProfileStrings.phone,
-                                  value: row.value,
-                                  showDivider: i > 0,
-                                  trailing: _ContactPill(
-                                    isPublic: row.isPublic,
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ),
-                    ],
+          body: AppRefresh(
+            onRefresh: _refresh,
+            child: SingleChildScrollView(
+              physics: AppRefresh.physics,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  ProfileBanner.edit(
+                    onBack: () => AppNav.back(context),
+                    onEdit: _edit,
                   ),
-              ],
+                  ProfileHead(
+                    initials: u.initials,
+                    name: u.fullName,
+                    role: _vm.roleLabel,
+                    city: u.city,
+                    metaTail: _vm.joinedLabel,
+                    tagsLabel: u.isInvestor
+                        ? ProfileStrings.investsIn
+                        : ProfileStrings.interestedIn,
+                    tags: _vm.sectors,
+                    photoUrl: u.photoUrl,
+                    photoData: u.photoData,
+                    linkedin: _vm.linkedin,
+                    onLinkedin: () => openExternalLink(_vm.linkedin),
+                  ),
+                  if (u.isInvestor)
+                    InvestorProfileBody(
+                      data: InvestorProfileData.fromUser(u),
+                      associations: _vm.associations,
+                      contact: InvestorContactData(
+                        email: u.email,
+                        emailPublic: u.emailPublic,
+                        phone: _vm.phoneLabel,
+                        phonePublic: u.phonePublic,
+                        linkedin: u.linkedin ?? '',
+                      ),
+                    )
+                  else
+                    ProfileSections(
+                      children: [
+                        if (about.isNotEmpty)
+                          ProfileSection(
+                            title: ProfileStrings.about,
+                            delay: stagger(),
+                            child: ProfileText(about),
+                          ),
+                        if (_vm.isFounder) _myStartups(context),
+                        if (_vm.associations.isNotEmpty)
+                          ProfileSection(
+                            title: ProfileStrings.associations,
+                            delay: stagger(),
+                            child: Column(
+                              children: [
+                                for (
+                                  var i = 0;
+                                  i < _vm.associations.length;
+                                  i++
+                                )
+                                  ListRow(
+                                    showDivider: i > 0,
+                                    leading: HueAvatar(
+                                      name: _vm.associations[i].name,
+                                      size: 44,
+                                      imageUrl: _vm.associations[i].logoUrl,
+                                      imageData: _vm.associations[i].logoData,
+                                    ),
+                                    title: _vm.associations[i].name,
+                                    subtitle:
+                                        '${_vm.associations[i].sectorLabel} · ${_vm.associations[i].location.label}',
+                                    onTap: () => StartupProfileScreen.open(
+                                      context,
+                                      startup: _vm.associations[i],
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        // On my own profile both are listed, each with a pill that
+                        // says who sees it (Public or Only you).
+                        if (_vm.contactRows().isNotEmpty)
+                          ProfileSection(
+                            title: ProfileStrings.contact,
+                            delay: stagger(),
+                            child: Column(
+                              children: [
+                                for (final (i, row)
+                                    in _vm.contactRows().indexed)
+                                  InfoRow(
+                                    icon: row.kind == ContactKind.email
+                                        ? AppIcons.mail
+                                        : AppIcons.phone,
+                                    label: row.kind == ContactKind.email
+                                        ? ProfileStrings.email
+                                        : ProfileStrings.phone,
+                                    value: row.value,
+                                    showDivider: i > 0,
+                                    trailing: _ContactPill(
+                                      isPublic: row.isPublic,
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                      ],
+                    ),
+                ],
+              ),
             ),
           ),
         );

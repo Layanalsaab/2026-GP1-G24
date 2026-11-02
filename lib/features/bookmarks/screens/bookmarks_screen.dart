@@ -11,7 +11,11 @@ import '../../../shared_ui/theme/app_text.dart';
 import '../../../shared_ui/widgets/buttons/app_button.dart';
 import '../../../shared_ui/widgets/cards/home_card.dart';
 import '../../../shared_ui/widgets/headers/list_screen_header.dart';
+import '../../../shared_ui/widgets/lists/app_refresh.dart';
 import '../../../shared_ui/widgets/lists/empty_state.dart';
+import '../../../data_access/repositories/bookmark_repository.dart';
+import '../../../data_access/repositories/discovery_repository.dart';
+import '../../../helpers/app_session.dart';
 import '../../../shared_ui/widgets/lists/filter_sort_pills.dart';
 import '../../../shared_ui/widgets/overlays/app_toast.dart';
 import '../../../shared_ui/widgets/overlays/picker_sheet.dart';
@@ -63,6 +67,16 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
     onRemove: widget.onRemove,
   );
 
+  /// Pull down: the saved items are read again (a startup that was deleted
+  /// or made private since drops out).
+  Future<void> _refresh() async {
+    final uid = AppSession.instance.user?.uid;
+    await DiscoveryRepository.instance.refresh();
+    if (uid != null) await BookmarkRepository.instance.load(uid);
+    final items = await BookmarkRepository.instance.savedItems();
+    if (mounted) _vm.replaceAll(items);
+  }
+
   @override
   void dispose() {
     _vm.dispose();
@@ -104,48 +118,54 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
         final items = _vm.visible;
         return Scaffold(
           backgroundColor: AppColors.cream,
-          body: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                ListScreenHeader(
-                  title: HomeStrings.bookmarksTitle,
-                  onBack: () => AppNav.back(context),
-                  pills: _vm.isEmpty
-                      ? null
-                      : FilterSortPills(
-                          filterLabel: _vm.type.label,
-                          filterActive: _vm.filtered,
-                          sortLabel: _vm.sort.label,
-                          onFilter: _pickFilter,
-                          onSort: _pickSort,
-                        ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 28),
-                  child: _vm.isEmpty
-                      ? _NoBookmarks(onExplore: widget.onExplore)
-                      : items.isEmpty
-                      ? _NoneOfType(
-                          plural: _vm.type.plural,
-                          onShowAll: _vm.resetFilter,
-                        )
-                      : Column(
-                          children: [
-                            for (var i = 0; i < items.length; i++)
-                              Padding(
-                                padding: EdgeInsets.only(top: i == 0 ? 0 : 16),
-                                child: _BookmarkCard(
-                                  key: ObjectKey(items[i]),
-                                  bookmark: items[i],
-                                  index: i,
-                                  onRemove: () => _remove(items[i]),
+          body: AppRefresh(
+            onRefresh: _refresh,
+            child: SingleChildScrollView(
+              physics: AppRefresh.physics,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  ListScreenHeader(
+                    title: HomeStrings.bookmarksTitle,
+                    onBack: () => AppNav.back(context),
+                    pills: _vm.isEmpty
+                        ? null
+                        : FilterSortPills(
+                            filterLabel: _vm.type.label,
+                            filterActive: _vm.filtered,
+                            sortLabel: _vm.sort.label,
+                            onFilter: _pickFilter,
+                            onSort: _pickSort,
+                          ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 28),
+                    child: _vm.isEmpty
+                        ? _NoBookmarks(onExplore: widget.onExplore)
+                        : items.isEmpty
+                        ? _NoneOfType(
+                            plural: _vm.type.plural,
+                            onShowAll: _vm.resetFilter,
+                          )
+                        : Column(
+                            children: [
+                              for (var i = 0; i < items.length; i++)
+                                Padding(
+                                  padding: EdgeInsets.only(
+                                    top: i == 0 ? 0 : 16,
+                                  ),
+                                  child: _BookmarkCard(
+                                    key: ObjectKey(items[i]),
+                                    bookmark: items[i],
+                                    index: i,
+                                    onRemove: () => _remove(items[i]),
+                                  ),
                                 ),
-                              ),
-                          ],
-                        ),
-                ),
-              ],
+                            ],
+                          ),
+                  ),
+                ],
+              ),
             ),
           ),
         );

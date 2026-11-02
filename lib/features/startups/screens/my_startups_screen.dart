@@ -8,7 +8,9 @@ import '../../../helpers/app_session.dart';
 import '../../../models/list_entries.dart';
 import '../../../models/startup.dart';
 import '../../../shared_ui/widgets/headers/list_screen_header.dart';
+import '../../../shared_ui/widgets/lists/app_refresh.dart';
 import '../../../shared_ui/widgets/lists/filter_sort_pills.dart';
+import '../../../navigation/app_router.dart';
 import '../view_models/my_startups_view_model.dart';
 import '../widgets/startup_filter_sheet.dart';
 import '../widgets/draft_card.dart';
@@ -57,6 +59,15 @@ class _MyStartupsScreenState extends State<MyStartupsScreen> {
   void dispose() {
     _vm.dispose();
     super.dispose();
+  }
+
+  /// Pull down: an invitation that arrived is accepted, then the list (the
+  /// startups you own and the ones you belong to) is read again.
+  Future<void> _refresh() async {
+    await AppRouter.checkInvitations(context);
+    final uid = AppSession.instance.user?.uid;
+    if (uid != null) unawaited(_drafts.load(uid));
+    await _vm.load();
   }
 
   void _add() => StartupStepsScreen.openAdd(context);
@@ -116,109 +127,116 @@ class _MyStartupsScreenState extends State<MyStartupsScreen> {
         final shown = _vm.visible;
         return Scaffold(
           backgroundColor: AppColors.cream,
-          body: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                ListScreenHeader(
-                  title: FounderToolsStrings.myStartupsTitle,
-                  onBack: () => AppNav.back(context),
-                  topTrailing: hasList || draft != null
-                      ? GoldPillButton.add(onTap: _add)
-                      : null,
-                  pills: hasList
-                      ? FilterSortPills(
-                          filterLabel: _vm.filterLabel,
-                          filterActive: _vm.filtered,
-                          sortLabel: _vm.sort.label,
-                          onFilter: () => showStartupFilterSheet(context, _vm),
-                          onSort: _pickSort,
-                        )
-                      : null,
-                ),
-                // The list starts right under the banner, at the same y as
-                // the Bookmarks list.
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 28),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      if (_vm.isEmpty) ...[
-                        if (draftCard != null) ...[
-                          draftCard,
-                          const SizedBox(height: 14),
-                        ],
-                        IllustratedEmptyCard(
-                          illustration: const _EmptyIllustration(),
-                          title: FounderToolsStrings.emptyTitle,
-                          message: FounderToolsStrings.emptyMessage,
-                          actionLabel: FounderToolsStrings.emptyButton,
-                          onAction: _add,
-                        ),
-                      ] else if (_vm.error != null && !hasList)
-                        EmptyState(
-                          title: FounderToolsStrings.loadFailed,
-                          message: '',
-                          actionLabel: FounderToolsStrings.retry,
-                          onAction: _vm.load,
-                        )
-                      else if (_vm.isLoading && !hasList)
-                        const Padding(
-                          padding: EdgeInsets.only(top: 48),
-                          child: Center(
-                            child: SizedBox(
-                              width: 28,
-                              height: 28,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 3,
-                                color: AppColors.moss600,
+          body: AppRefresh(
+            onRefresh: _refresh,
+            child: SingleChildScrollView(
+              physics: AppRefresh.physics,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  ListScreenHeader(
+                    title: FounderToolsStrings.myStartupsTitle,
+                    onBack: () => AppNav.back(context),
+                    topTrailing: hasList || draft != null
+                        ? GoldPillButton.add(onTap: _add)
+                        : null,
+                    pills: hasList
+                        ? FilterSortPills(
+                            filterLabel: _vm.filterLabel,
+                            filterActive: _vm.filtered,
+                            sortLabel: _vm.sort.label,
+                            onFilter: () =>
+                                showStartupFilterSheet(context, _vm),
+                            onSort: _pickSort,
+                          )
+                        : null,
+                  ),
+                  // The list starts right under the banner, at the same y as
+                  // the Bookmarks list.
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 28),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        if (_vm.isEmpty) ...[
+                          if (draftCard != null) ...[
+                            draftCard,
+                            const SizedBox(height: 14),
+                          ],
+                          IllustratedEmptyCard(
+                            illustration: const _EmptyIllustration(),
+                            title: FounderToolsStrings.emptyTitle,
+                            message: FounderToolsStrings.emptyMessage,
+                            actionLabel: FounderToolsStrings.emptyButton,
+                            onAction: _add,
+                          ),
+                        ] else if (_vm.error != null && !hasList)
+                          EmptyState(
+                            title: FounderToolsStrings.loadFailed,
+                            message: '',
+                            actionLabel: FounderToolsStrings.retry,
+                            onAction: _vm.load,
+                          )
+                        else if (_vm.isLoading && !hasList)
+                          const Padding(
+                            padding: EdgeInsets.only(top: 48),
+                            child: Center(
+                              child: SizedBox(
+                                width: 28,
+                                height: 28,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 3,
+                                  color: AppColors.moss600,
+                                ),
                               ),
                             ),
-                          ),
-                        )
-                      else ...[
-                        if (draftCard != null) ...[
-                          draftCard,
-                          const SizedBox(height: 14),
-                        ],
-                        if (shown.isEmpty)
-                          _NoMatches(onShowAll: _vm.resetFilters)
-                        else
-                          for (var i = 0; i < shown.length; i++) ...[
-                            // The same gap as between the cards of the Hub.
-                            if (i > 0) const SizedBox(height: HomeColumn.gap),
-                            // The Hub's startup card (HomeItemCard), with only
-                            // what your own startups need.
-                            HomeItemCard(
-                              key: ObjectKey(shown[i]),
-                              item: HomeItem.fromStartup(shown[i].startup),
-                              index: i,
-                              bookmarkable: false,
-                              badges: [
-                                RoleTag.forStartup(
-                                  shown[i].startup,
-                                  AppSession.instance.user?.uid,
-                                  fallback: shown[i].role,
-                                ),
-                                if (shown[i].startup.isClosed)
-                                  const GreyTag(FounderToolsStrings.closedPill)
-                                else if (!shown[i].startup.isPublic)
-                                  const PrivateTag(),
-                              ],
-                              actionLabel: shown[i].role.canManage
-                                  ? FounderToolsStrings.manage
-                                  : FounderToolsStrings.view,
-                              // Founder, co-founder and team member all open
-                              // Manage (a team member's is view-only).
-                              onTap: () =>
-                                  _manage(shown[i].startup, shown[i].role),
-                            ),
+                          )
+                        else ...[
+                          if (draftCard != null) ...[
+                            draftCard,
+                            const SizedBox(height: 14),
                           ],
+                          if (shown.isEmpty)
+                            _NoMatches(onShowAll: _vm.resetFilters)
+                          else
+                            for (var i = 0; i < shown.length; i++) ...[
+                              // The same gap as between the cards of the Hub.
+                              if (i > 0) const SizedBox(height: HomeColumn.gap),
+                              // The Hub's startup card (HomeItemCard), with only
+                              // what your own startups need.
+                              HomeItemCard(
+                                key: ObjectKey(shown[i]),
+                                item: HomeItem.fromStartup(shown[i].startup),
+                                index: i,
+                                bookmarkable: false,
+                                badges: [
+                                  RoleTag.forStartup(
+                                    shown[i].startup,
+                                    AppSession.instance.user?.uid,
+                                    fallback: shown[i].role,
+                                  ),
+                                  if (shown[i].startup.isClosed)
+                                    const GreyTag(
+                                      FounderToolsStrings.closedPill,
+                                    )
+                                  else if (!shown[i].startup.isPublic)
+                                    const PrivateTag(),
+                                ],
+                                actionLabel: shown[i].role.canManage
+                                    ? FounderToolsStrings.manage
+                                    : FounderToolsStrings.view,
+                                // Founder, co-founder and team member all open
+                                // Manage (a team member's is view-only).
+                                onTap: () =>
+                                    _manage(shown[i].startup, shown[i].role),
+                              ),
+                            ],
+                        ],
                       ],
-                    ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         );

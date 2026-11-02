@@ -1,3 +1,5 @@
+import '../../../shared_ui/widgets/lists/app_refresh.dart';
+
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -122,6 +124,15 @@ class _ManageStartupScreenState extends State<ManageStartupScreen> {
     } catch (_) {
       // The cards are fixed next time.
     }
+  }
+
+  /// Pull down: the startup (details, team) and its funding rounds are read
+  /// again, so a change made by someone else shows.
+  Future<void> _refresh() async {
+    final fresh = await StartupRepository.instance.fetchById(widget.startup.id);
+    if (fresh == null || !mounted) return;
+    _vm.replace(fresh);
+    await _rounds.load(fresh);
   }
 
   @override
@@ -504,7 +515,11 @@ class _ManageStartupScreenState extends State<ManageStartupScreen> {
                     const SizedBox(width: 6),
                     Flexible(
                       child: Text(
-                        '${s.isClosed ? FounderToolsStrings.closedPill : s.isPublic ? FounderToolsStrings.publicPill : FounderToolsStrings.privatePill} · ${s.sectorLabel} · ${s.stageLabel}',
+                        '${s.isClosed
+                            ? FounderToolsStrings.closedPill
+                            : s.isPublic
+                            ? FounderToolsStrings.publicPill
+                            : FounderToolsStrings.privatePill} · ${s.sectorLabel} · ${s.stageLabel}',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: AppText.onGreenMeta,
@@ -538,25 +553,29 @@ class _ManageStartupScreenState extends State<ManageStartupScreen> {
                 onBack: () => AppNav.back(context),
               ),
               Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
-                  // A team member sees the same tabs, read only, with the
-                  // "View only" notice at the top of every one.
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      if (s.isClosed)
-                        ViewOnlyBanner.notice(
-                          title: FounderToolsStrings.closedBannerTitle,
-                          message: _isOwner && s.hasOwner
-                              ? FounderToolsStrings.closedBannerOwner
-                              : FounderToolsStrings.closedBannerOthers,
-                          icon: AppIcons.lock,
-                        )
-                      else if (_role == StartupRole.member)
-                        const ViewOnlyBanner(),
-                      TabPaneSlide(index: _vm.tab, child: pane),
-                    ],
+                child: AppRefresh(
+                  onRefresh: _refresh,
+                  child: SingleChildScrollView(
+                    physics: AppRefresh.physics,
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
+                    // A team member sees the same tabs, read only, with the
+                    // "View only" notice at the top of every one.
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        if (s.isClosed)
+                          ViewOnlyBanner.notice(
+                            title: FounderToolsStrings.closedBannerTitle,
+                            message: _isOwner && s.hasOwner
+                                ? FounderToolsStrings.closedBannerOwner
+                                : FounderToolsStrings.closedBannerOthers,
+                            icon: AppIcons.lock,
+                          )
+                        else if (_role == StartupRole.member)
+                          const ViewOnlyBanner(),
+                        TabPaneSlide(index: _vm.tab, child: pane),
+                      ],
+                    ),
                   ),
                 ),
               ),
