@@ -557,6 +557,64 @@ class _OwnershipCard extends StatelessWidget {
                 ],
               ),
             ),
+          // before → after for the founder
+          Container(
+            margin: const EdgeInsets.only(top: 8),
+            padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
+            decoration: BoxDecoration(
+              color: AppColors.cream,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        FounderToolsStrings.yourOwnership,
+                        style: AppText.sans(size: 13, color: AppColors.metaText),
+                      ),
+                    ),
+                    InfoButton(onTap: () => onInfo('change')),
+                  ],
+                ),
+                const SizedBox(height: 2),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        vm.ownershipChangeText,
+                        style: _tabular(
+                          AppText.sans(size: 20, weight: FontWeight.w700),
+                        ),
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.errorFill,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        vm.ownershipDropText,
+                        style: _tabular(
+                          AppText.sans(
+                            size: 13,
+                            weight: FontWeight.w700,
+                            color: AppColors.error,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
