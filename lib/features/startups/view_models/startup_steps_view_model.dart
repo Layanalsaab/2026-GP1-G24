@@ -498,12 +498,12 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
 
   /// What else counts as a listed commerce model: its abbreviation ("B2B")
   /// and its name without the brackets ("Business-to-Business").
-  static final List<String> modelAlsoCountsAs = [
-    for (final m in BusinessModel.picks) ...[
-      m.shortLabel,
-      m.label.replaceAll(RegExp(r'\s*\(.*\)'), ''),
-    ],
-  ];
+  static final Map<String, String> modelAlsoCountsAs = {
+    for (final m in BusinessModel.picks) ...{
+      m.shortLabel: m.label,
+      m.label.replaceAll(RegExp(r'\s*\(.*\)'), ''): m.label,
+    },
+  };
 
   bool get sectorOtherRepeats =>
       isSectorOther && OtherCheck.repeats(sectorOther.text, _sectorLabels);
@@ -511,7 +511,7 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
       isModelOther &&
       OtherCheck.repeats(modelOther.text, [
         ..._modelLabels,
-        ...modelAlsoCountsAs,
+        ...modelAlsoCountsAs.keys,
       ]);
 
   /// "Other" is ticked (in any position).

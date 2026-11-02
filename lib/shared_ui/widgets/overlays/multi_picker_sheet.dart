@@ -31,7 +31,7 @@ Future<void> showMultiPickerSheet(
   ValueChanged<String>? onOtherChanged,
   VoidCallback? onUndoOther,
   int otherMax = 40,
-  List<String> alsoCountsAs = const [],
+  Map<String, String> alsoCountsAs = const {},
 }) {
   // The same bottom sheet as the Sector / Stage / Commerce model pickers.
   return showAppBottomSheet<void>(
@@ -74,7 +74,7 @@ class MultiPickerSheet extends StatefulWidget {
     this.onOtherChanged,
     this.onUndoOther,
     this.otherMax = 40,
-    this.alsoCountsAs = const [],
+    this.alsoCountsAs = const {},
   });
 
   final String title;
@@ -91,9 +91,9 @@ class MultiPickerSheet extends StatefulWidget {
   final VoidCallback? onUndoOther;
   final int otherMax;
 
-  /// Other texts that mean a listed option (e.g. "B2B"): the "Other"
-  /// write-in can't repeat them either.
-  final List<String> alsoCountsAs;
+  /// Other texts that mean a listed option (e.g. "B2B" -> its option): the
+  /// "Other" write-in can't repeat them either, and typing one ticks it.
+  final Map<String, String> alsoCountsAs;
 
   @override
   State<MultiPickerSheet> createState() => _MultiPickerSheetState();
@@ -122,7 +122,7 @@ class _MultiPickerSheetState extends State<MultiPickerSheet> {
       _otherOpen &&
       OtherCheck.repeats(_other.text, [
         ...widget.options,
-        ...widget.alsoCountsAs,
+        ...widget.alsoCountsAs.keys,
       ]);
 
   @override
@@ -215,8 +215,21 @@ class _MultiPickerSheetState extends State<MultiPickerSheet> {
                                   ? 'Please type your ${widget.otherNoun} — it can’t be blank.'
                                   : null),
                         onChanged: (v) {
-                          setState(() {});
+                          // A write-in that repeats a listed option ticks it.
+                          final m = OtherCheck.match(
+                            v,
+                            widget.options,
+                            alsoCountsAs: widget.alsoCountsAs,
+                          );
+                          final tick =
+                              m != null &&
+                              m != widget.otherLabel &&
+                              !_selected.contains(m);
+                          setState(() {
+                            if (tick) _selected.add(m);
+                          });
                           widget.onOtherChanged?.call(v);
+                          if (tick) widget.onToggle(m);
                         },
                       ),
                     ),

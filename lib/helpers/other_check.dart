@@ -24,4 +24,24 @@ class OtherCheck {
     final key = _key(t);
     return options.any((o) => _key(o) == key);
   }
+
+  /// The option [typed] repeats, or null when it matches none. [alsoCountsAs]
+  /// maps another spelling (an abbreviation, a name without brackets) to the
+  /// option it stands for. Used to select that option for the user.
+  static String? match(
+    String? typed,
+    Iterable<String> options, {
+    Map<String, String> alsoCountsAs = const {},
+  }) {
+    final t = (typed ?? '').trim();
+    if (t.isEmpty) return null;
+    final key = _key(t);
+    for (final o in options) {
+      if (_key(o) == key) return o;
+    }
+    for (final e in alsoCountsAs.entries) {
+      if (_key(e.key) == key) return e.value;
+    }
+    return null;
+  }
 }

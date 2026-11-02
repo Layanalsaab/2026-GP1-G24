@@ -141,12 +141,13 @@ class InvestorOnboardingViewModel extends ChangeNotifier with SafeNotifier {
 
   /// What else counts as a listed commerce model: its abbreviation ("B2B")
   /// and its name without the brackets ("Business-to-Business").
-  static final List<String> modelAlsoCountsAs = [
-    for (final m in BusinessModel.picks) ...[
-      m.shortLabel,
-      m.label.replaceAll(RegExp(r'\s*\(.*\)'), ''),
-    ],
-  ];
+  static final Map<String, String> modelAlsoCountsAs = {
+    for (final m in BusinessModel.picks) ...{
+      m.shortLabel: m.label,
+      m.label.replaceAll(RegExp(r'\s*\(.*\)'), ''): m.label,
+    },
+  };
+
   static const List<String> stageOptions = InvestorCriteria.stageOptions;
 
   /// The account that just verified its email.
@@ -234,11 +235,14 @@ class InvestorOnboardingViewModel extends ChangeNotifier with SafeNotifier {
   bool get sectorsOtherRepeats =>
       sectors.contains(otherLabel) &&
       OtherCheck.repeats(sectorsOther.text, sectorOptions);
+  bool get stagesOtherRepeats =>
+      stages.contains(otherLabel) &&
+      OtherCheck.repeats(stagesOther.text, stageOptions);
   bool get modelsOtherRepeats =>
       models.contains(otherLabel) &&
       OtherCheck.repeats(modelsOther.text, [
         ...modelOptions,
-        ...modelAlsoCountsAs,
+        ...modelAlsoCountsAs.keys,
       ]);
 
   String? get sectorsOtherError => sectorsOtherRepeats
@@ -249,12 +253,14 @@ class InvestorOnboardingViewModel extends ChangeNotifier with SafeNotifier {
           sectorsOther,
           'sector',
         );
-  String? get stagesOtherError => _otherError(
-    step4Tried,
-    stages.contains(otherLabel),
-    stagesOther,
-    'stage',
-  );
+  String? get stagesOtherError => stagesOtherRepeats
+      ? ValidationStrings.otherRepeats
+      : _otherError(
+          step4Tried,
+          stages.contains(otherLabel),
+          stagesOther,
+          'stage',
+        );
   String? get modelsOtherError => modelsOtherRepeats
       ? ValidationStrings.otherRepeats
       : _otherError(
@@ -272,6 +278,7 @@ class InvestorOnboardingViewModel extends ChangeNotifier with SafeNotifier {
       _groupOk(sectors, sectorsOther) &&
       !sectorsOtherRepeats &&
       _groupOk(stages, stagesOther) &&
+      !stagesOtherRepeats &&
       _groupOk(models, modelsOther) &&
       !modelsOtherRepeats;
 

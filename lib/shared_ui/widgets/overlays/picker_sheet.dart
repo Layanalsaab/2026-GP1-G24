@@ -46,7 +46,7 @@ Future<PickerResult?> showPickerSheet(
   int otherMax = 40,
   VoidCallback? onUndoOther,
   bool tall = false,
-  List<String> alsoCountsAs = const [],
+  Map<String, String> alsoCountsAs = const {},
 }) {
   return showAppBottomSheet<PickerResult>(
     context,
@@ -86,7 +86,7 @@ class PickerSheet extends StatefulWidget {
     this.otherMax = 40,
     this.onUndoOther,
     this.tall = false,
-    this.alsoCountsAs = const [],
+    this.alsoCountsAs = const {},
   });
 
   final String title;
@@ -102,8 +102,9 @@ class PickerSheet extends StatefulWidget {
   final bool tall;
 
   /// Other texts that mean a listed option (e.g. "B2B" for "Business-to-
-  /// Business (B2B)"): the "Other" write-in can't repeat them either.
-  final List<String> alsoCountsAs;
+  /// Business (B2B)") mapped to the option each stands for: the "Other"
+  /// write-in can't repeat them either, and typing one selects that option.
+  final Map<String, String> alsoCountsAs;
 
   @override
   State<PickerSheet> createState() => _PickerSheetState();
@@ -126,8 +127,19 @@ class _PickerSheetState extends State<PickerSheet> {
       _otherOpen &&
       OtherCheck.repeats(_other.text, [
         ...widget.options,
-        ...widget.alsoCountsAs,
+        ...widget.alsoCountsAs.keys,
       ]);
+
+  /// The listed option the write-in repeats; it shows as selected.
+  String? get _match {
+    if (!_otherOpen) return null;
+    final m = OtherCheck.match(
+      _other.text,
+      widget.options,
+      alsoCountsAs: widget.alsoCountsAs,
+    );
+    return m == widget.otherLabel ? null : m;
+  }
 
   @override
   void dispose() {
@@ -146,7 +158,13 @@ class _PickerSheetState extends State<PickerSheet> {
   }
 
   void _done() {
-    if (_repeats) return;
+    // The write-in repeats a listed option: Done picks that option.
+    final match = _match;
+    if (match != null) {
+      _committed = true;
+      Navigator.of(context).pop(PickerResult(match));
+      return;
+    }
     if (_other.text.trim().isEmpty) {
       setState(() => _showError = true);
       return;
@@ -202,7 +220,7 @@ class _PickerSheetState extends State<PickerSheet> {
                   for (final o in all)
                     PickerOptionRow(
                       label: o,
-                      selected: o == _selected,
+                      selected: o == _selected || o == _match,
                       onTap: () => _pick(o),
                     ),
                   if (shown.isEmpty && !_hasOther)
@@ -237,7 +255,7 @@ class _PickerSheetState extends State<PickerSheet> {
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
                 child: AppButton(
                   label: 'Done',
-                  onPressed: _repeats ? null : _done,
+                  onPressed: _done,
                 ),
               ),
           ],
