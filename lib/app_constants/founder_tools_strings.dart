@@ -253,7 +253,7 @@ class FounderToolsStrings {
   static const associatedEmpty =
       'Investors whose requests you accept appear here and on your profile.';
   static const shownOnProfile = 'Shown on profile';
-  static const calcCardTitle = 'Valuation calculator';
+  static const calcCardTitle = 'Valuation Calculator';
   static const calcCardText =
       'See what your funding ask says your startup is worth';
   static const pending = 'Pending';
@@ -305,7 +305,7 @@ class FounderToolsStrings {
   static const previewLabel = 'Preview';
 
   // ---- Valuation calculator ----
-  static const calcTitle = 'Valuation calculator';
+  static const calcTitle = 'Valuation Calculator';
   static const thisRaise = 'THIS RAISE';
   static const fundingToRaise = 'Funding to raise';
   static const equityToGive = 'Equity to give up';
