@@ -128,7 +128,7 @@ class _OwnProfileScreenState extends State<OwnProfileScreen> {
                     body: item.line,
                     bodyMaxLines: 2,
                     animate: false,
-                    badge: RoleTag(entry.role),
+                    badges: [RoleTag(entry.role)],
                     imageUrl: item.imageUrl,
                     imageData: item.imageData,
                     onTap: () => _openStartup(entry),

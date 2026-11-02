@@ -3,7 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "firebase emulators:exec --only firestore --project demo-inv \"node invitations.test.mjs\""
+    "test": "firebase emulators:exec --only firestore --project demo-inv \"node invitations.test.mjs\"",
+    "parity": "firebase emulators:exec --only firestore --project demo-parity \"node parity.test.mjs\""
   },
   "dependencies": {
     "@firebase/rules-unit-testing": "^5.0.0",

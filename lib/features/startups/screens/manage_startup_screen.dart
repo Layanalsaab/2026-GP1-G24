@@ -9,12 +9,10 @@ import '../../../data_access/repositories/startup_repository.dart';
 import '../../../helpers/share_link.dart';
 import '../../../models/list_entries.dart';
 import '../../../helpers/app_session.dart';
-import '../../../models/connection_request.dart';
 import '../../../shared_ui/widgets/overlays/app_dialog.dart';
 import '../../../models/startup.dart';
 import '../../../navigation/main_screen.dart';
 import '../../connection_requests/screens/interest_tab.dart';
-import '../../connection_requests/screens/requests_tab.dart';
 import '../../connection_requests/view_models/interest_view_model.dart';
 import '../../connection_requests/view_models/requests_view_model.dart';
 import '../../engagement_analytics/view_models/activity_view_model.dart';
@@ -82,6 +80,7 @@ class _ManageStartupScreenState extends State<ManageStartupScreen> {
   late final ManageStartupViewModel _vm = ManageStartupViewModel(
     startup: widget.startup,
   );
+  // The investment requests of the open round (shown on the round page).
   late final RequestsViewModel _requests = RequestsViewModel(
     startupId: widget.startup.id,
   );
@@ -135,8 +134,12 @@ class _ManageStartupScreenState extends State<ManageStartupScreen> {
 
   void _toast(String message) => AppToast.show(context, message);
 
-  /// Share icon: copies the startup's link.
-  void _share() => ShareLink.copy(context, ShareLink.startup(_vm.startup.id));
+  /// Share icon: opens the share sheet for the startup.
+  void _share() => ShareLink.share(
+    context,
+    ShareLink.startup(_vm.startup.id),
+    title: _vm.startup.name,
+  );
 
   /// The open section of the Details tab (0-based, like the form's steps).
   int? _openSection;
@@ -258,7 +261,7 @@ class _ManageStartupScreenState extends State<ManageStartupScreen> {
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
-      listenable: Listenable.merge([_vm, _requests, _interest, _rounds]),
+      listenable: Listenable.merge([_vm, _interest, _rounds]),
       builder: (context, _) {
         final s = _vm.startup;
         // The open round's Raised: the "already raised" answer of the
@@ -292,9 +295,10 @@ class _ManageStartupScreenState extends State<ManageStartupScreen> {
             onEdit: _editSection,
             myRole: _role,
           ),
-          2 => ManageRoundsTab(vm: _rounds, canManage: _canEdit),
-          3 => RequestsTab(
-            vm: _requests,
+          2 => ManageRoundsTab(
+            vm: _rounds,
+            canManage: _canEdit,
+            requests: _requests,
             onCheck: (r) => ValuationCalculatorScreen.open(
               context,
               startup: s,
@@ -302,9 +306,8 @@ class _ManageStartupScreenState extends State<ManageStartupScreen> {
               equityPercent: r.equityPercent,
             ),
             onToast: _toast,
-            canAct: _canEdit,
           ),
-          4 => InterestTab(vm: _interest, onToast: _toast, canAct: _canEdit),
+          3 => InterestTab(vm: _interest, onToast: _toast, canAct: _canEdit),
           _ => ManageSettingsTab(
             role: _role,
             isPublic: s.isPublic,
@@ -354,10 +357,6 @@ class _ManageStartupScreenState extends State<ManageStartupScreen> {
                   const HeaderTab(FounderToolsStrings.tabDashboard),
                   const HeaderTab(FounderToolsStrings.tabDetails),
                   const HeaderTab(FounderToolsStrings.tabRounds),
-                  HeaderTab(
-                    FounderToolsStrings.tabRequests,
-                    badge: _requests.count(RequestStatus.pending),
-                  ),
                   HeaderTab(
                     FounderToolsStrings.tabInterest,
                     badge: _interest.newCount,

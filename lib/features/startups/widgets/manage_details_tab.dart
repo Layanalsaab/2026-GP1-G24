@@ -384,8 +384,12 @@ class _Overview extends StatelessWidget {
         _QA('Startup name', s.name),
         _QA('Brief description', s.briefDescription),
         BoxGrid(
+          wrap: const {'Sectors'},
           items: [
-            ('Sector', s.sectorLabel),
+            (
+              s.sectorLabels.length > 1 ? 'Sectors' : 'Sector',
+              s.sectorLabels.join(', '),
+            ),
             ('Stage', s.stageLabel),
             ('Commerce model', s.businessModelLabel),
             ('Headquarters', s.location.label),

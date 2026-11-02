@@ -172,7 +172,7 @@ class _TeamMemberProfileScreenState extends State<TeamMemberProfileScreen> {
       body: item?.line ?? '',
       bodyMaxLines: 2,
       animate: false,
-      badge: RoleTag(role),
+      badges: [RoleTag(role)],
       imageUrl: item?.imageUrl,
       imageData: item?.imageData,
       onTap: () => _openStartup(ref),

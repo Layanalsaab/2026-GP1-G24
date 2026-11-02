@@ -137,7 +137,6 @@ void main() {
         'Dashboard',
         'Details',
         'Rounds',
-        'Requests',
         'Settings',
       ]) {
         await _goTo(t, tab);

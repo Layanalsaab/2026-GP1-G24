@@ -84,9 +84,26 @@ class HomeItemCard extends StatelessWidget {
     required this.item,
     this.index = 0,
     this.showMatch = false,
+    this.badges = const [],
+    this.actionLabel,
+    this.onTap,
+    this.bookmarkable = true,
   });
 
   final HomeItem item;
+
+  /// My Startups only: the role capsule (and "Private") next to the name.
+  final List<Widget> badges;
+
+  /// My Startups only: "Manage" / "View" at the bottom right.
+  final String? actionLabel;
+
+  /// My Startups only: what a tap does (Manage) instead of opening the public
+  /// page.
+  final VoidCallback? onTap;
+
+  /// False on My Startups: you can't bookmark your own startup.
+  final bool bookmarkable;
   final int index;
 
   /// Shows the "N% match" row (Explore, Matches).
@@ -97,6 +114,7 @@ class HomeItemCard extends StatelessWidget {
     // Guests never bookmark, and an investor can't bookmark their own profile.
     final session = AppSession.instance;
     final canBookmark =
+        bookmarkable &&
         session.canBookmark &&
         !(item.kind == HomeItemKind.investor && item.id == session.user?.uid);
     return ValueListenableBuilder<Set<String>>(
@@ -115,8 +133,13 @@ class HomeItemCard extends StatelessWidget {
           bookmarked: keys.contains(item.bookmarkKey),
           matchPercent: showMatch ? item.matchPercent : null,
           matchReason: showMatch ? item.matchReason : null,
-          onTap: () => openHomeItem(context, item),
-          onShare: () => ShareLink.copyKey(context, item.bookmarkKey),
+          badges: badges,
+          actionLabel: actionLabel,
+          onTap: onTap ?? () => openHomeItem(context, item),
+          // The share sheet (the teammate's change), with the startup's name
+          // as the title.
+          onShare: () =>
+              ShareLink.shareKey(context, item.bookmarkKey, title: item.name),
           onBookmark: canBookmark
               ? () => BookmarkRepository.instance.toggle(item.bookmarkKey)
               : null,

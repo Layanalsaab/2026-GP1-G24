@@ -108,7 +108,7 @@ void main() {
     final names = [
       'Co-founder',
       'Distributor',
-      'Technology development',
+      'Technology developer',
       'Supplier',
       'Marketing specialist',
       'Legal and accounting',

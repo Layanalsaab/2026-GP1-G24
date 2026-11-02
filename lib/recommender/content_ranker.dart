@@ -34,6 +34,11 @@ const Map<String, double> weights = {
 };
 const int topN = 20;
 
+/// How much a match on one of a startup's OTHER sectors counts compared with
+/// a match on its main sector (1.0). Ticking every sector therefore never
+/// beats a startup whose main sector fits.
+const double otherSectorFactor = 0.5;
+
 final Map<String, String> _sectorLabel = {
   for (final e in sectorValue.entries) e.value: e.key,
 };
@@ -96,9 +101,18 @@ double? _overlap(Set<String> chosen, String? value) {
   return (chosen.contains(value) ? 1.0 : 0.0) / math.sqrt(chosen.length);
 }
 
+/// The sector part: the main sector counts in full, any other sector of the
+/// startup counts [otherSectorFactor] of that.
+double? _sectorPart(MatchInvestor i, MatchStartup s) {
+  final main = _overlap(i.sectors, s.sector);
+  if (main == null || main > 0) return main;
+  if (!sharesOtherSector(i, s)) return main;
+  return otherSectorFactor / math.sqrt(i.sectors.length);
+}
+
 /// Per-attribute overlaps; null = blank, skipped by [weightedScore].
 Map<String, double?> scoreParts(MatchInvestor i, MatchStartup s) => {
-  'sector': _overlap(i.sectors, s.sector),
+  'sector': _sectorPart(i, s),
   'stage': _overlap(i.stages, s.stage),
   'model': _overlap(i.models, s.businessModel),
 };
@@ -135,7 +149,9 @@ List<String> reasonsForInvestor(MatchInvestor i, MatchStartup s) {
   return [
     if (isClose(i, s)) 'Close match',
     if (i.sectors.contains(s.sector))
-      'Same sector (${_sectorLabel[s.sector] ?? s.sector})',
+      'Same sector (${_sectorLabel[s.sector] ?? s.sector})'
+    else if (sharesOtherSector(i, s))
+      'Also in ${_sectorLabel[s.otherSectors.firstWhere(i.sectors.contains)] ?? ''}',
     if (i.stages.contains(s.stage)) '${_stageLabel[s.stage] ?? s.stage} stage',
     if (i.models.contains(s.businessModel))
       _modelShort[s.businessModel] ?? s.businessModel!,
@@ -147,7 +163,9 @@ List<String> reasonsForFounder(MatchInvestor i, MatchStartup s) {
   return [
     if (isClose(i, s)) 'Close match',
     if (i.sectors.contains(s.sector))
-      'Invests in ${_sectorLabel[s.sector] ?? s.sector}',
+      'Invests in ${_sectorLabel[s.sector] ?? s.sector}'
+    else if (sharesOtherSector(i, s))
+      'Also invests in ${_sectorLabel[s.otherSectors.firstWhere(i.sectors.contains)] ?? ''}',
     if (i.stages.contains(s.stage))
       'Backs ${_stageLabel[s.stage] ?? s.stage} startups',
     if (i.models.contains(s.businessModel))

@@ -122,9 +122,6 @@ class AuthStrings {
   static const roundSizeQuestion =
       'How much do you usually invest in one startup?';
   static const fillRequiredFields = 'Please fill in the required fields';
-  static const ledQuestion = 'Have you ever led an investment round?';
-  static const ledTip =
-      'Leading means you set the terms and bring other investors in.';
   static const roundsLedQuestion = 'How many rounds have you led?';
   static const coInvestQuestion =
       'Are you open to investing alongside other investors?';

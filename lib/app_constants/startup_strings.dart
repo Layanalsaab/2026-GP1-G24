@@ -144,12 +144,6 @@ class StartupStrings {
   // Visibility
   static const visibilitySwitch = 'Public';
   static const visibilityPrivateLabel = 'Private';
-  static const visibilityOn =
-      'Anyone can find this startup in the Hub, Explore, Trending, and '
-      'Matches, and can send you requests.';
-  static const visibilityOff =
-      "Only you can see this startup. It won't appear in the Hub, Explore, "
-      'Trending, or Matches, and no one can send you requests.';
   static const makePrivateTitle = 'Make this startup private?';
   static const makePrivateBody =
       'This will remove your startup from the Startup Hub. Investors will no '

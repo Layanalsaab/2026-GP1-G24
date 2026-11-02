@@ -20,6 +20,7 @@ class BoxGrid extends StatelessWidget {
     this.accent = const {},
     this.page = false,
     this.fullWidthLast = false,
+    this.wrap = const {},
   });
 
   /// The startup page's bigger boxes: cream #FAF8F4, label 13 grey, value 17
@@ -31,6 +32,10 @@ class BoxGrid extends StatelessWidget {
 
   /// Labels whose value is shown in moss green (the Website).
   final Set<String> accent;
+
+  /// Labels whose value may use as many lines as it needs (a long list of
+  /// sectors); every other value stops at two lines.
+  final Set<String> wrap;
 
   /// (label, value) pairs. An empty value shows [emptyText] in grey.
   final List<(String, String)> items;
@@ -56,6 +61,7 @@ class BoxGrid extends StatelessWidget {
                   emptyText,
                   accent.contains(items[i].$1),
                   page,
+                  wrap.contains(items[i].$1),
                 ),
               ),
               const SizedBox(width: 8),
@@ -67,6 +73,7 @@ class BoxGrid extends StatelessWidget {
                         emptyText,
                         accent.contains(items[i + 1].$1),
                         page,
+                        wrap.contains(items[i + 1].$1),
                       )
                     : const SizedBox.shrink(),
               ),
@@ -84,6 +91,7 @@ class BoxGrid extends StatelessWidget {
           emptyText,
           accent.contains(items.last.$1),
           page,
+          wrap.contains(items.last.$1),
         ),
       );
     }
@@ -95,8 +103,16 @@ class BoxGrid extends StatelessWidget {
 }
 
 class _Box extends StatelessWidget {
-  const _Box(this.label, this.value, this.emptyText, this.accent, this.page);
+  const _Box(
+    this.label,
+    this.value,
+    this.emptyText,
+    this.accent,
+    this.page,
+    this.wrap,
+  );
 
+  final bool wrap;
   final bool page;
   final bool accent;
   final String label;
@@ -123,8 +139,8 @@ class _Box extends StatelessWidget {
           const SizedBox(height: 2),
           Text(
             empty ? emptyText : value.trim(),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
+            maxLines: wrap ? null : 2,
+            overflow: wrap ? TextOverflow.visible : TextOverflow.ellipsis,
             style: AppText.sans(
               size: page ? 17 : 15,
               height: 20,

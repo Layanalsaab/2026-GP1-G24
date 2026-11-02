@@ -156,8 +156,14 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
     notifyListeners();
   }
 
-  /// 0 For You, 1 Trending, 2 Matches (guests: always Trending).
-  int get effectiveExploreTab => isGuest ? 1 : exploreTab;
+  /// 0 For You, 1 Trending, 2 Matches. Guests always see Trending; a founder
+  /// has no Matches tab (their matches are inside each open round), so a
+  /// stored 2 reads as Trending.
+  int get effectiveExploreTab {
+    if (isGuest) return 1;
+    if (isFounder && exploreTab > 1) return 1;
+    return exploreTab;
+  }
 
   // ---- Search and advanced search ----
 
@@ -324,6 +330,7 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
   /// The startup fields matching reads (lib/recommender/knowledge_filter).
   static const _startupMatchFields = [
     'sector',
+    'otherSectors',
     'stage',
     'businessModel',
     'lookingFor',

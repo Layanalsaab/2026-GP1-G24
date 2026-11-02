@@ -107,7 +107,11 @@ class _StartupProfileScreenState extends State<StartupProfileScreen> {
               ),
             if (_vm.showShare)
               GlassIconButton.share(
-                onTap: () => ProfileActions.share(context, _vm.key),
+                onTap: () => ProfileActions.share(
+                  context,
+                  _vm.key,
+                  title: _vm.startup.name,
+                ),
               ),
           ],
         );

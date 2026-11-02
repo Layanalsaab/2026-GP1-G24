@@ -169,6 +169,48 @@ await check('an older saved year (1995) still saves', true, () => updateDoc(doc(
 await check('a stranger cannot set logoData', false, () => updateDoc(doc(stranger, 'startups', 'S3'), touch({ logoData: pic(10) })));
 await check('removing the logo (deleting the field) is allowed', true, () => updateDoc(doc(founder, 'startups', 'S3'), touch({ logoData: deleteField() })));
 
+// Several sectors: a startup keeps its main sector and a list of the others
+const sectorLabels = Array.from({ length: 25 }, (_, i) => 'Sector ' + i);
+const maxStartup = (extra = {}) => ({
+  founderId: 'f1', name: 'Rafeeq Health', description: 'd', sector: 'other', sectorOther: 'Beekeeping',
+  otherSectors: sectorLabels, stage: 'other', stageOther: 'Stage text', businessModel: 'other',
+  businessModelOther: 'Model text', location: 'riyadh', lookingFor: ['funding', 'partnership', 'support', 'other'],
+  lookingForOther: 'Something', fundingRequirement: 500000, isPublic: true,
+  problem: 'p', solution: 's', targetCustomers: 'c', differentiation: 'd', marketSizeTam: 1000000,
+  currentAvailableCapital: 0, revenueThisYear: 0, monthlyBurnRate: 0, valuation: 0, raisedInRound: 0,
+  expectedRevenueYear1: 1, expectedRevenueYear2: 2, expectedRevenueYear3: 3,
+  businessModelExplanation: 'e', partnerTypes: ['a', 'b', 'c'], supportTypes: ['a', 'b'],
+  teamMembers: Array.from({ length: 20 }, (_, i) => ({ fullName: 'Member ' + i, role: 'r', uid: 'u' + i })),
+  memberIds: [], memberRoles: {}, createdAt: serverTimestamp(), updatedAt: serverTimestamp(), ...extra,
+});
+await check('the biggest startup (25 other sectors, every Other text, 20 team cards) can be created', true, () => setDoc(doc(founder, 'startups', 'M1'), maxStartup()));
+const allMoney = {
+  marketSizeTam: 9e12, marketSizeSam: 9e12, marketSizeSom: 9e12, currentAvailableCapital: 9e12,
+  expectedRevenueYear1: 9e12, expectedRevenueYear2: 9e12, expectedRevenueYear3: 9e12, valuation: 9e12,
+  revenueThisYear: 9e12, monthlyBurnRate: 9e12, raisedInRound: 9e12, fundingRequirement: 9e12,
+};
+await check('a startup that fills in all 12 amounts and picks Other three times can be created', true, () => setDoc(doc(founder, 'startups', 'M5'), maxStartup(allMoney)));
+await check('every amount, every Other, 10 looking-for values and 20 team cards together can be created', true, () => setDoc(doc(founder, 'startups', 'M6'), maxStartup({
+  ...allMoney, lookingFor: ['funding', 'cofounder', 'talent', 'partnership', 'support', 'mentorship', 'advisors', 'marketing', 'tech_development', 'other'],
+  partnerTypes: Array.from({ length: 10 }, (_, i) => 'p' + i), supportTypes: Array.from({ length: 10 }, (_, i) => 's' + i),
+  logoData: 'a'.repeat(1000), websiteUrl: 'https://example.com', foundedYear: 2024,
+})));
+await check('an amount that is not a whole number is refused', false, () => setDoc(doc(founder, 'startups', 'M8'), maxStartup({ valuation: 1.5 })));
+await check('an amount written as text is refused', false, () => setDoc(doc(founder, 'startups', 'M9'), maxStartup({ valuation: '100' })));
+for (const field of ['name', 'description', 'sector', 'stage', 'businessModel', 'location', 'lookingFor', 'isPublic']) {
+  await check('a startup without ' + field + ' is refused', false, () => {
+    const d = maxStartup(); delete d[field];
+    return setDoc(doc(founder, 'startups', 'N-' + field), d);
+  });
+}
+await check('a startup with a field the app does not know is refused', false, () => setDoc(doc(founder, 'startups', 'M10'), maxStartup({ isAdmin: true })));
+await check('more than 30 other sectors is refused', false, () => setDoc(doc(founder, 'startups', 'M2'), maxStartup({ otherSectors: Array.from({ length: 31 }, (_, i) => 's' + i) })));
+await check('otherSectors must be a list', false, () => setDoc(doc(founder, 'startups', 'M3'), maxStartup({ otherSectors: 'Fintech' })));
+await check('a startup without otherSectors (an older one) still saves', true, async () => {
+  const d = maxStartup(); delete d.otherSectors;
+  await setDoc(doc(founder, 'startups', 'M4'), d);
+});
+
 console.log(fails === 0 ? 'ALL PASSED' : fails + ' FAILED');
 await env.cleanup();
 process.exit(fails === 0 ? 0 : 1);

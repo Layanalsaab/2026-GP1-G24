@@ -131,6 +131,7 @@ class ValuationCalculatorViewModel extends ChangeNotifier with SafeNotifier {
     if (_follow && _valuation != null) return _autoEquity ?? double.nan;
     return _fixedEquity ?? parse(equity.text);
   }
+
   double get ownershipValue => parse(ownership.text);
 
   // same minimum as the other money boxes in the app

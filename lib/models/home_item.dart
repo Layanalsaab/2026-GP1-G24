@@ -155,7 +155,14 @@ class HomeItem {
     stage: s.stageLabel,
     stages: [s.stageLabel, if (s.stage == StartupStage.other) 'Other'],
     raising: s.fundingRequirement,
-    sectors: [s.sectorLabel, if (s.sector == Sector.other) 'Other'],
+    // Every sector, so the startup shows under each of them in the filters
+    // and in search. (A typed "Other" sector also counts as "Other".)
+    sectors: [
+      ...s.sectorLabels,
+      if (s.sector == Sector.other ||
+          s.otherSectors.any((o) => Sector.fromLabel(o) == null))
+        'Other',
+    ],
     lookingFor: [for (final l in s.lookingFor) s.lookingForLabelOf(l)],
     commerceModel: s.businessModelLabel,
     imageUrl: s.logoUrl,

@@ -4,6 +4,7 @@ import '../../../helpers/picture_data.dart';
 
 import 'package:flutter/services.dart';
 
+import '../../../app_constants/auth_strings.dart';
 import '../../../app_constants/founder_tools_strings.dart';
 import '../../../helpers/startup_validators.dart';
 import '../../../helpers/app_session.dart';
@@ -13,6 +14,7 @@ import '../../../models/startup_enums.dart';
 import '../../../models/team_member.dart';
 import '../view_models/startup_steps_view_model.dart';
 import '../../../shared_ui/widgets/forms/checkbox_card.dart';
+import '../../../shared_ui/widgets/overlays/app_dialog.dart';
 import '../../../shared_ui/widgets/overlays/multi_picker_sheet.dart';
 import '../../../app_constants/validation_strings.dart';
 import 'founder_ui.dart';
@@ -105,19 +107,30 @@ class _Basics extends StatelessWidget {
 
   final StartupStepsViewModel vm;
 
+  /// Any number of sectors (the first one picked is the main one).
   Future<void> _pickSector(BuildContext context) async {
-    final r = await showPickerSheet(
+    final live = {...vm.sectorPicks};
+    await showMultiPickerSheet(
       context,
       title: FounderToolsStrings.sectorTitle,
       options: [for (final s in Sector.values) s.label],
-      selected: vm.sector?.label,
-      otherText: vm.sectorOther.text,
+      selected: live,
+      onToggle: (label) {
+        if (!live.remove(label)) live.add(label);
+        vm.toggleSector(label);
+      },
       searchHint: FounderToolsStrings.sectorSearch,
       noResultsText: FounderToolsStrings.sectorNoResults,
+      otherLabel: 'Other',
       otherNoun: FounderToolsStrings.sectorNoun,
-      tall: true,
+      otherHint: AuthStrings.sectorOtherHint,
+      otherText: vm.sectorOther.text,
+      onOtherChanged: (v) => vm.sectorOther.text = v,
+      onUndoOther: () {
+        live.remove('Other');
+        vm.toggleSector('Other');
+      },
     );
-    if (r != null) vm.selectSector(r.value, r.otherText);
   }
 
   Future<void> _pickStage(BuildContext context) async {
@@ -206,11 +219,14 @@ class _Basics extends StatelessWidget {
               child: SelectField(
                 placeholder: FounderToolsStrings.sectorHint,
                 semanticLabel: FounderToolsStrings.sectorLabel,
-                value: vm.sector == null
+                value: vm.sectorPicks.isEmpty
                     ? null
-                    : (vm.isSectorOther
-                          ? SelectField.otherText(vm.sectorOther.text)
-                          : vm.sector!.label),
+                    : [
+                        for (final p in vm.sectorPicks)
+                          p == 'Other'
+                              ? SelectField.otherText(vm.sectorOther.text)
+                              : p,
+                      ].join(', '),
                 hasError:
                     vm.hasError(StartupField.sector) ||
                     vm.hasError(StartupField.sectorOther),
@@ -771,7 +787,18 @@ class _Team extends StatelessWidget {
                 _editor(context, null),
               ] else if (!vm.editorOpen) ...[
                 if (vm.team.isNotEmpty) const SizedBox(height: 10),
-                AddMemberButton(onTap: () => vm.openMemberEditor()),
+                if (vm.team.length >= TeamMember.teamMax)
+                  Text(
+                    FounderToolsStrings.teamFull,
+                    textAlign: TextAlign.center,
+                    style: AppText.sans(
+                      size: 13.5,
+                      color: AppColors.grey,
+                      height: 20,
+                    ),
+                  )
+                else
+                  AddMemberButton(onTap: () => vm.openMemberEditor()),
               ],
             ],
           ),
@@ -796,7 +823,19 @@ class _Team extends StatelessWidget {
       onCoFounder: vm.setMemberCoFounder,
       complete: vm.memberComplete,
       errorOf: vm.memberError,
-      onCancel: vm.cancelMemberEditor,
+      onCancel: () async {
+        if (vm.memberDirty) {
+          final discard = await showDiscardDialog(
+            context,
+            title: FounderToolsStrings.discardEditTitle,
+            message: FounderToolsStrings.discardEditMessage,
+            discardLabel: FounderToolsStrings.discard,
+            keepLabel: FounderToolsStrings.keepEditing,
+          );
+          if (!discard) return;
+        }
+        vm.cancelMemberEditor();
+      },
       onSave: () => _save(context),
       onRemove: vm.removeMember,
     );

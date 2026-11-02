@@ -108,6 +108,33 @@ void main() {
       m.dispose();
     });
 
+    test('the Investors search: no Investor type, counts and chips work', () {
+      expect(HomeFilters.groups(HomeContext.investors).map((g) => g.title), [
+        'Sector',
+        'Stages they invest in',
+        'Ticket size',
+        'City',
+        'Sort by',
+      ]);
+      final m = vm(SessionRole.founder)..setHubSwitch(1);
+      m.applySelection({
+        'Sector': {'HealthTech'},
+        'Stages they invest in': {'Seed'},
+        'Ticket size': {'SAR 100K – 500K'},
+        'City': {'Riyadh'},
+        'Sort by': {'Name A–Z'},
+      });
+      // Sort by is not counted: four filters.
+      expect(m.selectionCount, 4);
+      expect(m.chips.length, 4);
+      m.chips.first.onRemove();
+      expect(m.selectionCount, 3);
+      expect(m.chips.length, 3);
+      m.clearAll();
+      expect(m.selectionCount, 0);
+      m.dispose();
+    });
+
     test('countFor counts a draft without the search text', () {
       final m = vm(SessionRole.founder)..setHubSwitch(0);
       final n = m.countFor({

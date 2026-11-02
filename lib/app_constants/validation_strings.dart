@@ -93,7 +93,7 @@ class ValidationStrings {
   // ---- Add / Edit startup (docs/06 section 8) ----
   static const startupName = 'Please enter a startup name.';
   static const startupDescription = 'Please describe your startup.';
-  static const startupSector = 'Please select a sector.';
+  static const startupSector = 'Select at least one sector.';
   static const startupStage = 'Please select a stage.';
   static const startupModel = 'Please select a commerce model.';
   static const startupCity = 'Please select your headquarters.';

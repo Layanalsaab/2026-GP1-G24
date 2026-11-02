@@ -17,7 +17,7 @@ void main() {
     expect(FounderToolsStrings.partnerOptions, [
       'Co-founder',
       'Distributor',
-      'Technology development',
+      'Technology developer',
       'Supplier',
       'Marketing specialist',
       'Legal and accounting',
@@ -64,7 +64,7 @@ void main() {
       vm.partnerOther.text = 'distributors';
       expect(vm.errorOf(StartupField.partnerTypes), _msg);
       expect(vm.stepComplete(StartupStepsViewModel.askStep), isFalse);
-      vm.partnerOther.text = 'Technology Development';
+      vm.partnerOther.text = 'Technology Developer';
       expect(vm.errorOf(StartupField.partnerTypes), _msg);
       vm.partnerOther.text = 'Banks';
       expect(vm.errorOf(StartupField.partnerTypes), isNull);

@@ -74,8 +74,8 @@ class FounderToolsStrings {
   static const descriptionLabel = 'Brief description';
   static const descriptionHint = 'Describe your startup';
   static const sectorLabel = 'Sector';
-  static const sectorHint = 'Select a sector';
-  static const sectorTitle = 'Select sector';
+  static const sectorHint = 'Select sectors';
+  static const sectorTitle = 'Select sectors';
   static const sectorSearch = 'Search sectors';
   static const sectorNoResults = 'No sectors found';
   static const sectorNoun = 'sector';
@@ -118,6 +118,7 @@ class FounderToolsStrings {
   static const teamInfo =
       'Co-founders can edit this startup. Other members can only view it. Everyone you add by email gets linked to their Start.sa profile, or receives an invitation.';
   static const addMember = 'Add team member';
+  static const teamFull = 'A team can have up to 20 people.';
   static const newMember = 'New team member';
   static const editMember = 'Edit team member';
   static const memberName = 'Full name';
@@ -201,7 +202,7 @@ class FounderToolsStrings {
   static const partnerOptions = [
     'Co-founder',
     'Distributor',
-    'Technology development',
+    'Technology developer',
     'Supplier',
     'Marketing specialist',
     'Legal and accounting',
@@ -374,6 +375,18 @@ class FounderToolsStrings {
       'The new investors get the share you give up. Everyone who already owns part of the company keeps the same slice of the rest, so each of their shares gets a little smaller.',
     ),
   };
+
+  // ---- Confirm before saving ----
+  static const saveConfirmTitle = 'Save changes?';
+  static const saveConfirmButton = 'Save changes';
+  static const saveProfileMessage = 'Your changes will be saved to your profile.';
+  static const saveStartupMessage =
+      'Your changes will be saved to this startup.';
+  static const saveRoundMessage = 'Your changes will be saved to this round.';
+  static const addRoundTitle = 'Add round?';
+  static const addRoundMessage = 'This round will be added to your startup.';
+  static const addRoundButton = 'Add round';
+  static const roundUpdated = 'Round updated';
 
   // ---- Leaving the form / drafts ----
   static const discard = 'Discard';

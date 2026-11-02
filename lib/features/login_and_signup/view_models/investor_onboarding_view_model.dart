@@ -97,7 +97,6 @@ class InvestorOnboardingViewModel extends ChangeNotifier with SafeNotifier {
   void _load(InvestorCriteria c) {
     years = yearsOptions.contains(c.yearsInvesting) ? c.yearsInvesting : null;
     deals = dealsOptions.contains(c.dealsCount) ? c.dealsCount : null;
-    hasLedRound = c.hasLedRound;
     roundSize.setValues(c.roundMin, c.roundMax);
     sectors.addAll(c.sectors.where(sectorOptions.contains));
     sectorsOther.text = c.sectorsOther ?? '';
@@ -157,7 +156,6 @@ class InvestorOnboardingViewModel extends ChangeNotifier with SafeNotifier {
   // ---- Step 3 ----
   String? years;
   String? deals;
-  bool? hasLedRound;
   final roundSize = MoneyRange();
   bool step3Tried = false;
 
@@ -196,18 +194,12 @@ class InvestorOnboardingViewModel extends ChangeNotifier with SafeNotifier {
       step3Tried && years == null ? ValidationStrings.selectOne : null;
   String? get dealsError =>
       step3Tried && deals == null ? ValidationStrings.selectOne : null;
-  String? get ledError =>
-      step3Tried && hasLedRound == null ? ValidationStrings.chooseOne : null;
 
   bool get step3Complete =>
-      years != null &&
-      deals != null &&
-      hasLedRound != null &&
-      (!showRoundSize || roundSize.valid);
+      years != null && deals != null && (!showRoundSize || roundSize.valid);
 
   void pickYears(String v) => _set(() => years = v);
   void pickDeals(String v) => _set(() => deals = v);
-  void pickLed(String v) => _set(() => hasLedRound = v == 'Yes');
 
   /// Tapping Next on step 3: true when the user may continue.
   bool tryStep3() {
@@ -314,7 +306,9 @@ class InvestorOnboardingViewModel extends ChangeNotifier with SafeNotifier {
     return InvestorCriteria(
       yearsInvesting: years,
       dealsCount: deals,
-      hasLedRound: hasLedRound,
+      // "Have you ever led an investment round?" is no longer asked; an
+      // answer saved earlier stays as it is.
+      hasLedRound: _initial?.hasLedRound,
       roundsLed: _initial?.roundsLed,
       coInvest: _initial?.coInvest,
       ticketBand: _initial?.ticketBand,

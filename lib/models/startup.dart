@@ -22,6 +22,7 @@ class Startup {
     this.websiteUrl,
     this.fundingRequirement,
     this.sectorOther,
+    this.otherSectors = const [],
     this.stageOther,
     this.businessModelOther,
     this.lookingForOther,
@@ -79,6 +80,10 @@ class Startup {
   /// What the founder typed when they chose "Other". Only kept (and only
   /// meaningful) while the matching value is `other`.
   final String? sectorOther;
+
+  /// The sectors picked after the main one ([sector]), as shown to people (the
+  /// typed text for "Other"). Empty for a startup with one sector.
+  final List<String> otherSectors;
   final String? stageOther;
   final String? businessModelOther;
 
@@ -91,6 +96,14 @@ class Startup {
   /// The sector as shown to people: the typed text for "Other".
   String get sectorLabel =>
       _otherOr(sector == Sector.other, sectorOther, sector.label);
+
+  /// Every sector, the main one first (what the startup page lists). Cards and
+  /// headers show only [sectorLabel].
+  List<String> get sectorLabels => [
+    sectorLabel,
+    for (final o in otherSectors)
+      if (o != sectorLabel) o,
+  ];
 
   /// The stage as shown to people: the typed text for "Other".
   String get stageLabel =>
@@ -260,6 +273,7 @@ class Startup {
     StartupFields.tagline: tagline,
     StartupFields.description: description,
     StartupFields.sector: sector.value,
+    StartupFields.otherSectors: otherSectors,
     StartupFields.sectorOther: _otherToStore(
       sector == Sector.other,
       sectorOther,
@@ -344,6 +358,11 @@ class Startup {
       description: (data[StartupFields.description] as String?) ?? '',
       sector: sector,
       sectorOther: _otherFromMap(data[StartupFields.sectorOther]),
+      otherSectors: [
+        if (data[StartupFields.otherSectors] is List)
+          for (final v in data[StartupFields.otherSectors] as List)
+            if (v is String && v.trim().isNotEmpty) v.trim(),
+      ],
       stage: stage,
       stageOther: _otherFromMap(data[StartupFields.stageOther]),
       businessModel: model,
@@ -416,6 +435,7 @@ class Startup {
     bool clearFunding = false,
     bool? isPublic,
     String? sectorOther,
+    List<String>? otherSectors,
     String? stageOther,
     String? businessModelOther,
     String? lookingForOther,
@@ -449,6 +469,7 @@ class Startup {
     description: description ?? this.description,
     sector: sector ?? this.sector,
     sectorOther: sectorOther ?? this.sectorOther,
+    otherSectors: otherSectors ?? this.otherSectors,
     stage: stage ?? this.stage,
     stageOther: stageOther ?? this.stageOther,
     businessModel: businessModel ?? this.businessModel,

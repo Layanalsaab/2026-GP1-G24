@@ -35,7 +35,6 @@ void main() {
     );
     first.pickYears('1–3 years');
     first.pickDeals('0');
-    first.pickLed('Yes');
     first.dispose();
     expect(store.saved['u1']!.dealsCount, '0');
 
@@ -63,7 +62,6 @@ void main() {
     await vm.restoreDraft();
     expect(vm.years, isNull);
     expect(vm.deals, isNull);
-    expect(vm.hasLedRound, isNull);
     expect(vm.sectors, isEmpty);
     expect(vm.stages, isEmpty);
     expect(vm.models, isEmpty);

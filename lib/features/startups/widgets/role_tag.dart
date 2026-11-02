@@ -98,6 +98,41 @@ class RoleTag extends StatelessWidget {
   }
 }
 
+/// The small muted-grey "Private" capsule shown next to the role capsule on
+/// My Startups when the startup is private. Same size and type as [RoleTag]
+/// (height 20, radius 999, 11 px semibold, padding 0 8); it hugs its text.
+class PrivateTag extends StatelessWidget {
+  const PrivateTag({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      label: FounderToolsStrings.privatePill,
+      excludeSemantics: true,
+      child: Container(
+        height: 20,
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        decoration: BoxDecoration(
+          color: const Color(0xFFEDEEEB),
+          borderRadius: BorderRadius.circular(999),
+        ),
+        child: Center(
+          widthFactor: 1,
+          child: Text(
+            FounderToolsStrings.privatePill,
+            style: AppText.sans(
+              size: 11,
+              height: 20,
+              weight: FontWeight.w600,
+              color: const Color(0xFF5B625D),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _DashedPillPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {

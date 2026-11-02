@@ -399,7 +399,10 @@ void main() {
     });
 
     test('funding at least 1,000, ownership above 0, 2 decimals', () {
-      final vm = ValuationCalculatorViewModel(funding: 3000000, valuation: 9000000);
+      final vm = ValuationCalculatorViewModel(
+        funding: 3000000,
+        valuation: 9000000,
+      );
       addTearDown(vm.dispose);
       vm.funds.text = '500';
       expect(vm.fundingError, 'The amount must be at least SAR 1,000.');
@@ -570,7 +573,9 @@ void main() {
       expect(find.text(FounderToolsStrings.addAction), findsNothing);
     });
 
-    testWidgets('My Startups lists cards with the needs line', (tester) async {
+    testWidgets('My Startups lists the Hub card with a role capsule', (
+      tester,
+    ) async {
       _bigScreen(tester);
       repo.startups.addAll([
         PrototypeSeed.rafeeq,
@@ -581,10 +586,13 @@ void main() {
       // No count line under the title any more.
       expect(find.text('2 startups'), findsNothing);
       expect(find.text('Rafeeq Health'), findsOneWidget);
-      expect(find.text('Raising SAR 500,000'), findsOneWidget);
-      expect(find.text('Looking for partnership'), findsOneWidget);
-      expect(find.text('Public'), findsOneWidget);
+      // The same card as the Hub: no "needs" line and no Public pill any more,
+      // a role capsule, and a "Private" capsule for the private one.
+      expect(find.text('Raising SAR 500,000'), findsNothing);
+      expect(find.text('Public'), findsNothing);
+      expect(find.text('Founder'), findsNWidgets(2));
       expect(find.text('Private'), findsOneWidget);
+      expect(find.text('Manage'), findsNWidgets(2));
       expect(AppSession.instance.ownStartupIds, {'mock-rafeeq', 'mock-daftar'});
     });
 
@@ -597,13 +605,12 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(find.text('Rafeeq Health'), findsOneWidget);
-      // Header: role label above the name, six tabs, eye + share icons.
+      // Header: role label above the name, five tabs, eye + share icons.
       expect(find.text('FOUNDER'), findsOneWidget);
       for (final tab in [
         'Dashboard',
         'Details',
         'Rounds',
-        'Requests',
         'Interest',
         'Settings',
       ]) {
@@ -629,19 +636,6 @@ void main() {
         of: find.byType(ScrollableHeaderTabBar),
         matching: find.text(label),
       );
-      await tester.ensureVisible(tab('Requests'));
-      await tester.pumpAndSettle();
-      await tester.tap(tab('Requests'));
-      await tester.pumpAndSettle();
-      expect(find.text('Pending · 1'), findsOneWidget);
-      expect(find.text('SAR 300,000 for 15%'), findsOneWidget);
-      await tester.tap(find.text('Accept'));
-      await tester.pumpAndSettle();
-      // Confirmations show no pop-up any more; the request just leaves the list.
-      expect(find.text('No pending requests.'), findsOneWidget);
-      await tester.pump(const Duration(seconds: 3));
-      await tester.pumpAndSettle();
-
       await tester.ensureVisible(tab('Interest'));
       await tester.pumpAndSettle();
       await tester.tap(tab('Interest'));
@@ -659,13 +653,21 @@ void main() {
       expect(find.text('Delete Rafeeq Health?'), findsOneWidget);
     });
 
-    testWidgets('the share icon copies the link and says so', (tester) async {
+    testWidgets('the share icon opens the share sheet; Copy link says so', (
+      tester,
+    ) async {
       _bigScreen(tester);
       await tester.pumpWidget(
         _app(ManageStartupScreen(startup: PrototypeSeed.rafeeq)),
       );
       await tester.pumpAndSettle();
       await tester.tap(find.bySemanticsLabel('Share'));
+      await tester.pumpAndSettle();
+      // The sheet lists the apps, not just "Link copied".
+      expect(find.text('WhatsApp'), findsOneWidget);
+      expect(find.text('Copy link'), findsOneWidget);
+      expect(find.text('Link copied'), findsNothing);
+      await tester.tap(find.text('Copy link'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 400));
       expect(find.text('Link copied'), findsOneWidget);
@@ -880,6 +882,14 @@ void main() {
       }
       expect(find.text('Save changes'), findsOneWidget);
       await tester.tap(find.text('Save changes'));
+      await tester.pumpAndSettle();
+      // The confirm comes first.
+      expect(find.text('Save changes?'), findsOneWidget);
+      expect(
+        find.text('Your changes will be saved to this startup.'),
+        findsOneWidget,
+      );
+      await tester.tap(find.text('Save changes').last);
       await tester.pumpAndSettle();
       expect(find.text('Save changes'), findsNothing, reason: 'left the form');
       expect(find.text('edit'), findsOneWidget);

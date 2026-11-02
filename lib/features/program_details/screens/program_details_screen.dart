@@ -148,6 +148,7 @@ class _ProgramDetailsScreenState extends State<ProgramDetailsScreen> {
                                       onTap: () => ProfileActions.share(
                                         context,
                                         _vm.key,
+                                        title: _vm.program.name,
                                       ),
                                     ),
                                   ],
