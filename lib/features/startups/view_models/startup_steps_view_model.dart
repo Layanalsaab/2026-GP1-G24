@@ -1090,7 +1090,19 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
     memberRole.text = m?.role ?? '';
     memberContribution.text = m?.contribution ?? '';
     memberCoFounder = m?.coFounder ?? false;
+    _memberBaseline = _memberSignature();
   });
+
+  /// The member editor's values when it opened.
+  String _memberBaseline = '';
+
+  String _memberSignature() =>
+      '${memberName.text}|${memberEmail.text}|${memberRole.text}|'
+      '${memberContribution.text}|$memberCoFounder';
+
+  /// True when a value of the open member editor differs from how it opened:
+  /// its Cancel asks "Discard changes?" only then.
+  bool get memberDirty => editorOpen && _memberSignature() != _memberBaseline;
 
   void setMemberCoFounder(bool v) => _touch(() => memberCoFounder = v);
 

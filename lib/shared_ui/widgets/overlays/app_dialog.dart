@@ -171,6 +171,24 @@ class VerifyEmailDialog extends StatelessWidget {
   }
 }
 
+/// The "save these changes?" confirmation: the same dialog as
+/// [showDiscardDialog] with a green (primary) [confirmLabel] button and a
+/// "Cancel" text button. Completes with true only for the primary button.
+Future<bool> showSaveConfirmDialog(
+  BuildContext context, {
+  required String title,
+  required String message,
+  required String confirmLabel,
+  String cancelLabel = 'Cancel',
+}) => showDiscardDialog(
+  context,
+  title: title,
+  message: message,
+  discardLabel: confirmLabel,
+  keepLabel: cancelLabel,
+  danger: false,
+);
+
 /// The "leave this form?" confirmation: a centered dialog with a [title], the
 /// [message], a red full-width [discardLabel] button and a "Keep editing" text
 /// button under it. Completes with true only for Discard; "Keep editing" and

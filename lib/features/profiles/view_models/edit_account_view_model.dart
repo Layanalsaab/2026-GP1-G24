@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -66,7 +67,31 @@ class EditAccountViewModel extends ChangeNotifier with SafeNotifier {
     sectors = chips;
     otherSelected = other;
     otherSector = typed;
+    _baseline = _signature();
   }
+
+  /// The form as it opened, to compare with (see [hasChanges]).
+  late final String _baseline;
+
+  String _signature() => jsonEncode({
+    'name': fullName.trim(),
+    'bio': bio.trim(),
+    'phone': phone,
+    'linkedin': linkedin.trim(),
+    'value': valueOffered.trim(),
+    'gain': gain.trim(),
+    'city': city,
+    'emailPublic': emailPublic,
+    'phonePublic': phonePublic,
+    'sectors': [...sectors]..sort(),
+    'other': otherSelected ? otherSector.trim() : null,
+    'criteria': criteria?.buildCriteria(lookFor: gain).toFields(),
+  });
+
+  /// True when a value differs from how the form opened (typing something
+  /// and typing it back is no change). A new or removed photo counts.
+  bool get hasChanges =>
+      newPhoto != null || removePhoto || _signature() != _baseline;
 
   /// The 25 sector chips (the last one is "Other").
   static final List<String> sectorOptions = [

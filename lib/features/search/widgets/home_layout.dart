@@ -116,7 +116,8 @@ class HomeItemCard extends StatelessWidget {
           matchPercent: showMatch ? item.matchPercent : null,
           matchReason: showMatch ? item.matchReason : null,
           onTap: () => openHomeItem(context, item),
-          onShare: () => ShareLink.copyKey(context, item.bookmarkKey),
+          onShare: () =>
+              ShareLink.shareKey(context, item.bookmarkKey, title: item.name),
           onBookmark: canBookmark
               ? () => BookmarkRepository.instance.toggle(item.bookmarkKey)
               : null,

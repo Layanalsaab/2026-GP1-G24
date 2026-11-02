@@ -5,8 +5,8 @@ import '../../../models/startup.dart';
 import '../../../models/startup_enums.dart';
 import 'founder_ui.dart';
 
-/// What a startup asks for, read from what it looks for: Funding (an amount
-/// and the lead-investor answer), Partnership and Support (mentorship,
+/// What a startup asks for, read from what it looks for: Funding (the amount
+/// and what is already raised), Partnership and Support (mentorship,
 /// advisors, marketing, tech development, talent...). Shared by the Manage
 /// Details tab and the startup page so both say the same thing.
 class StartupAsk {

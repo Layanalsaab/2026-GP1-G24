@@ -444,12 +444,12 @@ void main() {
           ),
         ),
       );
+      // The gold line is one column wide (a third of the row), 3 high.
       final ind = find.byWidgetPredicate(
-        (w) =>
-            w is Container &&
-            w.constraints?.maxWidth == 28 &&
-            w.constraints?.maxHeight == 3,
+        (w) => w is Container && w.constraints?.maxHeight == 3,
       );
+      final row = t.getRect(find.byType(ExploreTabs));
+      expect(t.getSize(ind).width, closeTo(row.width / 3, 1));
       final x0 = t.getCenter(ind).dx;
       await t.tap(find.text('Matches'));
       await t.pump();

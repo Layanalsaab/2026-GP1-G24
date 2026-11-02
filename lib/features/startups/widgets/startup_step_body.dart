@@ -14,6 +14,7 @@ import '../../../models/startup_enums.dart';
 import '../../../models/team_member.dart';
 import '../view_models/startup_steps_view_model.dart';
 import '../../../shared_ui/widgets/forms/checkbox_card.dart';
+import '../../../shared_ui/widgets/overlays/app_dialog.dart';
 import '../../../shared_ui/widgets/overlays/multi_picker_sheet.dart';
 import '../../../app_constants/validation_strings.dart';
 import 'founder_ui.dart';
@@ -811,7 +812,19 @@ class _Team extends StatelessWidget {
       onCoFounder: vm.setMemberCoFounder,
       complete: vm.memberComplete,
       errorOf: vm.memberError,
-      onCancel: vm.cancelMemberEditor,
+      onCancel: () async {
+        if (vm.memberDirty) {
+          final discard = await showDiscardDialog(
+            context,
+            title: FounderToolsStrings.discardEditTitle,
+            message: FounderToolsStrings.discardEditMessage,
+            discardLabel: FounderToolsStrings.discard,
+            keepLabel: FounderToolsStrings.keepEditing,
+          );
+          if (!discard) return;
+        }
+        vm.cancelMemberEditor();
+      },
       onSave: () => _save(context),
       onRemove: vm.removeMember,
     );

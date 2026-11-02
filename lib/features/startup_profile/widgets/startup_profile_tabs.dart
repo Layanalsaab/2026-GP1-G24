@@ -795,9 +795,8 @@ class _InvestorRow extends StatelessWidget {
 
 // -------------------------------------------------------- current round
 
-/// "Current round": the type pill, the goal, the progress bar, what is raised
-/// and the lead-investor line. Not raising: only the title and "Not raising
-/// right now."
+/// "Current round": the type pill, the goal, the progress bar and what is
+/// raised. Not raising: only the title and "Not raising right now."
 class _CurrentRoundCard extends StatelessWidget {
   const _CurrentRoundCard({required this.round});
 
