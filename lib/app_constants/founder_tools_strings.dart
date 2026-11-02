@@ -286,6 +286,9 @@ class FounderToolsStrings {
   static const leaveCoFounderText =
       'You’ll stop being a co-founder of this startup';
   static const leaveMemberText = 'You’ll be removed from this startup’s team';
+  /// The person who created it, after handing it over.
+  static const leaveFounderText =
+      'You’ll leave the team. You can keep your name as Founder (former)';
   static String leaveTitle(String name) => 'Leave $name?';
   static const leaveMessage =
       'You won’t be able to see or manage this startup any more. The founder can add you again.';
