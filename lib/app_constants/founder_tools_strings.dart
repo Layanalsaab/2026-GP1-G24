@@ -201,7 +201,7 @@ class FounderToolsStrings {
   static const partnerOptions = [
     'Co-founder',
     'Distributor',
-    'Technology development',
+    'Technology developer',
     'Supplier',
     'Marketing specialist',
     'Legal and accounting',

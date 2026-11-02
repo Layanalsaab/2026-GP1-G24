@@ -180,7 +180,7 @@ void main() {
         vm.errorOf(StartupField.partnerTypes),
         'Select at least one partner type.',
       );
-      vm.togglePartner('Technology development');
+      vm.togglePartner('Technology developer');
       expect(vm.currentComplete, isTrue, reason: 'no funding questions');
       vm.toggleLookingFor('Support');
       expect(
@@ -232,7 +232,7 @@ void main() {
       vm.toggleLookingFor('Partnership');
       vm.funding.text = '1,000,000';
       vm.raised.text = '200,000';
-      vm.togglePartner('Technology development');
+      vm.togglePartner('Technology developer');
       vm.togglePartner('Other');
       vm.partnerOther.text = 'Banks';
       vm.revenueNow.text = '10';
@@ -244,7 +244,7 @@ void main() {
       expect(saved.revenueThisYear, 10);
       expect(saved.monthlyBurn, 5);
       expect(saved.businessModelText, 'Fees per payment');
-      expect(saved.partnerTypes, ['Technology development', 'Banks']);
+      expect(saved.partnerTypes, ['Technology developer', 'Banks']);
       expect(saved.supportTypes, isEmpty);
       expect(saved.lookingFor, {LookingFor.funding, LookingFor.partnership});
     });

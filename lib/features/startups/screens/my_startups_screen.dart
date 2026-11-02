@@ -13,7 +13,9 @@ import '../view_models/my_startups_view_model.dart';
 import '../widgets/startup_filter_sheet.dart';
 import '../widgets/draft_card.dart';
 import '../widgets/founder_ui.dart';
-import '../widgets/my_startup_card.dart';
+import '../../../models/home_item.dart';
+import '../../search/widgets/home_layout.dart';
+import '../widgets/role_tag.dart';
 import 'manage_startup_screen.dart';
 import 'startup_steps_screen.dart';
 
@@ -183,18 +185,27 @@ class _MyStartupsScreenState extends State<MyStartupsScreen> {
                           _NoMatches(onShowAll: _vm.resetFilters)
                         else
                           for (var i = 0; i < shown.length; i++) ...[
-                            if (i > 0) const SizedBox(height: 14),
-                            Rise.card(
+                            // The same gap as between the cards of the Hub.
+                            if (i > 0) const SizedBox(height: HomeColumn.gap),
+                            // The Hub's startup card (HomeItemCard), with only
+                            // what your own startups need.
+                            HomeItemCard(
                               key: ObjectKey(shown[i]),
-                              delay: Motion.stagger(context, i, stepMs: 50),
-                              child: MyStartupCard(
-                                startup: shown[i].startup,
-                                role: shown[i].role,
-                                // Founder, co-founder and team member all open
-                                // Manage (a team member's is view-only).
-                                onTap: () =>
-                                    _manage(shown[i].startup, shown[i].role),
-                              ),
+                              item: HomeItem.fromStartup(shown[i].startup),
+                              index: i,
+                              bookmarkable: false,
+                              badges: [
+                                RoleTag(shown[i].role),
+                                if (!shown[i].startup.isPublic)
+                                  const PrivateTag(),
+                              ],
+                              actionLabel: shown[i].role.canManage
+                                  ? FounderToolsStrings.manage
+                                  : FounderToolsStrings.view,
+                              // Founder, co-founder and team member all open
+                              // Manage (a team member's is view-only).
+                              onTap: () =>
+                                  _manage(shown[i].startup, shown[i].role),
                             ),
                           ],
                       ],

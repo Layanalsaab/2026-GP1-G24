@@ -556,7 +556,9 @@ void main() {
       expect(find.text(FounderToolsStrings.addAction), findsNothing);
     });
 
-    testWidgets('My Startups lists cards with the needs line', (tester) async {
+    testWidgets('My Startups lists the Hub card with a role capsule', (
+      tester,
+    ) async {
       _bigScreen(tester);
       repo.startups.addAll([
         PrototypeSeed.rafeeq,
@@ -567,10 +569,13 @@ void main() {
       // No count line under the title any more.
       expect(find.text('2 startups'), findsNothing);
       expect(find.text('Rafeeq Health'), findsOneWidget);
-      expect(find.text('Raising SAR 500,000'), findsOneWidget);
-      expect(find.text('Looking for partnership'), findsOneWidget);
-      expect(find.text('Public'), findsOneWidget);
+      // The same card as the Hub: no "needs" line and no Public pill any more,
+      // a role capsule, and a "Private" capsule for the private one.
+      expect(find.text('Raising SAR 500,000'), findsNothing);
+      expect(find.text('Public'), findsNothing);
+      expect(find.text('Founder'), findsNWidgets(2));
       expect(find.text('Private'), findsOneWidget);
+      expect(find.text('Manage'), findsNWidgets(2));
       expect(AppSession.instance.ownStartupIds, {'mock-rafeeq', 'mock-daftar'});
     });
 

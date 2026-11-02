@@ -39,7 +39,8 @@ class HomeCard extends StatelessWidget {
     this.index = 0,
     this.animate = true,
     this.bodyMaxLines = 3,
-    this.badge,
+    this.badges = const [],
+    this.actionLabel,
     this.imageUrl,
     this.imageData,
   });
@@ -74,9 +75,14 @@ class HomeCard extends StatelessWidget {
   /// stops at 2).
   final int bodyMaxLines;
 
-  /// Optional small badge next to the name (e.g. a role capsule on a
-  /// person's profile). Cards in the Hub don't use it.
-  final Widget? badge;
+  /// Optional small capsules next to the name (the role, "Private"). They
+  /// sit on the name's line while they fit and drop under it when they don't.
+  /// Hub cards don't use them.
+  final List<Widget> badges;
+
+  /// Optional text button at the bottom right, in front of the chevron
+  /// ("Manage" / "View" on My Startups). Hub cards don't use it.
+  final String? actionLabel;
 
   /// The startup's logo or the person's photo (the initials when none).
   final String? imageUrl;
@@ -123,7 +129,7 @@ class HomeCard extends StatelessWidget {
                             name: name,
                             tag: tag,
                             city: city,
-                            badge: badge,
+                            badges: badges,
                           ),
                         ),
                         // Space reserved for the absolutely placed actions
@@ -165,6 +171,31 @@ class HomeCard extends StatelessWidget {
                               ),
                             ],
                           ],
+                        ),
+                      ),
+                    ],
+                    if (actionLabel != null) ...[
+                      const SizedBox(height: 10),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: Semantics(
+                          label: actionLabel,
+                          excludeSemantics: true,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                actionLabel!,
+                                style: AppText.sans(
+                                  size: 15,
+                                  weight: FontWeight.w600,
+                                  color: AppColors.moss600,
+                                ),
+                              ),
+                              const SizedBox(width: 2),
+                              _CardChevron(hover: hover),
+                            ],
+                          ),
                         ),
                       ),
                     ],
@@ -214,11 +245,12 @@ class HomeCard extends StatelessWidget {
                     ],
                   ),
                 ),
-              Positioned(
-                right: 14,
-                bottom: 18,
-                child: _CardChevron(hover: hover),
-              ),
+              if (actionLabel == null)
+                Positioned(
+                  right: 14,
+                  bottom: 18,
+                  child: _CardChevron(hover: hover),
+                ),
             ],
           ),
         ),
@@ -235,10 +267,10 @@ class _NameBlock extends StatelessWidget {
     required this.name,
     required this.tag,
     required this.city,
-    this.badge,
+    this.badges = const [],
   });
 
-  final Widget? badge;
+  final List<Widget> badges;
   final String name;
   final String tag;
   final String city;
@@ -249,15 +281,16 @@ class _NameBlock extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        if (badge == null)
+        if (badges.isEmpty)
           _FitName(name)
         else
-          Row(
-            children: [
-              Flexible(child: _FitName(name)),
-              const SizedBox(width: 8),
-              badge!,
-            ],
+          // The capsules sit right after the name; when they do not fit on
+          // its line they drop under it (never squeeze the name away).
+          Wrap(
+            spacing: 8,
+            runSpacing: 4,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [_FitName(name), ...badges],
           ),
         const SizedBox(height: 5),
         Row(
