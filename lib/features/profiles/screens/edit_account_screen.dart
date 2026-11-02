@@ -63,10 +63,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     super.dispose();
   }
 
-  /// Close / system back. An investor with unsaved changes is asked first.
+  /// Close / system back. Founder or investor: with a value that differs from
+  /// how the form opened, the discard dialog asks first.
   Future<void> _leave() async {
     // While a save is still running the screen can always be left.
-    if (_vm.isLoading || !(widget.user.isInvestor && _vm.dirty)) {
+    if (_vm.isLoading || !_vm.hasChanges) {
       AppNav.back(context);
       return;
     }
@@ -223,6 +224,29 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   Future<void> _save() async {
     FocusScope.of(context).unfocus();
+    if (_vm.isLoading) return;
+    if (!_vm.isValid) {
+      // Invalid: the field errors show first, no confirm.
+      await _vm.submit();
+      if (mounted) AppToast.error(context, ProfileStrings.fixFields);
+      return;
+    }
+    final go = await showSaveConfirmDialog(
+      context,
+      title: FounderToolsStrings.saveConfirmTitle,
+      message: FounderToolsStrings.saveProfileMessage,
+      confirmLabel: FounderToolsStrings.saveConfirmButton,
+    );
+    if (!go || !mounted) return;
+    // The role is read again right before the write: the signed-in account
+    // must still be this one, with the same role.
+    final now = AppSession.instance.user;
+    if (now == null ||
+        now.uid != widget.user.uid ||
+        now.isInvestor != widget.user.isInvestor) {
+      AppToast.error(context, AccountStrings.saveFailed);
+      return;
+    }
     final updated = await _vm.submit();
     if (!mounted) return;
     if (updated != null) {
@@ -482,7 +506,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         final u = widget.user;
         final loading = _vm.isLoading;
         return PopScope(
-          canPop: !(u.isInvestor && _vm.dirty),
+          canPop: !_vm.hasChanges,
           onPopInvokedWithResult: (didPop, _) {
             if (!didPop) _leave();
           },

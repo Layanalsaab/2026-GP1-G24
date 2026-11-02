@@ -1,29 +1,69 @@
 import 'package:flutter/material.dart';
 
-import '../../../app_constants/founder_tools_strings.dart';
 import '../../../data_access/repositories/discovery_repository.dart';
 import '../../../helpers/formatters.dart';
 import '../../../models/funding_round.dart';
-import '../../../models/startup_enums.dart';
+import '../../../models/connection_request.dart';
 import '../../../shared_ui/widgets/overlays/app_dialog.dart';
+import '../../connection_requests/view_models/requests_view_model.dart';
 import '../../profiles/screens/investor_profile_screen.dart';
 import '../view_models/rounds_view_model.dart';
 import 'founder_ui.dart';
 import 'manage_card.dart';
+import 'round_detail.dart';
+import 'round_form.dart';
 
-/// Manage startup -> Rounds: the startup's rounds from Firestore. Adding or
-/// closing a round is saved with the startup (see RoundsViewModel).
+/// Manage startup -> Rounds: the startup's rounds from Firestore. Adding,
+/// editing or closing a round is saved with the startup (see
+/// RoundsViewModel).
 ///
 /// Top row: "Funding rounds" with "All amounts in SAR", and on the right
 /// "Close round" (a round is open) or "Add round" (none is). Below, the
 /// "New round" form when it is open, then the rounds table, newest first.
-class ManageRoundsTab extends StatelessWidget {
-  const ManageRoundsTab({super.key, required this.vm, this.canManage = true});
+/// Tapping a round opens its page ([RoundDetail]) inside this tab.
+class ManageRoundsTab extends StatefulWidget {
+  const ManageRoundsTab({
+    super.key,
+    required this.vm,
+    this.canManage = true,
+    this.requests,
+    this.onCheck,
+    this.onToast,
+  });
 
   final RoundsViewModel vm;
 
-  /// False hides Add round / Close round (a team member only reads).
+  /// False hides Add round / Close round / Edit round (a team member only
+  /// reads).
   final bool canManage;
+
+  /// The startup's investment requests, shown on the page of the OPEN round
+  /// ("Investment requests"). Null hides that section.
+  final RequestsViewModel? requests;
+
+  /// "Check in the calculator" of a request, and the toasts of Accept /
+  /// Decline.
+  final void Function(ConnectionRequest request)? onCheck;
+  final void Function(String message)? onToast;
+
+  @override
+  State<ManageRoundsTab> createState() => _ManageRoundsTabState();
+}
+
+class _ManageRoundsTabState extends State<ManageRoundsTab> {
+  /// The round whose page is open, or null for the list. It lives here (not in
+  /// the view model), so switching Manage tabs always comes back to the list.
+  int? _detail;
+
+  RoundsViewModel get vm => widget.vm;
+  bool get canManage => widget.canManage;
+
+  @override
+  void initState() {
+    super.initState();
+    // Back on the list: an Edit round form left open is dropped.
+    vm.resetView();
+  }
 
   Future<void> _confirmClose(BuildContext context) async {
     final open = vm.openRound;
@@ -47,6 +87,22 @@ class ManageRoundsTab extends StatelessWidget {
     return ListenableBuilder(
       listenable: vm,
       builder: (context, _) {
+        final detail = _detail;
+        if (detail != null && vm.rounds.any((r) => r.number == detail)) {
+          return RoundDetail(
+            vm: vm,
+            number: detail,
+            canManage: canManage,
+            requests: widget.requests,
+            onCheck: widget.onCheck,
+            onToast: widget.onToast,
+            onBack: () {
+              // An Edit round form left open is dropped with the page.
+              if (vm.editOpen) vm.cancelEdit();
+              setState(() => _detail = null);
+            },
+          );
+        }
         final open = vm.openRound;
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -95,17 +151,28 @@ class ManageRoundsTab extends StatelessWidget {
             ),
             const SizedBox(height: 14),
             if (canManage && vm.formOpen) ...[
-              _AddRoundForm(vm: vm),
+              RoundForm(vm: vm),
               const SizedBox(height: 14),
             ],
             RoundsTable(
               rounds: vm.rounds,
+              onOpen: (r) => setState(() => _detail = r.number),
               emptyText: vm.isLoading
                   ? 'Loading rounds…'
                   : vm.loadFailed
                   ? 'Couldn’t load the rounds. Check your connection.'
                   : 'No rounds yet.',
             ),
+            if (vm.rounds.isNotEmpty) ...[
+              const SizedBox(height: 10),
+              Center(
+                child: Text(
+                  'Tap a round to see its details.',
+                  textAlign: TextAlign.center,
+                  style: AppText.sans(size: 13, color: const Color(0xFF8C918D)),
+                ),
+              ),
+            ],
             if (vm.loadFailed) ...[
               const SizedBox(height: 10),
               Center(
@@ -189,9 +256,15 @@ class RoundsTable extends StatelessWidget {
     required this.rounds,
     this.emptyText = 'No rounds yet.',
     this.centerEmpty = false,
+    this.onOpen,
   });
 
   final List<FundingRound> rounds;
+
+  /// When set (Manage -> Rounds) every row is tappable: it shows its status
+  /// word and a chevron. Null (the startup page) keeps the plain read-only
+  /// table.
+  final ValueChanged<FundingRound>? onOpen;
 
   /// The text of an empty table (the startup page centres its own).
   final String emptyText;
@@ -199,33 +272,44 @@ class RoundsTable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final open = onOpen;
+    final table = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _HeaderRow(interactive: open != null),
+        if (rounds.isEmpty)
+          Padding(
+            padding: const EdgeInsets.all(18),
+            child: Text(
+              emptyText,
+              textAlign: centerEmpty ? TextAlign.center : TextAlign.start,
+              style: AppText.sans(size: 14, color: AppColors.grey),
+            ),
+          ),
+        for (final r in rounds) ...[
+          const Divider(height: 1, color: AppColors.dividerSoft),
+          _RoundRow(round: r, onTap: open == null ? null : () => open(r)),
+        ],
+      ],
+    );
     return ManageCard(
       padding: EdgeInsets.zero,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const _HeaderRow(),
-          if (rounds.isEmpty)
-            Padding(
-              padding: const EdgeInsets.all(18),
-              child: Text(
-                emptyText,
-                textAlign: centerEmpty ? TextAlign.center : TextAlign.start,
-                style: AppText.sans(size: 14, color: AppColors.grey),
-              ),
-            ),
-          for (final r in rounds) ...[
-            const Divider(height: 1, color: AppColors.dividerSoft),
-            _RoundRow(round: r),
-          ],
-        ],
-      ),
+      // A pressed row's background stays inside the card's rounded corners.
+      child: open == null
+          ? table
+          : ClipRRect(borderRadius: BorderRadius.circular(19), child: table),
     );
   }
 }
 
+/// Right padding of a tappable row: room for the chevron so the columns do
+/// not touch it.
+const double _chevronRoom = 32;
+
 class _HeaderRow extends StatelessWidget {
-  const _HeaderRow();
+  const _HeaderRow({this.interactive = false});
+
+  final bool interactive;
 
   @override
   Widget build(BuildContext context) {
@@ -245,7 +329,7 @@ class _HeaderRow extends StatelessWidget {
       ),
     );
     return Padding(
-      padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
+      padding: EdgeInsets.fromLTRB(14, 14, interactive ? _chevronRoom : 14, 12),
       child: Row(
         children: [
           cell(0, 'Round'),
@@ -263,18 +347,73 @@ class _HeaderRow extends StatelessWidget {
 
 /// One round: every first line has the same 22 px line height, so the first
 /// lines of the four cells sit on one line.
-class _RoundRow extends StatelessWidget {
-  const _RoundRow({required this.round});
+class _RoundRow extends StatefulWidget {
+  const _RoundRow({required this.round, this.onTap});
 
   final FundingRound round;
+
+  /// Set in Manage: the row opens the round page (it also shows the status
+  /// word and a chevron).
+  final VoidCallback? onTap;
 
   static const double line = 22;
 
   @override
+  State<_RoundRow> createState() => _RoundRowState();
+}
+
+class _RoundRowState extends State<_RoundRow> {
+  bool _pressed = false;
+
+  @override
   Widget build(BuildContext context) {
-    final r = round;
+    final onTap = widget.onTap;
+    final content = _content();
+    if (onTap == null) return content;
+    final r = widget.round;
+    return Semantics(
+      button: true,
+      label: 'Round ${r.number}, ${r.isOpen ? 'open' : 'closed'}',
+      onTap: onTap,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        onTapDown: (_) => setState(() => _pressed = true),
+        onTapUp: (_) => setState(() => _pressed = false),
+        onTapCancel: () => setState(() => _pressed = false),
+        child: ColoredBox(
+          color: _pressed ? AppColors.moss50 : Colors.transparent,
+          child: Stack(
+            children: [
+              content,
+              const Positioned(
+                right: 8,
+                top: 0,
+                bottom: 0,
+                child: Center(
+                  child: ExcludeSemantics(
+                    child: AppIcon.outline(
+                      AppIcons.rowChevron,
+                      size: 20,
+                      stroke: 2.2,
+                      color: Color(0xFF9AA19B),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _content() {
+    final r = widget.round;
+    const line = _RoundRow.line;
+    final interactive = widget.onTap != null;
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+      padding: EdgeInsets.fromLTRB(14, 16, interactive ? _chevronRoom : 14, 16),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -305,6 +444,18 @@ class _RoundRow extends StatelessWidget {
                     ],
                   ),
                 ),
+                if (interactive)
+                  Text(
+                    r.isOpen ? 'Open' : 'Closed',
+                    style: AppText.sans(
+                      size: 12.5,
+                      height: 17,
+                      weight: FontWeight.w600,
+                      color: r.isOpen
+                          ? const Color(0xFF2F8A4A)
+                          : const Color(0xFF8C918D),
+                    ),
+                  ),
                 Text(
                   r.typeLabel,
                   style: AppText.sans(
@@ -590,124 +741,6 @@ class _InvestorListState extends State<_InvestorList> {
             ),
           ),
       ],
-    );
-  }
-}
-
-// ------------------------------------------------------------- add round
-
-/// The "New round" form: a light green box above the table.
-class _AddRoundForm extends StatelessWidget {
-  const _AddRoundForm({required this.vm});
-
-  final RoundsViewModel vm;
-
-  Future<void> _pickType(BuildContext context) async {
-    final r = await showPickerSheet(
-      context,
-      title: 'Round type',
-      options: [for (final t in vm.allowedTypes) t.label],
-      selected: vm.type?.label,
-    );
-    if (r != null) {
-      vm.setType(StartupStage.picks.firstWhere((t) => t.label == r.value));
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.moss50,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.moss100),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Semantics(
-            header: true,
-            child: Text(
-              'New round · Round ${vm.nextNumber}',
-              style: AppText.sans(
-                size: 17,
-                weight: FontWeight.w700,
-                color: AppColors.green,
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          AppField(
-            label: 'Round type',
-            required: true,
-            child: SelectField(
-              placeholder: 'Select a round type',
-              value: vm.type?.label,
-              semanticLabel: 'Round type',
-              onTap: () => _pickType(context),
-            ),
-          ),
-          const SizedBox(height: FieldHelperRow.gapAfter),
-          AppField(
-            label: FounderToolsStrings.fundingLabel,
-            required: true,
-            sentenceCase: true,
-            info: FounderToolsStrings.fundingInfo,
-            hint: vm.amountHint,
-            error: vm.amountError,
-            child: MoneyField(
-              controller: vm.amount,
-              onChanged: vm.setAmount,
-              hasError: vm.amountError != null,
-              semanticLabel: FounderToolsStrings.fundingLabel,
-            ),
-          ),
-          const SizedBox(height: FieldHelperRow.gapAfter),
-          AppField(
-            label: FounderToolsStrings.raisedLabel,
-            required: true,
-            sentenceCase: true,
-            info: FounderToolsStrings.raisedInfo,
-            error: vm.raisedError,
-            child: MoneyField(
-              controller: vm.raised,
-              onChanged: vm.setRaised,
-              hasError: vm.raisedError != null,
-              semanticLabel: FounderToolsStrings.raisedLabel,
-            ),
-          ),
-          const SizedBox(height: 14),
-          Row(
-            children: [
-              Expanded(
-                child: AppButton(
-                  label: 'Cancel',
-                  variant: AppButtonVariant.outline,
-                  size: AppButtonSize.small,
-                  onPressed: vm.cancelForm,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: AppButton(
-                  label: 'Add round',
-                  variant: vm.formValid
-                      ? AppButtonVariant.primary
-                      : AppButtonVariant.off,
-                  size: AppButtonSize.small,
-                  onPressed: () async {
-                    final ok = await vm.addRound();
-                    if (!ok && vm.error != null && context.mounted) {
-                      AppToast.error(context, vm.error!);
-                    }
-                  },
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
     );
   }
 }

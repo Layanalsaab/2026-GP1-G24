@@ -25,8 +25,16 @@ class ExploreTab {
   static const trending = ExploreTab('Trending', AppIcons.tabTrending);
   static const matches = ExploreTab('Matches', AppIcons.tabMatches);
 
-  /// For You · Trending · Matches.
+  /// An investor's tabs: For You · Trending · Matches.
   static const defaults = [forYou, trending, matches];
+
+  /// A founder's tabs: For You · Trending. A founder's matches live inside
+  /// each open round (Manage startup -> Rounds).
+  static const founder = [forYou, trending];
+
+  /// The tabs of a founder or an investor.
+  static List<ExploreTab> forRole({required bool founder}) =>
+      founder ? ExploreTab.founder : defaults;
 }
 
 /// Home header (Hub / Explore / Support Channels): green, bottom radius 30,
@@ -319,16 +327,15 @@ class ExploreTabs extends StatelessWidget {
                   Motion.medium + const Duration(milliseconds: 40),
                 ),
                 curve: Motion.easeOut,
+                // One column wide (the tab row is a grid with one equal
+                // column per tab), so the line sits exactly under its tab.
                 child: FractionallySizedBox(
                   widthFactor: 1 / (n == 0 ? 1 : n),
-                  child: Center(
-                    child: Container(
-                      width: 28,
-                      height: 3,
-                      decoration: BoxDecoration(
-                        color: AppColors.gold,
-                        borderRadius: BorderRadius.circular(3),
-                      ),
+                  child: Container(
+                    height: 3,
+                    decoration: BoxDecoration(
+                      color: AppColors.gold,
+                      borderRadius: BorderRadius.circular(3),
                     ),
                   ),
                 ),

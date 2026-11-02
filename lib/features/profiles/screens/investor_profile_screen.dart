@@ -69,7 +69,11 @@ class _InvestorProfileScreenState extends State<InvestorProfileScreen> {
                     children: [
                       ProfileBanner.glass(
                         onBack: () => AppNav.back(context),
-                        onShare: () => ProfileActions.share(context, _vm.key),
+                        onShare: () => ProfileActions.share(
+                          context,
+                          _vm.key,
+                          title: _vm.investor.name,
+                        ),
                         showBookmark: _vm.showBookmark,
                         bookmarked: bookmarks.value.contains(_vm.key),
                         onBookmark: () =>

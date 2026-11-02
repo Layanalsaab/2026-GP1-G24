@@ -161,6 +161,9 @@ void main() {
     await t.pump();
     await t.tap(find.text('Save'));
     await t.pumpAndSettle();
+    expect(find.text('Save changes?'), findsOneWidget);
+    await t.tap(find.text('Save changes'));
+    await t.pumpAndSettle();
     expect(find.text('EDIT STARTUP'), findsNothing);
     expect(find.text('Nurses are hard to book'), findsWidgets);
     final repo = StartupRepository.instance as FakeStartupRepository;
@@ -273,6 +276,8 @@ void main() {
     );
     await t.pump();
     await t.tap(find.text('Save'));
+    await t.pumpAndSettle();
+    await t.tap(find.text('Save changes'));
     await t.pump();
     await t.pump(const Duration(milliseconds: 600));
     expect(find.text('Changes saved'), findsOneWidget);

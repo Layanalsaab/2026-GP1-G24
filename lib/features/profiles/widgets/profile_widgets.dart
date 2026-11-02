@@ -18,10 +18,10 @@ import '../../../shared_ui/widgets/buttons/app_button.dart';
 class ProfileActions {
   ProfileActions._();
 
-  /// Share: copies the link of the item behind [key] (`s-<id>`, `i-<id>`,
-  /// `p-<id>`) and says "Link copied".
-  static void share(BuildContext context, String key) =>
-      ShareLink.copyKey(context, key);
+  /// Share: opens the share sheet for the item behind [key] (`s-<id>`,
+  /// `i-<id>`, `p-<id>`); [title] is its name, used in the message.
+  static void share(BuildContext context, String key, {String? title}) =>
+      ShareLink.shareKey(context, key, title: title);
 
   /// Toggles the bookmark under [key] (`s-<id>`, `i-<id>`, `p-<id>`).
   static void toggleBookmark(BuildContext context, String key) {

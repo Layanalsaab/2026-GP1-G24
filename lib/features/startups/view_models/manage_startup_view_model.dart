@@ -19,7 +19,8 @@ class ManageStartupViewModel extends ChangeNotifier with SafeNotifier {
   /// The startup as last saved.
   Startup startup;
 
-  /// 0 Dashboard, 1 Details, 2 Rounds, 3 Requests, 4 Interest, 5 Settings.
+  /// 0 Dashboard, 1 Details, 2 Rounds, 3 Interest, 4 Settings. (The requests
+  /// of a round will live inside the round, not in a tab.)
   int tab = 0;
 
   bool isDeleting = false;

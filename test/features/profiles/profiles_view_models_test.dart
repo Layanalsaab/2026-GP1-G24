@@ -236,6 +236,25 @@ void main() {
   });
 
   group('EditAccountViewModel', () {
+    test('hasChanges compares with the opened form, not "touched"', () {
+      for (final user in [_founder, _investor]) {
+        final vm = EditAccountViewModel(
+          user: user,
+          userRepository: FakeUserRepository(),
+        );
+        expect(vm.hasChanges, isFalse);
+        final name = vm.fullName;
+        vm.setFullName('${name}x');
+        expect(vm.hasChanges, isTrue);
+        // Typing it back is no change (although the form was touched).
+        vm.setFullName(name);
+        expect(vm.dirty, isTrue);
+        expect(vm.hasChanges, isFalse);
+        vm.setEmailPublic(!vm.emailPublic);
+        expect(vm.hasChanges, isTrue);
+      }
+    });
+
     test('starts from the profile and validates on save', () async {
       final users = FakeUserRepository();
       final vm = EditAccountViewModel(user: _investor, userRepository: users);

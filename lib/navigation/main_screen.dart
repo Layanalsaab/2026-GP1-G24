@@ -252,8 +252,10 @@ class _MainScreenState extends State<MainScreen> {
                             menuLabel: HomeStrings.menuLabel,
                             onAvatarTap: _openMenu,
                             onSignUp: () => ChooseRoleScreen.open(context),
-                            tabs: showTabs ? ExploreTab.defaults : null,
-                            selectedTab: _vm.exploreTab,
+                            tabs: showTabs
+                                ? ExploreTab.forRole(founder: _vm.isFounder)
+                                : null,
+                            selectedTab: _vm.effectiveExploreTab,
                             onTabChanged: _vm.selectExploreTab,
                           ),
                           HomeSearchBar(

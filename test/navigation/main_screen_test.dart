@@ -7,6 +7,7 @@ import 'package:startsa/helpers/app_session.dart';
 import 'package:startsa/models/app_user.dart';
 import 'package:startsa/navigation/main_screen.dart';
 import 'package:startsa/shared_ui/theme/app_theme.dart';
+import 'package:startsa/shared_ui/widgets/headers/home_header.dart';
 import 'package:startsa/shared_ui/widgets/nav/app_side_drawer.dart';
 import 'package:startsa/shared_ui/widgets/overlays/app_bottom_sheet.dart';
 import 'package:startsa/shared_ui/icons/app_icons.dart';
@@ -22,6 +23,14 @@ void main() {
     role: AccountRole.founder,
     fullName: 'Shahad Alabdulkarim',
     email: 'shahad@example.com',
+    city: 'Riyadh',
+  );
+
+  const investor = AppUser(
+    uid: 'uid2',
+    role: AccountRole.investor,
+    fullName: 'Layan Alsaab',
+    email: 'layan@example.com',
     city: 'Riyadh',
   );
 
@@ -62,7 +71,7 @@ void main() {
     expect(find.bySemanticsLabel(RegExp('Open menu')), findsNothing);
   });
 
-  testWidgets('bottom nav switches to Explore and shows the sub-tabs', (
+  testWidgets('a founder\'s Explore has For You and Trending, no Matches', (
     tester,
   ) async {
     AppSession.instance.signIn(founder);
@@ -72,7 +81,34 @@ void main() {
     expect(find.text('Explore'), findsWidgets);
     expect(find.text('For You'), findsOneWidget);
     expect(find.text('Trending'), findsOneWidget);
+    expect(find.text('Matches'), findsNothing);
+    // Two equal columns: the tabs are centred in each half of the row.
+    final row = tester.getRect(find.byType(ExploreTabs));
+    expect(
+      tester.getCenter(find.text('For You')).dx,
+      closeTo(row.left + row.width / 4, 20),
+    );
+    expect(
+      tester.getCenter(find.text('Trending')).dx,
+      closeTo(row.left + row.width * 3 / 4, 20),
+    );
+  });
+
+  testWidgets('an investor\'s Explore keeps For You, Trending and Matches', (
+    tester,
+  ) async {
+    AppSession.instance.signIn(investor);
+    await pumpMain(tester);
+    await tester.tap(find.bySemanticsLabel('Explore').last);
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(find.text('For You'), findsOneWidget);
+    expect(find.text('Trending'), findsOneWidget);
     expect(find.text('Matches'), findsOneWidget);
+    final row = tester.getRect(find.byType(ExploreTabs));
+    expect(
+      tester.getCenter(find.text('Trending')).dx,
+      closeTo(row.center.dx, 20),
+    );
   });
 
   testWidgets(
