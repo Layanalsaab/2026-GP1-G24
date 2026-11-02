@@ -118,6 +118,7 @@ class FounderToolsStrings {
   static const teamInfo =
       'Co-founders can edit this startup. Other members can only view it. Everyone you add by email gets linked to their Start.sa profile, or receives an invitation.';
   static const addMember = 'Add team member';
+  static const teamFull = 'A team can have up to 20 people.';
   static const newMember = 'New team member';
   static const editMember = 'Edit team member';
   static const memberName = 'Full name';

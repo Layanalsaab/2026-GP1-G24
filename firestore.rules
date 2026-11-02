@@ -192,18 +192,14 @@ service cloud.firestore {
                     && request.resource.data.updatedAt == request.time
                     && validStartup(request.resource.data);
 
+      // The founder, and a co-founder (who can do everything the founder can:
+      // edit, members, visibility), in ONE rule: a rule that fails still uses
+      // up part of the 1000 expressions a request may evaluate, and a startup
+      // with every field filled in needs nearly all of them.
       allow update: if request.auth != null
-                    && resource.data.founderId == request.auth.uid
+                    && (resource.data.founderId == request.auth.uid
+                        || resource.data.get('memberRoles', {}).get(request.auth.uid, '') == 'coFounder')
                     // Ownership and creation time can never change.
-                    && request.resource.data.founderId == resource.data.founderId
-                    && request.resource.data.createdAt == resource.data.createdAt
-                    && request.resource.data.updatedAt == request.time
-                    && validStartup(request.resource.data);
-
-      // A co-founder can do everything the founder can (edit, members,
-      // visibility); only the owner and the creation time stay fixed.
-      allow update: if request.auth != null
-                    && resource.data.get('memberRoles', {}).get(request.auth.uid, '') == 'coFounder'
                     && request.resource.data.founderId == resource.data.founderId
                     && request.resource.data.createdAt == resource.data.createdAt
                     && request.resource.data.updatedAt == request.time
@@ -325,10 +321,11 @@ service cloud.firestore {
     // `in [...]` list costs one expression per value, and a request may
     // evaluate at most 1000 expressions).
     function validStartup(d) {
-      return d.keys().hasAll(['founderId', 'name', 'description', 'sector',
-                              'stage', 'businessModel', 'location',
-                              'lookingFor', 'isPublic'])
-        && d.keys().hasOnly(['founderId', 'name', 'oneLinePitch', 'description',
+      // The required fields (founderId, name, description, sector, stage,
+      // businessModel, location, lookingFor, isPublic) are read below, and
+      // reading a missing one refuses the write, so no separate hasAll() is
+      // needed (it cost a dozen of the 1000 expressions a request may use).
+      return d.keys().hasOnly(['founderId', 'name', 'oneLinePitch', 'description',
                              'sector', 'sectorOther', 'otherSectors', 'stage',
                              'stageOther',
                              'businessModel', 'businessModelOther',
@@ -410,8 +407,9 @@ service cloud.firestore {
     // so these helpers use d.get() (one call) instead of several checks.
     function validOther(d, field, value) {
       let v = d.get(field, null);
-      return (v == null || (v is string && v.size() <= 40))
-        && (value != 'other' || (v is string && v.size() >= 1));
+      return v == null ? value != 'other'
+                       : (v is string && v.size() <= 40
+                          && (value != 'other' || v.size() >= 1));
     }
 
     function optionalList(d, field, maxSize) {
@@ -431,10 +429,15 @@ service cloud.firestore {
       return v == null || (v is list && v.size() <= 10);
     }
 
-    // A SAR amount: a whole number, 0 or more, at most 13 digits.
+    // A SAR amount: a whole number (or null). The app already limits it to 0
+    // or more and 13 digits; every extra check here costs about two of the
+    // 1000 expressions a request may use, and a startup that fills in all
+    // twelve amounts, picks "Other" three times and is edited by a co-founder
+    // needs almost all of them (tools/rules_tests/parity.test.mjs proves it
+    // still fits).
     function optionalMoney(d, field) {
       let v = d.get(field, null);
-      return v == null || (v is int && v >= 0 && v < 10000000000000);
+      return v == null || v is int;
     }
 
     // The founded year runs from 1900 to the current year.
