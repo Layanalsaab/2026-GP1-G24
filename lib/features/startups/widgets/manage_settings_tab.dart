@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../app_constants/founder_tools_strings.dart';
 import '../../../models/list_entries.dart';
+import '../../../models/startup.dart';
 import 'founder_ui.dart';
 import 'manage_card.dart';
 
@@ -9,10 +10,15 @@ import 'manage_card.dart';
 /// button with a 40 px icon tile, a title with sub-text and, where needed, a
 /// control on the right.
 ///
-/// * **Public profile** (founder and co-founder): globe, a switch.
-/// * **Delete startup** (founder only): red trash, red title.
+/// * **Public profile** (owner and co-founder, not on a closed startup):
+///   globe, a switch.
+/// * The owner gets ONE way to end the startup ([ownerOption]):
+///   **Delete startup** (nobody else on it), **Transfer ownership** (a
+///   co-founder joined) or **Close startup** (only members).
+/// * A closed startup: the owner gets **Reopen startup** and **Leave
+///   startup** (nobody owns it afterwards).
 /// * **Leave startup** (co-founder and team member): red leave icon, red
-///   title; the founder has no Leave (transferring ownership is later).
+///   title.
 ///
 /// What a role cannot do is not shown at all.
 class ManageSettingsTab extends StatelessWidget {
@@ -23,20 +29,30 @@ class ManageSettingsTab extends StatelessWidget {
     required this.onVisibilityChanged,
     required this.onDelete,
     required this.onLeave,
+    this.ownerOption = OwnerOption.delete,
+    this.isClosed = false,
+    this.onTransfer,
+    this.onClose,
+    this.onReopen,
   });
 
+  /// What the user may do here ([StartupRole.founder] is the owner).
   final StartupRole role;
   final bool isPublic;
   final ValueChanged<bool> onVisibilityChanged;
   final VoidCallback onDelete;
   final VoidCallback onLeave;
+  final OwnerOption ownerOption;
+  final bool isClosed;
+  final VoidCallback? onTransfer;
+  final VoidCallback? onClose;
+  final VoidCallback? onReopen;
 
   @override
   Widget build(BuildContext context) {
-    // Only the founder can delete the startup.
-    final canDelete = role == StartupRole.founder;
+    final owner = role == StartupRole.founder;
     final cards = <Widget>[
-      if (role.canManage)
+      if (role.canManage && !isClosed)
         _SettingCard(
           icon: AppIcons.globe,
           fill: AppColors.moss50,
@@ -52,7 +68,17 @@ class ManageSettingsTab extends StatelessWidget {
             semanticLabel: FounderToolsStrings.publicProfile,
           ),
         ),
-      if (canDelete)
+      if (owner && isClosed)
+        _SettingCard(
+          icon: AppIcons.rocket,
+          fill: AppColors.moss50,
+          color: AppColors.moss600,
+          title: FounderToolsStrings.reopenStartup,
+          text: FounderToolsStrings.reopenStartupText,
+          onTap: onReopen ?? () {},
+        ),
+      // Nobody else on it (also once closed): it can be deleted.
+      if (owner && ownerOption == OwnerOption.delete)
         _SettingCard(
           icon: AppIcons.trash,
           fill: AppColors.errorFill,
@@ -62,13 +88,37 @@ class ManageSettingsTab extends StatelessWidget {
           danger: true,
           onTap: onDelete,
         ),
-      if (role != StartupRole.founder)
+      if (owner && !isClosed && ownerOption == OwnerOption.transfer)
+        _SettingCard(
+          icon: AppIcons.people,
+          fill: AppColors.moss50,
+          color: AppColors.moss600,
+          title: FounderToolsStrings.transferOwnership,
+          text: FounderToolsStrings.transferOwnershipText,
+          onTap: onTransfer ?? () {},
+        ),
+      if (owner && !isClosed && ownerOption == OwnerOption.close)
+        _SettingCard(
+          icon: AppIcons.lock,
+          fill: AppColors.errorFill,
+          color: AppColors.error,
+          title: FounderToolsStrings.closeStartup,
+          text: FounderToolsStrings.closeStartupText,
+          danger: true,
+          onTap: onClose ?? () {},
+        ),
+      // The owner leaves only a closed startup that has a team (an active
+      // one is handed over or deleted, and an empty one deleted, never left
+      // behind).
+      if (!owner || (isClosed && ownerOption != OwnerOption.delete))
         _SettingCard(
           icon: AppIcons.logout,
           fill: AppColors.errorFill,
           color: AppColors.error,
           title: FounderToolsStrings.leaveStartup,
-          text: role == StartupRole.coFounder
+          text: owner
+              ? FounderToolsStrings.leaveClosedOwnerText
+              : role == StartupRole.coFounder
               ? FounderToolsStrings.leaveCoFounderText
               : FounderToolsStrings.leaveMemberText,
           danger: true,

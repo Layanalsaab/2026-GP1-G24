@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../app_constants/founder_tools_strings.dart';
 import '../../../data_access/repositories/bookmark_repository.dart';
 import '../../../data_access/repositories/interest_repository.dart';
 import '../../../data_access/repositories/request_repository.dart';
@@ -12,6 +13,7 @@ import '../../../shared_ui/widgets/headers/header_buttons.dart';
 import '../../../shared_ui/widgets/headers/tabbed_header.dart';
 import '../../profiles/screens/investor_profile_screen.dart';
 import '../../profiles/widgets/profile_widgets.dart';
+import '../../startups/widgets/view_only_banner.dart';
 import '../view_models/startup_profile_view_model.dart';
 import '../widgets/startup_profile_tabs.dart';
 
@@ -134,6 +136,16 @@ class _StartupProfileScreenState extends State<StartupProfileScreen> {
                         )
                       else
                         header,
+                      // A closed startup says so above its tabs.
+                      if (_vm.startup.isClosed)
+                        const Padding(
+                          padding: EdgeInsets.fromLTRB(16, 16, 16, 0),
+                          child: ViewOnlyBanner.notice(
+                            title: FounderToolsStrings.closedBannerTitle,
+                            message: FounderToolsStrings.closedBannerPublic,
+                            icon: AppIcons.lock,
+                          ),
+                        ),
                       TabPaneSlide(
                         index: _vm.tab,
                         child: StartupProfilePane(

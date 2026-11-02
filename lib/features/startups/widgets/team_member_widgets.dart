@@ -19,11 +19,16 @@ class TeamMemberRow extends StatelessWidget {
     this.isYou = false,
     this.declined = false,
     this.error,
+    this.ownerId,
   });
 
   final TeamMember member;
   final VoidCallback onEdit;
   final bool isYou;
+
+  /// The startup's owner, so a co-founder it was handed to is tagged
+  /// "Co-founder · Owner".
+  final String? ownerId;
 
   /// The invited person said no (the tag reads "Declined").
   final bool declined;
@@ -75,7 +80,12 @@ class TeamMemberRow extends StatelessWidget {
                             weight: FontWeight.w600,
                           ),
                         ),
-                        ...teamTagsOf(member, isYou: isYou, declined: declined),
+                        ...teamTagsOf(
+                          member,
+                          isYou: isYou,
+                          declined: declined,
+                          ownerId: ownerId,
+                        ),
                       ],
                     ),
                     if (role.isNotEmpty || member.isFounder) ...[
@@ -295,7 +305,17 @@ class TeamMemberEditor extends StatelessWidget {
     required this.onSave,
     required this.onRemove,
     this.focusOf,
+    this.canRemove,
+    this.canChangeCoFounder,
   });
+
+  /// "Remove this member" is offered (default: an existing card that isn't
+  /// [lockedIdentity]). Only the owner removes a co-founder who joined.
+  final bool? canRemove;
+
+  /// The Co-founder box is shown (default: not [lockedIdentity]). Only the
+  /// owner changes it for someone who already joined.
+  final bool? canChangeCoFounder;
 
   /// "Your details" / "Edit team member" / "New team member" / "Edit founder".
   final String title;
@@ -432,7 +452,7 @@ class TeamMemberEditor extends StatelessWidget {
             info: FounderToolsStrings.memberContributionInfo,
             error: errorOf(contribution),
           ),
-          if (!lockedIdentity) ...[
+          if (canChangeCoFounder ?? !lockedIdentity) ...[
             const SizedBox(height: gap),
             CheckboxCard(
               compact: true,
@@ -464,7 +484,7 @@ class TeamMemberEditor extends StatelessWidget {
               ),
             ],
           ),
-          if (editing && !lockedIdentity) ...[
+          if (editing && (canRemove ?? !lockedIdentity)) ...[
             const SizedBox(height: 12),
             Semantics(
               button: true,

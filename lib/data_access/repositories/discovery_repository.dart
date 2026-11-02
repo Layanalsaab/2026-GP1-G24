@@ -89,7 +89,8 @@ class DiscoveryRepository {
   /// Hub, Startups side. [excludeIds] hides the founder's own startups.
   List<HomeItem> startups({Set<String> excludeIds = const {}}) => [
     for (final s in _startups)
-      if (s.isPublic && !excludeIds.contains(s.id)) HomeItem.fromStartup(s),
+      // Closed startups are not listed (their team still sees them).
+      if (s.isListed && !excludeIds.contains(s.id)) HomeItem.fromStartup(s),
   ];
 
   /// Hub, Investors side.
@@ -119,7 +120,7 @@ class DiscoveryRepository {
     }
     final dated = [
       for (final s in _startups)
-        if (s.isPublic && s.createdAt != null && !excludeIds.contains(s.id)) s,
+        if (s.isListed && s.createdAt != null && !excludeIds.contains(s.id)) s,
     ]..sort((a, b) => b.createdAt!.compareTo(a.createdAt!));
     return [
       for (final s in dated.take(4))

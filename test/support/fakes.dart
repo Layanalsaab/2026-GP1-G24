@@ -513,17 +513,83 @@ class FakeStartupRepository implements StartupRepository {
   @override
   Future<List<Startup>> fetchMemberStartups() async => List.of(memberOf);
 
+  /// Startups left with "Keep my name as Founder (former)" ticked.
+  final List<String> leftKeepingName = [];
+
   @override
-  Future<void> leave(Startup startup) async {
+  Future<void> leave(Startup startup, {bool keepFounderName = false}) async {
     left.add(startup.id);
+    if (keepFounderName) leftKeepingName.add(startup.id);
     memberOf.removeWhere((s) => s.id == startup.id);
+    startups.removeWhere((s) => s.id == startup.id);
   }
 
   @override
   Future<void> leaveAll() async => memberOf.clear();
 
+  /// (startup id, new owner) of every transfer.
+  final List<(String, String)> transfers = [];
+
   @override
-  Future<void> deleteAllMine() async => startups.clear();
+  Future<Startup> transferOwnership(Startup startup, String newOwnerId) async {
+    transfers.add((startup.id, newOwnerId));
+    final roles = {...startup.memberRoles}..remove(newOwnerId);
+    roles[startup.founderId] = 'coFounder';
+    final moved = startup.copyWith(
+      founderId: newOwnerId,
+      foundedBy: startup.originalFounderId,
+      memberRoles: roles,
+    );
+    startups.removeWhere((s) => s.id == startup.id);
+    memberOf.add(moved);
+    return moved;
+  }
+
+  @override
+  Future<Startup> close(Startup startup) async {
+    final closed = startup.copyWith(isClosed: true);
+    _replace(closed);
+    return closed;
+  }
+
+  @override
+  Future<Startup> reopen(Startup startup) async {
+    final open = startup.copyWith(isClosed: false, isPublic: false);
+    _replace(open);
+    return open;
+  }
+
+  void _replace(Startup s) {
+    final i = startups.indexWhere((e) => e.id == s.id);
+    if (i >= 0) startups[i] = s;
+  }
+
+  /// Startups where the signed-in user is "Founder (former)".
+  final List<Startup> former = [];
+
+  @override
+  Future<List<Startup>> fetchFormerStartups() async => List.of(former);
+
+  @override
+  Future<void> removeMyFormerName(String startupId) async =>
+      former.removeWhere((s) => s.id == startupId);
+
+  @override
+  Future<bool> hasAnyStartup() async =>
+      startups.isNotEmpty || memberOf.isNotEmpty;
+
+  /// Account deletion: each owned startup handed over, closed or deleted.
+  bool handedOver = false;
+  AuthFailure? handOverFails;
+
+  @override
+  Future<void> handOverAllMine() async {
+    if (handOverFails != null) throw AuthException(handOverFails!);
+    handedOver = true;
+    startups.clear();
+    memberOf.clear();
+    former.clear();
+  }
 
   @override
   Future<Startup> update(
@@ -587,6 +653,13 @@ class FakeInvitationRepository implements InvitationRepository {
     store[id] = inv;
     inviteIndex.putIfAbsent(email, () => []).add(startup.name);
     return inv;
+  }
+
+  @override
+  Future<void> cancelAllFor(Startup startup) async {
+    for (final m in startup.team) {
+      if (m.invited && m.email.isNotEmpty) await cancel(startup.id, m.email);
+    }
   }
 
   @override

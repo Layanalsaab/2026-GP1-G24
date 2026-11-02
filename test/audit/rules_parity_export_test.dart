@@ -347,11 +347,18 @@ void main() {
         isPublic: false,
       ),
     );
-    await startups.delete(saved);
+    // With co-founders on it the owner can't delete it: ownership goes to a
+    // joined co-founder, and the old owner stays as a co-founder.
+    final current = Startup.fromMap(
+      saved.id,
+      await db.getDocument(FirestoreCollections.startups, saved.id),
+    )!;
+    await startups.transferOwnership(current, 'm0');
 
-    // Zero amounts and the smallest texts.
+    // Zero amounts and the smallest texts; nobody else on it, so the owner
+    // can delete it.
     db.scenario = 'startup: smallest everything';
-    await startups.create(
+    final smallest = await startups.create(
       Startup(
         id: 'x',
         founderId: 'x',
@@ -376,6 +383,7 @@ void main() {
         foundedYear: 1900,
       ),
     );
+    await startups.delete(smallest);
 
     // -------------------------------------------------- the team and invites
     db.scenario = 'team: invite, accept, rename, leave';

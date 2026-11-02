@@ -101,8 +101,11 @@ class InvitationRepository {
     }
     // A joined person stays; a declined one is not invited again behind the
     // founder's back (removing the card and adding it again does that).
-    if (existing.status == InvitationStatus.accepted ||
-        existing.status == InvitationStatus.declined) {
+    // Somebody who joined and then LEFT (or was removed) can be invited
+    // again: their old "accepted" invitation turns pending.
+    if (existing.status == InvitationStatus.declined ||
+        (existing.status == InvitationStatus.accepted &&
+            await _stillOnTeam(existing, startup))) {
       return existing;
     }
     // Pending, cancelled or declined: pending again with the current words.
@@ -130,6 +133,51 @@ class InvitationRepository {
           : false,
       lastSentAt: existing.lastSentAt,
     );
+  }
+
+  /// The person who accepted [invitation] is still on the startup's team.
+  /// Read from the STORED startup: [startup] may be a copy loaded before
+  /// they joined (the editor was open), and treating them as gone would turn
+  /// their accepted invitation back into a pending one.
+  Future<bool> _stillOnTeam(Invitation invitation, Startup startup) async {
+    Startup current;
+    try {
+      current =
+          Startup.fromMap(
+            startup.id,
+            await _firestore.getDocument(
+              FirestoreCollections.startups,
+              startup.id,
+            ),
+          ) ??
+          startup;
+    } catch (_) {
+      // Can't check (offline): keep the accepted invitation as it is.
+      return true;
+    }
+    final uid = invitation.acceptedBy;
+    if (uid != null && uid.isNotEmpty) {
+      return uid == current.founderId || current.memberRoles.containsKey(uid);
+    }
+    // Older invitations don't say who accepted: a joined card with that
+    // e-mail means they are still there.
+    return current.team.any(
+      (m) => !m.invited && m.email == invitation.emailLower,
+    );
+  }
+
+  /// Cancels the invitation of everybody invited to [startup] who hasn't
+  /// joined yet (before the startup is deleted or closed), so nobody is asked
+  /// to join a startup they can't join. Best effort per person.
+  Future<void> cancelAllFor(Startup startup) async {
+    for (final m in startup.team) {
+      if (!m.invited || m.email.trim().isEmpty) continue;
+      try {
+        await cancel(startup.id, m.email);
+      } catch (e) {
+        debugPrint('Could not cancel the invitation of ${m.email}: $e');
+      }
+    }
   }
 
   /// The team removed the person before they joined.
@@ -253,6 +301,8 @@ class InvitationRepository {
         {
           'memberIds': _firestore.arrayUnion([uid]),
           'memberRoles.$uid': invitation.role,
+          // The rules protect the joined co-founders through this list.
+          if (invitation.isCoFounder) 'coFounderIds': _firestore.arrayUnion([uid]),
           'teamMembers': ?team,
           'updatedAt': _firestore.serverTimestamp(),
         },

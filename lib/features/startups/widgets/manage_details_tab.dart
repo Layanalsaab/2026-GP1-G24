@@ -606,6 +606,7 @@ class _Team extends StatelessWidget {
             myRole: myRole,
             startupName: s.name,
             startupId: s.id,
+            ownerId: s.founderId,
           ),
         ],
       ],
@@ -620,6 +621,7 @@ class _MemberCard extends StatelessWidget {
     required this.myRole,
     this.startupName = '',
     this.startupId,
+    this.ownerId,
   });
 
   final TeamMember member;
@@ -627,6 +629,9 @@ class _MemberCard extends StatelessWidget {
   final StartupRole myRole;
   final String startupName;
   final String? startupId;
+
+  /// The startup's owner (tagged "Co-founder · Owner" once handed over).
+  final String? ownerId;
 
   /// A person who joined (or the founder) has a profile to open; one who is
   /// still Invited, Not sent or Declined has none yet.
@@ -686,7 +691,7 @@ class _MemberCard extends StatelessWidget {
                         weight: FontWeight.w600,
                       ),
                     ),
-                    ...teamTagsOf(member, isYou: false),
+                    ...teamTagsOf(member, isYou: false, ownerId: ownerId),
                   ],
                 ),
                 Text(

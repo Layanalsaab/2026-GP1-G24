@@ -13,6 +13,7 @@ import '../view_models/startup_steps_view_model.dart';
 import '../widgets/founder_ui.dart';
 import '../widgets/manage_details_tab.dart';
 import '../widgets/startup_step_body.dart';
+import '../widgets/view_only_banner.dart';
 import 'my_startups_screen.dart';
 
 /// Which flow the 4-step startup form is in.
@@ -39,7 +40,13 @@ class StartupStepsScreen extends StatefulWidget {
     this.startup,
     this.draft,
     this.onlySection,
+    this.lostStartup = false,
   }) : assert(mode != StartupStepsMode.edit || startup != null);
+
+  /// Onboarding opened because the founder no longer has a startup (they
+  /// deleted or left their last one, or were removed from it): a note on the
+  /// first step says why.
+  final bool lostStartup;
 
   final StartupStepsMode mode;
 
@@ -55,10 +62,14 @@ class StartupStepsScreen extends StatefulWidget {
   final int? onlySection;
 
   /// Founder onboarding: replaces the whole stack (forward transition).
-  static void openOnboarding(BuildContext context) {
+  /// [lostStartup] adds the "You no longer have a startup" note.
+  static void openOnboarding(BuildContext context, {bool lostStartup = false}) {
     AppNav.reset(
       context,
-      const StartupStepsScreen(mode: StartupStepsMode.onboarding),
+      StartupStepsScreen(
+        mode: StartupStepsMode.onboarding,
+        lostStartup: lostStartup,
+      ),
       kind: RouteKind.forward,
       greenHeader: true,
     );
@@ -350,6 +361,12 @@ class _StartupStepsScreenState extends State<StartupStepsScreen> {
               ),
             ),
             children: [
+              // Back in "Add your startup" after losing the last one.
+              if (widget.lostStartup && _fromLogin && step == 0)
+                const ViewOnlyBanner.notice(
+                  title: FounderToolsStrings.lostStartupTitle,
+                  message: FounderToolsStrings.lostStartupMessage,
+                ),
               AuthCard(
                 child: TabPaneSlide(
                   index: step,

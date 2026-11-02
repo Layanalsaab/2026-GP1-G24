@@ -99,7 +99,15 @@ class _MainScreenState extends State<MainScreen> {
       if (!mounted) return;
       _session.setMemberRoles(roles);
       _session.setMemberStartupIds(member);
-      _vm.setOwnStartups(mine, alsoHide: member);
+      // "Matches for" lists the startups the user owns, but not closed
+      // ones (they are not raising); every startup of theirs stays hidden.
+      _vm.setOwnStartups(
+        [
+          for (final s in mine)
+            if (!s.isClosed) s,
+        ],
+        alsoHide: {...member, for (final s in mine) s.id},
+      );
     } catch (_) {
       // Offline: the lists simply do not hide anything.
     }

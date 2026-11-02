@@ -232,10 +232,15 @@ class StartupProfilePane extends StatelessWidget {
             role: '',
             contribution: '',
             isFounder: true,
-            uid: s.founderId,
+            uid: s.originalFounderId,
           ),
         );
       }
+    }
+    // The founder after she left, when she kept her name on the team.
+    final former = viewModel.formerFounder;
+    if (former != null && !team.any((m) => m.uid == former.uid)) {
+      team.insert(0, former);
     }
     int rank(TeamMember m) => m.isFounder ? 0 : (m.coFounder ? 1 : 2);
     final shown = [
@@ -275,6 +280,7 @@ class StartupProfilePane extends StatelessWidget {
               _PersonRow(
                 member: m,
                 isYou: me != null && m.uid == me,
+                ownerId: viewModel.startup.founderId,
                 // Invited people (shown only to the team) are not tappable.
                 onTap: m.invited && !m.isFounder
                     ? null
@@ -649,11 +655,15 @@ class _PersonRow extends StatelessWidget {
     required this.member,
     required this.isYou,
     required this.onTap,
+    this.ownerId,
   });
 
   final TeamMember member;
   final bool isYou;
   final VoidCallback? onTap;
+
+  /// The startup's owner (tagged "Co-founder · Owner" once handed over).
+  final String? ownerId;
 
   @override
   Widget build(BuildContext context) {
@@ -687,7 +697,7 @@ class _PersonRow extends StatelessWidget {
                       weight: FontWeight.w700,
                     ).copyWith(decoration: TextDecoration.none),
                   ),
-                  ...teamTagsOf(member, isYou: isYou),
+                  ...teamTagsOf(member, isYou: isYou, ownerId: ownerId),
                 ],
               ),
               if (role.isNotEmpty)

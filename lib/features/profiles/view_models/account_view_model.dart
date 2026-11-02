@@ -42,6 +42,10 @@ class AccountViewModel extends ChangeNotifier with SafeNotifier {
   /// are added until the invites exist.
   List<MyStartupEntry> memberEntries = const [];
 
+  /// The startups where the founder kept her name after leaving ("Founder
+  /// (former)"), public ones only.
+  List<Startup> formerStartups = const [];
+
   /// Every startup of the founder's profile, each with their role in it.
   List<MyStartupEntry> get startupEntries => [
     for (final s in startups)
@@ -141,9 +145,29 @@ class AccountViewModel extends ChangeNotifier with SafeNotifier {
       startups = await _startups.fetchMyStartups();
       _session.setOwnStartupIds(startups.map((s) => s.id));
       memberEntries = await _loadMemberEntries();
+      try {
+        formerStartups = await _startups.fetchFormerStartups();
+      } catch (_) {
+        // Only the "Founder (former)" entries are missing.
+      }
       notifyListeners();
     } catch (_) {
       // Keep the list as it is.
+    }
+  }
+
+  /// "Remove my name" on a "Founder (former)" entry. False when it failed.
+  Future<bool> removeFormerName(String startupId) async {
+    try {
+      await _startups.removeMyFormerName(startupId);
+      formerStartups = [
+        for (final s in formerStartups)
+          if (s.id != startupId) s,
+      ];
+      notifyListeners();
+      return true;
+    } catch (_) {
+      return false;
     }
   }
 
@@ -168,7 +192,7 @@ class AccountViewModel extends ChangeNotifier with SafeNotifier {
   /// Leave a startup I belong to (from the profile): the same logic as My
   /// Startups. A real startup drops only my own membership; the sample ones
   /// (interface only) just disappear locally.
-  Future<void> leave(String startupId) async {
+  Future<void> leave(String startupId, {bool alreadyLeft = false}) async {
     final entry = memberEntries
         .where((e) => e.startup.id == startupId)
         .firstOrNull;
@@ -182,7 +206,8 @@ class AccountViewModel extends ChangeNotifier with SafeNotifier {
       ...session.memberStartupIds.where((id) => id != startupId),
     });
     notifyListeners();
-    if (!PrototypeSeed.isSampleStartup(startupId)) {
+    // Manage already left it ([alreadyLeft]): only the list changes.
+    if (!alreadyLeft && !PrototypeSeed.isSampleStartup(startupId)) {
       try {
         await _startups.leave(entry.startup);
       } catch (_) {
