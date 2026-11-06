@@ -773,5 +773,18 @@ service cloud.firestore {
         && request.resource.data.diff(resource.data).affectedKeys()
              .hasOnly(['seenByFounder']);
     }
+
+    // -------------------------------------------------------------- tickets
+    // An investor's investment tickets (tickets/{investorId}-T1, ...). Any
+    // signed-in user can read them, so matching can use them. Only the admin
+    // scripts write them for now (tools/investor_tickets).
+    // When investors can create tickets in the app, replace `allow write`
+    // with create / update / delete for their own tickets only
+    // (the ticket's investorId == request.auth.uid). Until then the app gets
+    // PERMISSION_DENIED when it writes here.
+    match /tickets/{ticketId} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
   }
 }
