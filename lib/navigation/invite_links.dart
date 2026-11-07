@@ -6,10 +6,13 @@ import 'package:flutter/foundation.dart';
 import '../app_constants/app_config.dart';
 import '../features/startups/screens/invite_screen.dart';
 import '../shared_ui/widgets/overlays/app_toast.dart';
+import 'share_links.dart';
 
 /// The "Open Start.sa" link of an invitation e-mail
 /// (`https://<site>/invite?i=<invitation id>`). Android opens the app for it
-/// when the app is installed; the app shows the invite screen.
+/// when the app is installed; the app shows the invite screen. The links
+/// people share (a startup or an investor, see [ShareLinks]) arrive the same
+/// way.
 ///
 /// A link that arrives while the app is still starting (the splash) is kept
 /// and opened by [appReady], once the first real screen is up.
@@ -17,6 +20,7 @@ class InviteLinks {
   InviteLinks._();
 
   static String? _pending;
+  static ShareLinkTarget? _pendingShare;
   static bool _ready = false;
   static StreamSubscription<Uri>? _subscription;
 
@@ -43,6 +47,13 @@ class InviteLinks {
   }
 
   static void handle(Uri uri) {
+    // A shared startup / investor link.
+    final share = ShareLinks.parse(uri);
+    if (share != null) {
+      _pendingShare = share;
+      if (_ready) _openPending();
+      return;
+    }
     final id = idFrom(uri);
     if (id == null) return;
     _pending = id;
@@ -56,6 +67,11 @@ class InviteLinks {
   }
 
   static void _openPending() {
+    final share = _pendingShare;
+    if (share != null && AppToast.navigatorKey.currentContext != null) {
+      _pendingShare = null;
+      ShareLinks.open(share);
+    }
     final id = _pending;
     final context = AppToast.navigatorKey.currentContext;
     if (id == null || context == null) return;

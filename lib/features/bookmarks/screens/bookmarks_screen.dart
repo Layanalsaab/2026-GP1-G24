@@ -203,8 +203,7 @@ class _BookmarkCard extends StatelessWidget {
       index: index,
       bookmarked: true,
       onTap: () => openHomeItem(context, item),
-      onShare: () =>
-          ShareLink.shareKey(context, item.bookmarkKey, title: item.name),
+      onShare: () => ShareLink.shareItem(context, item),
       onBookmark: onRemove,
     );
   }

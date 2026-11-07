@@ -1,3 +1,5 @@
+import '../../../shared_ui/widgets/cards/pin_city.dart';
+
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -198,19 +200,7 @@ class ProfileHead extends StatelessWidget {
             child: Row(
               children: [
                 if (hasCity) ...[
-                  const AppIcon.filled(
-                    AppIcons.pin,
-                    size: 15,
-                    color: AppColors.metaText,
-                  ),
-                  const SizedBox(width: 6),
-                  Flexible(
-                    child: Text(
-                      city!.trim(),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
+                  Flexible(child: PinCity(city!.trim())),
                   const SizedBox(width: 6),
                   Container(
                     width: 3,

@@ -19,6 +19,7 @@ import 'package:startsa/helpers/app_session.dart';
 import 'package:startsa/models/funding_round.dart';
 import 'package:startsa/models/list_entries.dart';
 import 'package:startsa/models/startup_enums.dart';
+import 'package:startsa/shared_ui/icons/app_icons.dart';
 import 'package:startsa/shared_ui/theme/app_theme.dart';
 import 'package:startsa/shared_ui/widgets/headers/tabbed_header.dart';
 import 'package:startsa/shared_ui/widgets/overlays/app_toast.dart';
@@ -133,13 +134,14 @@ void main() {
           vm.raisedError,
           'Please enter an amount. Enter 0 if you haven’t raised anything yet.',
         );
-        // Series A: over 7,500,000 up to 55,000,000.
-        expect(vm.amountHint, 'Series A: over SAR 7,500,000 to 55,000,000');
+        // At least SAR 1,000, whatever the round type; no maximum.
+        vm.amount.text = '999';
+        expect(vm.amountError, 'The amount must be at least SAR 1,000.');
+        expect(vm.formValid, isFalse);
+        vm.amount.text = '1,000';
+        expect(vm.amountError, isNull);
         vm.amount.text = '1,000,000';
-        expect(
-          vm.amountError,
-          'That amount isn’t in the Series A range. Enter more than SAR 7,500,000 and up to SAR 55,000,000.',
-        );
+        expect(vm.amountError, isNull, reason: 'no Series A range any more');
         vm.amount.text = '10,000,000';
         vm.raised.text = '12,000,000';
         expect(
@@ -259,11 +261,9 @@ void main() {
       await t.enterText(fields.at(fields.evaluate().length - 2), '1200000');
       await t.pump();
       expect(find.text('1,200,000'), findsOneWidget);
-      // Series B: over 55,000,000 up to 190,000,000.
-      expect(
-        find.textContaining('isn’t in the Series B range'),
-        findsOneWidget,
-      );
+      // No range per round type: SAR 1,200,000 is fine for Series B.
+      expect(find.textContaining('range'), findsNothing);
+      expect(find.textContaining('at least SAR 1,000'), findsNothing);
       await t.enterText(fields.at(fields.evaluate().length - 2), '60000000');
       await t.enterText(fields.last, '0');
       await t.pump();
@@ -372,7 +372,7 @@ void main() {
       expect(find.text('SAR 200,000'), findsOneWidget);
       expect(find.text('40% of the target raised'), findsOneWidget);
       expect(find.text('Investors'), findsOneWidget);
-      expect(find.text('Who is in this round'), findsOneWidget);
+      expect(find.text('Who invested in this round'), findsOneWidget);
       expect(find.text('Ahmad Hassan'), findsOneWidget);
       expect(find.text('Matches'), findsOneWidget);
       expect(find.text('Investors that fit this round'), findsOneWidget);
@@ -471,7 +471,13 @@ void main() {
       expect(find.textContaining('Matched Investor'), findsNWidgets(5));
       expect(find.text('100% match'), findsNWidgets(5));
       expect(find.text('Same sector & stage'), findsNWidgets(5));
-      expect(find.text('Angel Investor · Riyadh'), findsAtLeastNWidgets(5));
+      // "Angel Investor · [pin] Riyadh" on every match card.
+      expect(find.text('Angel Investor'), findsAtLeastNWidgets(5));
+      expect(find.text('Riyadh'), findsAtLeastNWidgets(5));
+      expect(
+        find.byWidgetPredicate((w) => w is AppIcon && w.path == AppIcons.pin),
+        findsAtLeastNWidgets(5),
+      );
       // Tapping one opens that investor.
       await t.ensureVisible(find.text('Matched Investor 1'));
       await t.pumpAndSettle();
@@ -496,9 +502,10 @@ void main() {
       expect(find.text('200,000'), findsOneWidget);
       expect(find.text('Edit round'), findsNothing);
       final fields = find.byType(TextField);
-      // (The sample's SAR 500,000 Seed is below the real Seed range, so the
-      // range error shows until the amount is fixed.)
-      expect(find.textContaining('isn’t in the Seed range'), findsOneWidget);
+      // (No range per round type any more: the sample's SAR 500,000 Seed is
+      // fine.)
+      expect(find.textContaining('range'), findsNothing);
+      expect(find.textContaining('at least SAR 1,000'), findsNothing);
       await t.enterText(fields.at(fields.evaluate().length - 2), '3000000');
       await t.enterText(fields.last, '300000');
       await t.pump();

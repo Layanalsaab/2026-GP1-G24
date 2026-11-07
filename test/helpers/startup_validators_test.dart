@@ -83,8 +83,12 @@ void main() {
     test('digits are read through the thousands separators', () {
       expect(StartupValidators.money('1,200,000'), 1200000);
       expect(StartupValidators.money(''), isNull);
-      expect(StartupValidators.funding('0'), ValidationStrings.funding);
+      expect(StartupValidators.funding(''), ValidationStrings.funding);
+      expect(StartupValidators.funding('0'), ValidationStrings.fundingMin);
+      expect(StartupValidators.funding('999'), ValidationStrings.fundingMin);
+      expect(StartupValidators.funding('1,000'), isNull);
       expect(StartupValidators.funding('500,000'), isNull);
+      expect(StartupValidators.funding('900,000,000'), isNull);
     });
 
     test('valuation is required but 0 is allowed', () {

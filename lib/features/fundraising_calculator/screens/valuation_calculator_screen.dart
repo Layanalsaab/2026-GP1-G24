@@ -9,7 +9,7 @@ import '../../startups/widgets/manage_card.dart';
 import '../view_models/valuation_calculator_view_model.dart';
 
 /// Valuation calculator (docs/05 D4): inputs card, green result card,
-/// "Ownership after this raise" card and the note. From Manage the boxes
+/// "Ownership after this round" card and the note. From Manage the boxes
 /// are filled from the open round and the startup's valuation, from a
 /// request they are filled from the request. Nothing is saved.
 class ValuationCalculatorScreen extends StatefulWidget {
@@ -236,7 +236,7 @@ class _InputsCard extends StatelessWidget {
           ),
           const SizedBox(height: 18),
           Text(
-            FounderToolsStrings.thisRaise,
+            FounderToolsStrings.thisRound,
             style: AppText.sans(
               size: 12,
               weight: FontWeight.w700,

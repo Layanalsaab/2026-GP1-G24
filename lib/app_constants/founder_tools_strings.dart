@@ -217,10 +217,10 @@ class FounderToolsStrings {
     'Other',
   ];
   static const visibilityLabel = 'Visibility';
-  static const visibilityPublicTitle = 'Public';
+  static const visibilityPublicTitle = 'Public startup';
   static const visibilityPublicText =
       'Anyone on Start.sa can find this startup in the Hub and Explore.';
-  static const visibilityPrivateTitle = 'Private';
+  static const visibilityPrivateTitle = 'Private startup';
   static const visibilityPrivateText =
       'Only your team can see this startup. It won’t appear in the Hub or Explore.';
   static const yes = 'Yes';
@@ -233,7 +233,9 @@ class FounderToolsStrings {
   static const tabRounds = 'Rounds';
   static const tabOverview = 'Overview';
   static const tabRequests = 'Requests';
-  static const tabInterest = 'Interest';
+  static const tabInterest = 'EOI';
+  static const interestTitle = 'Expressions of interest';
+  static const interestSubtitle = 'Guests who are interested in your startup';
   static const tabSettings = 'Settings';
   static const editStartup = 'Edit startup';
   static const preview = 'Preview';
@@ -275,7 +277,6 @@ class FounderToolsStrings {
   static const interestEmpty = 'No new expressions of interest.';
   static const interestAllEmpty = 'No expressions of interest yet.';
   static const replyLabel = 'Reply';
-  static const publicProfile = 'Public profile';
   // Manage -> Settings shows the same two texts as the Startup Overview step.
   static const publicProfileOn = visibilityPublicText;
   static const publicProfileOff = visibilityPrivateText;
@@ -380,7 +381,7 @@ class FounderToolsStrings {
 
   // ---- Valuation calculator ----
   static const calcTitle = 'Valuation Calculator';
-  static const thisRaise = 'THIS RAISE';
+  static const thisRound = 'THIS ROUND';
   static const fundingToRaise = 'Funding to raise';
   static const equityToGive = 'Equity to give up';
   static const currentOwnership = 'Your current ownership';
@@ -388,7 +389,7 @@ class FounderToolsStrings {
   static const preMoney = 'Pre-money valuation';
   static const valueOfShare = 'Value of your share';
   static const fillAbove = 'Fill in the fields above';
-  static const ownershipAfter = 'Ownership after this raise';
+  static const ownershipAfter = 'Ownership after this round';
   static const youFounder = 'You (founder)';
   static const otherOwners = 'Other existing owners';
   static const newInvestors = 'New investors';
@@ -418,7 +419,7 @@ class FounderToolsStrings {
   static const calcInfo = <String, (String, String)>{
     'f': (
       'Funding to raise',
-      'The total money you want investors to put into your startup in this raise. It starts at your open round’s amount; change it to test another amount or an investor’s offer.',
+      'The total money you want investors to put into your startup in this round. It starts at your open round’s amount; change it to test another amount or an investor’s offer.',
     ),
     'e': (
       'Equity to give up',
@@ -426,7 +427,7 @@ class FounderToolsStrings {
     ),
     'o': (
       'Your current ownership',
-      'How much of the company you own today, before this raise. It starts at 100% when you have no co-founders and no earlier rounds. Investors in this round are not counted here: they are the new investors.',
+      'How much of the company you own today, before this round. It starts at 100% when you have no co-founders and no earlier rounds. Investors in this round are not counted here: they are the new investors.',
     ),
     'post': (
       'Post-money valuation',
@@ -442,7 +443,7 @@ class FounderToolsStrings {
     ),
     'change': ('Your dilution', 'How much your ownership drops in this round.'),
     'own': (
-      'Ownership after this raise',
+      'Ownership after this round',
       'The new investors get the share you give up. Everyone who already owns part of the company keeps the same slice of the rest, so each of their shares gets a little smaller.',
     ),
   };

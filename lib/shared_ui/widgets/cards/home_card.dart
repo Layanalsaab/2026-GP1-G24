@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../icons/app_icons.dart';
 import '../../motion/motion.dart';
 import '../../theme/app_colors.dart';
+import 'pin_city.dart';
 import '../../theme/app_metrics.dart';
 import '../../theme/app_text.dart';
 import 'avatars.dart';
@@ -297,27 +298,7 @@ class _NameBlock extends StatelessWidget {
           children: [
             TagChip(tag),
             const SizedBox(width: 8),
-            Flexible(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const AppIcon.filled(
-                    AppIcons.pin,
-                    size: 13,
-                    color: AppColors.hint,
-                  ),
-                  const SizedBox(width: 3),
-                  Flexible(
-                    child: Text(
-                      city,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppText.sans(size: 13, color: AppColors.metaText),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            Flexible(child: PinCity(city)),
           ],
         ),
       ],

@@ -87,6 +87,36 @@ void main() {
     expect(t.takeException(), isNull);
   });
 
+  testWidgets(
+    'Startup Overview: the Visibility card says Public / Private startup',
+    (t) async {
+      final vm = await _pump(t, 0, size: const Size(360, 2400));
+      await t.pump();
+      expect(find.text('Visibility'), findsOneWidget);
+      // Public by default; the title follows the switch.
+      expect(vm.isPublic, isTrue);
+      expect(find.text('Public startup'), findsOneWidget);
+      expect(
+        find.text(
+          'Anyone on Start.sa can find this startup in the Hub and Explore.',
+        ),
+        findsOneWidget,
+      );
+      vm.setPublic(false);
+      await t.pump();
+      expect(find.text('Private startup'), findsOneWidget);
+      expect(find.text('Public startup'), findsNothing);
+      expect(
+        find.text(
+          'Only your team can see this startup. It won’t appear in the Hub or Explore.',
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Public profile'), findsNothing);
+      expect(find.text('Private profile'), findsNothing);
+    },
+  );
+
   testWidgets('Startup Ask: boxes reveal their own questions', (t) async {
     await _pump(t, StartupStepsViewModel.askStep, size: const Size(360, 1400));
     expect(find.text('Funding'), findsOneWidget);
@@ -99,7 +129,9 @@ void main() {
       find.textContaining('How much are you raising?', findRichText: true),
       findsOneWidget,
     );
-    expect(find.text('Pre-seed: SAR 150,000 to 2,000,000'), findsOneWidget);
+    // No per-stage range hint under the amount any more.
+    expect(find.textContaining('SAR 150,000'), findsNothing);
+    expect(find.textContaining(' range'), findsNothing);
     expect(
       find.textContaining('already raised', findRichText: true),
       findsOneWidget,

@@ -18,6 +18,7 @@ import 'package:startsa/features/startups/view_models/rounds_view_model.dart';
 import 'package:startsa/helpers/app_session.dart';
 import 'package:startsa/models/app_user.dart';
 import 'package:startsa/models/list_entries.dart';
+import 'package:startsa/shared_ui/icons/app_icons.dart';
 import 'package:startsa/shared_ui/theme/app_theme.dart';
 import 'package:startsa/shared_ui/widgets/headers/tabbed_header.dart';
 import 'package:startsa/shared_ui/widgets/overlays/app_toast.dart';
@@ -197,7 +198,19 @@ void main() {
       AppSession.instance.signIn(_investor);
       await _pump(t, StartupProfileScreen(startup: PrototypeSeed.rafeeq));
       expect(find.text('Rafeeq Health'), findsWidgets);
-      expect(find.text('HealthTech · Pre-seed · Riyadh'), findsOneWidget);
+      // The one sub-line, with the location pin before the city.
+      expect(
+        find.bySemanticsLabel('HealthTech · Pre-seed · Riyadh'),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining('HealthTech · Pre-seed · ', findRichText: true),
+        findsOneWidget,
+      );
+      expect(
+        find.byWidgetPredicate((w) => w is AppIcon && w.path == AppIcons.pin),
+        findsOneWidget,
+      );
       for (final tab in ['Overview', 'Business', 'Team', 'Funding']) {
         expect(_tab(tab), findsOneWidget, reason: tab);
       }

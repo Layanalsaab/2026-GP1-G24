@@ -138,8 +138,7 @@ class HomeItemCard extends StatelessWidget {
           onTap: onTap ?? () => openHomeItem(context, item),
           // The share sheet (the teammate's change), with the startup's name
           // as the title.
-          onShare: () =>
-              ShareLink.shareKey(context, item.bookmarkKey, title: item.name),
+          onShare: () => ShareLink.shareItem(context, item),
           onBookmark: canBookmark
               ? () => BookmarkRepository.instance.toggle(item.bookmarkKey)
               : null,

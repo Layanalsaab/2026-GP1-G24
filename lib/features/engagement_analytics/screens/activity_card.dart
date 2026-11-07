@@ -24,13 +24,7 @@ class ActivityCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Semantics(
-                header: true,
-                child: Text(
-                  FounderToolsStrings.activity,
-                  style: AppText.sans(size: 17, weight: FontWeight.w700),
-                ),
-              ),
+              const ManageCardTitle(FounderToolsStrings.activity),
               if (a == null)
                 const ManageEmptyText(FounderToolsStrings.activityEmpty)
               else ...[

@@ -38,6 +38,14 @@
       {
         "source": "/invite",
         "destination": "/invite/index.html"
+      },
+      {
+        "source": "/startup/**",
+        "destination": "/open/index.html"
+      },
+      {
+        "source": "/investor/**",
+        "destination": "/open/index.html"
       }
     ],
     "headers": [

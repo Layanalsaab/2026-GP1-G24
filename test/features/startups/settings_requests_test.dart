@@ -82,9 +82,9 @@ void main() {
   });
 
   group('Settings tab', () {
-    testWidgets('founder: Public profile and Delete, no Leave', (t) async {
+    testWidgets('founder: Public startup and Delete, no Leave', (t) async {
       await _open(t);
-      expect(find.text('Public profile'), findsOneWidget);
+      expect(find.text('Public startup'), findsOneWidget);
       expect(find.text('Delete startup'), findsOneWidget);
       expect(find.text('Leave startup'), findsNothing);
       expect(
@@ -93,9 +93,31 @@ void main() {
       );
     });
 
-    testWidgets('co-founder: Public profile and Leave, no Delete', (t) async {
+    testWidgets('the visibility title follows the switch', (t) async {
+      await _open(t);
+      const publicText =
+          'Anyone on Start.sa can find this startup in the Hub and Explore.';
+      const privateText =
+          'Only your team can see this startup. It won’t appear in the Hub or Explore.';
+      expect(find.text('Public startup'), findsOneWidget);
+      expect(find.text(publicText), findsOneWidget);
+      expect(find.text('Private startup'), findsNothing);
+      await t.tap(find.text('Public startup'));
+      await t.pumpAndSettle();
+      expect(find.text('Private startup'), findsOneWidget);
+      expect(find.text(privateText), findsOneWidget);
+      expect(find.text('Public startup'), findsNothing);
+      expect(find.text('Public profile'), findsNothing);
+      expect(find.text('Private profile'), findsNothing);
+      await t.tap(find.text('Private startup'));
+      await t.pumpAndSettle();
+      expect(find.text('Public startup'), findsOneWidget);
+      expect(find.text(publicText), findsOneWidget);
+    });
+
+    testWidgets('co-founder: Public startup and Leave, no Delete', (t) async {
       await _open(t, role: StartupRole.coFounder);
-      expect(find.text('Public profile'), findsOneWidget);
+      expect(find.text('Public startup'), findsOneWidget);
       expect(find.text('Delete startup'), findsNothing);
       expect(find.text('Leave startup'), findsOneWidget);
       expect(
@@ -106,7 +128,7 @@ void main() {
 
     testWidgets('team member: only Leave', (t) async {
       await _open(t, role: StartupRole.member);
-      expect(find.text('Public profile'), findsNothing);
+      expect(find.text('Public startup'), findsNothing);
       expect(find.text('Delete startup'), findsNothing);
       expect(find.text('Leave startup'), findsOneWidget);
       expect(
@@ -152,7 +174,7 @@ void main() {
       );
       expect(find.text('Reopen startup'), findsOneWidget);
       expect(find.text('Leave startup'), findsOneWidget);
-      expect(find.text('Public profile'), findsNothing);
+      expect(find.text('Public startup'), findsNothing);
       expect(find.text('Close startup'), findsNothing);
       expect(
         find.text(
@@ -220,7 +242,7 @@ void main() {
         'Dashboard',
         'Details',
         'Rounds',
-        'Interest',
+        'EOI',
         'Settings',
       ]) {
         expect(
@@ -238,7 +260,7 @@ void main() {
     testWidgets('a team member sees interest without the reply button', (
       t,
     ) async {
-      await _open(t, role: StartupRole.member, tab: 'Interest');
+      await _open(t, role: StartupRole.member, tab: 'EOI');
       expect(find.text('Noura Alharbi'), findsOneWidget);
       expect(find.bySemanticsLabel(RegExp('^Reply')), findsNothing);
     });

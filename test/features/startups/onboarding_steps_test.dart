@@ -145,39 +145,21 @@ void main() {
   });
 
   group('Part 5: Startup Ask', () {
-    test('round amount limits', () {
-      expect(RoundLimits.allows(StartupStage.preSeed, 150000), isTrue);
-      expect(RoundLimits.allows(StartupStage.preSeed, 149999), isFalse);
-      expect(RoundLimits.allows(StartupStage.preSeed, 2000000), isTrue);
-      expect(RoundLimits.allows(StartupStage.seed, 2000000), isFalse);
-      expect(RoundLimits.allows(StartupStage.seed, 7500000), isTrue);
-      expect(RoundLimits.allows(StartupStage.seriesA, 55000000), isTrue);
-      expect(RoundLimits.allows(StartupStage.seriesB, 190000001), isFalse);
-      expect(RoundLimits.allows(StartupStage.seriesC, 190000001), isTrue);
-      expect(
-        RoundLimits.hint(StartupStage.preSeed),
-        'Pre-seed: SAR 150,000 to 2,000,000',
-      );
-      expect(
-        RoundLimits.hint(StartupStage.seed),
-        'Seed: over SAR 2,000,000 to 7,500,000',
-      );
-      expect(
-        RoundLimits.hint(StartupStage.seriesC),
-        'Series C: over SAR 190,000,000',
-      );
-      expect(
-        RoundLimits.error(StartupStage.preSeed, 5),
-        'That amount isn’t in the Pre-seed range. Enter between SAR 150,000 and SAR 2,000,000.',
-      );
-      expect(
-        RoundLimits.error(StartupStage.seed, 9000000),
-        'That amount isn’t in the Seed range. Enter more than SAR 2,000,000 and up to SAR 7,500,000.',
-      );
-      expect(
-        RoundLimits.error(StartupStage.seriesC, 1),
-        'That amount isn’t in the Series C range. Enter more than SAR 190,000,000.',
-      );
+    test('a round amount only needs to be at least SAR 1,000', () {
+      expect(RoundLimits.min, 1000);
+      // Any round type, any amount from SAR 1,000 up; no maximum.
+      for (final amount in [1000, 5000, 149999, 2000000, 999999999999]) {
+        expect(RoundLimits.allows(amount), isTrue, reason: '$amount');
+        expect(RoundLimits.error(amount), isNull, reason: '$amount');
+      }
+      for (final amount in [0, 1, 999]) {
+        expect(RoundLimits.allows(amount), isFalse, reason: '$amount');
+        expect(
+          RoundLimits.error(amount),
+          'The amount must be at least SAR 1,000.',
+          reason: '$amount',
+        );
+      }
     });
 
     test('nothing is ticked; only the ticked boxes ask questions', () {
@@ -207,22 +189,30 @@ void main() {
       expect(vm.currentComplete, isTrue);
     });
 
-    test('funding amount follows the Stage and says so at once', () {
+    test('funding amount: at least SAR 1,000, any stage, says so at once', () {
+      for (final stage in [StartupStage.preSeed, StartupStage.seriesC]) {
+        final vm = _vm(stage: stage);
+        addTearDown(vm.dispose);
+        vm.toggleLookingFor('Funding');
+        vm.step = StartupStepsViewModel.askStep;
+        vm.funding.text = '999';
+        expect(
+          vm.errorOf(StartupField.funding),
+          'The amount must be at least SAR 1,000.',
+          reason: stage.label,
+        );
+        vm.funding.text = '1,000';
+        expect(vm.errorOf(StartupField.funding), isNull, reason: stage.label);
+        // No range for the stage any more: a small or a huge amount is fine.
+        vm.funding.text = '500,000';
+        expect(vm.errorOf(StartupField.funding), isNull, reason: stage.label);
+        vm.funding.text = '900,000,000';
+        expect(vm.errorOf(StartupField.funding), isNull, reason: stage.label);
+      }
       final vm = _vm(stage: StartupStage.seed);
       addTearDown(vm.dispose);
       vm.toggleLookingFor('Funding');
       vm.step = StartupStepsViewModel.askStep;
-      expect(vm.fundingHint, 'Seed: over SAR 2,000,000 to 7,500,000');
-      vm.funding.text = '5,000';
-      expect(
-        vm.errorOf(StartupField.funding),
-        'That amount isn’t in the Seed range. Enter more than SAR 2,000,000 and up to SAR 7,500,000.',
-      );
-      vm.funding.text = '500,000';
-      expect(
-        vm.errorOf(StartupField.funding),
-        'That amount isn’t in the Seed range. Enter more than SAR 2,000,000 and up to SAR 7,500,000.',
-      );
       vm.funding.text = '3,000,000';
       expect(vm.errorOf(StartupField.funding), isNull);
       vm.raised.text = '4,000,000';

@@ -1,3 +1,4 @@
+import '../../../shared_ui/widgets/cards/pin_city.dart';
 import '../../../data_access/repositories/startup_repository.dart';
 import '../../../shared_ui/widgets/lists/app_refresh.dart';
 
@@ -15,6 +16,7 @@ import '../../../shared_ui/theme/app_text.dart';
 import '../../../shared_ui/widgets/headers/header_buttons.dart';
 import '../../../shared_ui/widgets/headers/tabbed_header.dart';
 import '../../profiles/screens/investor_profile_screen.dart';
+import '../../../helpers/share_link.dart';
 import '../../profiles/widgets/profile_widgets.dart';
 import '../../startups/widgets/view_only_banner.dart';
 import '../view_models/startup_profile_view_model.dart';
@@ -105,8 +107,27 @@ class _StartupProfileScreenState extends State<StartupProfileScreen> {
             imageUrl: s.logoUrl,
             imageData: s.logoData,
           ),
-          subline: Text(
-            _vm.infoLine,
+          // "HealthTech · Pre-seed · [pin] Riyadh": the pin takes the line's
+          // own (light) colour because the header is green.
+          subline: Text.rich(
+            TextSpan(
+              children: [
+                TextSpan(text: '${s.sectorLabel} · ${s.stageLabel} · '),
+                WidgetSpan(
+                  alignment: PlaceholderAlignment.middle,
+                  child: Padding(
+                    padding: const EdgeInsets.only(right: PinCity.gap),
+                    child: AppIcon.filled(
+                      AppIcons.pin,
+                      size: PinCity.pinSize,
+                      color: AppText.onGreenMeta.color,
+                    ),
+                  ),
+                ),
+                TextSpan(text: s.location.label),
+              ],
+            ),
+            semanticsLabel: _vm.infoLine,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: AppText.onGreenMeta,
@@ -127,10 +148,12 @@ class _StartupProfileScreenState extends State<StartupProfileScreen> {
               ),
             if (_vm.showShare)
               GlassIconButton.share(
-                onTap: () => ProfileActions.share(
+                onTap: () => ShareLink.shareStartup(
                   context,
-                  _vm.key,
-                  title: _vm.startup.name,
+                  id: _vm.startup.id,
+                  name: _vm.startup.name,
+                  sector: _vm.startup.sectorLabel,
+                  city: _vm.startup.location.label,
                 ),
               ),
           ],

@@ -327,17 +327,13 @@ class RoundsViewModel extends ChangeNotifier with SafeNotifier {
 
   int? get raisedValue => Formatters.parseMoney(raised.text);
 
-  /// The hint under "How much are you raising?" for the chosen round type.
-  String? get amountHint => RoundLimits.hint(type);
-
-  /// Empty (after "Add round" was tried) or outside the range of the round
-  /// type: the same limits and wording as the Startup Ask step. A number
-  /// outside the range says so at once.
+  /// Empty (after "Add round" was tried) or under SAR 1,000: the same rule
+  /// and wording as the Startup Ask step. A number under the minimum says so
+  /// at once.
   String? get amountError {
     final v = amountValue;
     if (v == null) return tried ? ValidationStrings.funding : null;
-    return RoundLimits.error(type, v) ??
-        (v <= 0 ? ValidationStrings.funding : null);
+    return RoundLimits.error(v);
   }
 
   /// "How much have you already raised in this round?": required (0 is
@@ -353,8 +349,7 @@ class RoundsViewModel extends ChangeNotifier with SafeNotifier {
   bool get formValid =>
       type != null &&
       StartupValidators.money(amount.text) != null &&
-      (amountValue ?? 0) > 0 &&
-      RoundLimits.allows(type, amountValue!) &&
+      RoundLimits.allows(amountValue ?? 0) &&
       raisedValue != null &&
       raisedValue! <= amountValue!;
 

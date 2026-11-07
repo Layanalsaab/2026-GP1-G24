@@ -148,10 +148,12 @@ class _ManageStartupScreenState extends State<ManageStartupScreen> {
   void _toast(String message) => AppToast.show(context, message);
 
   /// Share icon: opens the share sheet for the startup.
-  void _share() => ShareLink.share(
+  void _share() => ShareLink.shareStartup(
     context,
-    ShareLink.startup(_vm.startup.id),
-    title: _vm.startup.name,
+    id: _vm.startup.id,
+    name: _vm.startup.name,
+    sector: _vm.startup.sectorLabel,
+    city: _vm.startup.location.label,
   );
 
   /// The open section of the Details tab (0-based, like the form's steps).

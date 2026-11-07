@@ -101,17 +101,7 @@ class ManageDashboardTab extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Semantics(
-                    header: true,
-                    child: Text(
-                      FounderToolsStrings.associatedTitle,
-                      style: AppText.sans(
-                        size: 19,
-                        height: 26,
-                        weight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
+                  const ManageCardTitle(FounderToolsStrings.associatedTitle),
                   if (investors.isEmpty)
                     Padding(
                       padding: const EdgeInsets.only(top: 8),

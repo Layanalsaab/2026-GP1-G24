@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Start.sa</title>
+  <style>
+    :root { --green:#1f3f27; --moss:#2f5d3a; --cream:#faf8f4; --ink:#1c1f1d; --grey:#5b625d; }
+    * { box-sizing: border-box; }
+    body { margin:0; background:var(--cream); color:var(--ink);
+           font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+           display:flex; min-height:100vh; align-items:center; justify-content:center; padding:20px; }
+    .card { background:#fff; border:1px solid #ebe7df; border-radius:20px; max-width:440px; width:100%;
+            padding:28px 24px; text-align:center; }
+    .logo { width:56px; height:56px; border-radius:16px; margin:0 auto 16px; background:linear-gradient(145deg,#faf3e3,#f2e6c9);
+            display:flex; align-items:center; justify-content:center; color:#7a5a12; font-weight:700; font-size:20px; }
+    h1 { font-size:22px; margin:0 0 6px; overflow-wrap:anywhere; }
+    .on { font-size:14px; color:var(--grey); margin:0 0 18px; }
+    p { font-size:15px; line-height:22px; color:var(--grey); margin:0 0 12px; }
+    /* Shown on Android only (see the script below). */
+    .open { display:none; align-items:center; justify-content:center; width:100%; min-height:56px;
+            margin:6px 0 18px; padding:14px 18px; border-radius:14px; background:#1e7a3c; color:#fff;
+            font-size:17px; font-weight:700; text-decoration:none; }
+    .open:active { background:#17622f; }
+    .android.available .open { display:flex; }
+    .gone .install { display:none; }
+  </style>
+</head>
+<body>
+  <main class="card" id="card">
+    <div class="logo">S</div>
+    <h1 id="title">Start.sa</h1>
+    <p class="on" id="sub"></p>
+
+    <!-- Android only: opens THIS link in the Start.sa app, addressed to the
+         app by its package name. That works even when Android has not
+         verified the App Link (verification only decides who opens a plain
+         https link, not an intent sent straight to the app). If the app is
+         not installed Chrome comes back to this page. The script below fills
+         in the address. -->
+    <a id="open" class="open" href="#">Open in the Start.sa app</a>
+
+    <p class="install">Don’t have the app yet? Install it, then open this link again.</p>
+  </main>
+  <script>
+    (function () {
+      var card = document.getElementById('card');
+      var title = document.getElementById('title');
+      var sub = document.getElementById('sub');
+      var parts = location.pathname.split('/').filter(Boolean);
+      var kind = parts[0] === 'investor' ? 'investor' : 'startup';
+      var id = parts[1] ? decodeURIComponent(parts[1]) : '';
+      var noun = kind === 'investor' ? 'investor' : 'startup';
+
+      if (/Android/i.test(navigator.userAgent)) card.className += ' android';
+
+      // The button opens this same link in the app (package
+      // com.example.startsa); if the app is not installed, Chrome comes back
+      // to this page.
+      document.getElementById('open').href =
+        'intent://startsa-ea49e.web.app/' + kind + '/' + encodeURIComponent(id) +
+        '#Intent;scheme=https;package=com.example.startsa;' +
+        'S.browser_fallback_url=' + encodeURIComponent(location.href) + ';end';
+
+      function gone() {
+        card.className = card.className.replace(' available', '') + ' gone';
+        title.textContent = 'This ' + noun + ' is no longer available.';
+        sub.textContent = '';
+      }
+      function found(name) {
+        card.className += ' available';
+        title.textContent = name;
+        sub.textContent = kind === 'investor' ? 'An investor on Start.sa' : 'A startup on Start.sa';
+      }
+
+      if (!id) { gone(); return; }
+
+      // The public document only: a private or deleted startup is refused or
+      // missing, and then nothing about it is shown.
+      var collection = kind === 'investor' ? 'investors' : 'startups';
+      fetch('https://firestore.googleapis.com/v1/projects/startsa-ea49e/databases/(default)/documents/' +
+            collection + '/' + encodeURIComponent(id))
+        .then(function (r) {
+          if (r.status === 404 || r.status === 403) { gone(); return null; }
+          return r.ok ? r.json() : null;
+        })
+        .then(function (d) {
+          // No answer (not gone): just show the button.
+          if (!d) { if (card.className.indexOf(' gone') < 0) card.className += ' available'; return; }
+          var f = d.fields || {};
+          if (kind === 'startup') {
+            var isPublic = f.isPublic && f.isPublic.booleanValue === true;
+            var closed = f.status && f.status.stringValue === 'closed';
+            if (!isPublic || closed || !f.name) { gone(); return; }
+            found(f.name.stringValue);
+          } else {
+            if (!f.fullName) { gone(); return; }
+            found(f.fullName.stringValue);
+          }
+        })
+        .catch(function () { card.className += ' available'; }); // offline: just the button
+    })();
+  </script>
+</body>
+</html>

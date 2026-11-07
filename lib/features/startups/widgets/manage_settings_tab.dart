@@ -10,7 +10,7 @@ import 'manage_card.dart';
 /// button with a 40 px icon tile, a title with sub-text and, where needed, a
 /// control on the right.
 ///
-/// * **Public profile** (owner and co-founder, not on a closed startup):
+/// * **Public startup / Private startup** (owner and co-founder, not on a closed startup):
 ///   globe, a switch.
 /// * The owner gets ONE way to end the startup ([ownerOption]):
 ///   **Delete startup** (nobody else on it), **Transfer ownership** (a
@@ -62,7 +62,11 @@ class ManageSettingsTab extends StatelessWidget {
           icon: AppIcons.globe,
           fill: AppColors.moss50,
           color: AppColors.moss600,
-          title: FounderToolsStrings.publicProfile,
+          // The title follows the switch: "Public startup" / "Private
+          // startup".
+          title: isPublic
+              ? FounderToolsStrings.visibilityPublicTitle
+              : FounderToolsStrings.visibilityPrivateTitle,
           text: isPublic
               ? FounderToolsStrings.publicProfileOn
               : FounderToolsStrings.publicProfileOff,
@@ -70,7 +74,9 @@ class ManageSettingsTab extends StatelessWidget {
           trailing: AppSwitch(
             value: isPublic,
             onChanged: onVisibilityChanged,
-            semanticLabel: FounderToolsStrings.publicProfile,
+            semanticLabel: isPublic
+                ? FounderToolsStrings.visibilityPublicTitle
+                : FounderToolsStrings.visibilityPrivateTitle,
           ),
         ),
       if (owner && isClosed)

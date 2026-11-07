@@ -44,6 +44,51 @@ class ManageCard extends StatelessWidget {
   }
 }
 
+/// The title of a Dashboard card ("Activity", "Associated Investors"): 19 px
+/// on a 26 px line, bold. Every Dashboard card title uses this one style.
+class ManageCardTitle extends StatelessWidget {
+  const ManageCardTitle(this.text, {super.key});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    header: true,
+    child: Text(
+      text,
+      style: AppText.sans(size: 19, height: 26, weight: FontWeight.w700),
+    ),
+  );
+}
+
+/// The header at the top of a Manage tab: a bold 19 / 26 title with a small
+/// grey line under it (the style of "Funding rounds / All amounts in SAR").
+class ManageTabHeader extends StatelessWidget {
+  const ManageTabHeader({super.key, required this.title, this.subtitle});
+
+  final String title;
+  final String? subtitle;
+
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Semantics(
+        header: true,
+        child: Text(
+          title,
+          style: AppText.sans(size: 19, height: 26, weight: FontWeight.w700),
+        ),
+      ),
+      if (subtitle != null)
+        Text(
+          subtitle!,
+          style: AppText.sans(size: 13, color: const Color(0xFF8C918D)),
+        ),
+    ],
+  );
+}
+
 /// A grey 14/20 line used inside a [ManageCard] for empty states.
 class ManageEmptyText extends StatelessWidget {
   const ManageEmptyText(this.text, {super.key});

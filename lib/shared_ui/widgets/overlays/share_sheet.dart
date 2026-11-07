@@ -19,12 +19,15 @@ typedef SystemShare = Future<void> Function(String text, String subject);
 /// which opens the phone's own share sheet with every app installed.
 ///
 /// [url] is the link of the item, [title] its name (used in the message:
-/// "Rafeeq Health on Start.sa"). [copy] copies the link; [launch] opens an
-/// app or web address; [systemShare] opens the phone's share sheet.
+/// "Rafeeq Health on Start.sa"). [text] is a ready message that already
+/// contains [url] (a startup's "Check out ..."); without it the message is
+/// built from [title]. [copy] copies the link; [launch] opens an app or web
+/// address; [systemShare] opens the phone's share sheet.
 Future<void> showShareSheet(
   BuildContext context, {
   required String url,
   String? title,
+  String? text,
   required VoidCallback copy,
   required ShareLauncher launch,
   required SystemShare systemShare,
@@ -36,6 +39,7 @@ Future<void> showShareSheet(
       child: _ShareOptions(
         url: url,
         title: title,
+        fullText: text,
         copy: copy,
         launch: launch,
         systemShare: systemShare,
@@ -66,6 +70,7 @@ class _ShareOptions extends StatelessWidget {
   const _ShareOptions({
     required this.url,
     required this.title,
+    required this.fullText,
     required this.copy,
     required this.launch,
     required this.systemShare,
@@ -73,12 +78,18 @@ class _ShareOptions extends StatelessWidget {
 
   final String url;
   final String? title;
+
+  /// A ready message that contains [url], or null.
+  final String? fullText;
   final VoidCallback copy;
   final ShareLauncher launch;
   final SystemShare systemShare;
 
   /// "Rafeeq Health on Start.sa", or a plain line when the name is unknown.
   String get _message {
+    // A ready message: the line without its link (X, Telegram, mail subject).
+    final ready = fullText;
+    if (ready != null) return ready.replaceFirst(url, '').trim();
     final name = (title ?? '').trim();
     return name.isEmpty
         ? ProfileStrings.shareMessagePlain
@@ -106,7 +117,7 @@ class _ShareOptions extends StatelessWidget {
       }
     }
 
-    final text = '$_message\n$url';
+    final text = fullText ?? '$_message\n$url';
     final options = <_ShareOption>[
       _ShareOption(
         label: ProfileStrings.copyLink,

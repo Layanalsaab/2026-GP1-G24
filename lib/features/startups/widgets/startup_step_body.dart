@@ -636,7 +636,6 @@ class _Ask extends StatelessWidget {
             controller: vm.funding,
             field: StartupField.funding,
             info: FounderToolsStrings.fundingInfo,
-            hint: vm.fundingHint,
           ),
           _money(
             vm,

@@ -14,7 +14,6 @@ import '../../../data_access/repositories/user_repository.dart';
 import '../../../helpers/app_session.dart';
 import '../../../helpers/other_check.dart';
 import '../../../helpers/safe_notifier.dart';
-import '../../../helpers/round_limits.dart';
 import '../../../helpers/startup_finance.dart';
 import '../../../helpers/startup_validators.dart';
 import '../../../helpers/validators.dart';
@@ -538,9 +537,6 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
   /// on the Overview step (or the saved one when only this step is edited).
   StartupStage? get roundStage => stage ?? initial?.stage;
 
-  /// The one-line hint under "How much are you raising?".
-  String? get fundingHint => RoundLimits.hint(roundStage);
-
   /// The live value under the burn rate ("About 6 months").
   String? get runwayLine => Runway.line(
     StartupValidators.money(capital.text),
@@ -622,7 +618,7 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
       case StartupField.valuation:
         return StartupValidators.valuation(valuation.text);
       case StartupField.funding:
-        return StartupValidators.funding(funding.text, roundStage);
+        return StartupValidators.funding(funding.text);
       case StartupField.raised:
         return StartupValidators.raisedInRound(raised.text, funding.text);
       case StartupField.lookingFor:

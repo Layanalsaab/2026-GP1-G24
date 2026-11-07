@@ -121,7 +121,6 @@ class RoundForm extends StatelessWidget {
             required: true,
             sentenceCase: true,
             info: FounderToolsStrings.fundingInfo,
-            hint: vm.amountHint,
             error: vm.amountError,
             child: MoneyField(
               controller: vm.amount,

@@ -10,11 +10,37 @@ import '../features/startups/screens/manage_startup_screen.dart';
 import '../models/list_entries.dart';
 import '../helpers/app_session.dart';
 import '../models/home_item.dart';
+import '../models/startup.dart';
 
 /// Opens the profile behind a home card or row: startup -> Startup profile,
 /// investor -> Investor profile, program -> Program details. The model is
 /// resolved through [DiscoveryRepository]; a founder opening one of their own
 /// startups gets the preview mode. Counts a profile view for Trending.
+void openStartup(BuildContext context, Startup startup) {
+  InteractionRepository.instance.recordProfileView('s-${startup.id}');
+  final session = AppSession.instance;
+  final own =
+      session.ownStartupIds.contains(startup.id) ||
+      (session.isFounder && startup.founderId == session.user?.uid);
+  // A startup I belong to never opens as a public page (no bookmark): a
+  // co-founder gets Manage, a team member Manage view only. The founder
+  // sees the preview of the startup page.
+  if (!own) {
+    final role =
+        session.memberRoleOf(startup.id) ??
+        StartupRole.of(startup, session.user?.uid);
+    if (role != null && role != StartupRole.founder) {
+      ManageStartupScreen.open(context, startup, role: role);
+      return;
+    }
+  }
+  StartupProfileScreen.open(
+    context,
+    startup: startup,
+    preview: session.isFounder && own,
+  );
+}
+
 void openHomeItem(BuildContext context, HomeItem item) {
   final discovery = DiscoveryRepository.instance;
   switch (item.kind) {
@@ -24,25 +50,7 @@ void openHomeItem(BuildContext context, HomeItem item) {
           discovery.startupById(item.id) ??
           MatchingRepository.instance.startupById(item.id);
       if (startup == null) return;
-      InteractionRepository.instance.recordProfileView(item.bookmarkKey);
-      final session = AppSession.instance;
-      // A startup I belong to never opens as a public page (no bookmark): a
-      // co-founder gets Manage, a team member Manage view only. The founder
-      // sees the preview of the startup page.
-      if (!session.ownStartupIds.contains(item.id)) {
-        final role =
-            session.memberRoleOf(item.id) ??
-            StartupRole.of(startup, session.user?.uid);
-        if (role != null && role != StartupRole.founder) {
-          ManageStartupScreen.open(context, startup, role: role);
-          return;
-        }
-      }
-      StartupProfileScreen.open(
-        context,
-        startup: startup,
-        preview: session.isFounder && session.ownStartupIds.contains(item.id),
-      );
+      openStartup(context, startup);
     case HomeItemKind.investor:
       final investor =
           discovery.investorById(item.id) ??

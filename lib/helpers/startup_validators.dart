@@ -1,5 +1,4 @@
 import '../app_constants/validation_strings.dart';
-import '../models/startup_enums.dart';
 import 'round_limits.dart';
 
 /// Pure validators for the Add / Edit startup steps (docs/06 section 8).
@@ -182,11 +181,10 @@ class StartupValidators {
 
   /// "How much are you raising?": required, and inside the limits of the
   /// round type ([stage]).
-  static String? funding(String v, [StartupStage? stage]) {
+  static String? funding(String v) {
     final amount = money(v);
     if (amount == null) return ValidationStrings.funding;
-    return RoundLimits.error(stage, amount) ??
-        (amount <= 0 ? ValidationStrings.funding : null);
+    return RoundLimits.error(amount);
   }
 
   /// "How much have you already raised in this round?": required (0 is

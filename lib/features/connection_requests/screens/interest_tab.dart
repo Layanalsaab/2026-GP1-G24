@@ -5,7 +5,7 @@ import '../../startups/widgets/founder_ui.dart';
 import '../../startups/widgets/manage_card.dart';
 import '../view_models/interest_view_model.dart';
 
-/// Manage startup -> Interest (docs/05 D3): New / All chips and one card
+/// Manage startup -> EOI (docs/05 D3): a header, New / All chips and one card
 /// listing the people who expressed interest. The round reply button marks the
 /// person as seen and calls [onToast] with "Messaging opens in the full app".
 class InterestTab extends StatelessWidget {
@@ -31,6 +31,11 @@ class InterestTab extends StatelessWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            const ManageTabHeader(
+              title: FounderToolsStrings.interestTitle,
+              subtitle: FounderToolsStrings.interestSubtitle,
+            ),
+            const SizedBox(height: 12),
             Wrap(
               spacing: 8,
               runSpacing: 8,

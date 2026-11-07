@@ -34,6 +34,15 @@
                     android:scheme="https"
                     android:host="startsa-ea49e.web.app"
                     android:pathPrefix="/invite"/>
+                <!-- A shared startup or investor link opens that page. -->
+                <data
+                    android:scheme="https"
+                    android:host="startsa-ea49e.web.app"
+                    android:pathPrefix="/startup"/>
+                <data
+                    android:scheme="https"
+                    android:host="startsa-ea49e.web.app"
+                    android:pathPrefix="/investor"/>
             </intent-filter>
         </activity>
         <!-- Square logo cropper (image_cropper / uCrop). -->

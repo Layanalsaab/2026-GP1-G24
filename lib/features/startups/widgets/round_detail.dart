@@ -1,3 +1,5 @@
+import '../../../shared_ui/widgets/cards/pin_city.dart';
+
 import 'package:flutter/material.dart';
 
 import '../../../data_access/repositories/discovery_repository.dart';
@@ -79,7 +81,10 @@ class RoundDetail extends StatelessWidget {
               : null,
         ),
         const SizedBox(height: 22),
-        _SectionTitle(title: 'Investors', subtitle: 'Who is in this round'),
+        _SectionTitle(
+          title: 'Investors',
+          subtitle: 'Who invested in this round',
+        ),
         const SizedBox(height: 10),
         _Investors(round: round),
         // The investment requests belong to the open round (they used to be
@@ -331,9 +336,8 @@ class _Progress extends StatelessWidget {
 
 // ------------------------------------------------------------- investors
 
-/// "Title · City" of an investor, or just the one that exists.
-String _subtitle(String title, String city) =>
-    [title, city].where((t) => t.trim().isNotEmpty).join(' · ');
+/// The style of the "Title · [pin] City" line of an investor.
+final _subStyle = AppText.sans(size: 13.5, height: 19, color: AppColors.grey);
 
 class _Investors extends StatefulWidget {
   const _Investors({required this.round});
@@ -409,12 +413,8 @@ class _InvestorsState extends State<_Investors> {
         for (final i in r.investors) ...[
           _PersonTile(
             name: i.name,
-            subtitle: i.hasProfile
-                ? _subtitle(
-                    _profiles[i.investorId]?.title ?? '',
-                    _profiles[i.investorId]?.city ?? '',
-                  )
-                : '',
+            title: i.hasProfile ? _profiles[i.investorId]?.title ?? '' : '',
+            city: i.hasProfile ? _profiles[i.investorId]?.city ?? '' : '',
             imageUrl: _profiles[i.investorId]?.photoUrl,
             onTap: i.hasProfile ? () => _open(i) : null,
           ),
@@ -517,10 +517,8 @@ class _MatchesState extends State<_Matches> {
             for (final item in items) ...[
               _PersonTile(
                 name: item.name,
-                subtitle: _subtitle(
-                  widget.vm.matchedInvestor(item.id)?.title ?? 'Investor',
-                  item.city,
-                ),
+                title: widget.vm.matchedInvestor(item.id)?.title ?? 'Investor',
+                city: item.city,
                 imageUrl: item.imageUrl,
                 matchPercent: item.matchPercent,
                 matchReason: item.matchReason,
@@ -542,7 +540,8 @@ class _MatchesState extends State<_Matches> {
 class _PersonTile extends StatelessWidget {
   const _PersonTile({
     required this.name,
-    required this.subtitle,
+    required this.title,
+    required this.city,
     this.imageUrl,
     this.matchPercent,
     this.matchReason,
@@ -550,7 +549,10 @@ class _PersonTile extends StatelessWidget {
   });
 
   final String name;
-  final String subtitle;
+
+  /// The investor's title ("Angel investor"), then the [city] with its pin.
+  final String title;
+  final String city;
   final String? imageUrl;
   final int? matchPercent;
   final String? matchReason;
@@ -562,7 +564,7 @@ class _PersonTile extends StatelessWidget {
     final reason = (matchReason ?? '').trim();
     return Semantics(
       button: onTap != null,
-      label: [name, subtitle].where((t) => t.isNotEmpty).join(', '),
+      label: [name, title, city].where((t) => t.trim().isNotEmpty).join(', '),
       excludeSemantics: true,
       child: ManageCard(
         onTap: onTap,
@@ -590,16 +592,22 @@ class _PersonTile extends StatelessWidget {
                       weight: FontWeight.w700,
                     ),
                   ),
-                  if (subtitle.isNotEmpty)
-                    Text(
-                      subtitle,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppText.sans(
-                        size: 13.5,
-                        height: 19,
-                        color: AppColors.grey,
-                      ),
+                  if (title.trim().isNotEmpty || city.trim().isNotEmpty)
+                    Row(
+                      children: [
+                        if (title.trim().isNotEmpty)
+                          Flexible(
+                            child: Text(
+                              title,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: _subStyle,
+                            ),
+                          ),
+                        if (title.trim().isNotEmpty && city.trim().isNotEmpty)
+                          Text(' · ', style: _subStyle),
+                        Flexible(child: PinCity(city, style: _subStyle)),
+                      ],
                     ),
                   if (match != null) ...[
                     const SizedBox(height: 6),

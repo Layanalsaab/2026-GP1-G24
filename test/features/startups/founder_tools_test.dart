@@ -649,7 +649,7 @@ void main() {
         'Dashboard',
         'Details',
         'Rounds',
-        'Interest',
+        'EOI',
         'Settings',
       ]) {
         expect(find.text(tab), findsWidgets, reason: tab);
@@ -661,6 +661,16 @@ void main() {
       expect(find.text('Valuation'), findsOneWidget);
       expect(find.text('Valuation Calculator'), findsOneWidget);
       expect(find.text('Associated Investors'), findsOneWidget);
+      // Both card titles share one style (size, weight, line height).
+      final activityStyle = tester
+          .widget<Text>(find.text('Activity').first)
+          .style;
+      final investorsStyle = tester
+          .widget<Text>(find.text('Associated Investors'))
+          .style;
+      expect(activityStyle, investorsStyle);
+      expect(activityStyle?.fontSize, 19);
+      expect(activityStyle?.fontWeight, FontWeight.w700);
       expect(find.text('128'), findsOneWidget);
       expect(find.text('Ahmad Hassan'), findsOneWidget);
 
@@ -674,10 +684,16 @@ void main() {
         of: find.byType(ScrollableHeaderTabBar),
         matching: find.text(label),
       );
-      await tester.ensureVisible(tab('Interest'));
+      await tester.ensureVisible(tab('EOI'));
       await tester.pumpAndSettle();
-      await tester.tap(tab('Interest'));
+      await tester.tap(tab('EOI'));
       await tester.pumpAndSettle();
+      expect(find.text('Interest'), findsNothing);
+      expect(find.text('Expressions of interest'), findsOneWidget);
+      expect(
+        find.text('Guests who are interested in your startup'),
+        findsOneWidget,
+      );
       expect(find.text('New · 2'), findsOneWidget);
       expect(find.text('Noura Alharbi'), findsOneWidget);
 
@@ -685,7 +701,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(tab('Settings'));
       await tester.pumpAndSettle();
-      expect(find.text('Public profile'), findsOneWidget);
+      expect(find.text('Public startup'), findsOneWidget);
       await tester.tap(find.text('Delete startup'));
       await tester.pumpAndSettle();
       expect(find.text('Delete Rafeeq Health?'), findsOneWidget);
@@ -978,7 +994,9 @@ void main() {
         );
         await tester.pumpAndSettle();
         expect(find.text('SAR 5,000,000'), findsOneWidget);
-        expect(find.text('Ownership after this raise'), findsOneWidget);
+        expect(find.text('THIS ROUND'), findsOneWidget);
+        expect(find.text('THIS RAISE'), findsNothing);
+        expect(find.text('Ownership after this round'), findsOneWidget);
         expect(find.text('You (founder)'), findsOneWidget);
         expect(find.text('Other existing owners'), findsNothing);
 
@@ -987,10 +1005,28 @@ void main() {
         await tester.pumpAndSettle();
         expect(find.byType(InfoTip), findsOneWidget);
 
+        // The tips say "round", not "raise".
+        for (final text in FounderToolsStrings.calcInfo.values) {
+          expect(text.$1.toLowerCase(), isNot(contains('this raise')));
+          expect(text.$2.toLowerCase(), isNot(contains('this raise')));
+        }
+        expect(
+          FounderToolsStrings.calcInfo['f']!.$2,
+          contains('put into your startup in this round.'),
+        );
+        expect(
+          FounderToolsStrings.calcInfo['o']!.$2,
+          contains('before this round.'),
+        );
+        expect(
+          FounderToolsStrings.calcInfo['own']!.$1,
+          'Ownership after this round',
+        );
+
         await tester.enterText(find.byType(TextField).at(1), '');
         await tester.pumpAndSettle();
         expect(find.text('Fill in the fields above'), findsOneWidget);
-        expect(find.text('Ownership after this raise'), findsNothing);
+        expect(find.text('Ownership after this round'), findsNothing);
         expect(
           find.text('Enter a percentage above 0 and below 100.'),
           findsOneWidget,

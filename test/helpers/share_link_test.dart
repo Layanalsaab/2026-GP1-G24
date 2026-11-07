@@ -41,10 +41,10 @@ void main() {
   test('the link of a bookmark key', () {
     expect(
       ShareLink.forKey('s-mock-rafeeq'),
-      'https://start.sa/startup/mock-rafeeq',
+      'https://startsa-ea49e.web.app/startup/mock-rafeeq',
     );
-    expect(ShareLink.forKey('i-ahmad'), 'https://start.sa/investor/ahmad');
-    expect(ShareLink.forKey('p-taqadam'), 'https://start.sa/program/taqadam');
+    expect(ShareLink.forKey('i-ahmad'), 'https://startsa-ea49e.web.app/investor/ahmad');
+    expect(ShareLink.forKey('p-taqadam'), 'https://startsa-ea49e.web.app/program/taqadam');
   });
 
   testWidgets('copy puts the link on the clipboard and says Link copied', (
@@ -66,7 +66,7 @@ void main() {
     await t.tap(find.text('share'));
     await t.pump();
     await t.pump(const Duration(milliseconds: 400));
-    expect(copied, ['https://start.sa/startup/abc']);
+    expect(copied, ['https://startsa-ea49e.web.app/startup/abc']);
     expect(find.text('Link copied'), findsOneWidget);
     await t.pump(const Duration(seconds: 4));
   });
@@ -141,7 +141,7 @@ void main() {
             builder: (context) => TextButton(
               onPressed: () => ShareLink.share(
                 context,
-                'https://start.sa/startup/abc',
+                'https://startsa-ea49e.web.app/startup/abc',
                 title: 'Rafeeq Health',
               ),
               child: const Text('open'),
@@ -172,7 +172,7 @@ void main() {
         expect(opened, hasLength(1), reason: entry.key);
         final text = Uri.decodeFull(opened.single.toString());
         expect(text, startsWith(entry.value), reason: entry.key);
-        expect(text, contains('https://start.sa/startup/abc'));
+        expect(text, contains('https://startsa-ea49e.web.app/startup/abc'));
         // LinkedIn and Facebook only take the link; the others carry the text.
         if (entry.key != 'LinkedIn' && entry.key != 'Facebook') {
           expect(text, contains('Rafeeq Health on Start.sa'));
@@ -182,12 +182,97 @@ void main() {
       }
     });
 
+    testWidgets('a startup is shared with its ready message and the link', (
+      t,
+    ) async {
+      await t.binding.setSurfaceSize(const Size(412, 892));
+      addTearDown(() => t.binding.setSurfaceSize(null));
+      await t.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.light,
+          navigatorKey: AppToast.navigatorKey,
+          home: Builder(
+            builder: (context) => TextButton(
+              onPressed: () => ShareLink.shareStartup(
+                context,
+                id: 'abc',
+                name: 'Rafeeq Health',
+                sector: 'HealthTech',
+                city: 'Riyadh',
+              ),
+              child: const Text('open'),
+            ),
+          ),
+        ),
+      );
+      await t.tap(find.text('open'));
+      await t.pumpAndSettle();
+      await t.tap(find.text('More'));
+      await t.pumpAndSettle();
+      expect(
+        system.single.$1,
+        'Check out Rafeeq Health on Start.sa, a HealthTech startup from '
+        'Riyadh! https://startsa-ea49e.web.app/startup/abc',
+      );
+      // The subject is the same line without the link.
+      expect(
+        system.single.$2,
+        'Check out Rafeeq Health on Start.sa, a HealthTech startup from '
+        'Riyadh!',
+      );
+    });
+
+    testWidgets('an investor is shared with its ready message and the link', (
+      t,
+    ) async {
+      await t.binding.setSurfaceSize(const Size(412, 892));
+      addTearDown(() => t.binding.setSurfaceSize(null));
+      Future<void> open(String city) async {
+        system.clear();
+        await t.pumpWidget(
+          MaterialApp(
+            theme: AppTheme.light,
+            navigatorKey: AppToast.navigatorKey,
+            home: Builder(
+              builder: (context) => TextButton(
+                onPressed: () => ShareLink.shareInvestor(
+                  context,
+                  id: 'ahmad',
+                  name: 'Ahmad Alharbi',
+                  city: city,
+                ),
+                child: const Text('open'),
+              ),
+            ),
+          ),
+        );
+        await t.tap(find.text('open'));
+        await t.pumpAndSettle();
+        await t.tap(find.text('More'));
+        await t.pumpAndSettle();
+      }
+
+      await open('Riyadh');
+      expect(
+        system.single.$1,
+        'Check out Ahmad Alharbi on Start.sa, an investor from Riyadh! '
+        'https://startsa-ea49e.web.app/investor/ahmad',
+      );
+      // No city: the " from ..." part is left out.
+      await open('');
+      expect(
+        system.single.$1,
+        'Check out Ahmad Alharbi on Start.sa, an investor! '
+        'https://startsa-ea49e.web.app/investor/ahmad',
+      );
+    });
+
     testWidgets('More opens the phone\'s own share sheet', (t) async {
       await openSheet(t);
       await t.tap(find.text('More'));
       await t.pumpAndSettle();
       expect(system, hasLength(1));
-      expect(system.single.$1, contains('https://start.sa/startup/abc'));
+      expect(system.single.$1, contains('https://startsa-ea49e.web.app/startup/abc'));
       expect(system.single.$2, 'Rafeeq Health on Start.sa');
     });
 

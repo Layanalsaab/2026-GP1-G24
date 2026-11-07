@@ -132,6 +132,41 @@ class ProfileStrings {
   static const shareMore = 'More';
   static const shareCantOpen = 'Couldn’t open that app.';
   static String shareMessage(String name) => '$name on Start.sa';
+
+  /// THE message a startup is shared with. Change the wording here only; the
+  /// placeholders are {name}, {sector} (the main one), {city} and {link}.
+  static const startupShareTemplate =
+      'Check out {name} on Start.sa, a {sector} startup from {city}! {link}';
+
+  /// THE message an investor profile is shared with. Placeholders: {name},
+  /// {city} and {link}. An investor with no city drops " from {city}".
+  static const investorShareTemplate =
+      'Check out {name} on Start.sa, an investor from {city}! {link}';
+
+  /// [investorShareTemplate] filled in.
+  static String investorShare({
+    required String name,
+    required String city,
+    required String link,
+  }) {
+    final c = city.trim();
+    return investorShareTemplate
+        .replaceAll(' from {city}', c.isEmpty ? '' : ' from $c')
+        .replaceAll('{name}', name.trim())
+        .replaceAll('{link}', link);
+  }
+
+  /// [startupShareTemplate] filled in.
+  static String startupShare({
+    required String name,
+    required String sector,
+    required String city,
+    required String link,
+  }) => startupShareTemplate
+      .replaceAll('{name}', name.trim())
+      .replaceAll('{sector}', sector.trim())
+      .replaceAll('{city}', city.trim())
+      .replaceAll('{link}', link);
   static const shareMessagePlain = 'Take a look on Start.sa';
 
   // ---- Toasts ----

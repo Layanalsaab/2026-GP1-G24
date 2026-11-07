@@ -113,6 +113,7 @@ class ValidationStrings {
       'Please enter the expected revenue for all three years.';
   static const revenueMin = 'Each year must be at least SAR 1,000.';
   static const funding = 'Please enter the amount you’re raising.';
+  static const fundingMin = 'The amount must be at least SAR 1,000.';
   static const valuation = 'Please enter your current valuation.';
   static const revenueNow =
       'Please enter your revenue. Enter 0 if you haven’t made any yet.';

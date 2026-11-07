@@ -1,3 +1,4 @@
+import '../../../helpers/share_link.dart';
 import '../../../data_access/repositories/discovery_repository.dart';
 import '../../../shared_ui/widgets/lists/app_refresh.dart';
 import '../../../helpers/open_link.dart';
@@ -82,10 +83,11 @@ class _InvestorProfileScreenState extends State<InvestorProfileScreen> {
                       children: [
                         ProfileBanner.glass(
                           onBack: () => AppNav.back(context),
-                          onShare: () => ProfileActions.share(
+                          onShare: () => ShareLink.shareInvestor(
                             context,
-                            _vm.key,
-                            title: _vm.investor.name,
+                            id: _vm.investor.id,
+                            name: _vm.investor.name,
+                            city: _vm.investor.city,
                           ),
                           showBookmark: _vm.showBookmark,
                           bookmarked: bookmarks.value.contains(_vm.key),

@@ -5,7 +5,9 @@ import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../app_constants/app_config.dart';
 import '../app_constants/profile_strings.dart';
+import '../models/home_item.dart';
 import '../shared_ui/widgets/overlays/app_toast.dart';
 import '../shared_ui/widgets/overlays/share_sheet.dart';
 
@@ -13,12 +15,13 @@ import '../shared_ui/widgets/overlays/share_sheet.dart';
 /// (WhatsApp, X, Telegram, LinkedIn, Facebook, Email, "Copy link" and "More",
 /// which opens the phone's own share sheet).
 ///
-/// The link is `https://start.sa/<startup|investor|program>/<id>`. (A link that
-/// opens the app on that page can come later; the text shared stays the same.)
+/// The link is `<AppConfig.shareLinkBase>/<startup|investor|program>/<id>`.
+/// A startup or investor link opens that page in the app (see ShareLinks) or,
+/// without the app, the web page on Firebase Hosting.
 class ShareLink {
   ShareLink._();
 
-  static const String base = 'https://start.sa';
+  static const String base = AppConfig.shareLinkBase;
 
   static String startup(String id) => '$base/startup/$id';
   static String investor(String id) => '$base/investor/$id';
@@ -56,14 +59,78 @@ class ShareLink {
     BuildContext context,
     String url, {
     String? title,
+    String? text,
   }) => showShareSheet(
     context,
     url: url,
     title: title,
+    text: text,
     copy: () => copy(context, url),
     launch: launcher,
     systemShare: systemShare,
   );
+
+  /// Shares a startup with its ready message ("Check out Rafeeq Health on
+  /// Start.sa, a HealthTech startup from Riyadh! <link>"); the wording lives
+  /// in [ProfileStrings.startupShareTemplate].
+  static Future<void> shareStartup(
+    BuildContext context, {
+    required String id,
+    required String name,
+    required String sector,
+    required String city,
+  }) {
+    final link = startup(id);
+    return share(
+      context,
+      link,
+      title: name,
+      text: ProfileStrings.startupShare(
+        name: name,
+        sector: sector,
+        city: city,
+        link: link,
+      ),
+    );
+  }
+
+  /// Shares an investor profile with its ready message ("Check out Ahmad
+  /// Alharbi on Start.sa, an investor from Riyadh! <link>"); the wording
+  /// lives in [ProfileStrings.investorShareTemplate].
+  static Future<void> shareInvestor(
+    BuildContext context, {
+    required String id,
+    required String name,
+    required String city,
+  }) {
+    final link = investor(id);
+    return share(
+      context,
+      link,
+      title: name,
+      text: ProfileStrings.investorShare(name: name, city: city, link: link),
+    );
+  }
+
+  /// Shares a card item: a startup or an investor with its ready message,
+  /// a program with the plain one.
+  static Future<void> shareItem(BuildContext context, HomeItem item) =>
+      switch (item.kind) {
+        HomeItemKind.startup => shareStartup(
+          context,
+          id: item.id,
+          name: item.name,
+          sector: item.tag,
+          city: item.city,
+        ),
+        HomeItemKind.investor => shareInvestor(
+          context,
+          id: item.id,
+          name: item.name,
+          city: item.city,
+        ),
+        _ => shareKey(context, item.bookmarkKey, title: item.name),
+      };
 
   /// Opens the share sheet for the item behind a bookmark key.
   static Future<void> shareKey(
