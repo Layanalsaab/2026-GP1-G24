@@ -24,15 +24,19 @@ class StartupValidators {
   static String? selected(Object? value, String message) =>
       value == null || (value is String && value.isEmpty) ? message : null;
 
-  /// Required: four digits starting with 2 (2000-2999). A future year is
-  /// fine. Anything typed that is not (yet) such a year is an error from the
-  /// first keystroke, e.g. a leading 0 or 1, or fewer than four digits.
+  /// The earliest founded year accepted.
+  static const minFoundedYear = 2000;
+
+  /// Required: four digits, from [minFoundedYear] up to the current year (no
+  /// future years). The upper limit follows [now] (today by default).
   static String? foundedYear(String value, {DateTime? now}) {
     final text = value.trim();
     if (text.isEmpty) return ValidationStrings.foundedRequired;
-    return RegExp(r'^2\d{3}$').hasMatch(text)
+    final max = (now ?? DateTime.now()).year;
+    final year = RegExp(r'^\d{4}$').hasMatch(text) ? int.parse(text) : null;
+    return year != null && year >= minFoundedYear && year <= max
         ? null
-        : ValidationStrings.foundedInvalid;
+        : ValidationStrings.foundedRange(minFoundedYear, max);
   }
 
   /// True when [value] is a complete, valid year (for the green check).
@@ -142,10 +146,24 @@ class StartupValidators {
   static String? capital(String v) =>
       money(v) == null ? ValidationStrings.capital : null;
 
-  static String? revenue(String y1, String y2, String y3) =>
-      money(y1) != null && money(y2) != null && money(y3) != null
-      ? null
-      : ValidationStrings.revenue;
+  /// The least each of the three expected-revenue years can be (SAR).
+  static const minExpectedRevenue = 1000;
+
+  /// All three years are required, each at least [minExpectedRevenue].
+  static String? revenue(String y1, String y2, String y3) {
+    final years = [money(y1), money(y2), money(y3)];
+    if (years.any((v) => v == null)) return ValidationStrings.revenue;
+    return years.any((v) => v! < minExpectedRevenue)
+        ? ValidationStrings.revenueMin
+        : null;
+  }
+
+  /// True when a year has a value under [minExpectedRevenue].
+  static bool revenueTooLow(String y1, String y2, String y3) => [
+    money(y1),
+    money(y2),
+    money(y3),
+  ].any((v) => v != null && v < minExpectedRevenue);
 
   /// Required, and 0 is allowed.
   static bool valuationOk(String v) => money(v) != null;

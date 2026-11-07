@@ -4,7 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:startsa/shared_ui/widgets/forms/app_field.dart';
 import 'package:startsa/shared_ui/widgets/forms/app_text_field.dart';
 import 'package:startsa/shared_ui/widgets/forms/select_field.dart';
-import 'package:startsa/shared_ui/widgets/forms/visibility_switch.dart';
+import 'package:startsa/shared_ui/widgets/forms/visibility_picker.dart';
 
 /// The spacing rule of every form: label -> control 8 px, control -> next
 /// label 28 px, whatever sits in the helper line (counter, hint, error, link)
@@ -108,7 +108,7 @@ void main() {
         builder: (context, setState) => LabeledTextField(
           label: 'With Pill',
           controller: b,
-          labelTrailing: VisibilitySwitch(
+          labelTrailing: VisibilityPicker(
             isPublic: isPublic,
             fieldName: 'email',
             onChanged: (v) => setState(() => isPublic = v),
@@ -120,15 +120,23 @@ void main() {
     expect(top(t, find.text('With Pill')) - top(t, find.text('Before')), 106);
     expect(top(t, find.text('After')) - top(t, find.text('With Pill')), 106);
 
-    // One tap switches Private -> Public (no sheet), and back.
-    expect(find.text('Private'), findsOneWidget);
-    await t.tap(find.text('Private'));
-    await t.pump(const Duration(milliseconds: 300));
-    expect(find.text('Public'), findsOneWidget);
-    expect(find.text('Private'), findsNothing);
-    expect(top(t, find.text('After')) - top(t, find.text('With Pill')), 106);
+    // A tap opens the sheet; picking Public closes it and flips the button.
+    expect(find.text('Only you'), findsOneWidget);
+    await t.tap(find.text('Only you'));
+    await t.pumpAndSettle();
+    expect(find.text('Who can see your email?'), findsOneWidget);
     await t.tap(find.text('Public'));
-    await t.pump(const Duration(milliseconds: 300));
-    expect(find.text('Private'), findsOneWidget);
+    await t.pumpAndSettle();
+    expect(find.text('Who can see your email?'), findsNothing);
+    expect(find.text('Public'), findsOneWidget);
+    expect(find.text('Only you'), findsNothing);
+    expect(top(t, find.text('After')) - top(t, find.text('With Pill')), 106);
+    expect(top(t, find.text('With Pill')) - top(t, find.text('Before')), 106);
+
+    // The part of the button that hangs above the label row takes taps too.
+    final r = t.getRect(find.text('Public'));
+    await t.tapAt(Offset(r.center.dx, r.top - 5));
+    await t.pumpAndSettle();
+    expect(find.text('Who can see your email?'), findsOneWidget);
   });
 }

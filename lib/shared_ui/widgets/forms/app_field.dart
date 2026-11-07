@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 
 import '../../icons/app_icons.dart';
 import '../../motion/motion.dart';
@@ -509,7 +510,7 @@ class _AppFieldState extends State<AppField> {
     final hasInfo = widget.info != null;
     final tipOpen = hasInfo && _open;
     final hasError = widget.error != null && widget.error!.isNotEmpty;
-    return Column(
+    final column = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (widget.label != null) ...[
@@ -526,27 +527,31 @@ class _AppFieldState extends State<AppField> {
               ),
             )
           else
-            // The trailing widget (the Private / Public switch) is taller than
-            // the 20 px label line, so it hangs over it: the row stays 20 px
-            // high and the spacing between fields never changes.
-            SizedBox(
-              height: 20,
-              child: Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: FieldLabel(
-                      widget.label!,
-                      required: widget.required,
-                      hasError: hasError,
-                      onInfoTap: hasInfo ? _toggle : null,
-                      infoOpen: tipOpen,
-                      sentenceCase: widget.sentenceCase,
+            // The trailing widget (the "Only you / Public" button, 32 px) is
+            // taller than the 20 px label line, so it hangs over it: the row
+            // stays 20 px high and the spacing between fields never changes.
+            // [HitSlop] lets the part that hangs out still take taps.
+            HitSlop(
+              bottom: 6,
+              child: SizedBox(
+                height: 20,
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: FieldLabel(
+                        widget.label!,
+                        required: widget.required,
+                        hasError: hasError,
+                        onInfoTap: hasInfo ? _toggle : null,
+                        infoOpen: tipOpen,
+                        sentenceCase: widget.sentenceCase,
+                      ),
                     ),
-                  ),
-                  Positioned(right: 0, top: -3, child: widget.labelTrailing!),
-                ],
+                    Positioned(right: 0, top: -6, child: widget.labelTrailing!),
+                  ],
+                ),
               ),
             ),
           // Label -> control is always 8 px (the sub-text, when present,
@@ -572,6 +577,60 @@ class _AppFieldState extends State<AppField> {
         ),
       ],
     );
+    // The button on the label row hangs 6 px above the field: those taps too.
+    return widget.labelTrailing == null
+        ? column
+        : HitSlop(top: 6, child: column);
+  }
+}
+
+/// Lets taps just outside [child] (up to [top] px above and [bottom] px
+/// below) reach it, as if they landed on its edge. A child that hangs out of
+/// its box (a button taller than the label row) would otherwise only take
+/// taps inside the box. Size and layout are the child's.
+class HitSlop extends SingleChildRenderObjectWidget {
+  const HitSlop({
+    super.key,
+    this.top = 0,
+    this.bottom = 0,
+    required super.child,
+  });
+
+  final double top;
+  final double bottom;
+
+  @override
+  RenderObject createRenderObject(BuildContext context) =>
+      _RenderHitSlop(top, bottom);
+
+  @override
+  void updateRenderObject(BuildContext context, RenderObject renderObject) {
+    (renderObject as _RenderHitSlop)
+      ..top = top
+      ..bottom = bottom;
+  }
+}
+
+class _RenderHitSlop extends RenderProxyBox {
+  _RenderHitSlop(this.top, this.bottom);
+
+  double top;
+  double bottom;
+
+  @override
+  bool hitTest(BoxHitTestResult result, {required Offset position}) {
+    if (position.dx < 0 ||
+        position.dx >= size.width ||
+        position.dy < -top ||
+        position.dy >= size.height + bottom) {
+      return false;
+    }
+    // A tap in the margin lands on the nearest edge of the child.
+    final clamped = Offset(
+      position.dx,
+      position.dy.clamp(0.0, size.height - 0.01),
+    );
+    return super.hitTest(result, position: clamped);
   }
 }
 

@@ -172,7 +172,7 @@ class FounderToolsStrings {
   static const capitalLabel = 'Current available capital';
   static const burnLabel = 'Monthly burn rate';
   static const burnInfo =
-      'How much money you lose each month: your monthly costs minus your monthly revenue. Enter 0 if you earn more than you spend.';
+      'How much more money you spend than you earn each month: your monthly costs minus your monthly revenue. Enter 0 if you earn more than you spend.';
   static const revenueLabel = 'Expected revenue, next 3 years (SAR)';
   static const valuationLabel = 'Current company valuation';
   static const valuationInfo =
@@ -183,7 +183,7 @@ class FounderToolsStrings {
   static const revenueModelTitle = 'Revenue model';
   static const modelTextHint = 'Describe how your startup makes money';
   static const modelTextInfo =
-      'How your startup makes money. For example: who pays you, what you charge, and how often.';
+      'Who pays you, how much they pay, and how often.';
   static const modelTextMax = 250;
   static const fundingLabel = 'How much are you raising?';
   static const fundingInfo =
@@ -286,6 +286,7 @@ class FounderToolsStrings {
   static const leaveCoFounderText =
       'You’ll stop being a co-founder of this startup';
   static const leaveMemberText = 'You’ll be removed from this startup’s team';
+
   /// The person who created it, after handing it over.
   static const leaveFounderText =
       'You’ll leave the team. You can keep your name as Founder (former)';
@@ -316,6 +317,7 @@ class FounderToolsStrings {
         '${names.sublist(0, names.length - 1).join(', ')} and ${names.last}';
     return '$who haven’t accepted their invitations yet, so they will be cancelled.';
   }
+
   static const previewLabel = 'Preview';
 
   // ---- Ownership, closing and the last startup ----
@@ -336,14 +338,12 @@ class FounderToolsStrings {
   static const transferFailed =
       'We couldn’t transfer the startup. Please try again.';
   static const closeStartup = 'Close startup';
-  static const closeStartupText =
-      'Hides it from Start.sa. Its team keeps it';
+  static const closeStartupText = 'Hides it from Start.sa. Its team keeps it';
   static String closeTitle(String name) => 'Close $name?';
   static String closeMessage(String name) =>
       'Team members are on $name, so it can’t be deleted. Closing hides it from Start.sa, ends its open round and cancels pending invitations. The team keeps it, and you can reopen it later.';
   static String closedToast(String name) => '$name was closed';
-  static const closeFailed =
-      'We couldn’t close the startup. Please try again.';
+  static const closeFailed = 'We couldn’t close the startup. Please try again.';
   static const reopenStartup = 'Reopen startup';
   static const reopenStartupText = 'It comes back as Private';
   static String reopenTitle(String name) => 'Reopen $name?';
@@ -440,10 +440,7 @@ class FounderToolsStrings {
       'Value of your share',
       'What your share of the company is worth at this valuation.',
     ),
-    'change': (
-      'Your dilution',
-      'How much your ownership drops in this round.',
-    ),
+    'change': ('Your dilution', 'How much your ownership drops in this round.'),
     'own': (
       'Ownership after this raise',
       'The new investors get the share you give up. Everyone who already owns part of the company keeps the same slice of the rest, so each of their shares gets a little smaller.',
@@ -453,7 +450,8 @@ class FounderToolsStrings {
   // ---- Confirm before saving ----
   static const saveConfirmTitle = 'Save changes?';
   static const saveConfirmButton = 'Save changes';
-  static const saveProfileMessage = 'Your changes will be saved to your profile.';
+  static const saveProfileMessage =
+      'Your changes will be saved to your profile.';
   static const saveStartupMessage =
       'Your changes will be saved to this startup.';
   static const saveRoundMessage = 'Your changes will be saved to this round.';

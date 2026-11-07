@@ -161,18 +161,22 @@ void main() {
     });
 
     test(
-      'founded year: 4 digits starting with 2, error from the first key',
+      'founded year: 2000 up to this year, error once 4 digits are typed',
       () {
         final vm = StartupStepsViewModel(now: DateTime(2026, 10, 19));
         addTearDown(vm.dispose);
-        const msg = 'Enter a 4-digit year starting with 2, like 2024.';
+        const msg = 'Enter a year between 2000 and 2026.';
         expect(vm.errorOf(StartupField.founded), isNull, reason: 'untouched');
-        for (final bad in ['1', '2', '20', '202', '1800', '0999', '1999']) {
+        // Fewer than 4 digits wait for Next.
+        for (final partial in ['1', '2', '20', '202']) {
+          vm.founded.text = partial;
+          expect(vm.errorOf(StartupField.founded), isNull, reason: partial);
+        }
+        for (final bad in ['1800', '0999', '1999', '2027', '2099', '2500']) {
           vm.founded.text = bad;
           expect(vm.errorOf(StartupField.founded), msg, reason: bad);
         }
-        // A future year is fine.
-        for (final good in ['2000', '2024', '2026', '2099', '2500']) {
+        for (final good in ['2000', '2024', '2026']) {
           vm.founded.text = good;
           expect(vm.errorOf(StartupField.founded), isNull, reason: good);
         }

@@ -93,7 +93,13 @@ void main() {
       addTearDown(vm.dispose);
       vm.capital.text = '350,000';
       vm.burn.text = '50,000';
-      expect(vm.runwayLine, 'About 7 months of runway');
+      expect(vm.runwayLine, 'About 7 months');
+      vm.capital.text = '0';
+      expect(vm.runwayLine, 'No money left');
+      vm.burn.text = '0';
+      expect(vm.runwayLine, 'Cash-flow positive');
+      vm.burn.clear();
+      expect(vm.runwayLine, isNull);
     });
 
     test('every field is required, 0 is fine for revenue and burn', () {
@@ -122,10 +128,18 @@ void main() {
       vm.capital.text = '1';
       vm.burn.text = '0';
       vm.valuation.text = '0';
-      vm.rev1.text = '1';
-      vm.rev2.text = '1';
-      vm.rev3.text = '1';
+      vm.rev1.text = '1,000';
+      vm.rev2.text = '1,000';
+      vm.rev3.text = '999';
       vm.modelText.text = 'Subscriptions';
+      // A year under SAR 1,000 says so at once.
+      expect(
+        vm.errorOf(StartupField.revenue),
+        'Each year must be at least SAR 1,000.',
+      );
+      expect(vm.currentComplete, isFalse);
+      vm.rev3.text = '1,000';
+      expect(vm.errorOf(StartupField.revenue), isNull);
       expect(vm.currentComplete, isTrue);
     });
   });

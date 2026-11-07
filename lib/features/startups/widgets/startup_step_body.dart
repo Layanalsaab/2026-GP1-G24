@@ -18,6 +18,7 @@ import '../../../shared_ui/widgets/overlays/app_dialog.dart';
 import '../../../shared_ui/widgets/overlays/multi_picker_sheet.dart';
 import '../../../app_constants/validation_strings.dart';
 import 'founder_ui.dart';
+import 'runway_line.dart';
 import 'team_member_widgets.dart';
 
 /// The white card content of one step of the Add / Edit / onboarding form
@@ -99,6 +100,34 @@ Widget _money(
     semanticLabel: label,
   ),
 );
+
+/// Monthly burn rate with the calculated runway under it (live while typing).
+/// The line sits right under the field, or under the error when there is one.
+Widget _burn(StartupStepsViewModel vm) {
+  final runway = vm.runwayLine;
+  final error = vm.errorOf(StartupField.burn);
+  final line = runway == null ? null : RunwayLine(value: runway);
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      AppField(
+        label: FounderToolsStrings.burnLabel,
+        required: true,
+        sentenceCase: true,
+        info: FounderToolsStrings.burnInfo,
+        error: error,
+        below: error == null ? line : null,
+        child: MoneyField(
+          controller: vm.burn,
+          focusNode: vm.focusOf(StartupField.burn),
+          hasError: vm.hasError(StartupField.burn),
+          semanticLabel: FounderToolsStrings.burnLabel,
+        ),
+      ),
+      if (error != null) ?line,
+    ],
+  );
+}
 
 // ----------------------------------------------------------------- step 1
 
@@ -441,15 +470,7 @@ class _Finance extends StatelessWidget {
           controller: vm.capital,
           field: StartupField.capital,
         ),
-        _money(
-          vm,
-          label: FounderToolsStrings.burnLabel,
-          controller: vm.burn,
-          field: StartupField.burn,
-          info: FounderToolsStrings.burnInfo,
-          // Live while typing: "About 6 months of runway".
-          hint: vm.runwayLine,
-        ),
+        _burn(vm),
         _money(
           vm,
           label: FounderToolsStrings.valuationLabel,
@@ -840,9 +861,7 @@ class _Team extends StatelessWidget {
       onSave: () => _save(context),
       onRemove: vm.removeMember,
       canRemove: member == null ? null : vm.canRemoveMember(member),
-      canChangeCoFounder: member == null
-          ? null
-          : vm.canChangeCoFounder(member),
+      canChangeCoFounder: member == null ? null : vm.canChangeCoFounder(member),
     );
   }
 }

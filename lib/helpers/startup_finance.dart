@@ -29,4 +29,12 @@ class Runway {
     if (l == null) return null;
     return l.endsWith(' of runway') ? l.substring(0, l.length - 10) : l;
   }
+
+  /// The value of the calculated line under the burn rate field: "About 6
+  /// months", "Cash-flow positive" (burn 0), "No money left" (no capital), or
+  /// null while the burn rate is empty.
+  static String? line(int? capital, int? burn) {
+    final s = short(capital, burn);
+    return s == 'No runway left' ? 'No money left' : s;
+  }
 }

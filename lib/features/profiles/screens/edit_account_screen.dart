@@ -23,7 +23,7 @@ import '../../../shared_ui/widgets/forms/app_field.dart';
 import '../../../shared_ui/widgets/forms/app_text_field.dart';
 import '../../../shared_ui/widgets/forms/photo_pickers.dart';
 import '../../../shared_ui/widgets/forms/select_field.dart';
-import '../../../shared_ui/widgets/forms/visibility_switch.dart';
+import '../../../shared_ui/widgets/forms/visibility_picker.dart';
 import '../../../shared_ui/widgets/overlays/multi_picker_sheet.dart';
 import '../../../shared_ui/widgets/headers/header_buttons.dart';
 import '../../../shared_ui/widgets/lists/press_surface.dart';
@@ -136,7 +136,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 enabled: false,
                 maxLength: Validators.maxEmail,
                 keyboardType: TextInputType.emailAddress,
-                labelTrailing: VisibilitySwitch(
+                labelTrailing: VisibilityPicker(
                   isPublic: _vm.emailPublic,
                   onChanged: _vm.setEmailPublic,
                   fieldName: 'email',
@@ -153,7 +153,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 keyboardType: TextInputType.phone,
                 inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 error: _vm.phoneError,
-                labelTrailing: VisibilitySwitch(
+                labelTrailing: VisibilityPicker(
                   isPublic: _vm.phonePublic,
                   onChanged: _vm.setPhonePublic,
                   fieldName: 'phone',
@@ -369,7 +369,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 enabled: false,
                 maxLength: Validators.maxEmail,
                 keyboardType: TextInputType.emailAddress,
-                labelTrailing: VisibilitySwitch(
+                labelTrailing: VisibilityPicker(
                   isPublic: _vm.emailPublic,
                   onChanged: _vm.setEmailPublic,
                   fieldName: 'email',
@@ -378,7 +378,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               AppField(
                 label: AuthStrings.phone,
                 required: true,
-                labelTrailing: VisibilitySwitch(
+                labelTrailing: VisibilityPicker(
                   isPublic: _vm.phonePublic,
                   onChanged: _vm.setPhonePublic,
                   fieldName: 'phone',

@@ -75,10 +75,10 @@ class AuthStrings {
   static const citiesNone = 'No cities found';
   static const sectorsQuestion = 'Which sectors are you interested in?';
   static const sectorOtherHint = 'Type your sector, e.g. SportsTech';
-  static const valueQuestion = 'What can you offer startups?';
+  static const valueQuestion = 'Besides funding, what can you offer startups?';
   static const valuePlaceholder = 'Describe what you can offer';
   static const valueTip =
-      'For example: funding, mentoring, industry connections, introductions to partners.';
+      'For example: mentoring, industry connections, introductions to partners, etc.';
   static const gainQuestion = 'What are you looking for in startups?';
   static const gainPlaceholder = 'Describe what you are looking for';
   static const gainTip =

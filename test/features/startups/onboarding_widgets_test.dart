@@ -72,7 +72,18 @@ void main() {
     vm.capital.text = '300,000';
     vm.burn.text = '100,000';
     await t.pump();
-    expect(find.text('About 3 months of runway'), findsOneWidget);
+    expect(find.text('Runway:'), findsOneWidget);
+    expect(find.text('About 3 months'), findsOneWidget);
+    vm.burn.text = '0';
+    await t.pump();
+    expect(find.text('Cash-flow positive'), findsOneWidget);
+    vm.capital.text = '0';
+    vm.burn.text = '5';
+    await t.pump();
+    expect(find.text('No money left'), findsOneWidget);
+    vm.burn.clear();
+    await t.pump();
+    expect(find.text('Runway:'), findsNothing);
     expect(t.takeException(), isNull);
   });
 

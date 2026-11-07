@@ -60,70 +60,91 @@ void main() {
   Widget host(Widget sheet) => MaterialApp(home: Scaffold(body: sheet));
 
   group('Picker sheets', () {
-    testWidgets('single-select: Other repeating an option shows the error', (
+    testWidgets('single-select: Other naming an option picks it, no error', (
       t,
     ) async {
       await t.binding.setSurfaceSize(const Size(412, 900));
       addTearDown(() => t.binding.setSurfaceSize(null));
+      PickerResult? result;
       await t.pumpWidget(
-        host(
-          const PickerSheet(
-            title: 'Sector',
-            options: ['Fintech', 'HealthTech', 'Other'],
-            selected: 'Other',
-            otherNoun: 'sector',
+        MaterialApp(
+          home: Builder(
+            builder: (context) => Scaffold(
+              body: TextButton(
+                onPressed: () async => result = await showPickerSheet(
+                  context,
+                  title: 'Sector',
+                  options: const ['Fintech', 'HealthTech', 'Other'],
+                  selected: 'Other',
+                  otherNoun: 'sector',
+                ),
+                child: const Text('open'),
+              ),
+            ),
           ),
         ),
       );
-      await t.pump(const Duration(milliseconds: 400));
-      await t.enterText(find.byType(EditableText).last, 'fintechs');
-      await t.pump();
-      expect(find.text(_msg), findsOneWidget);
+      await t.tap(find.text('open'));
+      await t.pumpAndSettle();
       await t.enterText(find.byType(EditableText).last, 'Beekeeping');
-      await t.pump();
+      await t.pump(const Duration(milliseconds: 600));
+      expect(result, isNull);
+      await t.enterText(find.byType(EditableText).last, 'fintechs');
+      await t.pump(const Duration(milliseconds: 600));
+      await t.pumpAndSettle();
       expect(find.text(_msg), findsNothing);
+      expect(result?.value, 'Fintech');
+      expect(result?.otherText, isNull);
     });
 
-    testWidgets('commerce model: "b2b" is refused AS YOU TYPE, before Done', (
+    testWidgets('commerce model: "b2b" is picked for you after a pause', (
       t,
     ) async {
       await t.binding.setSurfaceSize(const Size(412, 900));
       addTearDown(() => t.binding.setSurfaceSize(null));
+      PickerResult? result;
       await t.pumpWidget(
-        host(
-          PickerSheet(
-            title: 'Commerce model',
-            options: const [
-              'Business-to-Business (B2B)',
-              'Business-to-Consumer (B2C)',
-              'Business-to-Government (B2G)',
-              'Other',
-            ],
-            selected: 'Other',
-            otherNoun: 'commerce model',
-            alsoCountsAs: StartupStepsViewModel.modelAlsoCountsAs,
+        MaterialApp(
+          home: Builder(
+            builder: (context) => Scaffold(
+              body: TextButton(
+                onPressed: () async => result = await showPickerSheet(
+                  context,
+                  title: 'Commerce model',
+                  options: const [
+                    'Business-to-Business (B2B)',
+                    'Business-to-Consumer (B2C)',
+                    'Business-to-Government (B2G)',
+                    'Other',
+                  ],
+                  selected: 'Other',
+                  otherNoun: 'commerce model',
+                  alsoCountsAs: StartupStepsViewModel.modelAlsoCountsAs,
+                ),
+                child: const Text('open'),
+              ),
+            ),
           ),
         ),
       );
-      await t.pump(const Duration(milliseconds: 400));
+      await t.tap(find.text('open'));
+      await t.pumpAndSettle();
       final box = find.byType(EditableText).last;
       await t.enterText(box, 'B');
-      await t.pump();
-      expect(find.text(_msg), findsNothing);
+      await t.pump(const Duration(milliseconds: 600));
+      expect(result, isNull);
       await t.enterText(box, 'b2b');
-      await t.pump();
-      expect(find.text(_msg), findsOneWidget);
-      await t.enterText(box, 'Business to Business');
-      await t.pump();
-      expect(find.text(_msg), findsOneWidget);
-      await t.enterText(box, 'Subscription boxes');
-      await t.pump();
+      await t.pump(const Duration(milliseconds: 600));
+      await t.pumpAndSettle();
       expect(find.text(_msg), findsNothing);
+      expect(result?.value, 'Business-to-Business (B2B)');
+      expect(result?.otherText, isNull);
     });
 
-    testWidgets('multi-select: Other repeating an option shows the error', (
+    testWidgets('multi-select: Other naming an option ticks it, no error', (
       t,
     ) async {
+      final toggled = <String>[];
       await t.binding.setSurfaceSize(const Size(412, 900));
       addTearDown(() => t.binding.setSurfaceSize(null));
       await t.pumpWidget(
@@ -132,15 +153,16 @@ void main() {
             title: 'Sectors',
             options: const ['Fintech', 'HealthTech', 'Other'],
             selected: const {'Other'},
-            onToggle: (_) {},
+            onToggle: toggled.add,
             otherNoun: 'sector',
           ),
         ),
       );
       await t.pump(const Duration(milliseconds: 400));
       await t.enterText(find.byType(EditableText).last, 'Health Tech');
-      await t.pump();
-      expect(find.text(_msg), findsOneWidget);
+      await t.pump(const Duration(milliseconds: 600));
+      expect(find.text(_msg), findsNothing);
+      expect(toggled, ['HealthTech', 'Other']);
     });
   });
 }

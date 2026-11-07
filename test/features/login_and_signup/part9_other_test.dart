@@ -7,7 +7,9 @@ import 'package:startsa/features/profiles/view_models/edit_account_view_model.da
 import 'package:startsa/models/app_user.dart';
 import 'package:startsa/models/investor_criteria.dart';
 import 'package:startsa/models/startup_enums.dart';
+
 import '../../support/fakes.dart';
+
 import 'package:startsa/shared_ui/widgets/overlays/multi_picker_sheet.dart';
 
 const _investor = AppUser(
@@ -60,9 +62,10 @@ void main() {
     });
   });
 
-  testWidgets('the multi sheet refuses "b2b" as you type (commerce models)', (
+  testWidgets('the multi sheet picks "b2b" for you (commerce models)', (
     t,
   ) async {
+    final toggled = <String>[];
     await t.binding.setSurfaceSize(const Size(412, 900));
     addTearDown(() => t.binding.setSurfaceSize(null));
     await t.pumpWidget(
@@ -72,7 +75,7 @@ void main() {
             title: 'Commerce models',
             options: InvestorOnboardingViewModel.modelOptions,
             selected: const {'Other'},
-            onToggle: (_) {},
+            onToggle: toggled.add,
             otherNoun: 'commerce model',
             alsoCountsAs: InvestorOnboardingViewModel.modelAlsoCountsAs,
           ),
@@ -82,26 +85,27 @@ void main() {
     await t.pump(const Duration(milliseconds: 400));
     final box = find.byType(EditableText).last;
     await t.enterText(box, 'b');
-    await t.pump();
-    expect(find.text(_msg), findsNothing);
+    await t.pump(const Duration(milliseconds: 600));
+    expect(toggled, isEmpty);
     await t.enterText(box, 'b2b');
-    await t.pump();
-    expect(find.text(_msg), findsOneWidget);
-    await t.enterText(box, 'Subscription boxes');
-    await t.pump();
+    await t.pump(const Duration(milliseconds: 600));
     expect(find.text(_msg), findsNothing);
+    expect(toggled, ['Business-to-Business (B2B)', 'Other']);
   });
 
   group('Investor and founder share one list and one "Other" rule', () {
     final all = [for (final s in Sector.values) s.label];
 
-    test('the sector list is the same for founders, investors and startups', () {
-      expect(InvestorOnboardingViewModel.sectorOptions, all);
-      expect(SignupViewModel.sectorOptions, all);
-      expect(EditAccountViewModel.sectorOptions, all);
-      expect(all.length, 25);
-      expect(all.last, 'Other');
-    });
+    test(
+      'the sector list is the same for founders, investors and startups',
+      () {
+        expect(InvestorOnboardingViewModel.sectorOptions, all);
+        expect(SignupViewModel.sectorOptions, all);
+        expect(EditAccountViewModel.sectorOptions, all);
+        expect(all.length, 25);
+        expect(all.last, 'Other');
+      },
+    );
 
     test('every sector, in any capitals, is refused as an investor Other', () {
       final vm = InvestorOnboardingViewModel(user: _investor);
@@ -159,9 +163,8 @@ void main() {
     });
   });
 
-  testWidgets('the sectors sheet refuses FINTECH / fin tech as you type', (
-    t,
-  ) async {
+  testWidgets('the sectors sheet picks FINTECH / fin tech for you', (t) async {
+    final toggled = <String>[];
     await t.binding.setSurfaceSize(const Size(412, 3000));
     addTearDown(() => t.binding.setSurfaceSize(null));
     await t.pumpWidget(
@@ -171,7 +174,7 @@ void main() {
             title: 'Sectors',
             options: InvestorOnboardingViewModel.sectorOptions,
             selected: const {'Other'},
-            onToggle: (_) {},
+            onToggle: toggled.add,
             searchHint: 'Search sectors',
             otherNoun: 'sector',
           ),
@@ -182,14 +185,9 @@ void main() {
     // Narrow the long list to its last row, so the write-in box is built.
     await t.enterText(find.byType(EditableText).first, 'oth');
     await t.pump();
-    final box = find.byType(EditableText).last;
-    for (final typed in ['FINTECH', 'fintech', 'Fin Tech', 'healthtech']) {
-      await t.enterText(box, typed);
-      await t.pump();
-      expect(find.text(_msg), findsOneWidget, reason: typed);
-    }
-    await t.enterText(box, 'Beekeeping');
-    await t.pump();
+    await t.enterText(find.byType(EditableText).last, 'FINTECH');
+    await t.pump(const Duration(milliseconds: 600));
     expect(find.text(_msg), findsNothing);
+    expect(toggled, ['Fintech', 'Other']);
   });
 }

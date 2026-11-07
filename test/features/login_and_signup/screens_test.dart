@@ -103,7 +103,10 @@ void main() {
     expect(value, findsOneWidget);
     expect(gain, findsOneWidget);
     expect(
-      find.textContaining('What can you offer startups?', findRichText: true),
+      find.textContaining(
+        'Besides funding, what can you offer startups?',
+        findRichText: true,
+      ),
       findsOneWidget,
     );
     expect(
@@ -115,7 +118,7 @@ void main() {
     );
     // The "i" button opens the example.
     final tip =
-        'For example: funding, mentoring, industry connections, introductions to partners.';
+        'For example: mentoring, industry connections, introductions to partners, etc.';
     expect(find.text(tip), findsNothing);
     await t.ensureVisible(find.byType(InfoButton).first);
     await t.tap(find.byType(InfoButton).first);
@@ -215,20 +218,25 @@ void main() {
       ),
     );
 
-    testWidgets('no log-in footer, a photo row and private pills', (t) async {
+    testWidgets('no log-in footer, a photo row and who-can-see buttons', (
+      t,
+    ) async {
       await openFounder(t);
       expect(find.textContaining('Already have an account?'), findsNothing);
       expect(find.text('Profile Photo'), findsOneWidget);
       expect(find.text('Upload photo'), findsOneWidget);
-      expect(find.text('Private'), findsNWidgets(2));
-      await t.tap(find.text('Private').first);
-      await t.pump(const Duration(milliseconds: 300));
+      expect(find.text('Only you'), findsNWidgets(2));
+      await t.tap(find.text('Only you').first);
+      await t.pumpAndSettle();
+      expect(find.text('Who can see your email?'), findsOneWidget);
+      await t.tap(find.text('Public'));
+      await t.pumpAndSettle();
       expect(find.text('Public'), findsOneWidget);
-      expect(find.text('Private'), findsOneWidget);
+      expect(find.text('Only you'), findsOneWidget);
     });
 
     testWidgets(
-      'the investor sign-up matches the founder: no footer, photo row, pills',
+      'the investor sign-up matches the founder: no footer, photo row, buttons',
       (t) async {
         await _pump(
           t,
@@ -239,7 +247,7 @@ void main() {
         );
         expect(find.textContaining('Already have an account?'), findsNothing);
         expect(find.text('Profile Photo'), findsOneWidget);
-        expect(find.text('Private'), findsNWidgets(2));
+        expect(find.text('Only you'), findsNWidgets(2));
       },
     );
 

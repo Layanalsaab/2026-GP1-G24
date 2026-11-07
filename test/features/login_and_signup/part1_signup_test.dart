@@ -3,84 +3,111 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:startsa/features/login_and_signup/view_models/signup_view_model.dart';
 import 'package:startsa/models/app_user.dart';
-import 'package:startsa/shared_ui/widgets/forms/visibility_switch.dart';
+import 'package:startsa/shared_ui/widgets/forms/visibility_picker.dart';
 
-Widget _switch({required bool isPublic, ValueChanged<bool>? onChanged}) =>
-    MaterialApp(
-      home: Scaffold(
-        body: Center(
-          child: VisibilitySwitch(
-            isPublic: isPublic,
-            onChanged: onChanged ?? (_) {},
-            fieldName: 'email',
-          ),
-        ),
+Widget _picker({
+  bool isPublic = false,
+  String field = 'email',
+  ValueChanged<bool>? onChanged,
+}) => MaterialApp(
+  home: Scaffold(
+    body: Center(
+      child: VisibilityPicker(
+        isPublic: isPublic,
+        onChanged: onChanged ?? (_) {},
+        fieldName: field,
       ),
-    );
+    ),
+  ),
+);
 
 void main() {
   setUpAll(() => GoogleFonts.config.allowRuntimeFetching = false);
 
-  group('Visibility switch', () {
-    testWidgets('Private: the word, a 40 x 24 grey track, a 18 x 18 knob', (
-      t,
-    ) async {
-      await t.pumpWidget(_switch(isPublic: false));
-      expect(find.text('Private'), findsOneWidget);
-      expect(
-        t.getSize(find.byKey(const ValueKey('visibility-track'))),
-        const Size(40, 24),
-      );
-      expect(
-        t.getSize(find.byKey(const ValueKey('visibility-knob'))),
-        const Size(18, 18),
-      );
-      final track = t.widget<AnimatedContainer>(
-        find.byKey(const ValueKey('visibility-track')),
-      );
-      expect(
-        (track.decoration! as BoxDecoration).color,
-        const Color(0xFFD6D3CC),
-      );
-    });
-
-    testWidgets('Public: moss track and the knob 16 px to the right', (
-      t,
-    ) async {
-      await t.pumpWidget(_switch(isPublic: false));
-      double knobInTrack() =>
-          t.getTopLeft(find.byKey(const ValueKey('visibility-knob'))).dx -
-          t.getTopLeft(find.byKey(const ValueKey('visibility-track'))).dx;
-      final off = knobInTrack();
-      await t.pumpWidget(_switch(isPublic: true));
-      await t.pumpAndSettle();
+  group('Visibility picker', () {
+    testWidgets('Only you is the private look; Public is the other', (t) async {
+      await t.pumpWidget(_picker());
+      expect(find.text('Only you'), findsOneWidget);
+      expect(find.text('Public'), findsNothing);
+      await t.pumpWidget(_picker(isPublic: true));
       expect(find.text('Public'), findsOneWidget);
-      expect(knobInTrack() - off, 16);
-      final track = t.widget<AnimatedContainer>(
-        find.byKey(const ValueKey('visibility-track')),
-      );
-      expect(
-        (track.decoration! as BoxDecoration).color,
-        const Color(0xFF2F5D3A),
-      );
+      expect(find.text('Only you'), findsNothing);
     });
 
-    testWidgets('a tap flips it', (t) async {
+    testWidgets('the button is at least 32 px tall', (t) async {
+      await t.pumpWidget(_picker());
+      final box = find.ancestor(
+        of: find.text('Only you'),
+        matching: find.byType(Container),
+      );
+      expect(t.getSize(box.first).height, greaterThanOrEqualTo(32));
+    });
+
+    testWidgets('a tap opens the sheet; picking Public closes it', (t) async {
       bool? got;
-      await t.pumpWidget(_switch(isPublic: false, onChanged: (v) => got = v));
-      await t.tap(find.byKey(const ValueKey('visibility-knob')));
-      expect(got, isTrue);
-    });
-
-    testWidgets('the screen-reader label says what a tap does', (t) async {
-      await t.pumpWidget(_switch(isPublic: false));
+      await t.pumpWidget(_picker(onChanged: (v) => got = v));
+      await t.tap(find.text('Only you'));
+      await t.pumpAndSettle();
+      expect(find.text('Who can see your email?'), findsOneWidget);
       expect(
-        find.bySemanticsLabel('Your email is private. Tap to make it public.'),
+        find.text('Anyone on Start.sa can see your email on your profile.'),
         findsOneWidget,
       );
-      await t.pumpWidget(_switch(isPublic: true));
       expect(
-        find.bySemanticsLabel('Your email is public. Tap to make it private.'),
+        find.text(
+          'Your email stays private and is never shown on your profile.',
+        ),
+        findsOneWidget,
+      );
+      await t.tap(find.text('Public'));
+      await t.pumpAndSettle();
+      expect(got, isTrue);
+      expect(find.text('Who can see your email?'), findsNothing);
+    });
+
+    testWidgets('picking the current choice changes nothing', (t) async {
+      var calls = 0;
+      await t.pumpWidget(_picker(onChanged: (_) => calls++));
+      await t.tap(find.text('Only you'));
+      await t.pumpAndSettle();
+      await t.tap(find.text('Only you').last);
+      await t.pumpAndSettle();
+      expect(calls, 0);
+      expect(find.text('Who can see your email?'), findsNothing);
+    });
+
+    testWidgets('the phone number says phone number', (t) async {
+      await t.pumpWidget(_picker(field: 'phone'));
+      await t.tap(find.text('Only you'));
+      await t.pumpAndSettle();
+      expect(find.text('Who can see your phone number?'), findsOneWidget);
+      expect(
+        find.text(
+          'Anyone on Start.sa can see your phone number on your profile.',
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.text(
+          'Your phone number stays private and is never shown on your profile.',
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('the screen-reader label says who can see it', (t) async {
+      await t.pumpWidget(_picker());
+      expect(
+        find.bySemanticsLabel(
+          'Who can see your email: only you. Tap to change.',
+        ),
+        findsOneWidget,
+      );
+      await t.pumpWidget(_picker(isPublic: true, field: 'phone'));
+      expect(
+        find.bySemanticsLabel(
+          'Who can see your phone number: everyone. Tap to change.',
+        ),
         findsOneWidget,
       );
     });

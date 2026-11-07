@@ -1,6 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
-import '../../../app_constants/validation_strings.dart';
 import '../../../helpers/other_check.dart';
 
 import '../../icons/app_icons.dart';
@@ -91,8 +92,8 @@ class MultiPickerSheet extends StatefulWidget {
   final VoidCallback? onUndoOther;
   final int otherMax;
 
-  /// Other texts that mean a listed option (e.g. "B2B" -> its option): the
-  /// "Other" write-in can't repeat them either, and typing one ticks it.
+  /// Other texts that mean a listed option (e.g. "B2B" -> its option): typing
+  /// one (and pausing) ticks that option and drops "Other".
   final Map<String, String> alsoCountsAs;
 
   @override
@@ -107,6 +108,11 @@ class _MultiPickerSheetState extends State<MultiPickerSheet> {
   final TextEditingController _query = TextEditingController();
   bool _showError = false;
 
+  /// Waits for the typing to pause before the write-in is compared with the
+  /// options, so "Retail stores" can still be typed after "Retail".
+  Timer? _pause;
+  static const _pauseAfterTyping = Duration(milliseconds: 500);
+
   bool get _hasOther => widget.otherNoun != null;
 
   /// Like the Sector / Stage / Commerce model pickers: only a list with a
@@ -117,16 +123,38 @@ class _MultiPickerSheetState extends State<MultiPickerSheet> {
   bool get _otherOpen => _hasOther && _selected.contains(widget.otherLabel);
   bool get _otherBlank => _other.text.trim().isEmpty;
 
-  /// The write-in repeats a listed option (it can't).
-  bool get _repeats =>
-      _otherOpen &&
-      OtherCheck.repeats(_other.text, [
-        ...widget.options,
-        ...widget.alsoCountsAs.keys,
-      ]);
+  /// The write-in names a listed option: that option is ticked, "Other" is
+  /// unticked and its text cleared, silently. Everything else stays picked.
+  void _autoPick() {
+    _pause?.cancel();
+    if (!_otherOpen) return;
+    final m = OtherCheck.match(
+      _other.text,
+      widget.options,
+      alsoCountsAs: widget.alsoCountsAs,
+    );
+    if (m == null || m == widget.otherLabel) return;
+    final add = !_selected.contains(m);
+    void apply() {
+      _selected.remove(widget.otherLabel);
+      if (add) _selected.add(m);
+      _other.clear();
+      _showError = false;
+    }
+
+    if (mounted) {
+      setState(apply);
+    } else {
+      apply();
+    }
+    widget.onOtherChanged?.call('');
+    if (add) widget.onToggle(m);
+    widget.onToggle(widget.otherLabel);
+  }
 
   @override
   void dispose() {
+    _pause?.cancel();
     _other.dispose();
     _query.dispose();
     super.dispose();
@@ -141,7 +169,7 @@ class _MultiPickerSheetState extends State<MultiPickerSheet> {
   }
 
   void _done() {
-    if (_repeats) return;
+    _autoPick();
     if (_otherOpen && _otherBlank) {
       setState(() => _showError = true);
       return;
@@ -161,7 +189,10 @@ class _MultiPickerSheetState extends State<MultiPickerSheet> {
     ];
     return PopScope(
       onPopInvokedWithResult: (didPop, _) {
-        if (didPop && _otherOpen && _otherBlank) widget.onUndoOther?.call();
+        if (!didPop) return;
+        // Closed before the pause ended: the match still counts.
+        _autoPick();
+        if (_otherOpen && _otherBlank) widget.onUndoOther?.call();
       },
       child: AppSheetScaffold(
         title: widget.title,
@@ -209,27 +240,14 @@ class _MultiPickerSheetState extends State<MultiPickerSheet> {
                             widget.otherHint ??
                             'Describe your other ${widget.otherNoun}',
                         max: widget.otherMax,
-                        error: _repeats
-                            ? ValidationStrings.otherRepeats
-                            : (_showError && _otherBlank
-                                  ? 'Please type your ${widget.otherNoun} — it can’t be blank.'
-                                  : null),
+                        error: _showError && _otherBlank
+                            ? 'Please type your ${widget.otherNoun} — it can’t be blank.'
+                            : null,
                         onChanged: (v) {
-                          // A write-in that repeats a listed option ticks it.
-                          final m = OtherCheck.match(
-                            v,
-                            widget.options,
-                            alsoCountsAs: widget.alsoCountsAs,
-                          );
-                          final tick =
-                              m != null &&
-                              m != widget.otherLabel &&
-                              !_selected.contains(m);
-                          setState(() {
-                            if (tick) _selected.add(m);
-                          });
+                          setState(() {});
                           widget.onOtherChanged?.call(v);
-                          if (tick) widget.onToggle(m);
+                          _pause?.cancel();
+                          _pause = Timer(_pauseAfterTyping, _autoPick);
                         },
                       ),
                     ),
@@ -238,10 +256,7 @@ class _MultiPickerSheetState extends State<MultiPickerSheet> {
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
-              child: AppButton(
-                label: 'Done',
-                onPressed: _repeats ? null : _done,
-              ),
+              child: AppButton(label: 'Done', onPressed: _done),
             ),
           ],
         ),

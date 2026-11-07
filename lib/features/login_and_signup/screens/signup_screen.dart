@@ -15,7 +15,7 @@ import '../../../shared_ui/widgets/forms/form_page.dart';
 import '../../../shared_ui/widgets/forms/password_rules.dart';
 import '../../../shared_ui/widgets/forms/photo_pickers.dart';
 import '../../../shared_ui/widgets/forms/select_field.dart';
-import '../../../shared_ui/widgets/forms/visibility_switch.dart';
+import '../../../shared_ui/widgets/forms/visibility_picker.dart';
 import '../../../shared_ui/widgets/headers/auth_headers.dart';
 import '../../../shared_ui/widgets/headers/overlap_layout.dart';
 import '../../../shared_ui/widgets/overlays/app_dialog.dart';
@@ -294,7 +294,7 @@ class _SignupScreenState extends State<SignupScreen> {
                           keyboardType: TextInputType.emailAddress,
                           valid: vm.emailValid,
                           error: vm.emailError,
-                          labelTrailing: VisibilitySwitch(
+                          labelTrailing: VisibilityPicker(
                             isPublic: vm.emailPublic,
                             onChanged: vm.setEmailPublic,
                             fieldName: 'email',
@@ -304,7 +304,7 @@ class _SignupScreenState extends State<SignupScreen> {
                         AppField(
                           label: AuthStrings.phone,
                           required: true,
-                          labelTrailing: VisibilitySwitch(
+                          labelTrailing: VisibilityPicker(
                             isPublic: vm.phonePublic,
                             onChanged: vm.setPhonePublic,
                             fieldName: 'phone',

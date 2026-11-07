@@ -56,7 +56,7 @@ void main() {
       'Phone Number',
       'LinkedIn Profile',
       'Which city are you in?',
-      'What can you offer startups?',
+      'Besides funding, what can you offer startups?',
       'What are you looking for in startups?',
       'How many years have you been investing?',
       'How many startups have you invested in so far?',

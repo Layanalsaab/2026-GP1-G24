@@ -541,8 +541,8 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
   /// The one-line hint under "How much are you raising?".
   String? get fundingHint => RoundLimits.hint(roundStage);
 
-  /// The live line under the burn rate ("About 6 months of runway").
-  String? get runwayLine => Runway.label(
+  /// The live value under the burn rate ("About 6 months").
+  String? get runwayLine => Runway.line(
     StartupValidators.money(capital.text),
     StartupValidators.money(burn.text),
   );
@@ -725,9 +725,9 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
   String? errorOf(StartupField f) {
     final raw = _rawError(f);
     if (raw == null) return null;
-    // A year that is not (yet) 4 digits starting with 2 says so from the
-    // first digit; an empty field waits for Next (or for leaving the field).
-    if (f == StartupField.founded && founded.text.trim().isNotEmpty) {
+    // A year outside 2000..this year says so as soon as 4 digits are typed;
+    // fewer digits or an empty field wait for Next (or for leaving the field).
+    if (f == StartupField.founded && founded.text.trim().length >= 4) {
       return raw;
     }
     // The "Other" write-in repeating a listed option says so at once.
@@ -744,6 +744,11 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
     // "Already raised" can't pass the amount being raised: says so at once.
     if (f == StartupField.raised &&
         StartupValidators.money(raised.text) != null) {
+      return raw;
+    }
+    // A year under SAR 1,000 says so at once (empty boxes wait for Next).
+    if (f == StartupField.revenue &&
+        StartupValidators.revenueTooLow(rev1.text, rev2.text, rev3.text)) {
       return raw;
     }
     // A typed zero says so at once (an empty field waits for Next).

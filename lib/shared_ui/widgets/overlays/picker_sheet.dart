@@ -1,9 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
-
-import '../../../app_constants/validation_strings.dart';
-import '../../../helpers/other_check.dart';
-
 import 'package:flutter/services.dart';
+
+import '../../../helpers/other_check.dart';
 
 import '../../icons/app_icons.dart';
 import '../../motion/motion.dart';
@@ -102,8 +102,8 @@ class PickerSheet extends StatefulWidget {
   final bool tall;
 
   /// Other texts that mean a listed option (e.g. "B2B" for "Business-to-
-  /// Business (B2B)") mapped to the option each stands for: the "Other"
-  /// write-in can't repeat them either, and typing one selects that option.
+  /// Business (B2B)") mapped to the option each stands for: typing one (and
+  /// pausing) picks that option, as if its row was tapped.
   final Map<String, String> alsoCountsAs;
 
   @override
@@ -122,13 +122,10 @@ class _PickerSheetState extends State<PickerSheet> {
   bool get _hasOther => widget.otherNoun != null;
   bool get _otherOpen => _hasOther && _selected == widget.otherLabel;
 
-  /// The write-in repeats a listed option (it can't).
-  bool get _repeats =>
-      _otherOpen &&
-      OtherCheck.repeats(_other.text, [
-        ...widget.options,
-        ...widget.alsoCountsAs.keys,
-      ]);
+  /// Waits for the typing to pause before the write-in is compared with the
+  /// options, so a longer phrase can still be typed.
+  Timer? _pause;
+  static const _pauseAfterTyping = Duration(milliseconds: 500);
 
   /// The listed option the write-in repeats; it shows as selected.
   String? get _match {
@@ -141,8 +138,19 @@ class _PickerSheetState extends State<PickerSheet> {
     return m == widget.otherLabel ? null : m;
   }
 
+  /// The write-in names a listed option: that option is picked (the sheet
+  /// closes with it, "Other" and its text are dropped), silently.
+  void _autoPick() {
+    _pause?.cancel();
+    final match = _match;
+    if (match == null || _committed || !mounted) return;
+    _committed = true;
+    Navigator.of(context).pop(PickerResult(match));
+  }
+
   @override
   void dispose() {
+    _pause?.cancel();
     _other.dispose();
     _query.dispose();
     super.dispose();
@@ -220,7 +228,7 @@ class _PickerSheetState extends State<PickerSheet> {
                   for (final o in all)
                     PickerOptionRow(
                       label: o,
-                      selected: o == _selected || o == _match,
+                      selected: o == _selected,
                       onTap: () => _pick(o),
                     ),
                   if (shown.isEmpty && !_hasOther)
@@ -239,12 +247,14 @@ class _PickerSheetState extends State<PickerSheet> {
                         controller: _other,
                         placeholder: 'Describe your other ${widget.otherNoun}',
                         max: widget.otherMax,
-                        error: _repeats
-                            ? ValidationStrings.otherRepeats
-                            : (_showError && _other.text.trim().isEmpty
-                                  ? 'Please type your ${widget.otherNoun} — it can’t be blank.'
-                                  : null),
-                        onChanged: (_) => setState(() {}),
+                        error: _showError && _other.text.trim().isEmpty
+                            ? 'Please type your ${widget.otherNoun} — it can’t be blank.'
+                            : null,
+                        onChanged: (_) {
+                          setState(() {});
+                          _pause?.cancel();
+                          _pause = Timer(_pauseAfterTyping, _autoPick);
+                        },
                       ),
                     ),
                 ],

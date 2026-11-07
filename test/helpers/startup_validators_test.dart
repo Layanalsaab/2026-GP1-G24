@@ -18,21 +18,40 @@ void main() {
   });
 
   group('founded year', () {
-    test('required; 4 digits starting with 2; a future year is fine', () {
+    test('required; 4 digits, 2000 up to the current year', () {
       expect(
         StartupValidators.foundedYear('', now: now),
         ValidationStrings.foundedRequired,
       );
-      for (final ok in ['2000', '2024', '2026', '2027', '2999']) {
+      for (final ok in ['2000', '2024', '2026']) {
         expect(StartupValidators.foundedYear(ok, now: now), isNull, reason: ok);
       }
-      for (final bad in ['1899', '1999', '0000', '0999', '20', '2', '12345']) {
+      for (final bad in [
+        '1899',
+        '1999',
+        '0000',
+        '0999',
+        '20',
+        '2',
+        '12345',
+        '2027',
+        '2999',
+      ]) {
         expect(
           StartupValidators.foundedYear(bad, now: now),
-          'Enter a 4-digit year starting with 2, like 2024.',
+          'Enter a year between 2000 and ${now.year}.',
           reason: bad,
         );
       }
+      // The upper limit follows the real year, it is not fixed.
+      expect(
+        StartupValidators.foundedYear('2031', now: DateTime(2031)),
+        isNull,
+      );
+      expect(
+        StartupValidators.foundedYear('2032', now: DateTime(2031)),
+        'Enter a year between 2000 and 2031.',
+      );
     });
   });
 
@@ -73,12 +92,20 @@ void main() {
       expect(StartupValidators.valuationOk(''), isFalse);
     });
 
-    test('revenue needs all three years', () {
+    test('revenue needs all three years, each at least SAR 1,000', () {
       expect(
-        StartupValidators.revenue('1', '2', ''),
+        StartupValidators.revenue('1,000', '2,000', ''),
         ValidationStrings.revenue,
       );
-      expect(StartupValidators.revenue('1', '2', '3'), isNull);
+      expect(
+        StartupValidators.revenue('999', '2,000', '3,000'),
+        'Each year must be at least SAR 1,000.',
+      );
+      expect(
+        StartupValidators.revenue('1,000', '2,000', '0'),
+        'Each year must be at least SAR 1,000.',
+      );
+      expect(StartupValidators.revenue('1,000', '2,000', '3,000'), isNull);
     });
   });
 

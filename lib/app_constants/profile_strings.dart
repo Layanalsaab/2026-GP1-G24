@@ -94,10 +94,10 @@ class ProfileStrings {
   static const city = 'City';
   static const cityPlaceholder = 'Select your city';
   static const sectorsOfInterest = 'Sectors of interest';
-  static const valueLabel = 'What can you offer startups?';
+  static const valueLabel = 'Besides funding, what can you offer startups?';
   static const valuePlaceholder = 'Describe what you can offer';
   static const valueTip =
-      'For example: funding, mentoring, industry connections, introductions to partners.';
+      'For example: mentoring, industry connections, introductions to partners, etc.';
   static const gainLabel = 'What are you looking for in startups?';
   static const gainHint = 'Describe what you are looking for';
   static const gainTip =

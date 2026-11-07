@@ -98,8 +98,8 @@ class ValidationStrings {
   static const startupModel = 'Please select a commerce model.';
   static const startupCity = 'Please select your headquarters.';
   static const foundedRequired = 'Please enter the year you were founded.';
-  static const foundedInvalid =
-      'Enter a 4-digit year starting with 2, like 2024.';
+  static String foundedRange(int min, int max) =>
+      'Enter a year between $min and $max.';
   static const websiteInvalid = 'Enter a valid website, like example.com';
   static const problem = 'Please describe the problem.';
   static const solution = 'Please describe your solution.';
@@ -111,6 +111,7 @@ class ValidationStrings {
   static const capital = 'Please enter your current capital.';
   static const revenue =
       'Please enter the expected revenue for all three years.';
+  static const revenueMin = 'Each year must be at least SAR 1,000.';
   static const funding = 'Please enter the amount you’re raising.';
   static const valuation = 'Please enter your current valuation.';
   static const revenueNow =
