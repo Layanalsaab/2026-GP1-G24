@@ -65,7 +65,7 @@ class RoundDetail extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _BackLink(onTap: onBack),
+        DetailBackLink(onTap: onBack),
         const SizedBox(height: 14),
         if (editingThis) ...[
           RoundForm(vm: vm, editing: true),
@@ -79,14 +79,14 @@ class RoundDetail extends StatelessWidget {
               : null,
         ),
         const SizedBox(height: 22),
-        _SectionTitle(title: 'Investors', subtitle: 'Who is in this round'),
+        SectionTitle(title: 'Investors', subtitle: 'Who is in this round'),
         const SizedBox(height: 10),
         _Investors(round: round),
         // The investment requests belong to the open round (they used to be
         // a tab of Manage startup).
         if (round.isOpen && requests != null) ...[
           const SizedBox(height: 22),
-          const _SectionTitle(
+          const SectionTitle(
             title: 'Investment Requests',
             subtitle: 'Investors asking to join this round',
           ),
@@ -100,7 +100,7 @@ class RoundDetail extends StatelessWidget {
         ],
         if (round.isOpen) ...[
           const SizedBox(height: 22),
-          const _SectionTitle(
+          const SectionTitle(
             title: 'Matches',
             subtitle: 'Investors that fit this round',
           ),
@@ -112,11 +112,17 @@ class RoundDetail extends StatelessWidget {
   }
 }
 
-/// Chevron + "All rounds" in moss green.
-class _BackLink extends StatelessWidget {
-  const _BackLink({required this.onTap});
+/// Chevron + "All rounds" (or another [label]) in moss green. Also the back
+/// link of the Investment Wallet ticket page.
+class DetailBackLink extends StatelessWidget {
+  const DetailBackLink({
+    super.key,
+    required this.onTap,
+    this.label = 'All rounds',
+  });
 
   final VoidCallback onTap;
+  final String label;
 
   @override
   Widget build(BuildContext context) {
@@ -124,7 +130,7 @@ class _BackLink extends StatelessWidget {
       alignment: Alignment.centerLeft,
       child: Semantics(
         button: true,
-        label: 'All rounds',
+        label: label,
         excludeSemantics: true,
         child: GestureDetector(
           behavior: HitTestBehavior.opaque,
@@ -142,7 +148,7 @@ class _BackLink extends StatelessWidget {
                 ),
                 const SizedBox(width: 4),
                 Text(
-                  'All rounds',
+                  label,
                   style: AppText.sans(
                     size: 15,
                     weight: FontWeight.w600,
@@ -158,8 +164,14 @@ class _BackLink extends StatelessWidget {
   }
 }
 
-class _SectionTitle extends StatelessWidget {
-  const _SectionTitle({required this.title, required this.subtitle});
+/// A section heading (19 bold) with its grey 13 line under it; also used by
+/// the Investment Wallet.
+class SectionTitle extends StatelessWidget {
+  const SectionTitle({
+    super.key,
+    required this.title,
+    required this.subtitle,
+  });
 
   final String title;
   final String subtitle;
@@ -235,16 +247,16 @@ class _RoundCard extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: _Box(label: 'Amount', value: Formatters.sar(r.amount)),
+                child: InfoBox(label: 'Amount', value: Formatters.sar(r.amount)),
               ),
               const SizedBox(width: 10),
               Expanded(
-                child: _Box(label: 'Raised', value: Formatters.sar(r.raised)),
+                child: InfoBox(label: 'Raised', value: Formatters.sar(r.raised)),
               ),
             ],
           ),
           const SizedBox(height: 14),
-          _Progress(percent: r.percent),
+          DetailProgress(percent: r.percent),
           const SizedBox(height: 6),
           Text(
             '${r.percent}% of the target raised',
@@ -265,8 +277,10 @@ class _RoundCard extends StatelessWidget {
   }
 }
 
-class _Box extends StatelessWidget {
-  const _Box({required this.label, required this.value});
+/// A small green box with a grey label and a bold value (Amount / Raised,
+/// Minimum / Maximum).
+class InfoBox extends StatelessWidget {
+  const InfoBox({super.key, required this.label, required this.value});
 
   final String label;
   final String value;
@@ -300,8 +314,8 @@ class _Box extends StatelessWidget {
 }
 
 /// A 8 px full-width bar; it stops at 100 % (the text under it can go past).
-class _Progress extends StatelessWidget {
-  const _Progress({required this.percent});
+class DetailProgress extends StatelessWidget {
+  const DetailProgress({super.key, required this.percent});
 
   final int percent;
 

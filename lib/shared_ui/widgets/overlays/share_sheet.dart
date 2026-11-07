@@ -19,7 +19,7 @@ typedef SystemShare = Future<void> Function(String text, String subject);
 /// which opens the phone's own share sheet with every app installed.
 ///
 /// [url] is the link of the item, [title] its name (used in the message:
-/// "Rafeeq Health on Start.sa"). [copy] copies the link; [launch] opens an
+/// "Look, I found Rafeeq Health on Start.sa. ..."). [copy] copies the link; [launch] opens an
 /// app or web address; [systemShare] opens the phone's share sheet.
 Future<void> showShareSheet(
   BuildContext context, {
@@ -77,12 +77,22 @@ class _ShareOptions extends StatelessWidget {
   final ShareLauncher launch;
   final SystemShare systemShare;
 
-  /// "Rafeeq Health on Start.sa", or a plain line when the name is unknown.
+  /// What the link is for, read from its address (startup, investor or
+  /// program), so the message says the right thing.
+  String? get _kind {
+    for (final k in const ['startup', 'investor', 'program']) {
+      if (url.contains('/$k/')) return k;
+    }
+    return null;
+  }
+
+  /// "Look, I found Rafeeq Health on Start.sa. A startup I think you will
+  /// like.", or a plain line when the name is unknown.
   String get _message {
     final name = (title ?? '').trim();
     return name.isEmpty
         ? ProfileStrings.shareMessagePlain
-        : ProfileStrings.shareMessage(name);
+        : ProfileStrings.shareMessage(name, kind: _kind);
   }
 
   /// [base] with [query] percent-encoded ("%20" for a space: Uri's own
@@ -106,7 +116,9 @@ class _ShareOptions extends StatelessWidget {
       }
     }
 
-    final text = '$_message\n$url';
+    // The message, then "Take a look:" and the link.
+    final text = '$_message\n${ProfileStrings.shareTakeALook} $url';
+    final subject = ProfileStrings.shareEmailSubject(title);
     final options = <_ShareOption>[
       _ShareOption(
         label: ProfileStrings.copyLink,
@@ -165,8 +177,8 @@ class _ShareOptions extends StatelessWidget {
             // Uri(queryParameters) would turn spaces into "+", which a mail
             // app shows as plus signs.
             query:
-                'subject=${Uri.encodeComponent(_message)}'
-                '&body=${Uri.encodeComponent(text)}',
+                'subject=${Uri.encodeComponent(subject)}'
+                '&body=${Uri.encodeComponent('${ProfileStrings.shareEmailGreeting}\n\n$text')}',
           ),
         ),
       ),
@@ -176,7 +188,7 @@ class _ShareOptions extends StatelessWidget {
         icon: AppIcons.share,
         onTap: () async {
           try {
-            await systemShare(text, _message);
+            await systemShare(text, subject);
           } catch (_) {
             if (context.mounted) {
               AppToast.error(context, ProfileStrings.shareCantOpen);

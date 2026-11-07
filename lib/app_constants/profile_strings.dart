@@ -35,7 +35,8 @@ class ProfileStrings {
   static const kvRaising = 'Raising';
   static const kvValuation = 'Valuation';
   static const kvCapital = 'Current capital';
-  static const kvFounded = 'Founded';
+  static const kvFounded = 'Founded year';
+  static const kvRunway = 'Runway';
   static const kvModel = 'Commerce model';
   static const kvCity = 'City';
   static const sendRequest = 'Send investment request';
@@ -44,7 +45,6 @@ class ProfileStrings {
   static const interestSent = 'Interest sent';
 
   // ---- Investor profile ----
-  static const investsIn = 'Invests in';
   static const interestedIn = 'Interested in';
   static const investmentSize = 'Investment Size';
   static const perFundingRound = 'Per funding round';
@@ -80,7 +80,17 @@ class ProfileStrings {
   static const myStartups = 'Startups';
   static const addStartup = '+ Add';
   static const noStartups = 'No startups yet.';
-  static const contact = 'Contact';
+  static const contact = 'Contact Information';
+  static const contactIntro =
+      'Only the details marked Public are shown to others.';
+  static const contactShown = 'Shown on your profile';
+
+  /// "Private. Only you can see your email" / "... your phone number".
+  static String contactPrivateNote(String noun) =>
+      'Private. Only you can see your $noun';
+
+  /// What someone else sees for a detail that is private ("Email is private").
+  static String detailPrivate(String label) => '$label is private';
   static const email = 'Email';
   static const phone = 'Phone';
   static const contactPublic = 'Public';
@@ -131,8 +141,27 @@ class ProfileStrings {
   static const shareEmail = 'Email';
   static const shareMore = 'More';
   static const shareCantOpen = 'Couldn’t open that app.';
-  static String shareMessage(String name) => '$name on Start.sa';
-  static const shareMessagePlain = 'Take a look on Start.sa';
+  // What a friend reads when you share something. [kind] is startup,
+  // investor or program (taken from the link).
+  static String shareMessage(String name, {String? kind}) => switch (kind) {
+    'startup' =>
+      'Look, I found $name on Start.sa. A startup I think you will like.',
+    'investor' =>
+      'Look, I found $name on Start.sa. An investor I think you should meet.',
+    'program' =>
+      'Look, I found $name on Start.sa. A support channel that might help you.',
+    _ => 'Look, I found $name on Start.sa.',
+  };
+  static const shareMessagePlain = 'Look what I found on Start.sa.';
+
+  /// The line before the link.
+  static const shareTakeALook = 'Take a look:';
+
+  /// The Email subject, and the greeting at the start of its body.
+  static String shareEmailSubject(String? name) => (name ?? '').trim().isEmpty
+      ? 'Look what I found on Start.sa'
+      : 'Look what I found on Start.sa: ${name!.trim()}';
+  static const shareEmailGreeting = 'Hi,';
 
   // ---- Toasts ----
   static const linkCopied = 'Link copied';

@@ -98,8 +98,10 @@ class _InvestorProfileScreenState extends State<InvestorProfileScreen> {
                           role: inv.title,
                           city: inv.city,
                           metaTail: _vm.associationCount,
-                          tagsLabel: ProfileStrings.investsIn,
-                          tags: inv.sectors,
+                          // The sectors are listed under Interests below: no
+                          // second "Invests in" line under the name.
+                          tagsLabel: '',
+                          tags: const [],
                           photoUrl: inv.photoUrl,
                           linkedin: _vm.linkedin,
                           onLinkedin: () => openExternalLink(_vm.linkedin),

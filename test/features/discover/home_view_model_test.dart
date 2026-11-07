@@ -1,10 +1,14 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:startsa/data_access/firebase_services/firestore_service.dart';
 import 'package:startsa/data_access/mock_data/prototype_seed.dart';
 import 'package:startsa/data_access/repositories/discovery_repository.dart';
+import 'package:startsa/data_access/repositories/interaction_repository.dart';
 import 'package:startsa/features/search/view_models/home_filters.dart';
 import 'package:startsa/features/search/view_models/home_view_model.dart';
 import 'package:startsa/helpers/app_session.dart';
 import 'package:startsa/models/home_item.dart';
+import 'package:startsa/models/latest_range.dart';
+import 'package:startsa/shared_ui/widgets/headers/home_header.dart';
 
 void main() {
   setUp(() {
@@ -23,7 +27,6 @@ void main() {
           final m = vm(r);
           expect(m.hubSwitch, want, reason: '$r Hub');
           expect(m.resultsSwitch, want, reason: '$r Explore results');
-          expect(m.forYouSwitch, want, reason: '$r For You');
           expect(m.trendingSwitch, want, reason: '$r Trending');
           m.dispose();
         }
@@ -88,7 +91,7 @@ void main() {
     test('selections are remembered per context', () {
       final m = vm(SessionRole.founder);
       m.applySelection({
-        'Sector': {'Fintech'},
+        'Sectors': {'Fintech'},
       });
       m.setHubSwitch(0);
       expect(m.selectionCount, 0);
@@ -110,17 +113,17 @@ void main() {
 
     test('the Investors search: no Investor type, counts and chips work', () {
       expect(HomeFilters.groups(HomeContext.investors).map((g) => g.title), [
-        'Sector',
-        'Stages they invest in',
-        'Ticket size',
+        'Sectors',
+        'Stages',
+        'Commerce models',
+        'Investment size',
         'City',
-        'Sort by',
       ]);
       final m = vm(SessionRole.founder)..setHubSwitch(1);
       m.applySelection({
-        'Sector': {'HealthTech'},
-        'Stages they invest in': {'Seed'},
-        'Ticket size': {'SAR 100K – 500K'},
+        'Sectors': {'HealthTech'},
+        'Stages': {'Seed'},
+        'Investment size': {'SAR 100K – 500K'},
         'City': {'Riyadh'},
         'Sort by': {'Name A–Z'},
       });
@@ -132,6 +135,8 @@ void main() {
       expect(m.chips.length, 3);
       m.clearAll();
       expect(m.selectionCount, 0);
+      // The sort is not a filter: it stays.
+      expect(m.sortChoice, 'Name A–Z');
       m.dispose();
     });
 
@@ -160,17 +165,15 @@ void main() {
         'Sector',
         'Stage',
         'Looking for',
+        'Partner types',
+        'Support types',
         'Raising',
         'Commerce model',
-        'City',
-        'Sort by',
+        'Headquarters',
       ]);
       expect(HomeFilters.groups(HomeContext.explore).length, 4);
       expect(HomeFilters.groups(HomeContext.support).first.title, 'Type');
-      expect(
-        HomeFilters.groups(HomeContext.investors)[1].title,
-        'Stages they invest in',
-      );
+      expect(HomeFilters.groups(HomeContext.investors)[1].title, 'Stages');
     });
   });
 
@@ -183,16 +186,188 @@ void main() {
       m.dispose();
     });
 
-    test('new on Start.sa follows the For You switch', () {
+    test('the tabs are Latest, Trending, For You and open on Latest', () {
+      expect([for (final t in ExploreTab.defaults) t.label], [
+        'Latest',
+        'Trending',
+        'For You',
+      ]);
+      // Founders and investors have the same tabs; there is no Matches tab.
+      expect(ExploreTab.forRole(founder: true), ExploreTab.defaults);
+      expect(ExploreTab.forRole(founder: false), ExploreTab.defaults);
       final m = vm(SessionRole.investor);
-      expect(m.newItems.every((i) => i.kind == HomeItemKind.startup), isTrue);
-      m.setForYouSwitch(1);
-      expect(m.newItems.every((i) => i.kind == HomeItemKind.investor), isTrue);
+      expect(m.effectiveExploreTab, 0);
+      m.selectExploreTab(2);
+      expect(m.effectiveExploreTab, 2);
+      m.selectExploreTab(9);
+      expect(m.effectiveExploreTab, 2);
+      m.dispose();
+    });
+
+    test('trending cards carry the rank, the growth and the reason', () {
+      final m = vm(SessionRole.investor);
+      final first = m.trending.first;
+      expect(first.highlight, '#1 · ${InteractionRepository.growthOf(0)}');
+      expect(first.highlight, '#1 · +38%');
+      expect(first.highlightReason, 'more views than last week');
+      expect(m.trending[1].highlight!.startsWith('#2 · '), isTrue);
+      m.setRange(0);
+      expect(m.trending.first.highlightReason, 'more views than yesterday');
+      m.setRange(2);
+      expect(m.trending.first.highlightReason, 'more views than last month');
+      m.dispose();
+    });
+
+    test('the (i) text of Trending names the period', () {
+      expect(
+        TrendingRange.week.info,
+        'Based on profile views in the last 7 days. The more a profile’s '
+        'views grew compared with the previous period, the higher it ranks.',
+      );
+      expect(TrendingRange.today.info, contains('profile views today.'));
+    });
+
+    test('For You has no switch: an investor gets startups, a founder investors', () {
+      final i = vm(SessionRole.investor);
+      expect(i.recommended, isNotEmpty);
+      expect(i.recommended.every((x) => x.kind == HomeItemKind.startup), isTrue);
+      expect(i.recommendedTitle, 'Recommended startups for you');
+      expect(
+        i.recommendedInfo,
+        'Based on your investment criteria: the sectors, stages and commerce '
+        'models you want to invest in, and how much you usually invest.',
+      );
       final f = vm(SessionRole.founder);
-      expect(f.newItems.every((i) => i.kind == HomeItemKind.investor), isTrue);
+      expect(f.recommended.every((x) => x.kind == HomeItemKind.investor), isTrue);
+      expect(f.recommendedTitle, 'Recommended investors for you');
+      expect(
+        f.recommendedInfo,
+        'Based on your startup: its sector, stage, commerce model and how much '
+        'you are raising, compared with each investor’s interests and usual '
+        'investment size.',
+      );
+      i.dispose();
       f.dispose();
-      expect(m.recommended.length, 3);
+    });
+
+    test('For You keeps the startups the founder belongs to out', () {
+      final id = PrototypeSeed.startups.first.id;
+      final m = vm(SessionRole.investor, own: {id});
+      expect(m.recommended.any((x) => x.id == id), isFalse);
       m.dispose();
     });
   });
+
+  group('Latest', () {
+    final now = DateTime.now();
+    DateTime ago(int days) => now.subtract(Duration(days: days));
+
+    Future<HomeViewModel> loaded(
+      Map<String, DateTime> startups, {
+      Set<String> own = const {},
+    }) async {
+      final base = PrototypeSeed.rafeeq;
+      final repo = DiscoveryRepository(
+        firestore: _Docs({
+          for (final e in startups.entries)
+            e.key: {
+              ...base.toMap(),
+              'name': 'S ${e.key}',
+              'isPublic': true,
+              'createdAt': e.value,
+            },
+        }),
+      );
+      await repo.refresh();
+      DiscoveryRepository.instance = repo;
+      return HomeViewModel(role: SessionRole.investor, ownStartupIds: own);
+    }
+
+    test('newest first, with a "Joined … ago" line, the last week by default', () async {
+      final m = await loaded({
+        'a': ago(2),
+        'b': ago(20),
+        'c': ago(0),
+        'd': ago(100),
+      });
+      expect(m.latestRange.label, 'Last week');
+      expect([for (final i in m.latest) i.id], ['c', 'a']);
+      expect(m.latest.first.highlight, 'Joined today');
+      expect(m.latest.last.highlight, 'Joined 2 days ago');
+      m.dispose();
+    });
+
+    test('the dropdown ranges: week, 3 months, 6 months, year', () async {
+      final m = await loaded({
+        'a': ago(2),
+        'b': ago(20),
+        'c': ago(100),
+        'd': ago(200),
+        'e': ago(400),
+      });
+      expect([for (final r in LatestRange.values) r.label], [
+        'Last week',
+        'Last 3 months',
+        'Last 6 months',
+        'Last year',
+      ]);
+      m.setLatestRange(1);
+      expect([for (final i in m.latest) i.id], ['a', 'b']);
+      m.setLatestRange(2);
+      expect([for (final i in m.latest) i.id], ['a', 'b', 'c']);
+      m.setLatestRange(3);
+      expect([for (final i in m.latest) i.id], ['a', 'b', 'c', 'd']);
+      m.dispose();
+    });
+
+    test('a founder does not see their own startups', () async {
+      final m = await loaded({'a': ago(1), 'b': ago(2)}, own: {'a'});
+      expect([for (final i in m.latest) i.id], ['b']);
+      m.dispose();
+    });
+
+    test('the joined lines', () {
+      final today = DateTime(2026, 11, 7, 12);
+      String at(DateTime d) => DiscoveryRepository.joinedAgo(d, now: today);
+      expect(at(DateTime(2026, 11, 7)), 'Joined today');
+      expect(at(DateTime(2026, 11, 6)), 'Joined yesterday');
+      expect(at(DateTime(2026, 11, 5)), 'Joined 2 days ago');
+      expect(at(DateTime(2026, 10, 31)), 'Joined 1 week ago');
+      expect(at(DateTime(2026, 10, 17)), 'Joined 3 weeks ago');
+      expect(at(DateTime(2026, 8, 7)), 'Joined 3 months ago');
+      expect(at(DateTime(2025, 1, 1)), 'Joined over a year ago');
+    });
+
+    test('empty when nothing joined in the range', () async {
+      final m = await loaded({'a': ago(300)});
+      expect(m.latest, isEmpty);
+      m.dispose();
+    });
+  });
+}
+
+/// Startups served as documents (the `isPublic == true` query).
+class _Docs extends FirestoreService {
+  _Docs(this.startups);
+
+  final Map<String, Map<String, Object?>> startups;
+
+  @override
+  Future<List<FirestoreDocument>> queryWhereEqual(
+    String collection,
+    String field,
+    Object value, {
+    int? limit,
+  }) async => collection == 'startups'
+      ? [
+          for (final e in startups.entries)
+            (id: e.key, data: Map<String, dynamic>.from(e.value)),
+        ]
+      : const [];
+
+  @override
+  Future<List<FirestoreDocument>> listCollection(
+    String collection, {
+    int limit = 100,
+  }) async => const [];
 }

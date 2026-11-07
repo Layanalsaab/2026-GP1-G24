@@ -25,3 +25,13 @@ write must be allowed; a refusal means the app and the rules disagree (or a
 request went over the 1000-expression limit). If port 8080 is still taken by an
 old emulator, run it through `sh run_emu.sh demo-parity parity.test.mjs`, which
 stops the old one first.
+
+## Investment Wallet (`npm run wallet`)
+
+Tests the `tickets` rules and the requests an investor sends with a ticket
+(`ticketId`): who can create, edit, close and delete a ticket, the amount rules
+(inside the ticket's range, no more than the open round still needs) and that
+the existing request without a ticket is unchanged.
+
+    cd tools/rules_tests
+    npm run wallet

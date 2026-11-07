@@ -53,7 +53,8 @@ void main() {
     test('bookmark keys follow the s-/i-/p- rule', () {
       expect(repo.startups().first.bookmarkKey, 's-mock-rafeeq');
       expect(repo.investors().first.bookmarkKey, 'i-ahmad');
-      expect(repo.programs().first.bookmarkKey, 'p-taqadam');
+      // There are no support channels yet.
+      expect(repo.programs(), isEmpty);
     });
   });
 

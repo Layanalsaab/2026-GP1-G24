@@ -113,9 +113,10 @@ void main() {
           size: size,
         );
         expect(find.text('Layan Alsaab'), findsOneWidget);
+        // No "Invests in" line: the sectors are under Interests.
         expect(
           find.textContaining('Invests in', findRichText: true),
-          findsOneWidget,
+          findsNothing,
         );
         expect(find.text('Investment Background'), findsOneWidget);
         expect(find.text('Send investment request'), findsOneWidget);

@@ -55,7 +55,7 @@ void main() {
   ) async {
     AppSession.instance.signIn(founder);
     await pumpMain(tester);
-    expect(find.text('Hub'), findsOneWidget);
+    expect(find.text('Start.sa Hub'), findsOneWidget);
     expect(find.text('SA'), findsWidgets);
     expect(find.text('Sign up'), findsNothing);
     expect(find.text('Startups'), findsOneWidget);
@@ -71,44 +71,48 @@ void main() {
     expect(find.bySemanticsLabel(RegExp('Open menu')), findsNothing);
   });
 
-  testWidgets('a founder\'s Explore has For You and Trending, no Matches', (
-    tester,
-  ) async {
-    AppSession.instance.signIn(founder);
-    await pumpMain(tester);
-    await tester.tap(find.bySemanticsLabel('Explore').last);
-    await tester.pump(const Duration(milliseconds: 500));
-    expect(find.text('Explore'), findsWidgets);
-    expect(find.text('For You'), findsOneWidget);
-    expect(find.text('Trending'), findsOneWidget);
-    expect(find.text('Matches'), findsNothing);
-    // Two equal columns: the tabs are centred in each half of the row.
-    final row = tester.getRect(find.byType(ExploreTabs));
-    expect(
-      tester.getCenter(find.text('For You')).dx,
-      closeTo(row.left + row.width / 4, 20),
-    );
-    expect(
-      tester.getCenter(find.text('Trending')).dx,
-      closeTo(row.left + row.width * 3 / 4, 20),
-    );
-  });
+  for (final role in ['founder', 'investor']) {
+    testWidgets('a $role\'s Explore has Latest, Trending and For You, no Matches', (
+      tester,
+    ) async {
+      AppSession.instance.signIn(role == 'founder' ? founder : investor);
+      await pumpMain(tester);
+      await tester.tap(find.bySemanticsLabel('Explore').last);
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(find.text('Explore'), findsWidgets);
+      expect(find.text('Latest'), findsOneWidget);
+      expect(find.text('Trending'), findsOneWidget);
+      expect(find.text('For You'), findsOneWidget);
+      expect(find.text('Matches'), findsNothing);
+      // Three equal columns, centred, in this order.
+      final row = tester.getRect(find.byType(ExploreTabs));
+      expect(
+        tester.getCenter(find.text('Latest')).dx,
+        closeTo(row.left + row.width / 6, 20),
+      );
+      expect(
+        tester.getCenter(find.text('Trending')).dx,
+        closeTo(row.center.dx, 20),
+      );
+      expect(
+        tester.getCenter(find.text('For You')).dx,
+        closeTo(row.left + row.width * 5 / 6, 20),
+      );
+      // It opens on Latest.
+      expect(find.text('Newest startups'), findsOneWidget);
+    });
+  }
 
-  testWidgets('an investor\'s Explore keeps For You, Trending and Matches', (
-    tester,
-  ) async {
-    AppSession.instance.signIn(investor);
+  testWidgets('a guest only has Trending, no sub-tabs', (tester) async {
+    AppSession.instance.signInAsGuest();
     await pumpMain(tester);
     await tester.tap(find.bySemanticsLabel('Explore').last);
     await tester.pump(const Duration(milliseconds: 500));
-    expect(find.text('For You'), findsOneWidget);
-    expect(find.text('Trending'), findsOneWidget);
-    expect(find.text('Matches'), findsOneWidget);
-    final row = tester.getRect(find.byType(ExploreTabs));
-    expect(
-      tester.getCenter(find.text('Trending')).dx,
-      closeTo(row.center.dx, 20),
-    );
+    // The Sign up pill is 1.5 px wider in the test font: not what is tested.
+    tester.takeException();
+    expect(find.byType(ExploreTabs), findsNothing);
+    expect(find.text('Top 30 trending'), findsOneWidget);
+    expect(find.text('Newest startups'), findsNothing);
   });
 
   testWidgets(

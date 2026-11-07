@@ -7,7 +7,9 @@ import '../../motion/motion.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_metrics.dart';
 import '../../theme/app_text.dart';
+import '../forms/select_field.dart';
 import 'app_overlay_route.dart';
+import 'multi_picker_sheet.dart';
 
 /// One option group of the advanced search sheet. [single] groups (e.g.
 /// "Sort by") allow one choice and show no "Choose any" hint.
@@ -16,12 +18,32 @@ class AdvancedSearchGroup {
     required this.title,
     required this.options,
     this.single = false,
+    this.drop = false,
+    this.otherHint,
   });
 
   final String title;
   final List<String> options;
   final bool single;
+
+  /// A long list (all sectors, all cities): shown as a dropdown that opens a
+  /// searchable list instead of a wall of chips.
+  final bool drop;
+
+  /// Set on a dropdown whose list has "Other": choosing it shows a text box
+  /// with this placeholder ("Type a sector, e.g. SportsTech").
+  final String? otherHint;
+
+  bool get hasOther => otherHint != null && options.contains('Other');
 }
+
+/// The key under which the typed "Other" text of the group [title] is kept in
+/// an [AdvancedSelection] (a one-item set). Not a group, so it is never
+/// counted or shown as a chip.
+String advancedOtherKey(String title) => '__other:$title';
+
+/// The longest "Other" text.
+const advancedOtherMax = 40;
 
 /// Selected options per group title.
 typedef AdvancedSelection = Map<String, Set<String>>;
@@ -107,6 +129,23 @@ class _AdvancedSearchSheetState extends State<AdvancedSearchSheet> {
         _draft[g.title] = cur;
       } else {
         _draft[g.title] = cur;
+        // Unticking Other forgets what was typed for it.
+        if (o == 'Other') _draft.remove(advancedOtherKey(g.title));
+      }
+    });
+  }
+
+  /// The typed "Other" text of a group ('' when none).
+  String _otherOf(AdvancedSearchGroup g) =>
+      (_draft[advancedOtherKey(g.title)] ?? const <String>{}).firstOrNull ?? '';
+
+  void _setOther(AdvancedSearchGroup g, String text) {
+    setState(() {
+      final t = text.trim();
+      if (t.isEmpty) {
+        _draft.remove(advancedOtherKey(g.title));
+      } else {
+        _draft[advancedOtherKey(g.title)] = {t};
       }
     });
   }
@@ -206,7 +245,9 @@ class _AdvancedSearchSheetState extends State<AdvancedSearchSheet> {
                       group: widget.groups[i],
                       selected: _draft[widget.groups[i].title] ?? const {},
                       last: i == widget.groups.length - 1,
+                      otherText: _otherOf(widget.groups[i]),
                       onToggle: (o) => _toggle(widget.groups[i], o),
+                      onOtherChanged: (t) => _setOther(widget.groups[i], t),
                     ),
                 ],
               ),
@@ -295,12 +336,16 @@ class _Group extends StatelessWidget {
     required this.selected,
     required this.last,
     required this.onToggle,
+    required this.otherText,
+    required this.onOtherChanged,
   });
 
   final AdvancedSearchGroup group;
   final Set<String> selected;
   final bool last;
   final ValueChanged<String> onToggle;
+  final String otherText;
+  final ValueChanged<String> onOtherChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -340,19 +385,89 @@ class _Group extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 10),
-          Wrap(
-            spacing: 7,
-            runSpacing: 7,
-            children: [
-              for (final o in group.options)
-                _OptionChip(
-                  label: o,
-                  on: selected.contains(o),
-                  onTap: () => onToggle(o),
-                ),
-            ],
-          ),
+          if (group.drop)
+            _DropGroup(
+              group: group,
+              selected: selected,
+              otherText: otherText,
+              onToggle: onToggle,
+              onOtherChanged: onOtherChanged,
+            )
+          else
+            Wrap(
+              spacing: 7,
+              runSpacing: 7,
+              children: [
+                for (final o in group.options)
+                  _OptionChip(
+                    label: o,
+                    on: selected.contains(o),
+                    onTap: () => onToggle(o),
+                  ),
+              ],
+            ),
         ],
+      ),
+    );
+  }
+}
+
+/// A dropdown group: a select box that opens the same searchable multi-select
+/// list as everywhere else in the app. When the list has "Other", ticking it
+/// shows the same text box; typing something that is already in the list
+/// ticks that option instead (and says so), as in every form.
+///
+/// A filter may look for "Other" with nothing typed (every item whose value is
+/// not in the list), which a form may not.
+class _DropGroup extends StatelessWidget {
+  const _DropGroup({
+    required this.group,
+    required this.selected,
+    required this.otherText,
+    required this.onToggle,
+    required this.onOtherChanged,
+  });
+
+  final AdvancedSearchGroup group;
+  final Set<String> selected;
+  final String otherText;
+  final ValueChanged<String> onToggle;
+  final ValueChanged<String> onOtherChanged;
+
+  /// "A, B" or "A, B +1": the first two chosen, in the list's order. Other
+  /// shows what was typed ("Other: SportsTech").
+  String get _summary {
+    final chosen = [
+      for (final o in group.options)
+        if (selected.contains(o))
+          o == 'Other' && otherText.trim().isNotEmpty
+              ? SelectField.otherText(otherText)
+              : o,
+    ];
+    if (chosen.length <= 2) return chosen.join(', ');
+    return '${chosen.take(2).join(', ')} +${chosen.length - 2}';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final noun = group.title.toLowerCase();
+    return SelectField(
+      placeholder: 'Select $noun',
+      value: _summary,
+      semanticLabel: group.title,
+      onTap: () => showMultiPickerSheet(
+        context,
+        title: group.title,
+        options: group.options,
+        selected: selected,
+        onToggle: onToggle,
+        searchHint: 'Search $noun',
+        otherNoun: group.hasOther ? 'sector' : null,
+        otherHint: group.otherHint,
+        otherText: otherText,
+        onOtherChanged: onOtherChanged,
+        allowBlankOther: true,
+        otherHelper: 'Leave empty to see every sector not in the list',
       ),
     );
   }

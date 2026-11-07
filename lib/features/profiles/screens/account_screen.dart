@@ -18,6 +18,7 @@ import '../../../shared_ui/icons/app_icons.dart';
 import '../../../shared_ui/navigation/app_route.dart';
 import '../../../shared_ui/theme/app_colors.dart';
 import '../../../shared_ui/widgets/cards/avatars.dart';
+import '../widgets/contact_section.dart';
 import '../../../shared_ui/widgets/cards/home_card.dart';
 import '../../../shared_ui/widgets/cards/profile_blocks.dart';
 import '../../../shared_ui/widgets/headers/profile_banner.dart';
@@ -248,10 +249,10 @@ class _OwnProfileScreenState extends State<OwnProfileScreen> {
                     role: _vm.roleLabel,
                     city: u.city,
                     metaTail: _vm.joinedLabel,
-                    tagsLabel: u.isInvestor
-                        ? ProfileStrings.investsIn
-                        : ProfileStrings.interestedIn,
-                    tags: _vm.sectors,
+                    tagsLabel: ProfileStrings.interestedIn,
+                    // An investor's sectors are listed under Interests: no
+                    // second "Invests in" line under the name.
+                    tags: u.isInvestor ? const [] : _vm.sectors,
                     photoUrl: u.photoUrl,
                     photoData: u.photoData,
                     linkedin: _vm.linkedin,
@@ -316,21 +317,24 @@ class _OwnProfileScreenState extends State<OwnProfileScreen> {
                             title: ProfileStrings.contact,
                             delay: stagger(),
                             child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
+                                const ContactIntro(),
                                 for (final (i, row)
                                     in _vm.contactRows().indexed)
-                                  InfoRow(
+                                  OwnContactRow(
                                     icon: row.kind == ContactKind.email
                                         ? AppIcons.mail
                                         : AppIcons.phone,
                                     label: row.kind == ContactKind.email
                                         ? ProfileStrings.email
                                         : ProfileStrings.phone,
+                                    noun: row.kind == ContactKind.email
+                                        ? 'email'
+                                        : 'phone number',
                                     value: row.value,
+                                    isPublic: row.isPublic,
                                     showDivider: i > 0,
-                                    trailing: _ContactPill(
-                                      isPublic: row.isPublic,
-                                    ),
                                   ),
                               ],
                             ),
@@ -343,36 +347,6 @@ class _OwnProfileScreenState extends State<OwnProfileScreen> {
           ),
         );
       },
-    );
-  }
-}
-
-/// The small "Public" / "Only you" pill at the end of a Contact row:
-/// height 22, 12 px semibold; Public in moss, Only you in grey.
-class _ContactPill extends StatelessWidget {
-  const _ContactPill({required this.isPublic});
-
-  final bool isPublic;
-
-  @override
-  Widget build(BuildContext context) {
-    final color = isPublic ? AppColors.moss600 : AppColors.grey;
-    return Container(
-      height: 22,
-      padding: const EdgeInsets.symmetric(horizontal: 9),
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        // Public: moss fill. Only you: a muted grey fill.
-        color: isPublic ? const Color(0xFFEEF4EF) : const Color(0xFFF0EDE6),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(
-          color: isPublic ? const Color(0xFFCFE0D3) : const Color(0xFFF0EDE6),
-        ),
-      ),
-      child: Text(
-        isPublic ? ProfileStrings.contactPublic : ProfileStrings.contactOnlyYou,
-        style: AppText.sans(size: 12, weight: FontWeight.w600, color: color),
-      ),
     );
   }
 }

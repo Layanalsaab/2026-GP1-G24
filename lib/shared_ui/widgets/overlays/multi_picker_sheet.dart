@@ -33,6 +33,8 @@ Future<void> showMultiPickerSheet(
   VoidCallback? onUndoOther,
   int otherMax = 40,
   Map<String, String> alsoCountsAs = const {},
+  bool allowBlankOther = false,
+  String? otherHelper,
 }) {
   // The same bottom sheet as the Sector / Stage / Commerce model pickers.
   return showAppBottomSheet<void>(
@@ -52,6 +54,8 @@ Future<void> showMultiPickerSheet(
       onUndoOther: onUndoOther,
       otherMax: otherMax,
       alsoCountsAs: alsoCountsAs,
+      allowBlankOther: allowBlankOther,
+      otherHelper: otherHelper,
     ),
   );
 }
@@ -76,6 +80,8 @@ class MultiPickerSheet extends StatefulWidget {
     this.onUndoOther,
     this.otherMax = 40,
     this.alsoCountsAs = const {},
+    this.allowBlankOther = false,
+    this.otherHelper,
   });
 
   final String title;
@@ -95,6 +101,13 @@ class MultiPickerSheet extends StatefulWidget {
   /// Other texts that mean a listed option (e.g. "B2B" -> its option): typing
   /// one (and pausing) ticks that option and drops "Other".
   final Map<String, String> alsoCountsAs;
+
+  /// A filter can look for "Other" with nothing typed (every item whose
+  /// value is not in the list); a form cannot, so it asks for the text.
+  final bool allowBlankOther;
+
+  /// A grey line under the write-in box.
+  final String? otherHelper;
 
   @override
   State<MultiPickerSheet> createState() => _MultiPickerSheetState();
@@ -170,7 +183,7 @@ class _MultiPickerSheetState extends State<MultiPickerSheet> {
 
   void _done() {
     _autoPick();
-    if (_otherOpen && _otherBlank) {
+    if (!widget.allowBlankOther && _otherOpen && _otherBlank) {
       setState(() => _showError = true);
       return;
     }
@@ -192,7 +205,9 @@ class _MultiPickerSheetState extends State<MultiPickerSheet> {
         if (!didPop) return;
         // Closed before the pause ended: the match still counts.
         _autoPick();
-        if (_otherOpen && _otherBlank) widget.onUndoOther?.call();
+        if (!widget.allowBlankOther && _otherOpen && _otherBlank) {
+          widget.onUndoOther?.call();
+        }
       },
       child: AppSheetScaffold(
         title: widget.title,
@@ -249,6 +264,14 @@ class _MultiPickerSheetState extends State<MultiPickerSheet> {
                           _pause?.cancel();
                           _pause = Timer(_pauseAfterTyping, _autoPick);
                         },
+                      ),
+                    ),
+                  if (_otherOpen && widget.otherHelper != null)
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(6, 0, 6, 0),
+                      child: Text(
+                        widget.otherHelper!,
+                        style: AppText.sans(size: 12.5, color: AppColors.grey),
                       ),
                     ),
                 ],

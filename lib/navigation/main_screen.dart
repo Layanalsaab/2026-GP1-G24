@@ -15,6 +15,7 @@ import '../features/programs/screens/programs_screen.dart';
 import '../features/search/screens/hub_screen.dart';
 import '../features/search/view_models/home_filters.dart';
 import '../features/search/view_models/home_view_model.dart';
+import '../features/wallet/screens/wallet_screen.dart';
 import '../features/startups/screens/my_startups_screen.dart';
 import '../helpers/app_session.dart';
 import '../models/list_entries.dart';
@@ -27,6 +28,7 @@ import '../shared_ui/widgets/nav/app_bottom_nav.dart';
 import '../shared_ui/widgets/nav/app_side_drawer.dart';
 import '../shared_ui/widgets/nav/home_search_bar.dart';
 import '../shared_ui/widgets/overlays/advanced_search_sheet.dart';
+import '../shared_ui/widgets/overlays/picker_sheet.dart';
 import '../shared_ui/widgets/overlays/app_bottom_sheet.dart';
 import 'app_router.dart';
 
@@ -156,6 +158,18 @@ class _MainScreenState extends State<MainScreen> {
     if (result != null) _vm.applySelection(result);
   }
 
+  /// The Hub's sort button: Newest or Name A–Z; picking the chosen one again
+  /// goes back to the default order.
+  Future<void> _openSort() async {
+    final r = await showPickerSheet(
+      context,
+      title: HomeStrings.sortTitle,
+      options: const [HomeStrings.sortNewest, HomeStrings.sortNameAZ],
+      selected: _vm.sortChoice,
+    );
+    if (r != null) _vm.setSort(r.value);
+  }
+
   /// "Log out" asks first.
   Future<void> _confirmLogOut() async {
     final ok = await showConfirmSheet(
@@ -189,7 +203,11 @@ class _MainScreenState extends State<MainScreen> {
             onTap: () => MyStartupsScreen.open(context),
           )
         else
-          AppDrawerItem(label: HomeStrings.wallet, icon: AppIcons.menuWallet),
+          AppDrawerItem(
+            label: HomeStrings.wallet,
+            icon: AppIcons.menuWallet,
+            onTap: () => WalletScreen.open(context),
+          ),
         AppDrawerItem(
           label: HomeStrings.bookmarks,
           icon: AppIcons.menuBookmark,
@@ -296,6 +314,8 @@ class _MainScreenState extends State<MainScreen> {
                               activeCount: _vm.selectionCount,
                               onChanged: _vm.setQuery,
                               onFilterTap: _openAdvanced,
+                              onSortTap: _vm.hasSortButton ? _openSort : null,
+                              sortActive: _vm.sortChoice != null,
                             ),
                             _page(),
                           ],

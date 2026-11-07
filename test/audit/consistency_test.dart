@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:startsa/app_constants/app_strings.dart';
+import 'package:startsa/app_constants/founder_tools_strings.dart';
 import 'package:startsa/features/login_and_signup/view_models/investor_onboarding_view_model.dart';
 import 'package:startsa/features/login_and_signup/view_models/signup_view_model.dart';
 import 'package:startsa/features/profiles/view_models/edit_account_view_model.dart';
@@ -56,15 +57,43 @@ void main() {
     List<String> options(HomeContext ctx, String title) => HomeFilters.groups(
       ctx,
     ).firstWhere((g) => g.title == title).options;
-    expect(options(HomeContext.investors, 'Sector'), sectors);
-    expect(options(HomeContext.investors, 'Stages they invest in'), [
+    final bands = [
+      for (final o in InvestorCriteria.ticketOptions)
+        if (o != 'Other') o,
+    ];
+    // Investors.
+    expect(options(HomeContext.investors, 'Sectors'), sectors);
+    expect(options(HomeContext.investors, 'Stages'), [
       for (final s in StartupStage.picks) s.label,
     ]);
     expect(options(HomeContext.investors, 'City'), AppStrings.allCities);
-    expect(
-      options(HomeContext.investors, 'Ticket size'),
-      InvestorCriteria.ticketOptions,
-    );
+    expect(options(HomeContext.investors, 'Investment size'), bands);
+    expect(options(HomeContext.investors, 'Commerce models'), [
+      'B2B',
+      'B2C',
+      'B2G',
+    ]);
+    // Startups.
+    expect(options(HomeContext.startups, 'Sector'), sectors);
+    expect(options(HomeContext.startups, 'Headquarters'), AppStrings.allCities);
+    expect(options(HomeContext.startups, 'Raising'), bands);
+    expect(options(HomeContext.startups, 'Looking for'), [
+      'Funding',
+      'Partnership',
+      'Support',
+    ]);
+    expect(options(HomeContext.startups, 'Partner types'), [
+      for (final o in FounderToolsStrings.partnerOptions)
+        if (o != 'Other') o,
+    ]);
+    expect(options(HomeContext.startups, 'Support types'), [
+      for (final o in FounderToolsStrings.supportOptions)
+        if (o != 'Other') o,
+    ]);
+    // The same commerce models a startup can pick.
+    for (final m in ['B2B', 'B2C', 'B2G']) {
+      expect(BusinessModel.picks.map((b) => b.shortLabel), contains(m));
+    }
   });
 
   group('firestore.rules accepts every value the app can store', () {

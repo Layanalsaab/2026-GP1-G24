@@ -113,6 +113,39 @@ class MatchingRepository {
     ];
   }
 
+  /// Every public startup that is not closed (the pool a wallet ticket is
+  /// matched against). Private startups cannot be read by an investor.
+  Future<List<Startup>> publicStartups({bool refresh = false}) async {
+    final docs = live
+        ? await _watch(
+            _liveStartups,
+            () => _firestore.watchWhereEqual(
+              FirestoreCollections.startups,
+              StartupFields.isPublic,
+              true,
+            ),
+            (pool) => _liveStartups = pool,
+          )
+        : await _load(
+            _startups,
+            refresh,
+            () => _firestore.queryWhereEqual(
+              FirestoreCollections.startups,
+              StartupFields.isPublic,
+              true,
+            ),
+            (pool) => _startups = pool,
+          );
+    final out = <Startup>[];
+    for (final d in docs) {
+      final s = Startup.fromMap(d.id, d.data);
+      if (s == null || s.isClosed) continue;
+      _shownStartups[d.id] = s;
+      out.add(s);
+    }
+    return out;
+  }
+
   /// Investors matched to the founder's [startup] (public or private), best
   /// first.
   Future<List<HomeItem>> investorsForStartup(

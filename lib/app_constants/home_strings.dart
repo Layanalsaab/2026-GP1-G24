@@ -4,7 +4,7 @@ class HomeStrings {
   HomeStrings._();
 
   // Titles
-  static const hubTitle = 'Hub';
+  static const hubTitle = 'Start.sa Hub';
   static const exploreTitle = 'Explore';
   static const supportTitle = 'Support Channels';
   static const menuLabel = 'Open menu, 4 new notifications';
@@ -17,6 +17,16 @@ class HomeStrings {
   // Sections
   static const newOnStartSa = 'New on Start.sa';
   static const recommended = 'Recommended for you';
+  static const recommendedStartups = 'Recommended startups for you';
+  static const recommendedInvestors = 'Recommended investors for you';
+  static const forYouInfoInvestor =
+      'Based on your investment criteria: the sectors, stages and commerce models you want to invest in, and how much you usually invest.';
+  static const forYouInfoFounder =
+      'Based on your startup: its sector, stage, commerce model and how much you are raising, compared with each investor’s interests and usual investment size.';
+  static const newestStartups = 'Newest startups';
+  static const noNewStartupsTitle = 'No new startups';
+  static const noNewStartupsMessage =
+      'No startups joined in this time range. Try a longer one.';
   static const top30 = 'Top 30 trending';
   static const results = 'Results';
   static const forYouBack = 'For You';
@@ -36,6 +46,12 @@ class HomeStrings {
   static const loadFailedTitle = 'Couldn’t load the list';
   static const loadFailedMessage = 'Check your connection and try again.';
   static const retry = 'Try again';
+  static const noSupportTitle = 'No support channels yet';
+  static const noSupportMessage =
+      'Support channels are not available yet. Check back soon.';
+  static const sortTitle = 'Sort by';
+  static const sortNewest = 'Newest';
+  static const sortNameAZ = 'Name A–Z';
   static const nothingYetTitle = 'Nothing here yet';
   static const nothingYetMessage =
       'New startups and investors will appear here.';

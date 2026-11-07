@@ -17,24 +17,21 @@ class ExploreTab {
 
   final String label;
 
-  /// Outline icon path from [AppIcons] (`tabForYou`, `tabTrending`,
-  /// `tabMatches`).
+  /// Outline icon path from [AppIcons] (`tabLatest`, `tabTrending`,
+  /// `tabForYou`).
   final String icon;
 
-  static const forYou = ExploreTab('For You', AppIcons.tabForYou);
+  static const latest = ExploreTab('Latest', AppIcons.tabLatest);
   static const trending = ExploreTab('Trending', AppIcons.tabTrending);
-  static const matches = ExploreTab('Matches', AppIcons.tabMatches);
+  static const forYou = ExploreTab('For You', AppIcons.tabForYou);
 
-  /// An investor's tabs: For You · Trending · Matches.
-  static const defaults = [forYou, trending, matches];
+  /// Latest · Trending · For You, for investors and founders alike. (There is
+  /// no Matches tab: matching lives inside each ticket of the Investment
+  /// Wallet and inside each open round.) Guests only see Trending.
+  static const defaults = [latest, trending, forYou];
 
-  /// A founder's tabs: For You · Trending. A founder's matches live inside
-  /// each open round (Manage startup -> Rounds).
-  static const founder = [forYou, trending];
-
-  /// The tabs of a founder or an investor.
-  static List<ExploreTab> forRole({required bool founder}) =>
-      founder ? ExploreTab.founder : defaults;
+  /// The tabs of a founder or an investor (the same).
+  static List<ExploreTab> forRole({required bool founder}) => defaults;
 }
 
 /// Home header (Hub / Explore / Support Channels): green, bottom radius 30,
@@ -103,48 +100,55 @@ class HomeHeader extends StatelessWidget {
         children: [
           SizedBox(
             height: 54,
-            child: Row(
-              children: [
-                Expanded(
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: guest
-                        ? GoldPillButton.signUp(onTap: onSignUp)
-                        : _HomeAvatar(
-                            initials: initials,
-                            showDot: hasNotification,
-                            label: menuLabel ?? 'Open menu',
-                            onTap: onAvatarTap,
-                          ),
-                  ),
-                ),
-                ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 240),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 10),
-                    child: Semantics(
-                      header: true,
-                      child: Text(
-                        title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        textAlign: TextAlign.center,
-                        style: AppText.homeTitle,
+            // The title takes what the avatar (or the Sign up pill) and the
+            // logo leave and shrinks to fit, so a long title such as
+            // "Start.sa Hub" never pushes the Sign up pill out of the row.
+            child: LayoutBuilder(
+              builder: (context, box) {
+                final side = guest ? 100.0 : 52.0;
+                final titleMax = (box.maxWidth - 2 * side).clamp(80.0, 240.0);
+                // The avatar (or Sign up pill) and the logo keep their own size
+                // at the two ends; the title sits between them.
+                return Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: guest
+                          ? GoldPillButton.signUp(onTap: onSignUp)
+                          : _HomeAvatar(
+                              initials: initials,
+                              showDot: hasNotification,
+                              label: menuLabel ?? 'Open menu',
+                              onTap: onAvatarTap,
+                            ),
+                    ),
+                    const Align(
+                      alignment: Alignment.centerRight,
+                      child: HeaderLogo(
+                        size: AppSize.headerLogoHome,
+                        rightMargin: 0,
+                        animate: false,
                       ),
                     ),
-                  ),
-                ),
-                const Expanded(
-                  child: Align(
-                    alignment: Alignment.centerRight,
-                    child: HeaderLogo(
-                      size: AppSize.headerLogoHome,
-                      rightMargin: 0,
-                      animate: false,
+                    ConstrainedBox(
+                      constraints: BoxConstraints(maxWidth: titleMax),
+                      child: Semantics(
+                        header: true,
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            title,
+                            maxLines: 1,
+                            textAlign: TextAlign.center,
+                            style: AppText.homeTitle,
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-              ],
+                  ],
+                );
+              },
             ),
           ),
           if (hasTabs)

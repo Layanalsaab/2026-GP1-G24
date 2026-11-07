@@ -3,8 +3,6 @@ import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:startsa/data_access/firebase_services/firestore_service.dart';
 import 'package:startsa/data_access/repositories/matching_repository.dart';
-import 'package:startsa/features/search/view_models/home_view_model.dart';
-import 'package:startsa/helpers/app_session.dart';
 import 'package:startsa/models/app_user.dart';
 import 'package:startsa/models/home_item.dart';
 import 'package:startsa/models/investor_criteria.dart';
@@ -217,58 +215,16 @@ void main() {
     },
   );
 
-  group('Explore -> Matches (HomeViewModel)', () {
-    test('investor: loads in the background, then shows the cards', () async {
-      final vm = HomeViewModel(
-        role: SessionRole.investor,
-        user: investorUser,
-        matching: repo,
-      );
-      var notified = 0;
-      vm.addListener(() => notified++);
-      expect(vm.matches, isEmpty);
-      expect(vm.matchesLoading, isTrue);
-      await _settle();
-      expect(vm.matchesLoading, isFalse);
-      expect(vm.matches.map((i) => i.id), ['exact', 'close']);
-      expect(notified, 1);
-      expect(firestore.queries.length, 1); // reading again doesn't reload
-      vm.dispose();
-    });
+  test('a read that fails throws (the screens show a calm message)', () async {
+    final broken = MatchingRepository(firestore: _FailingFirestore(), live: false);
+    await expectLater(broken.startupsForInvestor(investorUser), throwsA(anything));
+    await expectLater(broken.publicStartups(), throwsA(anything));
+  });
 
-    test('founder: follows the startup chosen in "Matches for"', () async {
-      final a = Startup.fromMap('a', _startup({'founderId': 'u9'}))!;
-      final b = Startup.fromMap(
-        'b',
-        _startup({'founderId': 'u9', 'sector': 'media', 'stage': 'series_b'}),
-      )!;
-      final vm = HomeViewModel(role: SessionRole.founder, matching: repo)
-        ..setOwnStartups([a, b]);
-      vm.matches;
-      await _settle();
-      expect(vm.matches.map((i) => i.id), ['ANG-1', 'ANG-2']);
-      vm.setMatchFor(1);
-      vm.matches;
-      await _settle();
-      expect(vm.matches.map((i) => i.id), ['ANG-3']);
-      vm.dispose();
-    });
-
-    test('a failed load shows the error state', () async {
-      final vm = HomeViewModel(
-        role: SessionRole.investor,
-        user: investorUser,
-        matching: MatchingRepository(
-          firestore: _FailingFirestore(),
-          live: false,
-        ),
-      );
-      vm.matches;
-      await _settle();
-      expect(vm.matchesFailed, isTrue);
-      expect(vm.matches, isEmpty);
-      vm.dispose();
-    });
+  test('publicStartups: every public startup that is not closed', () async {
+    final all = await repo.publicStartups();
+    expect(all, isNotEmpty);
+    expect(all.every((s) => s.isPublic && !s.isClosed), isTrue);
   });
 
   group('live updates (Firestore listeners)', () {
@@ -283,40 +239,31 @@ void main() {
     tearDown(() => liveRepo.clear());
 
     test(
-      'a founder edits a startup: the investor list updates by itself',
+      'a founder edits a startup: the investor list follows the listener',
       () async {
-        final vm = HomeViewModel(
-          role: SessionRole.investor,
-          user: investorUser,
-          matching: liveRepo,
-        );
-        vm.matches;
+        final first = liveRepo.startupsForInvestor(investorUser);
         live.send('startups', [
           (id: 'a', data: _startup({'name': 'Alpha'})),
         ]);
-        await _settle();
-        expect(vm.matches.map((i) => i.id), ['a']);
-        var notified = 0;
-        vm.addListener(() => notified++);
+        expect((await first).map((i) => i.id), ['a']);
+        var changed = 0;
+        liveRepo.changes.addListener(() => changed++);
         // Another founder makes their startup fit (no new query is made).
         live.send('startups', [
           (id: 'a', data: _startup({'name': 'Alpha'})),
           (id: 'b', data: _startup({'name': 'Beta'})),
         ]);
         await _settle();
-        expect(vm.matches.map((i) => i.id), ['a', 'b']);
-        expect(vm.matchesLoading, isFalse); // no spinner for an update
-        expect(notified, greaterThan(0));
+        expect(changed, greaterThan(0));
+        final again = await liveRepo.startupsForInvestor(investorUser);
+        expect(again.map((i) => i.id), ['a', 'b']);
         expect(live.listens, ['startups']); // one listener, started once
-        vm.dispose();
       },
     );
 
-    test('the founder edits their startup: Matches for it reloads', () async {
+    test('the founder edits their startup: the investors follow', () async {
       final a = Startup.fromMap('a', _startup({'founderId': 'u9'}))!;
-      final vm = HomeViewModel(role: SessionRole.founder, matching: liveRepo)
-        ..setOwnStartups([a]);
-      vm.matches;
+      final first = liveRepo.investorsForStartup(a);
       live.send('investors', [
         (id: 'ANG-1', data: _investor({})),
         (
@@ -328,80 +275,29 @@ void main() {
           }),
         ),
       ]);
-      await _settle();
-      expect(vm.matches.map((i) => i.id), ['ANG-1']);
+      expect((await first).map((i) => i.id), ['ANG-1']);
       // Saved as Media / Series B: the new copy gives other investors.
-      vm.setOwnStartups([
-        a.copyWith(
-          sector: Sector.fromValue('media'),
-          stage: StartupStage.seriesB,
-        ),
-      ]);
-      vm.matches;
-      await _settle();
-      expect(vm.matches.map((i) => i.id), ['ANG-3']);
-      vm.dispose();
+      final edited = a.copyWith(
+        sector: Sector.fromValue('media'),
+        stage: StartupStage.seriesB,
+      );
+      expect(
+        (await liveRepo.investorsForStartup(edited)).map((i) => i.id),
+        ['ANG-3'],
+      );
     });
 
-    test('an investor changes their preferences: the list follows', () async {
-      final vm = HomeViewModel(
-        role: SessionRole.investor,
-        user: investorUser,
-        matching: liveRepo,
-      );
-      vm.matches;
+    test('a listener error: it throws, and a new listener starts next time', () async {
+      final failed = liveRepo.startupsForInvestor(investorUser);
+      live.fail('startups');
+      await expectLater(failed, throwsA(anything));
+      final retry = liveRepo.startupsForInvestor(investorUser);
       live.send('startups', [
-        (id: 'fin', data: _startup({'name': 'Fin'})),
-        (
-          id: 'med',
-          data: _startup({
-            'name': 'Med',
-            'sector': 'media',
-            'stage': 'series_b',
-          }),
-        ),
+        (id: 'a', data: _startup({'name': 'Alpha'})),
       ]);
-      await _settle();
-      expect(vm.matches.map((i) => i.id), ['fin']);
-      vm.setUser(
-        investorUser.copyWith(
-          investorCriteria: const InvestorCriteria(
-            dealsCount: '1–5',
-            ticketBand: 'SAR 100K – 500K',
-            sectors: ['Media'],
-            stages: ['Series B'],
-            commerceModels: ['Business-to-Business (B2B)'],
-          ),
-        ),
-      );
-      vm.matches;
-      await _settle();
-      expect(vm.matches.map((i) => i.id), ['med']);
-      vm.dispose();
+      expect((await retry).map((i) => i.id), ['a']);
+      expect(live.listens, ['startups', 'startups']);
     });
-
-    test(
-      'a listener error: the error state, and a new listener next time',
-      () async {
-        final vm = HomeViewModel(
-          role: SessionRole.investor,
-          user: investorUser,
-          matching: liveRepo,
-        );
-        vm.matches;
-        live.fail('startups');
-        await _settle();
-        expect(vm.matchesFailed, isTrue);
-        final retry = vm.refreshMatches();
-        live.send('startups', [
-          (id: 'a', data: _startup({'name': 'Alpha'})),
-        ]);
-        await retry;
-        expect(vm.matches.map((i) => i.id), ['a']);
-        expect(live.listens, ['startups', 'startups']);
-        vm.dispose();
-      },
-    );
   });
 }
 

@@ -1,14 +1,11 @@
 import 'package:flutter/material.dart';
 
 import '../../../app_constants/home_strings.dart';
-import '../../../app_constants/matching_strings.dart';
 import '../../../data_access/repositories/interaction_repository.dart';
-import '../../../models/home_item.dart';
-import '../../../navigation/open_item.dart';
+import '../../../models/latest_range.dart';
 import '../../../shared_ui/icons/app_icons.dart';
-import '../../../shared_ui/theme/app_colors.dart';
-import '../../../shared_ui/widgets/cards/home_card.dart';
-import '../../../shared_ui/widgets/cards/trending.dart';
+import '../../../shared_ui/theme/app_text.dart';
+import '../../../shared_ui/widgets/forms/app_field.dart';
 import '../../../shared_ui/widgets/lists/empty_state.dart';
 import '../../../shared_ui/widgets/lists/section_header.dart';
 import '../../../shared_ui/widgets/lists/segmented_switch.dart';
@@ -17,10 +14,13 @@ import '../../search/screens/hub_screen.dart';
 import '../../search/view_models/home_view_model.dart';
 import '../../search/widgets/home_layout.dart';
 
-/// The Explore page (Figma 21-23, 26b-d, 27b): For You, Trending and Matches
-/// (the sub-tabs live in the shell's header; guests only get Trending).
-/// Searching or filtering on any sub-tab turns it into the results view.
-/// Rendered inside the shell's scroll view.
+/// The Explore page: Latest, Trending and For You (the sub-tabs live in the
+/// shell's header; guests only get Trending). Searching or filtering on any
+/// sub-tab turns it into the results view. Rendered inside the shell's scroll
+/// view.
+///
+/// There is no Matches tab: matching lives inside each ticket of the
+/// Investment Wallet and inside each open round of a startup.
 class ExploreScreen extends StatelessWidget {
   const ExploreScreen({
     super.key,
@@ -62,51 +62,55 @@ class ExploreScreen extends StatelessWidget {
     ];
   }
 
-  List<HomeSlot> _forYou(HomeViewModel vm) {
-    final newItems = vm.newItems;
-    if (vm.showAllNew) {
-      return [
-        HomeSlot(
-          Transform.translate(
-            offset: const Offset(-6, 0),
-            child: BackLink(
-              label: HomeStrings.forYouBack,
-              onTap: () => vm.setShowAllNew(false),
-            ),
-          ),
-          top: -4,
-          bottom: -4,
-        ),
-        _switch('for-you', vm.forYouSwitch, vm.setForYouSwitch),
-        _heading(
-          const SectionHeader(title: HomeStrings.newOnStartSa),
-          bottom: 0,
-        ),
-        cardsSlot(newItems, scope: vm.paneKey),
-      ];
-    }
+  /// Latest: "Newest startups" with the time range, each card with its
+  /// "Joined 2 days ago" line.
+  List<HomeSlot> _latest(HomeViewModel vm) {
+    final items = vm.latest;
     return [
-      _switch('for-you', vm.forYouSwitch, vm.setForYouSwitch),
       _heading(
         SectionHeader(
-          title: HomeStrings.newOnStartSa,
-          onSeeAll: () => vm.setShowAllNew(true),
+          title: HomeStrings.newestStartups,
+          trailing: RangeDropdown(
+            options: [for (final r in LatestRange.values) r.label],
+            selectedIndex: vm.latestRange.index,
+            onSelected: vm.setLatestRange,
+          ),
         ),
-        bottom: -8,
+        bottom: 0,
       ),
-      HomeSlot(_NewRail(items: newItems), bleed: true),
-      _heading(const SectionHeader(title: HomeStrings.recommended)),
-      cardsSlot(vm.recommended, scope: vm.paneKey),
+      if (items.isEmpty)
+        const HomeSlot(
+          EmptyState(
+            title: HomeStrings.noNewStartupsTitle,
+            message: HomeStrings.noNewStartupsMessage,
+            icon: AppIcons.target,
+          ),
+        )
+      else
+        cardsSlot(items, scope: vm.paneKey),
     ];
   }
 
-  List<HomeSlot> _trending(BuildContext context, HomeViewModel vm) {
+  /// For You: the recommended list only. An investor sees startups, a founder
+  /// investors. The match percentage shows only on a card that has one.
+  List<HomeSlot> _forYou(HomeViewModel vm) => [
+    _heading(
+      _InfoHeading(title: vm.recommendedTitle, info: vm.recommendedInfo),
+      bottom: 0,
+    ),
+    cardsSlot(vm.recommended, showMatch: true, scope: vm.paneKey),
+  ];
+
+  /// Trending: "Top 30 trending" with the range, each card with its rank and
+  /// growth ("#1 · +38%") and "more views than last week".
+  List<HomeSlot> _trending(HomeViewModel vm) {
     final items = vm.trending;
     return [
       _switch('trending', vm.trendingSwitch, vm.setTrendingSwitch),
       _heading(
-        SectionHeader(
+        _InfoHeading(
           title: HomeStrings.top30,
+          info: vm.range.info,
           trailing: RangeDropdown(
             options: [for (final r in TrendingRange.values) r.label],
             selectedIndex: vm.range.index,
@@ -115,108 +119,8 @@ class ExploreScreen extends StatelessWidget {
         ),
         bottom: 0,
       ),
-      HomeSlot(
-        TrendingBox(
-          // A new ranking (another range or side) enters again.
-          key: ValueKey(
-            '${vm.paneKey}|${vm.range.name}|${contentSignature(items)}',
-          ),
-          children: [
-            for (var i = 0; i < items.length; i++)
-              TrendingRow(
-                rank: i + 1,
-                category: items[i].tag,
-                name: items[i].name,
-                kind: avatarKindOf(items[i].kind),
-                imageUrl: items[i].imageUrl,
-                imageData: items[i].imageData,
-                onTap: () => openHomeItem(context, items[i]),
-              ),
-          ],
-        ),
-      ),
-      HomeSlot(TrendingNote(vm.range.note), top: -2),
+      cardsSlot(items, scope: '${vm.paneKey}|${vm.range.name}'),
       if (vm.isGuest) HomeSlot(GuestJoinCard(onSignUp: onSignUp)),
-    ];
-  }
-
-  List<HomeSlot> _matches(HomeViewModel vm) {
-    final own = vm.ownStartups;
-    return [
-      if (vm.isFounder && own.isNotEmpty)
-        HomeSlot(
-          MatchesForDropdown(
-            options: [
-              for (final s in own)
-                MatchesForOption(
-                  name: s.name,
-                  subtitle: '${s.sectorLabel} · ${s.stageLabel}',
-                ),
-            ],
-            selectedIndex: vm.matchFor.clamp(0, own.length - 1),
-            onSelected: vm.setMatchFor,
-          ),
-        ),
-      ..._matchCards(vm),
-    ];
-  }
-
-  /// The cards, or the loading / failed / empty state (data from Firestore).
-  List<HomeSlot> _matchCards(HomeViewModel vm) {
-    final items = vm.matches; // starts the load when needed
-    if (items.isNotEmpty) {
-      return [cardsSlot(items, showMatch: true, scope: vm.paneKey)];
-    }
-    if (vm.matchesLoading) {
-      return const [
-        HomeSlot(
-          Padding(
-            padding: EdgeInsets.only(top: 56),
-            child: Center(
-              child: SizedBox(
-                width: 28,
-                height: 28,
-                child: CircularProgressIndicator(
-                  strokeWidth: 3,
-                  color: AppColors.moss600,
-                ),
-              ),
-            ),
-          ),
-        ),
-      ];
-    }
-    if (vm.matchesFailed) {
-      return [
-        HomeSlot(
-          EmptyState(
-            title: MatchingStrings.loadFailed,
-            message: MatchingStrings.loadFailedMessage,
-            icon: AppIcons.warn,
-            actionLabel: MatchingStrings.retry,
-            onAction: vm.refreshMatches,
-          ),
-        ),
-      ];
-    }
-    final String message;
-    if (vm.isFounder) {
-      message = vm.ownStartups.isEmpty
-          ? MatchingStrings.noneFounderNoStartup
-          : MatchingStrings.noneFounder;
-    } else {
-      message = vm.user?.investorCriteria == null
-          ? MatchingStrings.noneInvestor
-          : MatchingStrings.noneInvestorNoFit;
-    }
-    return [
-      HomeSlot(
-        EmptyState(
-          title: MatchingStrings.noneTitle,
-          message: message,
-          icon: AppIcons.target,
-        ),
-      ),
     ];
   }
 
@@ -229,39 +133,65 @@ class ExploreScreen extends StatelessWidget {
     } else {
       switch (vm.effectiveExploreTab) {
         case 0:
-          slots = _forYou(vm);
+          slots = _latest(vm);
         case 1:
-          slots = _trending(context, vm);
+          slots = _trending(vm);
         default:
-          slots = _matches(vm);
+          slots = _forYou(vm);
       }
     }
     return HomeColumn(slots: slots);
   }
 }
 
-/// The "New on Start.sa" rail: snapping, full-bleed rail cards.
-class _NewRail extends StatelessWidget {
-  const _NewRail({required this.items});
+/// A section heading with an (i) button after the title that opens a tip
+/// under it, and an optional [trailing] widget (the range dropdown).
+class _InfoHeading extends StatefulWidget {
+  const _InfoHeading({required this.title, required this.info, this.trailing});
 
-  final List<HomeItem> items;
+  final String title;
+  final String info;
+  final Widget? trailing;
+
+  @override
+  State<_InfoHeading> createState() => _InfoHeadingState();
+}
+
+class _InfoHeadingState extends State<_InfoHeading> {
+  bool _open = false;
 
   @override
   Widget build(BuildContext context) {
-    return SnapRail(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        for (final it in items)
-          RailCard(
-            name: it.name,
-            tag: it.tag,
-            city: it.city,
-            body: it.line,
-            joined: it.joinedLabel ?? 'Joined this week',
-            kind: avatarKindOf(it.kind),
-            imageUrl: it.imageUrl,
-            imageData: it.imageData,
-            onTap: () => openHomeItem(context, it),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 2),
+          child: Row(
+            children: [
+              Flexible(
+                child: Semantics(
+                  header: true,
+                  child: Text(widget.title, style: AppText.sectionTitle),
+                ),
+              ),
+              const SizedBox(width: 2),
+              InfoButton(
+                open: _open,
+                semanticLabel: 'About this list',
+                onTap: () => setState(() => _open = !_open),
+              ),
+              if (widget.trailing != null) ...[
+                const Spacer(),
+                widget.trailing!,
+              ],
+            ],
           ),
+        ),
+        if (_open) ...[
+          const SizedBox(height: 6),
+          InfoTip(widget.info),
+        ],
       ],
     );
   }

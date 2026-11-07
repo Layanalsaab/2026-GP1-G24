@@ -14,6 +14,7 @@ import '../device_services/image_fit.dart';
 import 'funding_round_repository.dart';
 import 'invitation_repository.dart';
 import 'public_profile_repository.dart';
+import 'ticket_repository.dart';
 
 /// Reads and writes the `startups` collection and the startups' logos in
 /// Storage. Screens and view models never touch Firebase directly.
@@ -457,6 +458,13 @@ class StartupRepository {
     }
     // Before the startup goes: the rules read it to allow cancelling.
     await InvitationRepository.instance.cancelAllFor(startup);
+    // The requests investors sent to it go too (before the startup: the
+    // rules read it to allow this).
+    try {
+      await TicketRepository.instance.removeRequestsForStartup(startup.id);
+    } catch (e) {
+      debugPrint('Could not remove the requests of a startup: $e');
+    }
     await _deleteDocumentAndRounds(startup);
     changes.value++;
     _refreshMyProfile();
