@@ -119,6 +119,10 @@ class ProfileSection extends StatelessWidget {
   final bool rise;
   final Duration delay;
 
+  /// How far the content is indented under the (bold) heading. The startup
+  /// page's section cards use the same value.
+  static const double contentIndent = 12;
+
   @override
   Widget build(BuildContext context) {
     final section = Container(
@@ -167,7 +171,10 @@ class ProfileSection extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 8),
-          child,
+          Padding(
+            padding: const EdgeInsets.only(left: contentIndent),
+            child: child,
+          ),
         ],
       ),
     );

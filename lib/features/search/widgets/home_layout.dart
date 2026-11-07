@@ -133,6 +133,8 @@ class HomeItemCard extends StatelessWidget {
           bookmarked: keys.contains(item.bookmarkKey),
           matchPercent: showMatch ? item.matchPercent : null,
           matchReason: showMatch ? item.matchReason : null,
+          highlight: item.highlight,
+          highlightReason: item.highlightReason,
           badges: badges,
           actionLabel: actionLabel,
           onTap: onTap ?? () => openHomeItem(context, item),

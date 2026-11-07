@@ -237,15 +237,18 @@ void main() {
       expect(find.text('Round 2 · Open'), findsNothing);
       expect(find.text('Valuation'), findsNothing);
       expect(find.text('About'), findsOneWidget);
-      for (final fact in [
-        'Sector',
-        'Stage',
-        'Commerce model',
-        'Headquarters',
-        'Founded',
-      ]) {
+      for (final fact in ['Commerce model', 'Founded year']) {
         expect(find.text(fact), findsOneWidget, reason: fact);
       }
+      // The header already shows the sector, stage and city: not repeated.
+      for (final dup in ['Sector', 'Sectors', 'Stage', 'Headquarters']) {
+        expect(find.text(dup), findsNothing, reason: dup);
+      }
+      // (The header's one sub-line has the pin before the city.)
+      expect(
+        find.bySemanticsLabel('HealthTech · Pre-seed · Riyadh'),
+        findsOneWidget,
+      );
       expect(find.text('Looking for'), findsOneWidget);
       // Funding shows only the amount; no "raised so far" or lead investor.
       expect(find.text('Raising SAR 500,000'), findsOneWidget);
@@ -274,10 +277,10 @@ void main() {
       expect(find.text('Funding goal'), findsOneWidget);
       expect(find.text('Key numbers'), findsOneWidget);
       for (final label in [
-        'Valuation',
-        'Available capital',
-        'Revenue this year',
-        'Monthly burn',
+        'Current company valuation',
+        'Current available capital',
+        'Current financial year revenue',
+        'Monthly burn rate',
         'Runway',
       ]) {
         expect(find.text(label), findsOneWidget, reason: label);
@@ -356,8 +359,7 @@ void main() {
         ..setHubSwitch(0);
       addTearDown(m.dispose);
       expect(m.hubCards.any((i) => i.id == naql), isTrue);
-      m.setForYouSwitch(0);
-      expect(m.newItems.any((i) => i.id == naql), isFalse);
+      expect(m.latest.any((i) => i.id == naql), isFalse);
       expect(m.recommended.any((i) => i.id == naql), isFalse);
     });
 

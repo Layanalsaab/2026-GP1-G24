@@ -5,6 +5,9 @@ class FirestoreCollections {
   static const users = 'users';
   static const startups = 'startups';
   static const requests = 'requests';
+
+  /// An investor's investment tickets (id = `investorId-T1`, ...).
+  static const tickets = 'tickets';
   static const interests = 'interests';
   static const publicProfiles = 'publicProfiles';
 
@@ -250,4 +253,32 @@ class StoragePaths {
 
   /// `users/{uid}/profile.jpg`
   static String userProfilePhoto(String uid) => 'users/$uid/profile.jpg';
+}
+
+/// Fields of a `tickets/{investorId}-T{n}` document (an investor's investment
+/// ticket, see tools/investor_tickets). firestore.rules uses the same names.
+class TicketFields {
+  TicketFields._();
+
+  static const investorId = 'investorId';
+  static const name = 'name';
+  static const sectors = 'sectors';
+  static const stages = 'stages';
+  static const amountMin = 'amountMin';
+  static const amountMax = 'amountMax';
+
+  /// [open], [closed] or [used].
+  static const status = 'status';
+
+  /// The startup the ticket was used for; null until then.
+  static const startupId = 'startupId';
+  static const createdAt = 'createdAt';
+
+  static const open = 'open';
+  static const closed = 'closed';
+  static const used = 'used';
+
+  /// Extra fields of a `requests` document sent through a ticket.
+  static const ticketId = 'ticketId';
+  static const startupName = 'startupName';
 }

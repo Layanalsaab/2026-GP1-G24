@@ -145,6 +145,10 @@ class AppIcons {
       'M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9';
 
   // Explore sub-tab icons (stroke 2).
+  /// Two arrows, up and down (the Hub's sort button).
+  static const sortArrows =
+      'M7 4v16M7 20l-3-3M7 20l3-3M17 20V4M17 4l-3 3M17 4l3 3';
+  static const tabLatest = 'M12 7v5l3 2M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z';
   static const tabForYou =
       'M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9zM19 16l.7 1.8 1.8.7-1.8.7L19 21l-.7-1.8-1.8-.7 1.8-.7z';
   static const tabTrending = 'M3 17l6-6 4 4 8-8M15 7h6v6';

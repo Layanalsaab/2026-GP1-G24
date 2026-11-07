@@ -13,6 +13,7 @@ import 'package:startsa/helpers/app_session.dart';
 import 'package:startsa/models/app_user.dart';
 import 'package:startsa/models/investor_criteria.dart';
 import 'package:startsa/models/investor_profile.dart';
+import 'package:startsa/shared_ui/icons/app_icons.dart';
 import 'package:startsa/shared_ui/theme/app_theme.dart';
 
 import '../../support/fakes.dart';
@@ -91,12 +92,23 @@ void main() {
         expect(find.text('Marketplace'), findsOneWidget);
         expect(find.text('Investment Focus'), findsNothing);
         await t.scrollUntilVisible(
-          find.text('Contact'),
+          find.text('Contact Information'),
           300,
           scrollable: find.byType(Scrollable).first,
         );
+        expect(
+          find.text('Only the details marked Public are shown to others.'),
+          findsOneWidget,
+        );
         expect(find.text('Public'), findsOneWidget);
         expect(find.text('Only you'), findsOneWidget);
+        // A note under each: who sees it.
+        expect(find.text('Shown on your profile'), findsOneWidget);
+        expect(
+          find.text('Private. Only you can see your phone number'),
+          findsOneWidget,
+        );
+        expect(find.text('Private. Only you can see your email'), findsNothing);
       });
 
       testWidgets('own profile with no data does not crash', (t) async {
@@ -106,8 +118,16 @@ void main() {
         expect(find.text('Investment Size'), findsNothing);
         expect(find.text('Investment Background'), findsNothing);
         expect(find.text('Investment Interests'), findsNothing);
-        expect(find.text('Contact'), findsOneWidget);
+        expect(find.text('Contact Information'), findsOneWidget);
         expect(find.text('Only you'), findsNWidgets(2));
+        expect(
+          find.text('Private. Only you can see your email'),
+          findsOneWidget,
+        );
+        expect(
+          find.text('Private. Only you can see your phone number'),
+          findsOneWidget,
+        );
       });
 
       testWidgets('founder view of a sample investor', (t) async {
@@ -128,7 +148,16 @@ void main() {
         expect(find.text('SAR 100K – 500K'), findsWidgets);
         expect(find.text('Investment Background'), findsOneWidget);
         expect(find.text('Investment Interests'), findsOneWidget);
-        expect(find.text('Contact'), findsNothing);
+        // Someone else's profile has Contact Information too: a private
+        // detail says so, with a lock, and shows no value.
+        expect(find.text('Contact Information'), findsOneWidget);
+        expect(find.text('Email is private'), findsOneWidget);
+        expect(find.text('Phone is private'), findsOneWidget);
+        expect(find.text('Private'), findsNWidgets(2));
+        expect(
+          find.text('Only the details marked Public are shown to others.'),
+          findsNothing,
+        );
         expect(find.text('Send investment request'), findsOneWidget);
       });
 
@@ -158,12 +187,19 @@ void main() {
         );
         await _pump(t, const InvestorProfileScreen(investor: open), size);
         await t.scrollUntilVisible(
-          find.text('Contact'),
+          find.text('Contact Information'),
           300,
           scrollable: find.byType(Scrollable).first,
         );
         expect(find.text('open@gmail.com'), findsOneWidget);
-        expect(find.text('Public'), findsOneWidget);
+        expect(find.text('Email is private'), findsNothing);
+        // The private phone: no number, a lock and the Private tag.
+        expect(find.text('Phone is private'), findsOneWidget);
+        expect(find.text('Private'), findsOneWidget);
+        expect(
+          find.byWidgetPredicate((w) => w is AppIcon && w.path == AppIcons.lock),
+          findsOneWidget,
+        );
         expect(find.text('Only you'), findsNothing);
         expect(find.textContaining('501112222'), findsNothing);
       });

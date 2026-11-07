@@ -99,19 +99,19 @@ void main() {
       expect(find.text('VUZ'), findsWidgets);
       expect(find.text('Co-founder'), findsOneWidget);
       // Both private: no Contact section at all.
-      expect(find.text('Contact'), findsNothing);
+      expect(find.text('Contact Information'), findsNothing);
     });
 
     testWidgets('only the email is public: only the email shows', (t) async {
       await pump(t, _profile(email: 'k@gmail.com', emailPublic: true));
-      expect(find.text('Contact'), findsOneWidget);
+      expect(find.text('Contact Information'), findsOneWidget);
       expect(find.text('k@gmail.com'), findsOneWidget);
       expect(find.textContaining('+966'), findsNothing);
     });
 
     testWidgets('only the phone is public: only the phone shows', (t) async {
       await pump(t, _profile(phone: '551234567', phonePublic: true));
-      expect(find.text('Contact'), findsOneWidget);
+      expect(find.text('Contact Information'), findsOneWidget);
       expect(find.text('+966 551234567'), findsOneWidget);
       expect(find.textContaining('@'), findsNothing);
     });
@@ -120,7 +120,7 @@ void main() {
       await pump(t, null);
       expect(find.text('Khaled Zaatarah'), findsOneWidget);
       expect(find.text('Founder'), findsWidgets);
-      expect(find.text('Contact'), findsNothing);
+      expect(find.text('Contact Information'), findsNothing);
       expect(find.text('Startups'), findsNothing);
     });
   });

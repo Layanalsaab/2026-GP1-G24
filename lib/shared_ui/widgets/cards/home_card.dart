@@ -37,6 +37,8 @@ class HomeCard extends StatelessWidget {
     this.bookmarked = false,
     this.matchPercent,
     this.matchReason,
+    this.highlight,
+    this.highlightReason,
     this.index = 0,
     this.animate = true,
     this.bodyMaxLines = 3,
@@ -65,6 +67,11 @@ class HomeCard extends StatelessWidget {
   /// e.g. 92 -> "92% match".
   final int? matchPercent;
   final String? matchReason;
+
+  /// Replaces "N% match" in the same pill: "Joined 2 days ago" (Latest) or
+  /// "#1 · +38%" (Trending), with an optional grey [highlightReason].
+  final String? highlight;
+  final String? highlightReason;
 
   /// Position in the list, for the entrance stagger.
   final int index;
@@ -150,18 +157,23 @@ class HomeCard extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    if (matchPercent != null) ...[
+                    if (matchPercent != null || highlight != null) ...[
                       const SizedBox(height: 12),
                       Padding(
                         padding: const EdgeInsets.only(right: 22),
                         child: Row(
                           children: [
-                            _MatchPill('$matchPercent% match'),
-                            if (matchReason != null) ...[
+                            _MatchPill(highlight ?? '$matchPercent% match'),
+                            if ((highlight != null
+                                    ? highlightReason
+                                    : matchReason) !=
+                                null) ...[
                               const SizedBox(width: 7),
                               Expanded(
                                 child: Text(
-                                  matchReason!,
+                                  (highlight != null
+                                      ? highlightReason
+                                      : matchReason)!,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: AppText.sans(

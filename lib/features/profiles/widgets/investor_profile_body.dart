@@ -11,6 +11,7 @@ import '../../../shared_ui/theme/app_text.dart';
 import '../../../shared_ui/widgets/cards/avatars.dart';
 import '../../../shared_ui/widgets/cards/profile_blocks.dart';
 import '../../startup_profile/screens/startup_profile_screen.dart';
+import 'contact_section.dart';
 import 'profile_widgets.dart';
 
 /// Email / phone of the signed-in investor with their Private / Public tags.
@@ -232,50 +233,11 @@ class InvestorProfileBody extends StatelessWidget {
               ],
             ),
           ),
-        if (contact != null &&
-            (contact!.ownerView ||
-                (contact!.emailPublic && contact!.email.trim().isNotEmpty) ||
-                (contact!.phonePublic && contact!.phone.trim().isNotEmpty)))
+        if (contact != null)
           ProfileSection(
             title: ProfileStrings.contact,
             delay: stagger(),
-            child: Column(
-              children: [
-                if (contact!.ownerView ||
-                    (contact!.emailPublic && contact!.email.trim().isNotEmpty))
-                  _ContactRow(
-                    icon: AppIcons.mail,
-                    label: ProfileStrings.email,
-                    value: contact!.email,
-                    isPublic: contact!.emailPublic,
-                  ),
-                if (contact!.ownerView ||
-                    (contact!.phonePublic && contact!.phone.trim().isNotEmpty))
-                  _ContactRow(
-                    icon: AppIcons.phone,
-                    label: ProfileStrings.phone,
-                    value: contact!.phone,
-                    isPublic: contact!.phonePublic,
-                    showDivider:
-                        contact!.ownerView ||
-                        (contact!.emailPublic &&
-                            contact!.email.trim().isNotEmpty),
-                  ),
-                if (contact!.ownerView && contact!.linkedin.trim().isNotEmpty)
-                  Container(
-                    decoration: const BoxDecoration(
-                      border: Border(
-                        top: BorderSide(color: AppColors.rowSeparator),
-                      ),
-                    ),
-                    child: InfoRow(
-                      icon: AppIcons.linkedIn,
-                      label: ProfileStrings.linkedinLabel,
-                      value: contact!.linkedin.trim(),
-                    ),
-                  ),
-              ],
-            ),
+            child: _ContactBlock(contact: contact!),
           ),
       ],
     );
@@ -436,63 +398,79 @@ class _ValueRows extends StatelessWidget {
   }
 }
 
-/// An [InfoRow] with a Private / Public tag on the right.
-class _ContactRow extends StatelessWidget {
-  const _ContactRow({
-    required this.icon,
-    required this.label,
-    required this.value,
-    required this.isPublic,
-    this.showDivider = false,
-  });
+/// "Contact Information": on your own profile both details with a note on who
+/// sees each (and your LinkedIn); on someone else's profile the details they
+/// made Public, and "Email is private" / "Phone is private" (a lock and the
+/// Private tag, no value) for the rest.
+class _ContactBlock extends StatelessWidget {
+  const _ContactBlock({required this.contact});
 
-  final String icon;
-  final String label;
-  final String value;
-  final bool isPublic;
-  final bool showDivider;
+  final InvestorContactData contact;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        border: showDivider
-            ? const Border(top: BorderSide(color: AppColors.rowSeparator))
-            : null,
-      ),
-      child: Row(
+    final c = contact;
+    final hasEmail = c.emailPublic && c.email.trim().isNotEmpty;
+    final hasPhone = c.phonePublic && c.phone.trim().isNotEmpty;
+    if (c.ownerView) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Expanded(
-            child: InfoRow(
-              icon: icon,
-              label: label,
-              value: value.trim().isEmpty ? ProfileStrings.notAdded : value,
-            ),
+          const ContactIntro(),
+          OwnContactRow(
+            icon: AppIcons.mail,
+            label: ProfileStrings.email,
+            noun: 'email',
+            value: c.email,
+            isPublic: c.emailPublic,
           ),
-          const SizedBox(width: 8),
-          Container(
-            height: 24,
-            padding: const EdgeInsets.symmetric(horizontal: 10),
-            decoration: BoxDecoration(
-              color: isPublic ? AppColors.mossChip : const Color(0xFFF1EFEA),
-              borderRadius: BorderRadius.circular(999),
-            ),
-            child: Center(
-              widthFactor: 1,
-              child: Text(
-                isPublic
-                    ? ProfileStrings.publicTag
-                    : ProfileStrings.contactOnlyYou,
-                style: AppText.sans(
-                  size: 11.5,
-                  weight: FontWeight.w600,
-                  color: isPublic ? AppColors.moss600 : AppColors.grey,
-                ),
+          OwnContactRow(
+            icon: AppIcons.phone,
+            label: ProfileStrings.phone,
+            noun: 'phone number',
+            value: c.phone,
+            isPublic: c.phonePublic,
+            showDivider: true,
+          ),
+          if (c.linkedin.trim().isNotEmpty)
+            Container(
+              decoration: const BoxDecoration(
+                border: Border(top: BorderSide(color: AppColors.rowSeparator)),
+              ),
+              child: InfoRow(
+                icon: AppIcons.linkedIn,
+                label: ProfileStrings.linkedinLabel,
+                value: c.linkedin.trim(),
               ),
             ),
-          ),
         ],
-      ),
+      );
+    }
+    return Column(
+      children: [
+        hasEmail
+            ? PublicContactRow(
+                icon: AppIcons.mail,
+                label: ProfileStrings.email,
+                value: c.email,
+              )
+            : const PrivateContactRow(
+                icon: AppIcons.mail,
+                label: ProfileStrings.email,
+              ),
+        hasPhone
+            ? PublicContactRow(
+                icon: AppIcons.phone,
+                label: ProfileStrings.phone,
+                value: c.phone,
+                showDivider: true,
+              )
+            : const PrivateContactRow(
+                icon: AppIcons.phone,
+                label: ProfileStrings.phone,
+                showDivider: true,
+              ),
+      ],
     );
   }
 }

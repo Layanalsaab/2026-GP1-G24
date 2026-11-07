@@ -1,6 +1,7 @@
 import '../../../app_constants/app_strings.dart';
+import '../../../app_constants/founder_tools_strings.dart';
+import '../../../helpers/size_bands.dart';
 import '../../../models/home_item.dart';
-import '../../../models/investor_criteria.dart';
 import '../../../models/startup_enums.dart';
 import '../../../shared_ui/widgets/overlays/advanced_search_sheet.dart';
 
@@ -15,6 +16,8 @@ class HomeFilterGroup {
     this.options, {
     this.field,
     this.single = false,
+    this.drop = false,
+    this.otherHint,
   });
 
   final String title;
@@ -24,6 +27,12 @@ class HomeFilterGroup {
   /// data has no such field; it still counts in the badge and chips).
   final HomeFilterField? field;
   final bool single;
+
+  /// Shown as a dropdown (a long list) instead of chips.
+  final bool drop;
+
+  /// A sector dropdown: "Other" shows a text box with this placeholder.
+  final String? otherHint;
 }
 
 /// The item field a group filters on.
@@ -34,8 +43,13 @@ enum HomeFilterField {
   type,
   city,
   model,
+
+  /// An investor's commerce models (several).
+  models,
   ticket,
   raising,
+  partner,
+  support,
 }
 
 /// The advanced search groups, the filtering and the sorting of the home
@@ -48,11 +62,21 @@ class HomeFilters {
   static final _sectors = [for (final v in Sector.values) v.label];
   static final _stages = [for (final v in StartupStage.picks) v.label];
   static final _cities = List<String>.of(AppStrings.allCities);
-  static const _raising = [
-    'Under SAR 250K',
-    'SAR 250K – 1M',
-    'SAR 1M – 5M',
-    'Over SAR 5M',
+  static final _standardSectors = {for (final v in Sector.values) v.label};
+
+  /// The placeholder of the "Other" text box of a sector dropdown.
+  static const otherSectorHint = 'Type a sector, e.g. SportsTech';
+  static const _commerce = ['B2B', 'B2C', 'B2G'];
+
+  /// The "Looking for" choices of the Hub (a startup may look for more).
+  static const _lookingFor = ['Funding', 'Partnership', 'Support'];
+  static final _partnerTypes = [
+    for (final o in FounderToolsStrings.partnerOptions)
+      if (o != 'Other') o,
+  ];
+  static final _supportTypes = [
+    for (final o in FounderToolsStrings.supportOptions)
+      if (o != 'Other') o,
   ];
   static const _sort = HomeFilterGroup('Sort by', [
     'Newest',
@@ -93,40 +117,90 @@ class HomeFilters {
         ];
       case HomeContext.investors:
         return [
-          HomeFilterGroup('Sector', _sectors, field: HomeFilterField.sectors),
           HomeFilterGroup(
-            'Stages they invest in',
-            _stages,
-            field: HomeFilterField.stage,
+            'Sectors',
+            _sectors,
+            field: HomeFilterField.sectors,
+            drop: true,
+            otherHint: otherSectorHint,
+          ),
+          HomeFilterGroup('Stages', _stages, field: HomeFilterField.stage),
+          HomeFilterGroup(
+            'Commerce models',
+            _commerce,
+            field: HomeFilterField.models,
           ),
           HomeFilterGroup(
-            'Ticket size',
-            InvestorCriteria.ticketOptions,
+            'Investment size',
+            SizeBand.labels,
             field: HomeFilterField.ticket,
           ),
-          HomeFilterGroup('City', _cities, field: HomeFilterField.city),
-          _sort,
+          HomeFilterGroup(
+            'City',
+            _cities,
+            field: HomeFilterField.city,
+            drop: true,
+          ),
         ];
       case HomeContext.explore:
         return [
-          HomeFilterGroup('Sector', _sectors, field: HomeFilterField.sectors),
+          HomeFilterGroup(
+            'Sector',
+            _sectors,
+            field: HomeFilterField.sectors,
+            drop: true,
+            otherHint: otherSectorHint,
+          ),
           HomeFilterGroup('Stage', _stages, field: HomeFilterField.stage),
-          HomeFilterGroup('City', _cities, field: HomeFilterField.city),
+          HomeFilterGroup(
+            'City',
+            _cities,
+            field: HomeFilterField.city,
+            drop: true,
+          ),
           _sort,
         ];
       case HomeContext.startups:
         return [
-          HomeFilterGroup('Sector', _sectors, field: HomeFilterField.sectors),
+          HomeFilterGroup(
+            'Sector',
+            _sectors,
+            field: HomeFilterField.sectors,
+            drop: true,
+            otherHint: otherSectorHint,
+          ),
           HomeFilterGroup('Stage', _stages, field: HomeFilterField.stage),
-          HomeFilterGroup('Looking for', [
-            for (final v in LookingFor.values) v.label,
-          ], field: HomeFilterField.looking),
-          HomeFilterGroup('Raising', _raising, field: HomeFilterField.raising),
-          HomeFilterGroup('Commerce model', [
-            for (final v in BusinessModel.picks) v.shortLabel,
-          ], field: HomeFilterField.model),
-          HomeFilterGroup('City', _cities, field: HomeFilterField.city),
-          _sort,
+          HomeFilterGroup(
+            'Looking for',
+            _lookingFor,
+            field: HomeFilterField.looking,
+          ),
+          HomeFilterGroup(
+            'Partner types',
+            _partnerTypes,
+            field: HomeFilterField.partner,
+          ),
+          HomeFilterGroup(
+            'Support types',
+            _supportTypes,
+            field: HomeFilterField.support,
+          ),
+          HomeFilterGroup(
+            'Raising',
+            SizeBand.labels,
+            field: HomeFilterField.raising,
+          ),
+          HomeFilterGroup(
+            'Commerce model',
+            _commerce,
+            field: HomeFilterField.model,
+          ),
+          HomeFilterGroup(
+            'Headquarters',
+            _cities,
+            field: HomeFilterField.city,
+            drop: true,
+          ),
         ];
     }
   }
@@ -134,7 +208,13 @@ class HomeFilters {
   /// The groups as the sheet widget wants them.
   static List<AdvancedSearchGroup> sheetGroups(HomeContext ctx) => [
     for (final g in groups(ctx))
-      AdvancedSearchGroup(title: g.title, options: g.options, single: g.single),
+      AdvancedSearchGroup(
+        title: g.title,
+        options: g.options,
+        single: g.single,
+        drop: g.drop,
+        otherHint: g.otherHint,
+      ),
   ];
 
   /// Does [it] pass the selection and the search text? Within a group any
@@ -148,7 +228,10 @@ class HomeFilters {
     for (final g in groups) {
       final picked = sel[g.title] ?? const <String>{};
       if (picked.isEmpty || g.field == null || g.single) continue;
-      final hit = picked.any((v) => _matches(it, g.field!, v));
+      final typed =
+          (sel[advancedOtherKey(g.title)] ?? const <String>{}).firstOrNull ??
+          '';
+      final hit = picked.any((v) => _matches(it, g.field!, v, typed));
       if (!hit) return false;
     }
     final q = query.trim().toLowerCase();
@@ -159,24 +242,45 @@ class HomeFilters {
     return true;
   }
 
-  static bool _matches(HomeItem it, HomeFilterField field, String v) {
+  /// The sector filter's "Other": with text typed, an item whose own
+  /// (non-standard) sector contains it; with none, every item that has a sector
+  /// outside the standard list.
+  static bool _matchesOtherSector(HomeItem it, String typed) {
+    final own = [
+      for (final s in it.sectors)
+        if (s != 'Other' && !_standardSectors.contains(s)) s,
+    ];
+    final t = typed.trim().toLowerCase();
+    if (t.isEmpty) return it.sectors.contains('Other') || own.isNotEmpty;
+    return own.any((s) => s.toLowerCase().contains(t));
+  }
+
+  static bool _matches(
+    HomeItem it,
+    HomeFilterField field,
+    String v,
+    String typed,
+  ) {
     switch (field) {
       case HomeFilterField.sectors:
+        if (v == 'Other') return _matchesOtherSector(it, typed);
         return it.sectors.contains(v);
       case HomeFilterField.stage:
         return it.stages.contains(v);
       case HomeFilterField.ticket:
-        return it.ticket == v;
+        // The investor's usual ticket overlaps the band.
+        final lo = it.ticketLow, hi = it.ticketHigh;
+        final band = SizeBand.of(v);
+        if (lo == null || hi == null || band == null) return false;
+        return band.overlaps(lo, hi);
       case HomeFilterField.raising:
-        final r = it.raising;
-        if (r == null || r <= 0) return false;
-        return switch (v) {
-          'Under SAR 250K' => r < 250000,
-          'SAR 250K – 1M' => r >= 250000 && r < 1000000,
-          'SAR 1M – 5M' => r >= 1000000 && r <= 5000000,
-          'Over SAR 5M' => r > 5000000,
-          _ => false,
-        };
+        return SizeBand.of(v)?.containsAmount(it.raising) ?? false;
+      case HomeFilterField.partner:
+        return it.partnerTypes.contains(v);
+      case HomeFilterField.support:
+        return it.supportTypes.contains(v);
+      case HomeFilterField.models:
+        return it.models.contains(v);
       case HomeFilterField.looking:
         return it.lookingFor.contains(v);
       case HomeFilterField.type:

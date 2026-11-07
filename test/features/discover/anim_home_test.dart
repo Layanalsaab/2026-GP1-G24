@@ -8,7 +8,6 @@ import 'package:startsa/helpers/app_session.dart';
 import 'package:startsa/models/app_user.dart';
 import 'package:startsa/models/home_item.dart';
 import 'package:startsa/navigation/main_screen.dart';
-import 'package:startsa/shared_ui/motion/motion.dart';
 import 'package:startsa/shared_ui/theme/app_theme.dart';
 import 'package:startsa/shared_ui/widgets/cards/home_card.dart';
 import 'package:startsa/shared_ui/widgets/cards/trending.dart';
@@ -173,30 +172,20 @@ void main() {
       await t.pump(const Duration(seconds: 2));
     });
 
-    testWidgets('Explore: rail cards are static, Trending box rises in', (
+    testWidgets('Explore: Trending shows standard cards with rank and growth', (
       t,
     ) async {
       await pumpMain(t);
       await t.tap(find.bySemanticsLabel('Explore').last);
       await t.pump(const Duration(milliseconds: 600));
-      final rails = find.byType(RailCard);
-      if (rails.evaluate().isNotEmpty) {
-        expect(
-          find.ancestor(of: rails.first, matching: find.byType(Rise)),
-          findsNothing,
-        );
-      }
       await t.tap(find.text('Trending').first);
       await t.pump();
-      await t.pump(const Duration(milliseconds: 100));
-      expect(find.byType(TrendingBox), findsOneWidget);
-      expect(
-        find.descendant(
-          of: find.byType(TrendingBox),
-          matching: find.byType(Rise),
-        ),
-        findsOneWidget,
-      );
+      await t.pump(const Duration(milliseconds: 600));
+      // Standard cards (no ranked box): the rank and the growth in the pill.
+      expect(find.byType(TrendingBox), findsNothing);
+      expect(find.byType(HomeCard), findsWidgets);
+      expect(find.text('#1 · +38%'), findsOneWidget);
+      expect(find.text('more views than last week'), findsWidgets);
       await t.pump(const Duration(seconds: 2));
     });
   });

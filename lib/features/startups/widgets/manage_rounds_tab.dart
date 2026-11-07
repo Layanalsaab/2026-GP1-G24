@@ -137,11 +137,11 @@ class _ManageRoundsTabState extends State<ManageRoundsTab> {
                 ),
                 if (canManage && !vm.formOpen && vm.ready)
                   open != null
-                      ? _PillButton(
+                      ? PillButton(
                           label: 'Close round',
                           onTap: () => _confirmClose(context),
                         )
-                      : _PillButton(
+                      : PillButton(
                           label: 'Add round',
                           icon: AppIcons.plus,
                           filled: true,
@@ -176,7 +176,7 @@ class _ManageRoundsTabState extends State<ManageRoundsTab> {
             if (vm.loadFailed) ...[
               const SizedBox(height: 10),
               Center(
-                child: _PillButton(label: 'Try again', onTap: vm.load),
+                child: PillButton(label: 'Try again', onTap: vm.load),
               ),
             ],
           ],
@@ -188,8 +188,9 @@ class _ManageRoundsTabState extends State<ManageRoundsTab> {
 
 /// "Close round" (white, 1 px border) or "Add round" (green, plus icon):
 /// height 40, radius 999.
-class _PillButton extends StatelessWidget {
-  const _PillButton({
+class PillButton extends StatelessWidget {
+  const PillButton({
+    super.key,
     required this.label,
     required this.onTap,
     this.icon,
@@ -427,7 +428,7 @@ class _RoundRowState extends State<_RoundRow> {
                   height: line,
                   child: Row(
                     children: [
-                      _StatusDot(open: r.isOpen),
+                      StatusDot(open: r.isOpen),
                       const SizedBox(width: 8),
                       Flexible(
                         child: Text(
@@ -558,15 +559,18 @@ class _RoundRowState extends State<_RoundRow> {
 }
 
 /// 8 px dot: open = green with a soft ring, closed = grey.
-class _StatusDot extends StatelessWidget {
-  const _StatusDot({required this.open});
+class StatusDot extends StatelessWidget {
+  const StatusDot({super.key, required this.open, this.label});
 
   final bool open;
+
+  /// The spoken status; "Open" / "Closed" when null (a ticket says "Used").
+  final String? label;
 
   @override
   Widget build(BuildContext context) {
     return Semantics(
-      label: open ? 'Open' : 'Closed',
+      label: label ?? (open ? 'Open' : 'Closed'),
       excludeSemantics: true,
       child: Container(
         width: 8,

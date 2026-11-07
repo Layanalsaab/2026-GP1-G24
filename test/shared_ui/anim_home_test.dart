@@ -451,7 +451,7 @@ void main() {
       final row = t.getRect(find.byType(ExploreTabs));
       expect(t.getSize(ind).width, closeTo(row.width / 3, 1));
       final x0 = t.getCenter(ind).dx;
-      await t.tap(find.text('Matches'));
+      await t.tap(find.text('For You'));
       await t.pump();
       await t.pump(const Duration(milliseconds: 100));
       final mid = t.getCenter(ind).dx;
@@ -459,7 +459,7 @@ void main() {
       final x1 = t.getCenter(ind).dx;
       expect(mid, greaterThan(x0));
       expect(mid, lessThan(x1));
-      expect(x1, closeTo(t.getCenter(find.text('Matches')).dx, 25));
+      expect(x1, closeTo(t.getCenter(find.text('For You')).dx, 25));
     });
   });
 

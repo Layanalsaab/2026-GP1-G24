@@ -17,6 +17,14 @@ class OtherCheck {
     return k;
   }
 
+  /// True when [a] and [b] are the same text by the rule above ("Fin Tech"
+  /// and "fintechs" are the same). Blank is never the same as anything.
+  static bool same(String? a, String? b) {
+    final x = (a ?? '').trim(), y = (b ?? '').trim();
+    if (x.isEmpty || y.isEmpty) return false;
+    return _key(x) == _key(y);
+  }
+
   /// True when [typed] is one of [options] (see above). Blank never repeats.
   static bool repeats(String? typed, Iterable<String> options) {
     final t = (typed ?? '').trim();

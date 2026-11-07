@@ -24,6 +24,8 @@ class HomeSearchBar extends StatelessWidget {
     this.onChanged,
     this.onSubmitted,
     this.activeCount = 0,
+    this.onSortTap,
+    this.sortActive = false,
     this.hint = 'Search',
     this.overlap = 24,
   });
@@ -35,6 +37,12 @@ class HomeSearchBar extends StatelessWidget {
 
   /// Number of active filters (badge + active fill).
   final int activeCount;
+
+  /// The Hub's sort button, next to the filter button (null hides it).
+  /// [sortActive]: a sort is chosen (the button is filled like an active
+  /// filter).
+  final VoidCallback? onSortTap;
+  final bool sortActive;
   final String hint;
 
   /// How far the bar overlaps the widget above it.
@@ -80,6 +88,12 @@ class HomeSearchBar extends StatelessWidget {
             ),
             Container(width: 1, height: 22, color: AppColors.searchDivider),
             const SizedBox(width: 2),
+            if (onSortTap != null) ...[
+              _SortButton(active: sortActive, onTap: onSortTap!),
+              const SizedBox(width: 2),
+              Container(width: 1, height: 22, color: AppColors.searchDivider),
+              const SizedBox(width: 2),
+            ],
             _FilterButton(count: activeCount, onTap: onFilterTap),
           ],
         ),
@@ -87,6 +101,45 @@ class HomeSearchBar extends StatelessWidget {
     );
     if (overlap <= 0) return bar;
     return _Overlap(overlap: overlap, child: bar);
+  }
+}
+
+/// The sort button: two arrows (up and down) on a 40 x 40 button, filled like
+/// an active filter while a sort is chosen.
+class _SortButton extends StatelessWidget {
+  const _SortButton({required this.active, required this.onTap});
+
+  final bool active;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: active ? 'Sort, a sort is chosen' : 'Sort',
+      excludeSemantics: true,
+      onTap: onTap,
+      child: Pressable(
+        onTap: onTap,
+        scale: 0.94,
+        child: AnimatedContainer(
+          duration: Motion.dur(context, const Duration(milliseconds: 200)),
+          curve: Curves.ease,
+          width: 40,
+          height: 40,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: active ? AppColors.mossChip : Colors.transparent,
+            borderRadius: BorderRadius.circular(11),
+          ),
+          child: const AppIcon.outline(
+            AppIcons.sortArrows,
+            size: 20,
+            color: AppColors.moss600,
+          ),
+        ),
+      ),
+    );
   }
 }
 

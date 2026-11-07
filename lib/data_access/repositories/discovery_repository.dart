@@ -98,10 +98,9 @@ class DiscoveryRepository {
     for (final i in _investors) HomeItem.fromInvestor(i),
   ];
 
-  /// Support Channels (fixed reference content, not people).
-  List<HomeItem> programs() => [
-    for (final p in PrototypeSeed.programs) HomeItem.fromProgram(p),
-  ];
+  /// Support Channels. There are none yet: the page says so instead of
+  /// showing made-up programs.
+  List<HomeItem> programs() => const [];
 
   /// "New on Start.sa" rail, Startups side (newest first).
   List<HomeItem> newStartups({Set<String> excludeIds = const {}}) {
@@ -126,6 +125,54 @@ class DiscoveryRepository {
       for (final s in dated.take(4))
         HomeItem.fromStartup(s).withJoined(joinedLabel(s.createdAt!)),
     ];
+  }
+
+  /// Explore -> Latest: the public startups that joined at most [days] days
+  /// ago, newest first, each with its "Joined 2 days ago" line. The founder's
+  /// own startups ([excludeIds]) and private or closed ones are left out.
+  List<HomeItem> latestStartups({
+    required int days,
+    Set<String> excludeIds = const {},
+    DateTime? now,
+  }) {
+    final today = now ?? DateTime.now();
+    final dated = [
+      for (final s in _startups)
+        if (s.isListed &&
+            s.createdAt != null &&
+            !excludeIds.contains(s.id) &&
+            _daysSince(s.createdAt!, today) <= days)
+          s,
+    ]..sort((a, b) => b.createdAt!.compareTo(a.createdAt!));
+    return [
+      for (final s in dated)
+        HomeItem.fromStartup(
+          s,
+        ).withHighlight(joinedAgo(s.createdAt!, now: today)),
+    ];
+  }
+
+  static int _daysSince(DateTime created, DateTime today) =>
+      DateTime(today.year, today.month, today.day)
+          .difference(DateTime(created.year, created.month, created.day))
+          .inDays;
+
+  /// "Joined today" / "Joined yesterday" / "Joined 3 days ago" / "Joined 2
+  /// weeks ago" / "Joined 4 months ago" / "Joined over a year ago".
+  static String joinedAgo(DateTime created, {DateTime? now}) {
+    final d = _daysSince(created, now ?? DateTime.now());
+    if (d < 1) return 'Joined today';
+    if (d < 2) return 'Joined yesterday';
+    if (d < 7) return 'Joined $d days ago';
+    if (d < 30) {
+      final w = (d / 7).round();
+      return 'Joined $w ${w == 1 ? 'week' : 'weeks'} ago';
+    }
+    if (d < 365) {
+      final m = (d / 30).round();
+      return 'Joined $m ${m == 1 ? 'month' : 'months'} ago';
+    }
+    return 'Joined over a year ago';
   }
 
   /// "New on Start.sa" rail, Investors side (newest first).

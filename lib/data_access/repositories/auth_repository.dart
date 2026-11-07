@@ -7,6 +7,7 @@ import '../../models/auth_failure.dart';
 import '../firebase_services/auth_service.dart';
 import 'bookmark_repository.dart';
 import 'startup_repository.dart';
+import 'ticket_repository.dart';
 import 'team_lookup.dart';
 import 'user_repository.dart';
 
@@ -136,7 +137,13 @@ class AuthRepository {
       throw const AuthException(AuthFailure.unknown);
     }
     try {
-      await _users.deleteProfile(account.uid);
+      // An investor's tickets and the requests they sent go with the account.
+    try {
+      await TicketRepository.instance.removeAllFor(account.uid);
+    } catch (_) {
+      // Carry on: the account itself must still be removed.
+    }
+    await _users.deleteProfile(account.uid);
     } catch (e) {
       debugPrint('Deleting the unverified profile failed: $e');
     }

@@ -13,6 +13,7 @@ import '../../../shared_ui/theme/app_text.dart';
 import '../../../shared_ui/widgets/cards/avatars.dart';
 import '../../../shared_ui/widgets/cards/box_grid.dart';
 import '../../../shared_ui/widgets/cards/charts.dart';
+import '../../../shared_ui/widgets/cards/profile_blocks.dart' show ProfileSection;
 import '../../../shared_ui/widgets/forms/photo_pickers.dart'
     show DashedBorderPainter;
 import '../../profiles/screens/account_screen.dart';
@@ -67,16 +68,14 @@ class StartupProfilePane extends StatelessWidget {
 
   List<Widget> _overview() {
     final s = viewModel.startup;
+    // The sector, stage and headquarters are in the header: not repeated.
+    // The header names only the main sector, so a startup with more than one
+    // keeps a "Sectors" row for all of them.
     final facts = <(String, String)>[
       ('Website', viewModel.website),
-      (
-        s.sectorLabels.length > 1 ? 'Sectors' : 'Sector',
-        s.sectorLabels.join(', '),
-      ),
-      ('Stage', s.stageLabel),
+      if (s.sectorLabels.length > 1) ('Sectors', s.sectorLabels.join(', ')),
       ('Commerce model', s.businessModelLabel),
-      ('Headquarters', s.location.label),
-      ('Founded', s.foundedYear?.toString() ?? ''),
+      (ProfileStrings.kvFounded, s.foundedYear?.toString() ?? ''),
     ].where((f) => f.$2.trim().isNotEmpty).toList();
     // Funding shows only while the startup is raising.
     final raising = viewModel.currentRound;
@@ -321,11 +320,11 @@ class StartupProfilePane extends StatelessWidget {
     final s = viewModel.startup;
     String amount(int? v) => v == null ? '—' : Formatters.sarShort(v);
     final key = <(String, String)>[
-      ('Valuation', amount(s.valuation)),
-      ('Available capital', amount(s.capital)),
-      ('Revenue this year', amount(s.revenueThisYear)),
-      ('Monthly burn', amount(s.monthlyBurn)),
-      ('Runway', Runway.short(s.capital, s.monthlyBurn) ?? '—'),
+      (FounderToolsStrings.valuationLabel, amount(s.valuation)),
+      (FounderToolsStrings.capitalLabel, amount(s.capital)),
+      (FounderToolsStrings.revenueNowLabel, amount(s.revenueThisYear)),
+      (FounderToolsStrings.burnLabel, amount(s.monthlyBurn)),
+      (ProfileStrings.kvRunway, Runway.short(s.capital, s.monthlyBurn) ?? '—'),
     ];
     return [
       _CurrentRoundCard(round: viewModel.currentRound),
@@ -437,7 +436,11 @@ class _SectionCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 14),
-          child,
+          // The content sits indented under its (bold) heading.
+          Padding(
+            padding: const EdgeInsets.only(left: ProfileSection.contentIndent),
+            child: child,
+          ),
         ],
       ),
     );

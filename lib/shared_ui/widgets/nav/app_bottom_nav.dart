@@ -24,7 +24,7 @@ class AppBottomNav extends StatelessWidget {
   final int currentIndex;
   final ValueChanged<int> onSelect;
 
-  static const _labels = ['Support Channels', 'Hub', 'Explore'];
+  static const _labels = ['Support Channels', 'Start.sa Hub', 'Explore'];
   static const _icons = [
     AppIcons.navSupport,
     AppIcons.navHub,

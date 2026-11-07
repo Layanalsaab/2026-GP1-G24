@@ -54,7 +54,7 @@ class ShareLink {
   };
 
   /// Opens the share sheet for [url]. [title] is the item's name, used in the
-  /// message ("Rafeeq Health on Start.sa").
+  /// message ("Look, I found Rafeeq Health on Start.sa ...").
   static Future<void> share(
     BuildContext context,
     String url, {

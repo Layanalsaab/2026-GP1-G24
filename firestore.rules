@@ -724,20 +724,27 @@ service cloud.firestore {
         && (resource.data.investorId == request.auth.uid
             || resource.data.founderId == request.auth.uid);
 
+      // A request with a `ticketId` is sent from the Investment Wallet: it has
+      // no equity, the ticket must be the investor's own OPEN ticket, and the
+      // amount must be inside the ticket's range and no more than the open
+      // round of the startup still needs (funding minus raised).
       allow create: if request.auth != null
         && request.resource.data.investorId == request.auth.uid
         && request.resource.data.status == 'pending'
         && request.resource.data.keys().hasOnly(['startupId', 'founderId',
                                                  'investorId', 'message',
                                                  'amount', 'equity', 'status',
-                                                 'createdAt'])
+                                                 'createdAt', 'ticketId',
+                                                 'startupName'])
         && request.resource.data.message is string
         && request.resource.data.message.size() <= 1000
         && request.resource.data.amount is int
         && request.resource.data.amount > 0
-        && request.resource.data.equity is number
-        && request.resource.data.equity > 0
-        && request.resource.data.equity < 100;
+        && (('ticketId' in request.resource.data)
+            ? validTicketRequest(request.resource.data)
+            : (request.resource.data.equity is number
+               && request.resource.data.equity > 0
+               && request.resource.data.equity < 100));
 
       allow update: if request.auth != null
         && resource.data.founderId == request.auth.uid
@@ -745,9 +752,27 @@ service cloud.firestore {
              .hasOnly(['status'])
         && request.resource.data.status in ['pending', 'accepted', 'declined'];
 
-      // The investor may withdraw their own request.
+      // The investor may withdraw their own request; the owner of the
+      // startup removes the requests it received when it is deleted.
       allow delete: if request.auth != null
-        && resource.data.investorId == request.auth.uid;
+        && (resource.data.investorId == request.auth.uid
+            || get(/databases/$(database)/documents/startups/$(resource.data.startupId))
+                 .data.founderId == request.auth.uid);
+    }
+
+    function validTicketRequest(d) {
+      let t = get(/databases/$(database)/documents/tickets/$(d.ticketId)).data;
+      let s = get(/databases/$(database)/documents/startups/$(d.startupId)).data;
+      let raised = s.get('raisedInRound', 0);
+      return t.investorId == request.auth.uid
+        && t.status == 'open'
+        && d.amount >= t.amountMin
+        && d.amount <= t.amountMax
+        && d.get('equity', null) == null
+        && d.startupName is string && d.startupName.size() <= 60
+        && d.founderId == s.founderId
+        && s.get('fundingRequirement', 0) > 0
+        && d.amount <= s.fundingRequirement - (raised == null ? 0 : raised);
     }
 
     // ------------------------------------------------------------ interests
@@ -776,15 +801,50 @@ service cloud.firestore {
 
     // -------------------------------------------------------------- tickets
     // An investor's investment tickets (tickets/{investorId}-T1, ...). Any
-    // signed-in user can read them, so matching can use them. Only the admin
-    // scripts write them for now (tools/investor_tickets).
-    // When investors can create tickets in the app, replace `allow write`
-    // with create / update / delete for their own tickets only
-    // (the ticket's investorId == request.auth.uid). Until then the app gets
-    // PERMISSION_DENIED when it writes here.
+    // signed-in user can read them, so matching can use them. The admin
+    // scripts (tools/investor_tickets) write the sample ones; an investor
+    // creates, edits, closes and deletes their own in the Investment Wallet.
+    // A ticket becomes "used" (with its startupId) when a founder accepts a
+    // request sent with it: that is NOT allowed here yet (see the report).
+    function validTicket(d) {
+      return d.name is string && d.name.size() > 0 && d.name.size() <= 40
+        && d.sectors is list && d.sectors.size() > 0 && d.sectors.size() <= 25
+        && d.stages is list && d.stages.size() > 0 && d.stages.size() <= 6
+        && d.amountMin is int && d.amountMax is int
+        && d.amountMin >= 1000 && d.amountMax > d.amountMin
+        // Not tied to what the investor usually invests; only a sanity limit.
+        && d.amountMax <= 10000000000000;
+    }
+
     match /tickets/{ticketId} {
       allow read: if request.auth != null;
-      allow write: if false;
+
+      // The id is `uid-T{n}`; a new ticket is open and not used yet.
+      allow create: if request.auth != null
+        && ticketId.matches('^' + request.auth.uid + '-T[0-9]+$')
+        && request.resource.data.keys().hasOnly(['investorId', 'name',
+             'sectors', 'stages', 'amountMin', 'amountMax', 'status',
+             'startupId', 'createdAt'])
+        && request.resource.data.investorId == request.auth.uid
+        && request.resource.data.status == 'open'
+        && request.resource.data.get('startupId', null) == null
+        && request.resource.data.createdAt == request.time
+        && validTicket(request.resource.data);
+
+      // The investor edits an OPEN ticket (name, sectors, stages, amounts)
+      // or closes it. A closed or used ticket can't change.
+      allow update: if request.auth != null
+        && resource.data.investorId == request.auth.uid
+        && resource.data.status == 'open'
+        && request.resource.data.investorId == resource.data.investorId
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.get('startupId', null) == null
+        && request.resource.data.status in ['open', 'closed']
+        && validTicket(request.resource.data);
+
+      // Deleting an account removes its tickets.
+      allow delete: if request.auth != null
+        && resource.data.investorId == request.auth.uid;
     }
   }
 }
