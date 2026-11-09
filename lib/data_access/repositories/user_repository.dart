@@ -189,6 +189,8 @@ class UserRepository {
         UserFields.lookingFor: keep(UserFields.lookingFor),
         UserFields.title: 'Investor',
         UserFields.photoUrl: keep(UserFields.photoUrl),
+        // Investors who sign up in the app are never dataset investors.
+        UserFields.isArchived: false,
         UserFields.createdAt:
             keep(UserFields.createdAt) ?? _firestore.serverTimestamp(),
       };

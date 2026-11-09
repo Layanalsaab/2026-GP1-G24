@@ -57,6 +57,7 @@ class Startup {
     this.isClosed = false,
     this.closedAt,
     this.ownerChangedAt,
+    this.isArchived = false,
   });
 
   final String id;
@@ -244,6 +245,10 @@ class Startup {
   /// When the startup last got a new owner (the team's one-time pop-up).
   final DateTime? ownerChangedAt;
 
+  /// A startup imported from the dataset (Crunchbase), not made in the app.
+  /// New startups are always false.
+  final bool isArchived;
+
   /// The person with the title "Founder".
   String get originalFounderId {
     final by = (foundedBy ?? '').trim();
@@ -399,6 +404,7 @@ class Startup {
         : StartupFields.statusActive,
     if (closedAt != null) StartupFields.closedAt: closedAt,
     if (ownerChangedAt != null) StartupFields.ownerChangedAt: ownerChangedAt,
+    StartupFields.isArchived: isArchived,
   };
 
   /// Returns null when a required field is missing or holds an unknown value,
@@ -483,6 +489,7 @@ class Startup {
       isClosed: data[StartupFields.status] == StartupFields.statusClosed,
       closedAt: data[StartupFields.closedAt] as DateTime?,
       ownerChangedAt: data[StartupFields.ownerChangedAt] as DateTime?,
+      isArchived: data[StartupFields.isArchived] == true,
     );
   }
 
@@ -593,6 +600,7 @@ class Startup {
     isClosed: isClosed ?? this.isClosed,
     closedAt: closedAt ?? this.closedAt,
     ownerChangedAt: ownerChangedAt ?? this.ownerChangedAt,
+    isArchived: isArchived,
   );
 
   static List<String> _strings(Object? raw) => [

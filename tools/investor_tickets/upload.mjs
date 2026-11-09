@@ -1,7 +1,7 @@
 // Writes output/plan.json (from generate.mjs) to Firebase.
 //
 // WHAT IT TOUCHES (and nothing else):
-//   1. `investors` with isDataset == true: ONLY investmentsCount and ticketSize
+//   1. `investors` with isArchived == true (the dataset): ONLY investmentsCount and ticketSize
 //      (an update, every other field stays as it is).
 //   2. NEW documents in `tickets` (id "<investorId>-T1", isSample: true).
 //   It never touches app investors, users, startups or any other collection.
@@ -48,7 +48,7 @@ const live = new Map((await db.collection('investors').get()).docs.map((d) => [d
 for (const u of plan.updates) {
   const now = live.get(u.id);
   if (!now) problems.push(`${u.id}: not in investors`);
-  else if (now.isDataset !== true) problems.push(`${u.id}: not a dataset investor`);
+  else if (now.isArchived !== true && now.isDataset !== true) problems.push(`${u.id}: not a dataset investor`);
   if (!COUNTS.includes(u.investmentsCount)) problems.push(`${u.id}: investmentsCount "${u.investmentsCount}"`);
   if (!BANDS.includes(u.ticketSize)) problems.push(`${u.id}: ticketSize "${u.ticketSize}"`);
   if (now && now.investmentsCount !== u.investmentsCount) changes.investmentsCount++;

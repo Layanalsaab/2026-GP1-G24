@@ -99,7 +99,7 @@ Map<String, Object?> _doc({
   'endDate': end,
   'investors': investors,
   'wantsLeadInvestor': null,
-  'isDataset': true,
+  'isArchived': true,
 };
 
 void main() {
@@ -191,7 +191,7 @@ void main() {
       expect(map['endDate'], isNull);
       expect(map['investorIds'], ['inv-2']);
       expect(map['investorCount'], 2);
-      expect(map['isDataset'], isFalse);
+      expect(map['isArchived'], isFalse);
     });
 
     test('a closed round keeps what it raised', () {

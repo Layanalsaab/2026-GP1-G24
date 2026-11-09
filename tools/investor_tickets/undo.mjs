@@ -20,7 +20,7 @@ initializeApp({ credential: cert(JSON.parse(fs.readFileSync(keyPath, 'utf8'))) }
 const db = getFirestore();
 
 const backup = JSON.parse(fs.readFileSync('output/investors_backup.json', 'utf8'))
-  .filter((d) => d.data.isDataset === true);
+  .filter((d) => d.data.isArchived === true || d.data.isDataset === true);
 const samples = (await db.collection('tickets').where('isSample', '==', true).get()).docs;
 
 console.log(`Investors to restore: ${backup.length}`);

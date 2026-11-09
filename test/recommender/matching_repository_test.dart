@@ -59,7 +59,7 @@ Map<String, dynamic> _investor(Map<String, dynamic> over) => {
   'roundSizeMax': null,
   'investmentsCount': '1–5',
   'crunchbaseRank': 10,
-  'isDataset': true,
+  'isArchived': true,
   ...over,
 };
 

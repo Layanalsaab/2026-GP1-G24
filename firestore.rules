@@ -152,7 +152,10 @@ service cloud.firestore {
              'linkedinUrl', 'offer', 'lookingFor', 'title', 'photoUrl',
              'createdAt', 'yearsInvesting', 'sectorsOther',
              'preferredStagesOther', 'preferredCommerceModelsOther',
-             'emailPublic', 'phonePublic', 'email', 'phone'])
+             'emailPublic', 'phonePublic', 'email', 'phone', 'isArchived'])
+        // Only the dataset investors are archived (written by the admin
+        // script), never an investor who signed up in the app.
+        && request.resource.data.get('isArchived', false) == false
         // Email and phone are listed only when the investor made them Public.
         && (!('email' in request.resource.data)
             || request.resource.data.get('emailPublic', false) == true)
@@ -366,11 +369,12 @@ service cloud.firestore {
 
         allow create: if canEdit(startupAfter())
                       && statusOf(startupAfter()) == 'active'
-                      && request.resource.data.isDataset == false
+                      && request.resource.data.get('isArchived', false) == false
                       && validRound(request.resource.data, startupAfter(), startupId);
 
         allow update: if canEdit(startupAfter())
-                      && request.resource.data.isDataset == resource.data.isDataset
+                      && request.resource.data.get('isArchived', false)
+                           == resource.data.get('isArchived', false)
                       && request.resource.data.startupId == resource.data.startupId
                       && validRound(request.resource.data, startupAfter(), startupId);
 
@@ -437,7 +441,7 @@ service cloud.firestore {
                                'endDate', 'investors', 'investorIds',
                                'investorCount', 'wantsLeadInvestor',
                                'amountEstimated', 'raisedEstimated',
-                               'isDataset', 'createdAt', 'updatedAt'])
+                               'isArchived', 'createdAt', 'updatedAt'])
           && d.startupId == id
           && d.number is int && d.number >= 1
           && d.stage is string
@@ -494,7 +498,11 @@ service cloud.firestore {
                              // Finance and Growth / Startup Ask answers
                              'revenueThisYear', 'monthlyBurnRate',
                              'businessModelExplanation', 'raisedInRound',
-                             'partnerTypes', 'supportTypes'])
+                             'partnerTypes', 'supportTypes',
+                             // Dataset startups only (admin script); always
+                             // false for a startup saved in the app.
+                             'isArchived'])
+        && d.get('isArchived', false) == false
         && d.name is string && d.name.size() >= 1 && d.name.size() <= 40
         // The one-line pitch: at most 120.
         && d.description is string && d.description.size() <= 1500

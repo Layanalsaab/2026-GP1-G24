@@ -49,6 +49,10 @@ class UserFields {
   /// Whether the profile shows the email / phone (private when missing).
   static const emailPublic = 'emailPublic';
   static const phonePublic = 'phonePublic';
+
+  /// `investors/{id}` only: true on the investors imported from the dataset
+  /// (Crunchbase), false on investors who signed up in the app.
+  static const isArchived = 'isArchived';
   static const sectorsOfInterest = 'sectorsOfInterest';
 
   // Profile photo: download URL of `users/{uid}/profile.jpg` in Storage.
@@ -183,6 +187,11 @@ class StartupFields {
 
   /// When the startup last got a new owner (a timestamp).
   static const ownerChangedAt = 'ownerChangedAt';
+
+  /// True only on the startups imported from the dataset (Crunchbase).
+  /// Startups made in the app are saved with false, and nobody can change it
+  /// in the app (firestore.rules).
+  static const isArchived = 'isArchived';
 }
 
 /// Fields of a `startups/{startupId}/fundingRounds/{roundId}` document (the
@@ -207,7 +216,10 @@ class FundingRoundFields {
   static const investorIds = 'investorIds';
   static const investorCount = 'investorCount';
   static const wantsLeadInvestor = 'wantsLeadInvestor';
-  static const isDataset = 'isDataset';
+
+  /// True only on rounds imported from the dataset (Crunchbase). Rounds added
+  /// in the app are saved with false.
+  static const isArchived = 'isArchived';
   static const createdAt = 'createdAt';
   static const updatedAt = 'updatedAt';
 
