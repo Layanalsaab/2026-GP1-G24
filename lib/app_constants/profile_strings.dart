@@ -80,6 +80,8 @@ class ProfileStrings {
   static const myStartups = 'Startups';
   static const addStartup = '+ Add';
   static const noStartups = 'No startups yet.';
+
+  static const founderInterests = 'Interests';
   static const contact = 'Contact Information';
   static const contactIntro =
       'Only the details marked Public are shown to others.';

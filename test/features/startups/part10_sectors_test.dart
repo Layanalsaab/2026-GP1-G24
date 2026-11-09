@@ -192,18 +192,21 @@ void main() {
       expect(find.textContaining('HealthTech · Pre-seed'), findsOneWidget);
     });
 
-    testWidgets('a startup with one sector has no Sector box (the header says it)', (t) async {
-      t.view.physicalSize = const Size(412, 2400);
-      t.view.devicePixelRatio = 1;
-      addTearDown(t.view.reset);
-      await t.pumpWidget(
-        MaterialApp(home: StartupProfileScreen(startup: _startup())),
-      );
-      await t.pumpAndSettle();
-      expect(find.text('Sector'), findsNothing);
-      expect(find.text('Sectors'), findsNothing);
-      expect(find.textContaining('HealthTech · Pre-seed'), findsOneWidget);
-    });
+    testWidgets(
+      'a startup with one sector has the "Sector" box, like the form',
+      (t) async {
+        t.view.physicalSize = const Size(412, 2400);
+        t.view.devicePixelRatio = 1;
+        addTearDown(t.view.reset);
+        await t.pumpWidget(
+          MaterialApp(home: StartupProfileScreen(startup: _startup())),
+        );
+        await t.pumpAndSettle();
+        expect(find.text('Sector'), findsOneWidget);
+        expect(find.text('Sectors'), findsNothing);
+        expect(find.textContaining('HealthTech · Pre-seed'), findsOneWidget);
+      },
+    );
 
     testWidgets('a long list wraps instead of being cut off', (t) async {
       final all = [for (final s in Sector.values) s.label].join(', ');

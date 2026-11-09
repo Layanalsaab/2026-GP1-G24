@@ -87,7 +87,9 @@ void main() {
     return vm;
   }
 
-  testWidgets('Latest: the newest startups with their "Joined" line', (t) async {
+  testWidgets('Latest: the newest startups with their "Joined" line', (
+    t,
+  ) async {
     final now = DateTime.now();
     await pump(
       t,
@@ -121,7 +123,12 @@ void main() {
     );
     await t.tap(find.text('Last week'));
     await t.pumpAndSettle();
-    for (final o in ['Last 3 months', 'Last 6 months', 'Last year']) {
+    for (final o in [
+      'Last month',
+      'Last 3 months',
+      'Last 6 months',
+      'Last year',
+    ]) {
       expect(find.text(o), findsOneWidget);
     }
     await t.tap(find.text('Last 3 months'));
@@ -130,25 +137,18 @@ void main() {
     expect(find.text('No new startups'), findsNothing);
   });
 
-  testWidgets('Trending: standard cards, rank and growth, the (i) button', (
+  testWidgets('Trending: standard cards with the rank, no analytics', (
     t,
   ) async {
     await pump(t, sample: true, tab: 1);
     expect(find.text('Top 30 trending'), findsOneWidget);
     expect(find.text('Last 7 days'), findsOneWidget);
     expect(find.byType(HomeCard), findsWidgets);
-    expect(find.text('#1 · +38%'), findsOneWidget);
-    expect(find.text('more views than last week'), findsWidgets);
-    final tip =
-        'Based on profile views in the last 7 days. The more a profile’s '
-        'views grew compared with the previous period, the higher it ranks.';
-    expect(find.text(tip), findsNothing);
-    await t.tap(find.bySemanticsLabel('About this list'));
-    await t.pumpAndSettle();
-    expect(find.text(tip), findsOneWidget);
-    await t.tap(find.bySemanticsLabel('About this list'));
-    await t.pumpAndSettle();
-    expect(find.text(tip), findsNothing);
+    // Only the rank: no growth numbers, no "more views", no (i) button.
+    expect(find.text('#1'), findsOneWidget);
+    expect(find.textContaining('%'), findsNothing);
+    expect(find.textContaining('more views'), findsNothing);
+    expect(find.bySemanticsLabel('About this list'), findsNothing);
   });
 
   testWidgets('For You (investor): startups, no switch, no New section', (

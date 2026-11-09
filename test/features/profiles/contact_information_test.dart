@@ -194,12 +194,61 @@ void main() {
   testWidgets('the content sits indented under the bold heading', (t) async {
     AppSession.instance.signIn(investor);
     await _pump(t, const OwnProfileScreen(user: investor));
-    final heading = t.getTopLeft(find.text('About')).dx;
+    final heading = t.getTopLeft(find.text('Bio')).dx;
     final content = t
         .getTopLeft(find.text('Angel investor in the Kingdom.'))
         .dx;
     expect(content - heading, closeTo(12, 0.5));
-    final text = t.widget<Text>(find.text('About'));
+    final text = t.widget<Text>(find.text('Bio'));
     expect(text.style!.fontWeight, FontWeight.w700);
+  });
+
+  testWidgets('founder and investor profiles: Bio, then Contact Information', (
+    t,
+  ) async {
+    // The same heading and the same order on both.
+    AppSession.instance.signIn(founder);
+    await _pump(t, const OwnProfileScreen(user: founder));
+    expect(find.text('About'), findsNothing);
+    expect(find.text('Bio'), findsOneWidget);
+    expect(
+      t.getTopLeft(find.text('Bio')).dy,
+      lessThan(t.getTopLeft(find.text('Contact Information')).dy),
+    );
+    // Right under it: nothing else sits between the two.
+    expect(find.text('Startups'), findsOneWidget);
+    expect(
+      t.getTopLeft(find.text('Contact Information')).dy,
+      lessThan(t.getTopLeft(find.text('Startups')).dy),
+    );
+
+    AppSession.instance.signIn(investor);
+    await _pump(t, const OwnProfileScreen(user: investor));
+    expect(find.text('About'), findsNothing);
+    expect(
+      t.getTopLeft(find.text('Bio')).dy,
+      lessThan(t.getTopLeft(find.text('Contact Information')).dy),
+    );
+
+    // Someone else's investor profile too.
+    const other = InvestorProfile(
+      id: 'o',
+      name: 'Other Investor',
+      title: 'Investor',
+      city: 'Riyadh',
+      sectors: ['Fintech'],
+      stages: ['Seed'],
+      ticketRange: 'SAR 100K – 500K',
+      locations: [],
+      about: 'Backs early teams.',
+      yearsInvesting: '4–6 years',
+      startupsInvested: '4–6',
+    );
+    await _pump(t, const InvestorProfileScreen(investor: other));
+    final bio = t.getTopLeft(find.text('Bio')).dy;
+    final contact = t.getTopLeft(find.text('Contact Information')).dy;
+    final background = t.getTopLeft(find.text('Investment Background')).dy;
+    expect(bio, lessThan(contact));
+    expect(contact, lessThan(background));
   });
 }

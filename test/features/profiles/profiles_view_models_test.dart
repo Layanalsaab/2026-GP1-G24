@@ -84,11 +84,14 @@ void main() {
     test('tabs and display values follow the prototype', () {
       session.signIn(_investor);
       final vm = StartupProfileViewModel(startup: startup, session: session);
+      // The six steps of the add-startup form, in the same order.
       expect(StartupProfileViewModel.tabLabels, [
-        'Overview',
-        'Business',
-        'Team',
-        'Funding',
+        'Startup Overview',
+        'Startup Description',
+        'Target Market',
+        'Finance and Growth',
+        'Startup Team',
+        'Startup Ask',
       ]);
       vm.selectTab(3);
       expect(vm.tab, 3);

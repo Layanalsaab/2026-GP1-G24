@@ -69,7 +69,7 @@ class HomeCard extends StatelessWidget {
   final String? matchReason;
 
   /// Replaces "N% match" in the same pill: "Joined 2 days ago" (Latest) or
-  /// "#1 · +38%" (Trending), with an optional grey [highlightReason].
+  /// "#1" (Trending), with an optional grey [highlightReason].
   final String? highlight;
   final String? highlightReason;
 

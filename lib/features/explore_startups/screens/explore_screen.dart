@@ -101,8 +101,8 @@ class ExploreScreen extends StatelessWidget {
     cardsSlot(vm.recommended, showMatch: true, scope: vm.paneKey),
   ];
 
-  /// Trending: "Top 30 trending" with the range, each card with its rank and
-  /// growth ("#1 · +38%") and "more views than last week".
+  /// Trending: "Top 30 trending" with the range, each card with its rank
+  /// ("#1"). No analytics are shown (no growth, no view counts).
   List<HomeSlot> _trending(HomeViewModel vm) {
     final items = vm.trending;
     return [
@@ -110,7 +110,6 @@ class ExploreScreen extends StatelessWidget {
       _heading(
         _InfoHeading(
           title: HomeStrings.top30,
-          info: vm.range.info,
           trailing: RangeDropdown(
             options: [for (final r in TrendingRange.values) r.label],
             selectedIndex: vm.range.index,
@@ -147,10 +146,12 @@ class ExploreScreen extends StatelessWidget {
 /// A section heading with an (i) button after the title that opens a tip
 /// under it, and an optional [trailing] widget (the range dropdown).
 class _InfoHeading extends StatefulWidget {
-  const _InfoHeading({required this.title, required this.info, this.trailing});
+  const _InfoHeading({required this.title, this.info, this.trailing});
 
   final String title;
-  final String info;
+
+  /// The tip behind the (i) button; null shows no button.
+  final String? info;
   final Widget? trailing;
 
   @override
@@ -175,12 +176,14 @@ class _InfoHeadingState extends State<_InfoHeading> {
                   child: Text(widget.title, style: AppText.sectionTitle),
                 ),
               ),
-              const SizedBox(width: 2),
-              InfoButton(
-                open: _open,
-                semanticLabel: 'About this list',
-                onTap: () => setState(() => _open = !_open),
-              ),
+              if (widget.info != null) ...[
+                const SizedBox(width: 2),
+                InfoButton(
+                  open: _open,
+                  semanticLabel: 'About this list',
+                  onTap: () => setState(() => _open = !_open),
+                ),
+              ],
               if (widget.trailing != null) ...[
                 const Spacer(),
                 widget.trailing!,
@@ -188,9 +191,9 @@ class _InfoHeadingState extends State<_InfoHeading> {
             ],
           ),
         ),
-        if (_open) ...[
+        if (_open && widget.info != null) ...[
           const SizedBox(height: 6),
-          InfoTip(widget.info),
+          InfoTip(widget.info!),
         ],
       ],
     );

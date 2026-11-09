@@ -18,6 +18,9 @@ import '../../../shared_ui/widgets/cards/home_card.dart';
 import '../../../shared_ui/widgets/cards/profile_blocks.dart';
 import '../../../shared_ui/widgets/headers/profile_banner.dart';
 import '../../../shared_ui/widgets/overlays/app_toast.dart';
+import '../../profiles/widgets/contact_section.dart';
+import '../../profiles/widgets/investor_profile_body.dart'
+    show ProfileValueRows;
 import '../../profiles/widgets/profile_widgets.dart';
 import '../../startups/widgets/role_tag.dart';
 import 'startup_profile_screen.dart';
@@ -207,7 +210,8 @@ class _TeamMemberProfileScreenState extends State<TeamMemberProfileScreen> {
               city: p?.city,
               metaTail: widget.startupName,
               tagsLabel: ProfileStrings.interestedIn,
-              tags: p?.sectors ?? const [],
+              // The sectors are listed under Interests below.
+              tags: const [],
               photoUrl: p?.photoUrl,
               photoData: p?.photoData,
               linkedin: p?.linkedin,
@@ -223,32 +227,51 @@ class _TeamMemberProfileScreenState extends State<TeamMemberProfileScreen> {
                 children: [
                   if (about.isNotEmpty)
                     ProfileSection(
-                      title: ProfileStrings.about,
+                      title: ProfileStrings.bio,
                       child: ProfileText(about),
                     ),
-                  if (_startups.isNotEmpty) _startupCards(),
-                  // Only what the person made Public (each on its own).
-                  if (p != null && (p.email != null || p.phone != null))
+                  // Contact Information right under the bio, like an
+                  // investor's profile: what was made Public, and "Email is
+                  // private" / "Phone is private" (a lock, no value) for the
+                  // rest.
+                  ProfileSection(
+                    title: ProfileStrings.contact,
+                    child: Column(
+                      children: [
+                        p?.email != null
+                            ? PublicContactRow(
+                                icon: AppIcons.mail,
+                                label: ProfileStrings.email,
+                                value: p!.email!,
+                              )
+                            : const PrivateContactRow(
+                                icon: AppIcons.mail,
+                                label: ProfileStrings.email,
+                              ),
+                        p?.phone != null
+                            ? PublicContactRow(
+                                icon: AppIcons.phone,
+                                label: ProfileStrings.phone,
+                                value: '+966 ${p!.phone}',
+                                showDivider: true,
+                              )
+                            : const PrivateContactRow(
+                                icon: AppIcons.phone,
+                                label: ProfileStrings.phone,
+                                showDivider: true,
+                              ),
+                      ],
+                    ),
+                  ),
+                  if ((p?.sectors ?? const []).isNotEmpty)
                     ProfileSection(
-                      title: ProfileStrings.contact,
-                      child: Column(
-                        children: [
-                          if (p.email != null)
-                            InfoRow(
-                              icon: AppIcons.mail,
-                              label: ProfileStrings.email,
-                              value: p.email!,
-                            ),
-                          if (p.phone != null)
-                            InfoRow(
-                              icon: AppIcons.phone,
-                              label: ProfileStrings.phone,
-                              value: '+966 ${p.phone}',
-                              showDivider: p.email != null,
-                            ),
-                        ],
+                      title: ProfileStrings.founderInterests,
+                      child: ProfileValueRows(
+                        ProfileStrings.sectors,
+                        p!.sectors,
                       ),
                     ),
+                  if (_startups.isNotEmpty) _startupCards(),
                 ],
               ),
           ],

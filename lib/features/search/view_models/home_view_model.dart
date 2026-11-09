@@ -359,10 +359,7 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
         k: _bookmarks.savedAt(k) ?? DateTime.now(),
     };
     return isFounder
-        ? _discovery.recommendedInvestors(
-            own: _own,
-            bookmarks: saved,
-          )
+        ? _discovery.recommendedInvestors(own: _own, bookmarks: saved)
         : _discovery.recommendedStartups(
             excludeIds: _ownIds,
             criteria: user?.investorCriteria,
@@ -377,7 +374,8 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
     final now = _bookmarks.keys.value;
     // Many at once means the saved bookmarks were just loaded (or cleared):
     // use them right away. One toggle waits until For You is left.
-    final bulk = now.difference(_seenBookmarks).length > 1 ||
+    final bulk =
+        now.difference(_seenBookmarks).length > 1 ||
         _seenBookmarks.difference(now).length > 1;
     _seenBookmarks = {...now};
     final onForYou =
@@ -400,18 +398,14 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
 
   void setRange(int index) => _set(() => range = TrendingRange.values[index]);
 
-  /// The top 30, each with its rank and growth ("#1 · +38%") and the reason
-  /// ("more views than last week").
+  /// The top 30, each with its rank ("#1").
   List<HomeItem> get trending {
     final items = trendingSwitch == 0
         ? _interactions.trendingStartups(range)
         : _interactions.trendingInvestors(range);
     return [
       for (var i = 0; i < items.length; i++)
-        items[i].withHighlight(
-          '#${i + 1} · ${InteractionRepository.growthOf(i)}',
-          reason: 'more views ${range.compare}',
-        ),
+        items[i].withHighlight('#${i + 1}'),
     ];
   }
 

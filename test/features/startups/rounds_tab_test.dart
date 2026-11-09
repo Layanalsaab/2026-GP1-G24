@@ -430,7 +430,9 @@ void main() {
         MaterialApp(
           theme: AppTheme.light,
           navigatorKey: AppToast.navigatorKey,
-          home: Scaffold(body: SingleChildScrollView(child: ManageRoundsTab(vm: vm))),
+          home: Scaffold(
+            body: SingleChildScrollView(child: ManageRoundsTab(vm: vm)),
+          ),
         ),
       );
       await t.tap(find.text('Round 2'));
@@ -576,9 +578,7 @@ void main() {
       expect(find.text('SAR 200,000'), findsOneWidget);
     });
 
-    testWidgets('a view-only member opens the page but cannot edit', (
-      t,
-    ) async {
+    testWidgets('a view-only member opens the page but cannot edit', (t) async {
       await _openRounds(t, role: StartupRole.member);
       await t.tap(find.text('Round 2'));
       await t.pumpAndSettle();

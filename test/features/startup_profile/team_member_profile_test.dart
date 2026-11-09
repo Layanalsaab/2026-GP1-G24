@@ -98,14 +98,19 @@ void main() {
       expect(find.text('Startups'), findsOneWidget);
       expect(find.text('VUZ'), findsWidgets);
       expect(find.text('Co-founder'), findsOneWidget);
-      // Both private: no Contact section at all.
-      expect(find.text('Contact Information'), findsNothing);
+      // Both private: the section is still there, like an investor's, with
+      // a lock and no value.
+      expect(find.text('Contact Information'), findsOneWidget);
+      expect(find.text('Email is private'), findsOneWidget);
+      expect(find.text('Phone is private'), findsOneWidget);
+      expect(find.text('Private'), findsNWidgets(2));
     });
 
     testWidgets('only the email is public: only the email shows', (t) async {
       await pump(t, _profile(email: 'k@gmail.com', emailPublic: true));
       expect(find.text('Contact Information'), findsOneWidget);
       expect(find.text('k@gmail.com'), findsOneWidget);
+      expect(find.text('Phone is private'), findsOneWidget);
       expect(find.textContaining('+966'), findsNothing);
     });
 
@@ -113,6 +118,7 @@ void main() {
       await pump(t, _profile(phone: '551234567', phonePublic: true));
       expect(find.text('Contact Information'), findsOneWidget);
       expect(find.text('+966 551234567'), findsOneWidget);
+      expect(find.text('Email is private'), findsOneWidget);
       expect(find.textContaining('@'), findsNothing);
     });
 
@@ -120,7 +126,9 @@ void main() {
       await pump(t, null);
       expect(find.text('Khaled Zaatarah'), findsOneWidget);
       expect(find.text('Founder'), findsWidgets);
-      expect(find.text('Contact Information'), findsNothing);
+      // Nothing is known: both are shown as private.
+      expect(find.text('Contact Information'), findsOneWidget);
+      expect(find.text('Email is private'), findsOneWidget);
       expect(find.text('Startups'), findsNothing);
     });
   });

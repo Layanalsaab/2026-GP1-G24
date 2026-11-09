@@ -184,8 +184,10 @@ void main() {
       // Standard cards (no ranked box): the rank and the growth in the pill.
       expect(find.byType(TrendingBox), findsNothing);
       expect(find.byType(HomeCard), findsWidgets);
-      expect(find.text('#1 · +38%'), findsOneWidget);
-      expect(find.text('more views than last week'), findsWidgets);
+      expect(find.text('#1'), findsOneWidget);
+      // No analytics on the cards.
+      expect(find.textContaining('more views'), findsNothing);
+      expect(find.textContaining('%'), findsNothing);
       await t.pump(const Duration(seconds: 2));
     });
   });

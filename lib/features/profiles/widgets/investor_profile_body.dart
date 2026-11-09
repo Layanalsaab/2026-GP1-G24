@@ -172,9 +172,15 @@ class InvestorProfileBody extends StatelessWidget {
           ),
         if (d.about.isNotEmpty)
           ProfileSection(
-            title: ProfileStrings.about,
+            title: ProfileStrings.bio,
             delay: stagger(),
             child: ProfileText(d.about),
+          ),
+        if (contact != null)
+          ProfileSection(
+            title: ProfileStrings.contact,
+            delay: stagger(),
+            child: _ContactBlock(contact: contact!),
           ),
         if (d.offer.isNotEmpty)
           ProfileSection(
@@ -201,9 +207,12 @@ class InvestorProfileBody extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _ValueRows(ProfileStrings.sectors, d.sectors),
-                _ValueRows(ProfileStrings.stages, d.stages),
-                _ValueRows(ProfileStrings.commerceModels, d.commerceModels),
+                ProfileValueRows(ProfileStrings.sectors, d.sectors),
+                ProfileValueRows(ProfileStrings.stages, d.stages),
+                ProfileValueRows(
+                  ProfileStrings.commerceModels,
+                  d.commerceModels,
+                ),
               ],
             ),
           ),
@@ -232,12 +241,6 @@ class InvestorProfileBody extends StatelessWidget {
                   ),
               ],
             ),
-          ),
-        if (contact != null)
-          ProfileSection(
-            title: ProfileStrings.contact,
-            delay: stagger(),
-            child: _ContactBlock(contact: contact!),
           ),
       ],
     );
@@ -351,10 +354,11 @@ class _BackgroundGrid extends StatelessWidget {
   }
 }
 
-/// One interests group: a small grey label with a gold bar, then the values
+/// One interests group (shared with the founder profile): a small grey label
+/// with a gold bar, then the values
 /// as plain text, one per line (no chips).
-class _ValueRows extends StatelessWidget {
-  const _ValueRows(this.label, this.values);
+class ProfileValueRows extends StatelessWidget {
+  const ProfileValueRows(this.label, this.values, {super.key});
 
   final String label;
   final List<String> values;
@@ -382,14 +386,19 @@ class _ValueRows extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 6),
+          // The values sit a little to the right, under the label's text (past
+          // its gold bar).
           for (final v in values)
-            Text(
-              v,
-              style: AppText.sans(
-                size: 14,
-                height: 22,
-                weight: FontWeight.w500,
-                color: AppColors.ink,
+            Padding(
+              padding: const EdgeInsets.only(left: 11),
+              child: Text(
+                v,
+                style: AppText.sans(
+                  size: 14,
+                  height: 22,
+                  weight: FontWeight.w500,
+                  color: AppColors.ink,
+                ),
               ),
             ),
         ],

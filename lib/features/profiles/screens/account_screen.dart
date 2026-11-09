@@ -199,9 +199,9 @@ class _OwnProfileScreenState extends State<OwnProfileScreen> {
                     city: u.city,
                     metaTail: _vm.joinedLabel,
                     tagsLabel: ProfileStrings.interestedIn,
-                    // An investor's sectors are listed under Interests: no
-                    // second "Invests in" line under the name.
-                    tags: u.isInvestor ? const [] : _vm.sectors,
+                    // The sectors are listed under Interests (investor and
+                    // founder alike): no line under the name.
+                    tags: const [],
                     photoUrl: u.photoUrl,
                     photoData: u.photoData,
                     linkedin: _vm.linkedin,
@@ -224,9 +224,49 @@ class _OwnProfileScreenState extends State<OwnProfileScreen> {
                       children: [
                         if (about.isNotEmpty)
                           ProfileSection(
-                            title: ProfileStrings.about,
+                            title: ProfileStrings.bio,
                             delay: stagger(),
                             child: ProfileText(about),
+                          ),
+                        // On my own profile both are listed, each with a pill that
+                        // says who sees it (Public or Only you).
+                        if (_vm.contactRows().isNotEmpty)
+                          ProfileSection(
+                            title: ProfileStrings.contact,
+                            delay: stagger(),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                const ContactIntro(),
+                                for (final (i, row)
+                                    in _vm.contactRows().indexed)
+                                  OwnContactRow(
+                                    icon: row.kind == ContactKind.email
+                                        ? AppIcons.mail
+                                        : AppIcons.phone,
+                                    label: row.kind == ContactKind.email
+                                        ? ProfileStrings.email
+                                        : ProfileStrings.phone,
+                                    noun: row.kind == ContactKind.email
+                                        ? 'email'
+                                        : 'phone number',
+                                    value: row.value,
+                                    isPublic: row.isPublic,
+                                    showDivider: i > 0,
+                                  ),
+                              ],
+                            ),
+                          ),
+                        // The same sections as an investor's profile: the
+                        // sectors are listed here, not as a line under the name.
+                        if (_vm.sectors.isNotEmpty)
+                          ProfileSection(
+                            title: ProfileStrings.founderInterests,
+                            delay: stagger(),
+                            child: ProfileValueRows(
+                              ProfileStrings.sectors,
+                              _vm.sectors,
+                            ),
                           ),
                         if (_vm.isFounder) _myStartups(context),
                         if (_vm.associations.isNotEmpty)
@@ -255,35 +295,6 @@ class _OwnProfileScreenState extends State<OwnProfileScreen> {
                                       context,
                                       startup: _vm.associations[i],
                                     ),
-                                  ),
-                              ],
-                            ),
-                          ),
-                        // On my own profile both are listed, each with a pill that
-                        // says who sees it (Public or Only you).
-                        if (_vm.contactRows().isNotEmpty)
-                          ProfileSection(
-                            title: ProfileStrings.contact,
-                            delay: stagger(),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                const ContactIntro(),
-                                for (final (i, row)
-                                    in _vm.contactRows().indexed)
-                                  OwnContactRow(
-                                    icon: row.kind == ContactKind.email
-                                        ? AppIcons.mail
-                                        : AppIcons.phone,
-                                    label: row.kind == ContactKind.email
-                                        ? ProfileStrings.email
-                                        : ProfileStrings.phone,
-                                    noun: row.kind == ContactKind.email
-                                        ? 'email'
-                                        : 'phone number',
-                                    value: row.value,
-                                    isPublic: row.isPublic,
-                                    showDivider: i > 0,
                                   ),
                               ],
                             ),

@@ -80,22 +80,36 @@ void main() {
           size: size,
         );
         expect(find.text('Rafeeq Health'), findsWidgets);
-        expect(find.text('About'), findsOneWidget);
+        // The first tab is the first step of the form.
+        expect(find.text('Startup Overview'), findsWidgets);
         expect(find.text('Send investment request'), findsOneWidget);
 
-        // The four tabs (a "Funding" row also exists inside the Overview).
+        // The six tabs: the steps of the add-startup form.
         Finder tab(String label) => find.descendant(
           of: find.byType(ScrollableHeaderTabBar),
           matching: find.text(label),
         );
-        for (final name in ['Business', 'Team', 'Funding', 'Overview']) {
+        Future<void> open(String name) async {
+          await t.ensureVisible(tab(name));
+          await t.pumpAndSettle();
           await t.tap(tab(name));
           await t.pump(const Duration(milliseconds: 500));
         }
-        await t.tap(tab('Funding'));
-        await t.pump(const Duration(milliseconds: 500));
+
+        for (final name in [
+          'Startup Description',
+          'Target Market',
+          'Finance and Growth',
+          'Startup Team',
+          'Startup Ask',
+          'Startup Overview',
+        ]) {
+          await open(name);
+        }
+        await open('Finance and Growth');
+        expect(find.text('Expected revenue next 3 years'), findsOneWidget);
+        await open('Startup Ask');
         expect(find.text('Funding rounds'), findsOneWidget);
-        expect(find.text('Expected revenue'), findsOneWidget);
 
         await t.tap(find.text('Send investment request'));
         await t.pump(const Duration(milliseconds: 400));

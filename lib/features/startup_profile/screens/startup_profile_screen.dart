@@ -105,7 +105,7 @@ class _StartupProfileScreenState extends State<StartupProfileScreen> {
         final preview = _vm.isPreview;
         final s = _vm.startup;
         // Same header style as Manage: back (or close in preview), the logo
-        // tile, the name, ONE sub-line, and four equal tabs. No description
+        // tile, the name, ONE sub-line, and six tabs. No description
         // and no stat strip here: they live in the Overview tab.
         final header = TabbedHeader(
           title: s.name,
@@ -142,7 +142,9 @@ class _StartupProfileScreenState extends State<StartupProfileScreen> {
           tabs: [
             for (final t in StartupProfileViewModel.tabLabels) HeaderTab(t),
           ],
-          equalTabs: true,
+          // Six tabs, named like the steps of the add-startup form, scroll
+          // sideways the way Manage startup's do.
+          scrollableTabs: true,
           selectedIndex: _vm.tab,
           onTabChanged: _vm.selectTab,
           onBack: () => AppNav.back(context),

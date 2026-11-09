@@ -4,28 +4,27 @@ import '../../../app_constants/founder_tools_strings.dart';
 import '../../../app_constants/profile_strings.dart';
 import '../../../helpers/app_session.dart';
 import '../../../helpers/formatters.dart';
-import '../../../helpers/startup_finance.dart';
 import '../../../models/investor_profile.dart';
 import '../../../models/team_member.dart';
 import '../../../shared_ui/icons/app_icons.dart';
 import '../../../shared_ui/theme/app_colors.dart';
 import '../../../shared_ui/theme/app_text.dart';
 import '../../../shared_ui/widgets/cards/avatars.dart';
-import '../../../shared_ui/widgets/cards/box_grid.dart';
-import '../../../shared_ui/widgets/cards/charts.dart';
-import '../../../shared_ui/widgets/cards/profile_blocks.dart' show ProfileSection;
-import '../../../shared_ui/widgets/forms/photo_pickers.dart'
-    show DashedBorderPainter;
+import '../../../shared_ui/widgets/cards/profile_blocks.dart'
+    show ProfileSection;
 import '../../profiles/screens/account_screen.dart';
 import '../../startups/widgets/manage_card.dart';
+import '../../startups/widgets/manage_details_tab.dart';
+import '../../startups/widgets/startup_ask.dart';
 import '../../startups/widgets/manage_rounds_tab.dart';
 import '../../startups/widgets/role_tag.dart';
-import '../../startups/widgets/startup_ask.dart';
 import '../screens/team_member_profile_screen.dart';
 import '../view_models/startup_profile_view_model.dart';
 
-/// The content of the selected tab of the startup page. Tabs: Overview,
-/// Business, Team, Funding. White cards (radius 20, padding 18, 16 px side
+/// The content of the selected tab of the startup page. The six tabs are the
+/// six steps of the add-startup form (Startup Overview, Startup Description,
+/// Target Market, Finance and Growth, Startup Team, Startup Ask) and show the
+/// same questions and answers as Manage -> Details. White cards (radius 20, padding 18, 16 px side
 /// margins), 12 px apart; question blocks inside a card are separated by a
 /// soft 1 px divider.
 class StartupProfilePane extends StatelessWidget {
@@ -45,10 +44,9 @@ class StartupProfilePane extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cards = switch (viewModel.tab) {
-      0 => _overview(),
-      1 => _business(),
-      2 => _team(context),
-      _ => _funding(),
+      4 => _team(context),
+      5 => _ask(),
+      final i => _section(i),
     };
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
@@ -64,156 +62,102 @@ class StartupProfilePane extends StatelessWidget {
     );
   }
 
-  // ------------------------------------------------------------- Overview
+  // ------------------------------------------------------- the form's steps
 
-  List<Widget> _overview() {
+  /// One of the first four steps (Overview, Description, Target Market,
+  /// Finance and Growth): the heading of the step and the same body Manage ->
+  /// Details opens.
+  List<Widget> _section(int i) => [
+    _SectionCard(
+      icon: ManageDetailsTab.iconOf(i),
+      title: FounderToolsStrings.stepTitles[i],
+      tone: i.isOdd ? _Tone.gold : _Tone.moss,
+      child: ManageDetailsTab.sectionBody(viewModel.startup, i),
+    ),
+  ];
+
+  /// The Startup Ask card: the asks of the form (Funding, Partnership,
+  /// Support) that the startup chose. None is shown as "Not selected", and with
+  /// none chosen there is no card.
+  Widget? _askCard() {
+    final rows = _askRows();
+    if (rows == null) return null;
+    return _SectionCard(
+      icon: ManageDetailsTab.iconOf(5),
+      title: FounderToolsStrings.stepTitles[5],
+      tone: _Tone.gold,
+      child: rows,
+    );
+  }
+
+  Widget? _askRows() {
     final s = viewModel.startup;
-    // The sector, stage and headquarters are in the header: not repeated.
-    // The header names only the main sector, so a startup with more than one
-    // keeps a "Sectors" row for all of them.
-    final facts = <(String, String)>[
-      ('Website', viewModel.website),
-      if (s.sectorLabels.length > 1) ('Sectors', s.sectorLabels.join(', ')),
-      ('Commerce model', s.businessModelLabel),
-      (ProfileStrings.kvFounded, s.foundedYear?.toString() ?? ''),
-    ].where((f) => f.$2.trim().isNotEmpty).toList();
-    // Funding shows only while the startup is raising.
     final raising = viewModel.currentRound;
     final partnership = StartupAsk.partnership(s);
     final support = StartupAsk.supportSelected(s);
+    // Only what the startup chose: nothing says what it did not choose.
     final rows = <Widget>[
       if (raising != null)
-        _LookRow(
-          kind: _LookKind.funding,
+        AskRow(
+          icon: AppIcons.wallet,
           title: 'Funding',
-          value: 'Raising ${Formatters.sar(raising.goal)}',
+          selected: true,
+          detail: 'Raising ${Formatters.sar(raising.goal)}',
         ),
       if (partnership)
-        _LookRow(
-          kind: _LookKind.partnership,
+        AskRow(
+          icon: AppIcons.people,
           title: 'Partnership',
-          value: StartupAsk.partners(s).join(', '),
+          selected: true,
+          detail: StartupAsk.partners(s).join(', '),
         ),
       if (support)
-        _LookRow(
-          kind: _LookKind.support,
-          title: 'Support',
-          value: StartupAsk.support(s).join(', '),
-        ),
-    ];
-    return [
-      _SectionCard(
-        icon: AppIcons.info,
-        title: ProfileStrings.about,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            if (s.briefDescription.isNotEmpty)
-              Padding(
-                padding: EdgeInsets.only(bottom: facts.isEmpty ? 0 : 14),
-                child: Text(
-                  s.briefDescription,
-                  style: AppText.sans(
-                    size: 16,
-                    height: 24,
-                    color: AppColors.ink,
-                  ),
-                ),
-              ),
-            if (facts.isNotEmpty)
-              BoxGrid(
-                items: facts,
-                accent: const {'Website'},
-                wrap: const {'Sectors'},
-                page: true,
-              ),
-          ],
-        ),
-      ),
-      if (rows.isNotEmpty)
-        _SectionCard(
-          icon: AppIcons.target,
-          title: ProfileStrings.lookingFor,
-          tone: _Tone.gold,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              for (var i = 0; i < rows.length; i++) ...[
-                if (i > 0) const SizedBox(height: 8),
-                rows[i],
-              ],
-            ],
-          ),
-        ),
-    ];
-  }
-
-  // ------------------------------------------------------------- Business
-
-  List<Widget> _business() {
-    final s = viewModel.startup;
-    final hasDescription =
-        s.problem.trim().isNotEmpty ||
-        s.solution.trim().isNotEmpty ||
-        s.advantage.trim().isNotEmpty;
-    final hasMarket = s.customers.trim().isNotEmpty || viewModel.hasMarket;
-    final hasModel = s.businessModelText.trim().isNotEmpty;
-    if (!hasDescription && !hasMarket && !hasModel) {
-      return [
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 24),
-          child: Text(
-            ProfileStrings.noBusinessDetails,
-            textAlign: TextAlign.center,
-            style: AppText.sans(size: 14, color: AppColors.metaText),
-          ),
-        ),
-      ];
-    }
-    return [
-      if (hasDescription)
-        _SectionCard(
+        AskRow(
           icon: AppIcons.bulb,
-          title: 'Startup description',
-          child: _Blocks([
-            if (s.problem.trim().isNotEmpty)
-              _Answer(ProfileStrings.theProblem, s.problem),
-            if (s.solution.trim().isNotEmpty)
-              _Answer(ProfileStrings.ourSolution, s.solution),
-            if (s.advantage.trim().isNotEmpty)
-              _Answer(ProfileStrings.different, s.advantage),
-          ]),
-        ),
-      if (hasMarket)
-        _SectionCard(
-          icon: AppIcons.search,
-          title: 'Target market',
-          child: _Blocks([
-            if (s.customers.trim().isNotEmpty)
-              _Answer(ProfileStrings.targetCustomers, s.customers),
-            if (viewModel.hasMarket)
-              _Answer(
-                ProfileStrings.marketSize,
-                viewModel.targetMarketShort,
-                big: true,
-                caption: ProfileStrings.yearlyRevenue,
-              ),
-          ]),
-        ),
-      if (hasModel)
-        _SectionCard(
-          icon: AppIcons.wallet,
-          title: FounderToolsStrings.revenueModelTitle,
-          tone: _Tone.gold,
-          child: Text(
-            s.businessModelText.trim(),
-            style: AppText.sans(size: 16, height: 23, color: AppColors.ink),
-          ),
+          title: 'Support',
+          selected: true,
+          detail: StartupAsk.support(s).join(', '),
         ),
     ];
+    if (rows.isEmpty) return null;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (var i = 0; i < rows.length; i++) ...[
+          if (i > 0) const SizedBox(height: 10),
+          rows[i],
+        ],
+      ],
+    );
   }
 
-  // ----------------------------------------------------------------- Team
+  /// Startup Ask: what the startup is looking for (as in the form), then the
+  /// round it is raising and its funding rounds.
+  List<Widget> _ask() => [
+    // No card at all when the startup chose nothing.
+    ?_askCard(),
+    _CurrentRoundCard(round: viewModel.currentRound),
+    Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          'Funding rounds',
+          style: AppText.sans(size: 19, height: 26, weight: FontWeight.w700),
+        ),
+        Text(
+          'All amounts in SAR',
+          style: AppText.sans(size: 13, color: const Color(0xFF8C918D)),
+        ),
+        const SizedBox(height: 12),
+        // The same table as Manage, read only (the startup's real rounds).
+        RoundsTable(
+          rounds: viewModel.roundsNewestFirst,
+          emptyText: viewModel.roundsEmptyText,
+          centerEmpty: true,
+        ),
+      ],
+    ),
+  ];
 
   /// Founder first, then the co-founders, then the members (each group in the
   /// order they were added). Invited people (no account yet) are hidden from
@@ -308,66 +252,6 @@ class StartupProfilePane extends StatelessWidget {
       startupId: viewModel.startup.id,
     );
   }
-
-  // -------------------------------------------------------------- Funding
-
-  List<Widget> _funding() {
-    final s = viewModel.startup;
-    String amount(int? v) => v == null ? '—' : Formatters.sarShort(v);
-    final key = <(String, String)>[
-      (FounderToolsStrings.valuationLabel, amount(s.valuation)),
-      (FounderToolsStrings.capitalLabel, amount(s.capital)),
-      (FounderToolsStrings.revenueNowLabel, amount(s.revenueThisYear)),
-      (FounderToolsStrings.burnLabel, amount(s.monthlyBurn)),
-      (ProfileStrings.kvRunway, Runway.short(s.capital, s.monthlyBurn) ?? '—'),
-    ];
-    return [
-      _CurrentRoundCard(round: viewModel.currentRound),
-      _SectionCard(
-        icon: AppIcons.trend,
-        title: 'Key numbers',
-        child: BoxGrid(items: key, page: true, fullWidthLast: true),
-      ),
-      Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            'Funding rounds',
-            style: AppText.sans(size: 19, height: 26, weight: FontWeight.w700),
-          ),
-          Text(
-            'All amounts in SAR',
-            style: AppText.sans(size: 13, color: const Color(0xFF8C918D)),
-          ),
-          const SizedBox(height: 12),
-          // The same table as Manage, read only (the startup's real rounds).
-          RoundsTable(
-            rounds: viewModel.roundsNewestFirst,
-            emptyText: viewModel.roundsEmptyText,
-            centerEmpty: true,
-          ),
-        ],
-      ),
-      if (viewModel.hasRevenue)
-        _SectionCard(
-          icon: AppIcons.trend,
-          title: ProfileStrings.expectedRevenue,
-          trailing: Text(
-            ProfileStrings.sarPerYear,
-            style: AppText.sans(
-              size: 13,
-              weight: FontWeight.w600,
-              color: const Color(0xFF8C918D),
-            ),
-          ),
-          child: RevenueBars(
-            values: viewModel.revenueValues,
-            labels: viewModel.revenueLabels,
-            valueLabels: viewModel.revenueValueLabels,
-          ),
-        ),
-    ];
-  }
 }
 
 enum _Tone { moss, gold }
@@ -380,14 +264,12 @@ class _SectionCard extends StatelessWidget {
     required this.title,
     required this.child,
     this.tone = _Tone.moss,
-    this.trailing,
   });
 
   final String icon;
   final String title;
   final Widget child;
   final _Tone tone;
-  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
@@ -427,7 +309,6 @@ class _SectionCard extends StatelessWidget {
                   ),
                 ),
               ),
-              ?trailing,
             ],
           ),
           const SizedBox(height: 14),
@@ -438,173 +319,6 @@ class _SectionCard extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-// ----------------------------------------------------------- Looking for
-
-enum _LookKind { funding, partnership, support }
-
-/// One chosen option of "Looking for": a dashed row with a gradient icon
-/// tile, the title and its (minimal) value.
-class _LookRow extends StatelessWidget {
-  const _LookRow({
-    required this.kind,
-    required this.title,
-    required this.value,
-  });
-
-  final _LookKind kind;
-  final String title;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    final (icon, colors) = switch (kind) {
-      _LookKind.funding => (
-        AppIcons.wallet,
-        const [Color(0xFFD4AE55), Color(0xFFA9832C)],
-      ),
-      _LookKind.partnership => (
-        AppIcons.workOut,
-        const [Color(0xFF5B82BD), Color(0xFF2B4F80)],
-      ),
-      _LookKind.support => (
-        AppIcons.people,
-        const [Color(0xFF4F7D5A), Color(0xFF2F5D3A)],
-      ),
-    };
-    return CustomPaint(
-      painter: DashedBorderPainter(
-        color: const Color(0xFFD9D6CF),
-        radius: 14,
-        strokeWidth: 1,
-      ),
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: const Color(0xFFFBFAF7),
-          borderRadius: BorderRadius.circular(14),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 38,
-              height: 38,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: colors,
-                ),
-              ),
-              child: Center(
-                child: AppIcon.filled(icon, size: 18, color: AppColors.white),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: AppText.sans(size: 16, weight: FontWeight.w700),
-                  ),
-                  if (value.trim().isNotEmpty)
-                    Text(
-                      value,
-                      style: AppText.sans(
-                        size: 14,
-                        height: 20,
-                        color: const Color(0xFF4B544E),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ------------------------------------------------------------ answers
-
-/// A question with its answer: the label (13.5 semibold #6B726C) over the
-/// answer (16 / 23 ink). [big] shows the answer as a large dark-green number
-/// with a [caption].
-class _Answer extends StatelessWidget {
-  const _Answer(this.label, this.answer, {this.big = false, this.caption});
-
-  final String label;
-  final String answer;
-  final bool big;
-  final String? caption;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: AppText.sans(
-            size: 13.5,
-            weight: FontWeight.w600,
-            color: const Color(0xFF6B726C),
-          ),
-        ),
-        const SizedBox(height: 4),
-        if (big)
-          Text(
-            answer,
-            style: AppText.sans(
-              size: 28,
-              height: 34,
-              weight: FontWeight.w700,
-              color: AppColors.green,
-            ),
-          )
-        else
-          Text(
-            answer.trim(),
-            style: AppText.sans(size: 16, height: 23, color: AppColors.ink),
-          ),
-        if (caption != null)
-          Text(caption!, style: AppText.sans(size: 13, color: AppColors.grey)),
-      ],
-    );
-  }
-}
-
-/// Question blocks of one card, a 1 px soft divider between them.
-class _Blocks extends StatelessWidget {
-  const _Blocks(this.children);
-
-  final List<Widget> children;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        for (var i = 0; i < children.length; i++) ...[
-          if (i > 0)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 14),
-              child: Divider(
-                height: 1,
-                thickness: 1,
-                color: StartupProfilePane._divider,
-              ),
-            ),
-          children[i],
-        ],
-      ],
     );
   }
 }

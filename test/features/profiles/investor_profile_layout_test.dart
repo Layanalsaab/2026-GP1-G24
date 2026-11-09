@@ -197,7 +197,9 @@ void main() {
         expect(find.text('Phone is private'), findsOneWidget);
         expect(find.text('Private'), findsOneWidget);
         expect(
-          find.byWidgetPredicate((w) => w is AppIcon && w.path == AppIcons.lock),
+          find.byWidgetPredicate(
+            (w) => w is AppIcon && w.path == AppIcons.lock,
+          ),
           findsOneWidget,
         );
         expect(find.text('Only you'), findsNothing);

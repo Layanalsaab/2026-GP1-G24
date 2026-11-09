@@ -1,6 +1,7 @@
 /// The time ranges of the Latest tab dropdown (Explore).
 enum LatestRange {
   week('Last week', 7),
+  month('Last month', 30),
   months3('Last 3 months', 90),
   months6('Last 6 months', 180),
   year('Last year', 365);

@@ -3,12 +3,12 @@ import 'discovery_repository.dart';
 
 /// The ranges of the Trending range dropdown.
 enum TrendingRange {
-  today('Today', 'today', 'than yesterday'),
-  week('Last 7 days', 'in the last 7 days', 'than last week'),
-  month('Last 30 days', 'in the last 30 days', 'than last month'),
-  year('This year', 'this year', 'than last year');
+  today('Today', 'today'),
+  week('Last 7 days', 'in the last 7 days'),
+  month('Last 30 days', 'in the last 30 days'),
+  year('This year', 'this year');
 
-  const TrendingRange(this.label, this.noteText, this.compare);
+  const TrendingRange(this.label, this.noteText);
 
   /// The text in the dropdown.
   final String label;
@@ -16,16 +16,8 @@ enum TrendingRange {
   /// The tail of "Ranked by profile views ...".
   final String noteText;
 
-  /// "more views [compare]" on a Trending card ("than last week").
-  final String compare;
-
   /// "Ranked by profile views in the last 7 days".
   String get note => 'Ranked by profile views $noteText';
-
-  /// The text of the (i) button next to "Top 30 trending".
-  String get info =>
-      'Based on profile views $noteText. The more a profile’s views grew '
-      'compared with the previous period, the higher it ranks.';
 }
 
 /// Profile views and the Trending ranking (Explore -> Trending, top 30 per
@@ -48,30 +40,6 @@ class InteractionRepository {
   static const topCount = 30;
 
   final Map<String, int> _views = {};
-
-  /// PLACEHOLDER growth numbers for the Trending cards ("#1 · +38%") until
-  /// profile views are recorded and compared with the previous period.
-  static const _growth = [
-    '+38%',
-    '+24%',
-    '+19%',
-    '+12%',
-    '+9%',
-    '+31%',
-    '+7%',
-    '+16%',
-    '+22%',
-    '+11%',
-    '+5%',
-    '+27%',
-    '+14%',
-    '+8%',
-    '+18%',
-  ];
-
-  /// The growth shown for rank [index] (0 is #1).
-  static String growthOf(int index) => _growth[index % _growth.length];
-
 
   /// Counts a profile open. [key] is `s-<id>` or `i-<id>`.
   void recordProfileView(String key) => _views[key] = (_views[key] ?? 0) + 1;

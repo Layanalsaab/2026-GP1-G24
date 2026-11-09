@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:startsa/app_constants/founder_tools_strings.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:startsa/data_access/mock_data/prototype_seed.dart';
@@ -123,9 +124,7 @@ void main() {
       expect(find.text('View only'), findsNothing);
     });
 
-    testWidgets('a team member gets no View only notice on any tab', (
-      t,
-    ) async {
+    testWidgets('a team member gets no View only notice on any tab', (t) async {
       await _pump(
         t,
         ManageStartupScreen(
@@ -134,12 +133,7 @@ void main() {
         ),
       );
       expect(find.text('TEAM MEMBER'), findsOneWidget);
-      for (final tab in [
-        'Dashboard',
-        'Details',
-        'Rounds',
-        'Settings',
-      ]) {
+      for (final tab in ['Dashboard', 'Details', 'Rounds', 'Settings']) {
         await _goTo(t, tab);
         expect(find.text('View only'), findsNothing, reason: tab);
         expect(
@@ -190,9 +184,7 @@ void main() {
   });
 
   group('Part 7 · startup page', () {
-    testWidgets('header: one sub-line, four equal tabs, no description', (
-      t,
-    ) async {
+    testWidgets('header: one sub-line, six tabs, no description', (t) async {
       AppSession.instance.signIn(_investor);
       await _pump(t, StartupProfileScreen(startup: PrototypeSeed.rafeeq));
       expect(find.text('Rafeeq Health'), findsWidgets);
@@ -209,86 +201,89 @@ void main() {
         find.byWidgetPredicate((w) => w is AppIcon && w.path == AppIcons.pin),
         findsOneWidget,
       );
-      for (final tab in ['Overview', 'Business', 'Team', 'Funding']) {
+      // Six tabs, named and ordered like the steps of the add-startup form.
+      const tabs = [
+        'Startup Overview',
+        'Startup Description',
+        'Target Market',
+        'Finance and Growth',
+        'Startup Team',
+        'Startup Ask',
+      ];
+      for (final tab in tabs) {
         expect(_tab(tab), findsOneWidget, reason: tab);
       }
-      // Four equal cells.
-      final widths = [
-        for (final tab in ['Overview', 'Business', 'Team', 'Funding'])
-          t
-              .getSize(
-                find
-                    .ancestor(of: _tab(tab), matching: find.byType(Expanded))
-                    .first,
-              )
-              .width,
-      ];
-      expect(widths.toSet().length, 1);
-      // The brief description appears once: in About, not in the header.
+      // The brief description appears once: in the Overview, not in the header.
       expect(find.text(PrototypeSeed.rafeeq.briefDescription), findsOneWidget);
     });
 
-    testWidgets('Overview: tiles, About with facts, Looking for', (t) async {
+    testWidgets('Startup Overview: the questions of the form, and the ask', (
+      t,
+    ) async {
       AppSession.instance.signIn(_investor);
       await _pump(t, StartupProfileScreen(startup: PrototypeSeed.rafeeq));
-      // No Raising / Valuation tiles on Overview any more.
+      // No Raising / Valuation tiles on the first tab.
       expect(find.text('Round 2 · Open'), findsNothing);
       expect(find.text('Valuation'), findsNothing);
-      expect(find.text('About'), findsOneWidget);
-      for (final fact in ['Commerce model', 'Founded year']) {
-        expect(find.text(fact), findsOneWidget, reason: fact);
-      }
-      // The header already shows the sector, stage and city: not repeated.
-      for (final dup in ['Sector', 'Sectors', 'Stage', 'Headquarters']) {
-        expect(find.text(dup), findsNothing, reason: dup);
+      expect(find.text('Startup Overview'), findsWidgets);
+      // The same questions as the form's first step (and Manage -> Details).
+      for (final q in [
+        'Startup name',
+        'Brief description',
+        'Sector',
+        'Stage',
+        'Commerce model',
+        'Headquarters',
+        'Founded year',
+      ]) {
+        expect(find.text(q), findsOneWidget, reason: q);
       }
       // (The header's one sub-line has the pin before the city.)
       expect(
         find.bySemanticsLabel('HealthTech · Pre-seed · Riyadh'),
         findsOneWidget,
       );
-      expect(find.text('Looking for'), findsOneWidget);
-      // Funding shows only the amount; no "raised so far" or lead investor.
+      // What it is looking for is on the last tab, like the form's last step.
+      await _goTo(t, 'Startup Ask');
+      expect(find.text('Funding'), findsWidgets);
       expect(find.text('Raising SAR 500,000'), findsOneWidget);
       expect(find.textContaining('raised so far'), findsNothing);
       expect(find.textContaining('lead investor'), findsNothing);
       expect(find.text('Open to partnerships'), findsNothing);
     });
 
-    testWidgets('Business, Team and Funding tabs show their cards', (t) async {
+    testWidgets('the six tabs show the answers of their form step', (t) async {
       AppSession.instance.signIn(_investor);
       await _pump(t, StartupProfileScreen(startup: PrototypeSeed.rafeeq));
-      await _goTo(t, 'Business');
-      expect(find.text('Startup description'), findsOneWidget);
-      expect(find.text('The problem'), findsOneWidget);
-      expect(find.text('Our solution'), findsOneWidget);
-      expect(find.text('What makes us unique'), findsOneWidget);
-      expect(find.text('Target market'), findsOneWidget);
-      expect(find.text('Target customers'), findsOneWidget);
+      await _goTo(t, 'Startup Description');
+      expect(find.text(FounderToolsStrings.problemLabel), findsOneWidget);
+      expect(find.text(FounderToolsStrings.solutionLabel), findsOneWidget);
+      expect(find.text(FounderToolsStrings.advantageLabel), findsOneWidget);
+      await _goTo(t, 'Target Market');
+      expect(find.text(FounderToolsStrings.customersLabel), findsOneWidget);
       expect(find.text('Target market size'), findsOneWidget);
-      await _goTo(t, 'Team');
-      expect(find.text('Team'), findsWidgets);
-      expect(find.text('Founder'), findsOneWidget);
-      expect(find.text('Associated investors'), findsOneWidget);
-      await _goTo(t, 'Funding');
-      expect(find.text('Current round'), findsOneWidget);
-      expect(find.text('Funding goal'), findsOneWidget);
-      expect(find.text('Key numbers'), findsOneWidget);
+      await _goTo(t, 'Finance and Growth');
       for (final label in [
-        'Current company valuation',
-        'Current available capital',
-        'Current financial year revenue',
-        'Monthly burn rate',
+        FounderToolsStrings.revenueNowLabel,
+        FounderToolsStrings.capitalLabel,
+        FounderToolsStrings.burnLabel,
         'Runway',
+        FounderToolsStrings.valuationLabel,
+        'Expected revenue next 3 years',
+        FounderToolsStrings.revenueModelTitle,
       ]) {
         expect(find.text(label), findsOneWidget, reason: label);
       }
-      expect(find.text('Traction'), findsNothing);
+      await _goTo(t, 'Startup Team');
+      expect(find.text('Founder'), findsOneWidget);
+      expect(find.text('Associated investors'), findsOneWidget);
+      await _goTo(t, 'Startup Ask');
+      expect(find.text('Current round'), findsOneWidget);
+      expect(find.text('Funding goal'), findsOneWidget);
       expect(find.text('Funding rounds'), findsOneWidget);
       expect(find.text('All amounts in SAR'), findsOneWidget);
       expect(find.text('Round 1'), findsOneWidget);
-      expect(find.text('Expected revenue'), findsOneWidget);
-      expect(find.text('SAR per year'), findsOneWidget);
+      expect(find.text('Traction'), findsNothing);
     });
 
     testWidgets('buttons: investor, guest and another founder', (t) async {

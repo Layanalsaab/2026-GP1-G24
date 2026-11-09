@@ -2,7 +2,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:startsa/data_access/firebase_services/firestore_service.dart';
 import 'package:startsa/data_access/mock_data/prototype_seed.dart';
 import 'package:startsa/data_access/repositories/discovery_repository.dart';
-import 'package:startsa/data_access/repositories/interaction_repository.dart';
 import 'package:startsa/features/search/view_models/home_filters.dart';
 import 'package:startsa/features/search/view_models/home_view_model.dart';
 import 'package:startsa/helpers/app_session.dart';
@@ -187,11 +186,10 @@ void main() {
     });
 
     test('the tabs are Latest, Trending, For You and open on Latest', () {
-      expect([for (final t in ExploreTab.defaults) t.label], [
-        'Latest',
-        'Trending',
-        'For You',
-      ]);
+      expect(
+        [for (final t in ExploreTab.defaults) t.label],
+        ['Latest', 'Trending', 'For You'],
+      );
       // Founders and investors have the same tabs; there is no Matches tab.
       expect(ExploreTab.forRole(founder: true), ExploreTab.defaults);
       expect(ExploreTab.forRole(founder: false), ExploreTab.defaults);
@@ -204,33 +202,29 @@ void main() {
       m.dispose();
     });
 
-    test('trending cards carry the rank, the growth and the reason', () {
+    test('trending cards carry the rank only (no analytics)', () {
       final m = vm(SessionRole.investor);
-      final first = m.trending.first;
-      expect(first.highlight, '#1 · ${InteractionRepository.growthOf(0)}');
-      expect(first.highlight, '#1 · +38%');
-      expect(first.highlightReason, 'more views than last week');
-      expect(m.trending[1].highlight!.startsWith('#2 · '), isTrue);
+      final items = m.trending;
+      expect(items.first.highlight, '#1');
+      expect(items.first.highlightReason, isNull);
+      expect(items[1].highlight, '#2');
+      for (final i in items) {
+        expect(i.highlight, matches(RegExp(r'^#\d+$')));
+        expect(i.highlightReason, isNull);
+      }
+      // The range does not add anything to a card.
       m.setRange(0);
-      expect(m.trending.first.highlightReason, 'more views than yesterday');
-      m.setRange(2);
-      expect(m.trending.first.highlightReason, 'more views than last month');
+      expect(m.trending.first.highlightReason, isNull);
       m.dispose();
-    });
-
-    test('the (i) text of Trending names the period', () {
-      expect(
-        TrendingRange.week.info,
-        'Based on profile views in the last 7 days. The more a profile’s '
-        'views grew compared with the previous period, the higher it ranks.',
-      );
-      expect(TrendingRange.today.info, contains('profile views today.'));
     });
 
     test('For You has no switch: an investor gets startups, a founder investors', () {
       final i = vm(SessionRole.investor);
       expect(i.recommended, isNotEmpty);
-      expect(i.recommended.every((x) => x.kind == HomeItemKind.startup), isTrue);
+      expect(
+        i.recommended.every((x) => x.kind == HomeItemKind.startup),
+        isTrue,
+      );
       expect(i.recommendedTitle, 'Recommended startups for you');
       expect(
         i.recommendedInfo,
@@ -239,7 +233,10 @@ void main() {
         'bookmark. The more you bookmark, the more it follows your taste.',
       );
       final f = vm(SessionRole.founder);
-      expect(f.recommended.every((x) => x.kind == HomeItemKind.investor), isTrue);
+      expect(
+        f.recommended.every((x) => x.kind == HomeItemKind.investor),
+        isTrue,
+      );
       expect(f.recommendedTitle, 'Recommended investors for you');
       expect(
         f.recommendedInfo,
@@ -285,42 +282,57 @@ void main() {
       return HomeViewModel(role: SessionRole.investor, ownStartupIds: own);
     }
 
-    test('newest first, with a "Joined … ago" line, the last week by default', () async {
-      final m = await loaded({
-        'a': ago(2),
-        'b': ago(20),
-        'c': ago(0),
-        'd': ago(100),
-      });
-      expect(m.latestRange.label, 'Last week');
-      expect([for (final i in m.latest) i.id], ['c', 'a']);
-      expect(m.latest.first.highlight, 'Joined today');
-      expect(m.latest.last.highlight, 'Joined 2 days ago');
-      m.dispose();
-    });
+    test(
+      'newest first, with a "Joined … ago" line, the last week by default',
+      () async {
+        final m = await loaded({
+          'a': ago(2),
+          'b': ago(20),
+          'c': ago(0),
+          'd': ago(100),
+        });
+        expect(m.latestRange.label, 'Last week');
+        expect([for (final i in m.latest) i.id], ['c', 'a']);
+        expect(m.latest.first.highlight, 'Joined today');
+        expect(m.latest.last.highlight, 'Joined 2 days ago');
+        m.dispose();
+      },
+    );
 
-    test('the dropdown ranges: week, 3 months, 6 months, year', () async {
-      final m = await loaded({
-        'a': ago(2),
-        'b': ago(20),
-        'c': ago(100),
-        'd': ago(200),
-        'e': ago(400),
-      });
-      expect([for (final r in LatestRange.values) r.label], [
-        'Last week',
-        'Last 3 months',
-        'Last 6 months',
-        'Last year',
-      ]);
-      m.setLatestRange(1);
-      expect([for (final i in m.latest) i.id], ['a', 'b']);
-      m.setLatestRange(2);
-      expect([for (final i in m.latest) i.id], ['a', 'b', 'c']);
-      m.setLatestRange(3);
-      expect([for (final i in m.latest) i.id], ['a', 'b', 'c', 'd']);
-      m.dispose();
-    });
+    test(
+      'the dropdown ranges: week, month, 3 months, 6 months, year',
+      () async {
+        final m = await loaded({
+          'a': ago(2),
+          'b': ago(20),
+          'c': ago(100),
+          'd': ago(200),
+          'e': ago(400),
+        });
+        expect(
+          [for (final r in LatestRange.values) r.label],
+          [
+            'Last week',
+            'Last month',
+            'Last 3 months',
+            'Last 6 months',
+            'Last year',
+          ],
+        );
+        expect(LatestRange.month.days, 30);
+        // Last week: only a.
+        expect([for (final i in m.latest) i.id], ['a']);
+        m.setLatestRange(1); // Last month
+        expect([for (final i in m.latest) i.id], ['a', 'b']);
+        m.setLatestRange(2); // Last 3 months
+        expect([for (final i in m.latest) i.id], ['a', 'b']);
+        m.setLatestRange(3); // Last 6 months
+        expect([for (final i in m.latest) i.id], ['a', 'b', 'c']);
+        m.setLatestRange(4); // Last year
+        expect([for (final i in m.latest) i.id], ['a', 'b', 'c', 'd']);
+        m.dispose();
+      },
+    );
 
     test('a founder does not see their own startups', () async {
       final m = await loaded({'a': ago(1), 'b': ago(2)}, own: {'a'});

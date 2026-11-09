@@ -134,22 +134,35 @@ class ManageDetailsTab extends StatelessWidget {
     );
   }
 
-  Widget _body(int i) {
+  Widget _body(int i) => sectionBody(startup, i, myRole);
+
+  /// The read-only content of section [i] (0-based, the form's steps). The
+  /// startup page shows these same widgets under the same six tab names, so
+  /// the labels and answers can never differ from Manage -> Details and the
+  /// add-startup form.
+  static Widget sectionBody(
+    Startup s,
+    int i, [
+    StartupRole role = StartupRole.member,
+  ]) {
     switch (i) {
       case 0:
-        return _Overview(startup);
+        return _Overview(s);
       case 1:
-        return _Description(startup);
+        return _Description(s);
       case 2:
-        return _Market(startup);
+        return _Market(s);
       case 3:
-        return _Finance(startup);
+        return _Finance(s);
       case 4:
-        return _Team(startup, myRole);
+        return _Team(s, role);
       default:
-        return _Ask(startup);
+        return _Ask(s);
     }
   }
+
+  /// The icon of section [i] (the tile of its heading).
+  static String iconOf(int i) => _icons[i];
 }
 
 /// One accordion row: header (tile, title, summary, Edit pill, chevron) and,

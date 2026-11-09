@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import '../../../app_constants/founder_tools_strings.dart';
 import '../../../app_constants/profile_strings.dart';
 import '../../../data_access/repositories/discovery_repository.dart';
 import '../../../data_access/repositories/funding_round_repository.dart';
@@ -115,13 +116,10 @@ class StartupProfileViewModel extends ChangeNotifier with SafeNotifier {
     return null;
   }
 
-  /// Tab order: Overview, Business, Team, Funding.
-  static const tabLabels = [
-    ProfileStrings.tabOverview,
-    ProfileStrings.tabBusiness,
-    ProfileStrings.tabTeam,
-    ProfileStrings.tabFinancials,
-  ];
+  /// The six tabs are the six steps of the add-startup form, in the same
+  /// order and with the same names: Startup Overview, Startup Description,
+  /// Target Market, Finance and Growth, Startup Team, Startup Ask.
+  static const tabLabels = FounderToolsStrings.stepTitles;
 
   Startup startup;
   final AppSession _session;

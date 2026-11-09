@@ -645,13 +645,7 @@ void main() {
       expect(find.text('Rafeeq Health'), findsOneWidget);
       // Header: role label above the name, five tabs, eye + share icons.
       expect(find.text('FOUNDER'), findsOneWidget);
-      for (final tab in [
-        'Dashboard',
-        'Details',
-        'Rounds',
-        'EOI',
-        'Settings',
-      ]) {
+      for (final tab in ['Dashboard', 'Details', 'Rounds', 'EOI', 'Settings']) {
         expect(find.text(tab), findsWidgets, reason: tab);
       }
       expect(find.bySemanticsLabel('Preview profile'), findsOneWidget);

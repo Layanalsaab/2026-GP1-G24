@@ -99,7 +99,7 @@ class HomeItem {
   final bool isNew;
 
   /// A line shown in the match pill's style instead of "N% match" (Latest:
-  /// "Joined 2 days ago"; Trending: "#1 · +38%").
+  /// "Joined 2 days ago"; Trending: "#1").
   final String? highlight;
   final String? highlightReason;
 
@@ -129,7 +129,7 @@ class HomeItem {
   HomeItem withJoined(String label) => _copy(joinedLabel: label, isNew: true);
 
   /// A line under the body in the match pill's style: "Joined 2 days ago"
-  /// (Latest) or "#1 · +38%" with its [reason] (Trending).
+  /// (Latest) or "#1" (Trending), with an optional [reason].
   HomeItem withHighlight(String text, {String? reason}) =>
       _copy(highlight: text, highlightReason: reason);
 

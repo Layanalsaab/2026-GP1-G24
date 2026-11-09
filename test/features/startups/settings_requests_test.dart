@@ -158,7 +158,10 @@ void main() {
         ),
       );
       expect(find.text('Public startup'), findsOneWidget);
-      expect(find.text('Shown in the Hub as a closed startup.'), findsOneWidget);
+      expect(
+        find.text('Shown in the Hub as a closed startup.'),
+        findsOneWidget,
+      );
       expect(find.text('Close startup'), findsNothing);
       expect(find.text('Leave startup'), findsNothing);
       expect(
@@ -187,7 +190,9 @@ void main() {
       expect(find.text('Leave startup'), findsNothing);
       expect(find.text('Public startup'), findsNothing);
       expect(
-        find.text('This startup is closed, so there is nothing to change here.'),
+        find.text(
+          'This startup is closed, so there is nothing to change here.',
+        ),
         findsOneWidget,
       );
       expect(find.text('This startup has been closed.'), findsOneWidget);
@@ -212,9 +217,7 @@ void main() {
       await t.pump(const Duration(seconds: 4));
     });
 
-    testWidgets('the owner alone is asked to invite the next owner', (
-      t,
-    ) async {
+    testWidgets('the owner alone is asked to invite the next owner', (t) async {
       await _open(t);
       await t.tap(find.text('Leave startup'));
       await t.pumpAndSettle();

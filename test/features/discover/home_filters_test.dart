@@ -62,7 +62,10 @@ void main() {
     expect(passes(investorItem, c, 'Sectors', 'HealthTech'), isTrue);
     expect(passes(investorItem, c, 'Stages', 'Seed'), isTrue);
     expect(passes(investorItem, c, 'Stages', 'Series B'), isFalse);
-    expect(passes(investorItem, c, 'Investment size', 'SAR 100K – 500K'), isTrue);
+    expect(
+      passes(investorItem, c, 'Investment size', 'SAR 100K – 500K'),
+      isTrue,
+    );
     expect(passes(investorItem, c, 'Investment size', 'Over SAR 5M'), isFalse);
     expect(
       HomeFilters.groups(c).map((g) => g.title),
@@ -82,26 +85,31 @@ void main() {
   });
 
   group('Explore filters: dropdowns and Other', () {
-    test('Sector and City are dropdowns with every option; Stage stays chips', () {
-      final g = {for (final x in HomeFilters.groups(HomeContext.explore)) x.title: x};
-      expect(g.keys, ['Sector', 'Stage', 'City', 'Sort by']);
-      expect(g['Sector']!.drop, isTrue);
-      expect(g['Sector']!.options.length, 25);
-      expect(g['Sector']!.options.last, 'Other');
-      expect(g['Sector']!.otherHint, 'Type a sector, e.g. SportsTech');
-      expect(g['City']!.drop, isTrue);
-      expect(g['City']!.options.length, 22);
-      expect(g['Stage']!.drop, isFalse);
-      expect(g['Stage']!.options, [
-        'Pre-seed',
-        'Seed',
-        'Series A',
-        'Series B',
-        'Series C',
-      ]);
-      expect(g['Sort by']!.single, isTrue);
-      expect(g['Sort by']!.options, ['Newest', 'Name A–Z']);
-    });
+    test(
+      'Sector and City are dropdowns with every option; Stage stays chips',
+      () {
+        final g = {
+          for (final x in HomeFilters.groups(HomeContext.explore)) x.title: x,
+        };
+        expect(g.keys, ['Sector', 'Stage', 'City', 'Sort by']);
+        expect(g['Sector']!.drop, isTrue);
+        expect(g['Sector']!.options.length, 25);
+        expect(g['Sector']!.options.last, 'Other');
+        expect(g['Sector']!.otherHint, 'Type a sector, e.g. SportsTech');
+        expect(g['City']!.drop, isTrue);
+        expect(g['City']!.options.length, 22);
+        expect(g['Stage']!.drop, isFalse);
+        expect(g['Stage']!.options, [
+          'Pre-seed',
+          'Seed',
+          'Series A',
+          'Series B',
+          'Series C',
+        ]);
+        expect(g['Sort by']!.single, isTrue);
+        expect(g['Sort by']!.options, ['Newest', 'Name A–Z']);
+      },
+    );
 
     test('the sheet groups carry the dropdown and the Other placeholder', () {
       final sheet = HomeFilters.sheetGroups(HomeContext.explore);

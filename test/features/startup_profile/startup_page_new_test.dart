@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:startsa/app_constants/founder_tools_strings.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:startsa/data_access/mock_data/prototype_seed.dart';
@@ -92,12 +93,16 @@ void main() {
   }
 
   Future<void> goTo(WidgetTester t, String tab) async {
+    // The six tabs scroll sideways: bring the one asked for into view.
+    await t.ensureVisible(find.text(tab).first);
+    await t.pumpAndSettle();
     await t.tap(find.text(tab).first);
     await t.pumpAndSettle();
   }
 
-  testWidgets('Overview: Looking for has only the minimal values', (t) async {
+  testWidgets('Startup Ask: the ask has only the minimal values', (t) async {
     await pump(t, _startup());
+    await goTo(t, 'Startup Ask');
     expect(find.text('Raising SAR 500,000'), findsOneWidget);
     expect(find.text('Technology, Distribution'), findsOneWidget);
     expect(find.text('Mentorship, Hiring'), findsOneWidget);
@@ -105,17 +110,19 @@ void main() {
     expect(find.textContaining('lead investor'), findsNothing);
   });
 
-  testWidgets('Business: model card, no growth plan', (t) async {
+  testWidgets('Finance and Growth: revenue model, no growth plan', (t) async {
     await pump(t, _startup());
-    await goTo(t, 'Business');
-    expect(find.text('Revenue model'), findsOneWidget);
+    await goTo(t, 'Finance and Growth');
+    expect(find.text(FounderToolsStrings.revenueModelTitle), findsOneWidget);
     expect(find.text('Families pay per visit'), findsOneWidget);
-    expect(find.textContaining('rowth'), findsNothing);
+    // The step is called Finance and Growth, but there is no growth plan.
+    expect(find.textContaining('Growth plan'), findsNothing);
+    expect(find.textContaining('growth plan'), findsNothing);
   });
 
   testWidgets('Team: founder first, then co-founder, then members', (t) async {
     await pump(t, _startup());
-    await goTo(t, 'Team');
+    await goTo(t, 'Startup Team');
     double y(String name) => t.getTopLeft(find.text(name)).dy;
     expect(y('Shahad Founder'), lessThan(y('Faisal Co')));
     expect(y('Faisal Co'), lessThan(y('Sara Member')));
@@ -135,21 +142,24 @@ void main() {
         ),
       );
     await pump(t, _startup(), preview: true);
-    await goTo(t, 'Team');
+    await goTo(t, 'Startup Team');
     expect(find.text('Ggg Invited'), findsOneWidget);
     expect(find.text('Invited'), findsOneWidget);
   });
 
-  testWidgets('Funding: current round, key numbers, no old tiles', (t) async {
+  testWidgets('Startup Ask has the current round; Finance has the numbers', (
+    t,
+  ) async {
     await pump(t, _startup());
-    await goTo(t, 'Funding');
+    await goTo(t, 'Startup Ask');
     expect(find.text('Current round'), findsOneWidget);
     expect(find.text('Funding goal'), findsOneWidget);
     expect(find.text('SAR 200,000 raised'), findsOneWidget);
     expect(find.text('40%'), findsWidgets);
     // The lead-investor line is gone, even though this startup saved one.
     expect(find.textContaining('lead investor'), findsNothing);
-    expect(find.text('Key numbers'), findsOneWidget);
+    await goTo(t, 'Finance and Growth');
+    expect(find.text(FounderToolsStrings.revenueNowLabel), findsOneWidget);
     expect(find.text('SAR 0'), findsOneWidget, reason: 'revenue 0');
     expect(find.text('About 7 months'), findsOneWidget);
     expect(find.text('Available now'), findsNothing);
