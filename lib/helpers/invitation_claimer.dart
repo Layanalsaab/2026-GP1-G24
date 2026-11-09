@@ -12,6 +12,10 @@ class InvitationClaimer {
 
   /// A person who just created and verified their account joins every team
   /// that invited that e-mail, at once. Returns the startup names.
+  ///
+  /// An invitation to take a startup over as its owner is not accepted here:
+  /// it is always asked (Accept / Decline), see
+  /// AppRouter.askOwnerInvitations.
   static Future<List<String>> acceptAll(
     AppUser user, {
     InvitationRepository? repository,
@@ -20,6 +24,7 @@ class InvitationClaimer {
     final joined = <String>[];
     try {
       for (final invitation in await repo.pendingForMe()) {
+        if (invitation.isOwner) continue;
         try {
           await repo.accept(invitation, fullName: user.fullName);
           joined.add(invitation.startupName);

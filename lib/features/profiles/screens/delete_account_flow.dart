@@ -62,7 +62,7 @@ Future<void> startAccountDeletion(BuildContext context) async {
 }
 
 /// The founder's warning: one line per startup saying what will happen to it
-/// (the same rules as [StartupRepository.handOverAllMine]). Just the general
+/// (the same rules as [StartupRepository.closeAllMine]). Just the general
 /// warning when the startups can't be read.
 Future<String> founderDeletionMessage() async {
   final lines = <String>[AccountStrings.deleteWarningFounderBase];
@@ -81,17 +81,8 @@ Future<String> founderDeletionMessage() async {
 }
 
 String _lineFor(Startup s) {
-  if (s.isClosed) {
-    return s.memberRoles.isEmpty
-        ? AccountStrings.deleteDeletes(s.name)
-        : AccountStrings.deleteLeavesClosed(s.name);
-  }
-  return switch (s.ownerOption) {
-    OwnerOption.delete => AccountStrings.deleteDeletes(s.name),
-    OwnerOption.transfer => AccountStrings.deleteTransfers(
-      s.name,
-      s.nameOf(s.coFoundersInTeamOrder.first, fallback: 'a co-founder'),
-    ),
-    OwnerOption.close => AccountStrings.deleteCloses(s.name),
-  };
+  if (s.memberRoles.isEmpty) return AccountStrings.deleteDeletes(s.name);
+  return s.isClosed
+      ? AccountStrings.deleteStaysClosed(s.name)
+      : AccountStrings.deleteCloses(s.name);
 }

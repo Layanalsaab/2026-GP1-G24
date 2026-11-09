@@ -135,8 +135,9 @@ class _WalletTicketsTabState extends State<WalletTicketsTab> {
 
 // ------------------------------------------------------------------ table
 
-/// Column widths: Ticket · Amount · Matches, gap 10.
-const _flex = [130, 95, 78];
+/// Column widths: Ticket · Amount, gap 10. (A ticket's matches are on its
+/// page, not in the table.)
+const _flex = [170, 110];
 const _gap = 10.0;
 
 /// Right padding of a row: room for the chevron.
@@ -208,16 +209,14 @@ class _HeaderRow extends StatelessWidget {
           cell(0, WalletStrings.colTicket),
           const SizedBox(width: _gap),
           cell(1, WalletStrings.colAmount, center: true),
-          const SizedBox(width: _gap),
-          cell(2, WalletStrings.colMatches),
         ],
       ),
     );
   }
 }
 
-/// One ticket: the first line of every cell has the same 22 px line height,
-/// so the three first lines sit on one line.
+/// One ticket: the first line of both cells has the same 22 px line height,
+/// so the first lines sit on one line.
 class _TicketRow extends StatefulWidget {
   const _TicketRow({
     required this.vm,
@@ -280,9 +279,7 @@ class _TicketRowState extends State<_TicketRow> {
 
   Widget _content() {
     final t = widget.ticket;
-    final vm = widget.vm;
     const line = _TicketRow.line;
-    final matches = vm.matchesLabel(t);
     return Padding(
       padding: const EdgeInsets.fromLTRB(14, 16, _chevronRoom, 16),
       child: Row(
@@ -356,29 +353,6 @@ class _TicketRowState extends State<_TicketRow> {
                       height: line,
                       weight: FontWeight.w700,
                     ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: _gap),
-          // Matches: "2 matches", the startup (used) or "—" (closed).
-          Expanded(
-            flex: _flex[2],
-            child: SizedBox(
-              height: line,
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  matches,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppText.sans(
-                    size: 14,
-                    weight: FontWeight.w600,
-                    color: t.isOpen && matches != '0 matches'
-                        ? AppColors.moss600
-                        : AppColors.grey,
                   ),
                 ),
               ),

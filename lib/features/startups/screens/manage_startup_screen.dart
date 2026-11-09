@@ -8,10 +8,12 @@ import '../../../app_constants/founder_tools_strings.dart';
 import '../../../data_access/repositories/invitation_repository.dart';
 import '../../../data_access/repositories/request_repository.dart';
 import '../../../data_access/repositories/startup_repository.dart';
+import '../../../data_access/repositories/team_lookup.dart';
+import '../../../helpers/formatters.dart';
 import '../../../helpers/share_link.dart';
+import '../../../helpers/validators.dart';
 import '../../../models/list_entries.dart';
 import '../../../helpers/app_session.dart';
-import '../../../shared_ui/widgets/overlays/app_dialog.dart';
 import '../../../models/startup.dart';
 import '../../../navigation/app_router.dart';
 import '../../../navigation/main_screen.dart';
@@ -23,7 +25,6 @@ import '../../fundraising_calculator/screens/valuation_calculator_screen.dart';
 import '../../startup_profile/screens/startup_profile_screen.dart';
 import '../view_models/manage_startup_view_model.dart';
 import '../view_models/rounds_view_model.dart';
-import '../widgets/founder_leave_dialog.dart';
 import '../widgets/founder_ui.dart';
 import '../widgets/manage_dashboard_tab.dart';
 import '../widgets/manage_details_tab.dart';
@@ -31,6 +32,7 @@ import '../widgets/manage_rounds_tab.dart';
 import '../widgets/role_tag.dart';
 import '../widgets/view_only_banner.dart';
 import '../widgets/manage_settings_tab.dart';
+import '../widgets/owner_handover_dialogs.dart';
 import 'my_startups_screen.dart';
 import 'startup_steps_screen.dart';
 
@@ -107,6 +109,8 @@ class _ManageStartupScreenState extends State<ManageStartupScreen> {
   void initState() {
     super.initState();
     _fixInvitedCards();
+    // The owner: is somebody invited to take over still waiting?
+    _vm.loadOwnerInvite();
   }
 
   /// Somebody accepted an invitation while the startup was private, so only
@@ -146,6 +150,10 @@ class _ManageStartupScreenState extends State<ManageStartupScreen> {
   }
 
   void _toast(String message) => AppToast.show(context, message);
+
+  /// "8 Nov 2026" for the Closed banner (null when it wasn't stored).
+  static String? _closedDate(Startup s) =>
+      s.closedAt == null ? null : Formatters.dayMonthYear(s.closedAt!);
 
   /// Share icon: opens the share sheet for the startup.
   void _share() => ShareLink.shareStartup(
@@ -222,7 +230,9 @@ class _ManageStartupScreenState extends State<ManageStartupScreen> {
   }
 
   Future<void> _setPublic(bool value) async {
-    if (!_role.canManage) return;
+    final s = _vm.startup;
+    // A closed startup: its owner only.
+    if (s.isClosed ? !_isOwner : !_role.canManage) return;
     final result = await _vm.setPublic(value);
     if (!mounted) return;
     if (result == null) {
@@ -236,8 +246,8 @@ class _ManageStartupScreenState extends State<ManageStartupScreen> {
     );
   }
 
-  /// This is the user's only startup (owned, joined or closed): the delete
-  /// and leave confirmations say so. False when it can't tell.
+  /// This is the user's only startup (owned, joined or closed): the owner's
+  /// leave confirmation says so. False when it can't tell.
   Future<bool> _isLastStartup() async {
     final session = AppSession.instance;
     if (session.user == null || !session.isFounder) return false;
@@ -255,99 +265,34 @@ class _ManageStartupScreenState extends State<ManageStartupScreen> {
     }
   }
 
-  /// [message] plus the last-startup warning when it applies.
-  String _withLastWarning(String message, bool last) =>
-      last ? '$message\n\n${FounderToolsStrings.lastStartupWarning}' : message;
-
-  /// After deleting or leaving: a founder with no startup left goes through
-  /// the log-in steps (invitations, then "Add your startup" with a note);
-  /// otherwise back to My Startups.
+  /// After leaving: a founder with no startup left goes through the log-in
+  /// steps (invitations, then "Add your startup" with a note); otherwise
+  /// back to My Startups.
   Future<void> _afterLosingStartup() async {
     if (await AppRouter.openIfNoStartupLeft(context)) return;
     if (!mounted) return;
     AppNav.resetStack(context, [MainScreen(), const MyStartupsScreen()]);
   }
 
-  Future<void> _delete() async {
-    // Only the owner can delete (checked again here, not just hidden), and
-    // only when nobody else is on the startup.
-    if (!_isOwner || _vm.startup.ownerOption != OwnerOption.delete) return;
-    final name = _vm.startup.name;
-    // Invited people haven't joined: their invitations are cancelled.
+  /// Close startup (the owner): permanent; the startup stays in everyone's
+  /// account as closed. The confirmation names who is still only invited.
+  Future<void> _close() async {
+    final s = _vm.startup;
+    if (!_isOwner || s.isClosed) return;
     final invited = [
-      for (final m in _vm.startup.team)
+      for (final m in s.team)
         if (m.invited && !m.isFounder && m.name.trim().isNotEmpty)
           m.name.trim(),
     ];
-    var message = FounderToolsStrings.deleteMessage;
+    var message = FounderToolsStrings.closeMessage(s.name, s.memberIds.length);
     if (invited.isNotEmpty) {
       message =
-          '$message\n\n${FounderToolsStrings.deleteCancelsInvites(invited)}';
+          '$message\n\n${FounderToolsStrings.invitationsCancelled(invited)}';
     }
-    final last = await _isLastStartup();
-    if (!mounted) return;
-    final confirmed = await showConfirmSheet(
-      context,
-      title: FounderToolsStrings.deleteTitle(name),
-      message: _withLastWarning(message, last),
-      confirmLabel: FounderToolsStrings.deleteStartup,
-    );
-    if (!confirmed || !mounted) return;
-    final ok = await _vm.delete();
-    if (!mounted) return;
-    if (!ok) {
-      AppToast.error(context, _vm.error ?? FounderToolsStrings.deleteFailed);
-      return;
-    }
-    AppToast.confirm(context, FounderToolsStrings.deleted(name));
-    await _afterLosingStartup();
-  }
-
-  /// Transfer ownership (the owner, with a co-founder on the startup): pick
-  /// the co-founder, confirm, and the startup is theirs. The user stays a
-  /// co-founder, so Manage reopens from My Startups with their new role.
-  Future<void> _transfer() async {
-    if (!_isOwner) return;
-    final choices = _vm.newOwnerChoices;
-    if (choices.isEmpty) return;
-    var pick = choices.first;
-    if (choices.length > 1) {
-      final r = await showPickerSheet(
-        context,
-        title: FounderToolsStrings.newOwnerTitle,
-        options: [for (final c in choices) c.$2],
-      );
-      if (r == null || !mounted) return;
-      pick = choices.firstWhere((c) => c.$2 == r.value, orElse: () => pick);
-    }
-    final (uid, person) = pick;
-    final go = await showDiscardDialog(
-      context,
-      title: FounderToolsStrings.transferTitle(person),
-      message: FounderToolsStrings.transferMessage(person, _vm.startup.name),
-      discardLabel: FounderToolsStrings.transferOwnership,
-      keepLabel: FounderToolsStrings.cancel,
-      danger: false,
-    );
-    if (!go || !mounted) return;
-    final ok = await _vm.transferTo(uid);
-    if (!mounted) return;
-    if (!ok) {
-      AppToast.error(context, _vm.error ?? FounderToolsStrings.transferFailed);
-      return;
-    }
-    AppToast.confirm(context, FounderToolsStrings.transferredToast(person));
-    AppNav.resetStack(context, [MainScreen(), const MyStartupsScreen()]);
-  }
-
-  /// Close startup (the owner, with only members on it).
-  Future<void> _close() async {
-    if (!_isOwner || _vm.startup.ownerOption != OwnerOption.close) return;
-    final name = _vm.startup.name;
     final go = await showConfirmSheet(
       context,
-      title: FounderToolsStrings.closeTitle(name),
-      message: FounderToolsStrings.closeMessage(name),
+      title: FounderToolsStrings.closeTitle(s.name),
+      message: message,
       confirmLabel: FounderToolsStrings.closeStartup,
       icon: AppIcons.lock,
     );
@@ -358,82 +303,165 @@ class _ManageStartupScreenState extends State<ManageStartupScreen> {
       AppToast.error(context, _vm.error ?? FounderToolsStrings.closeFailed);
       return;
     }
-    AppToast.confirm(context, FounderToolsStrings.closedToast(name));
+    AppToast.confirm(context, FounderToolsStrings.closedToast(s.name));
     AppNav.resetStack(context, [MainScreen(), const MyStartupsScreen()]);
   }
 
-  /// Reopen startup (the owner of a closed startup): it comes back Private.
-  Future<void> _reopen() async {
-    if (!_isOwner || !_vm.startup.isClosed) return;
-    final name = _vm.startup.name;
-    final go = await showDiscardDialog(
-      context,
-      title: FounderToolsStrings.reopenTitle(name),
-      message: FounderToolsStrings.reopenMessage,
-      discardLabel: FounderToolsStrings.reopenStartup,
-      keepLabel: FounderToolsStrings.cancel,
-      danger: false,
-    );
-    if (!go || !mounted) return;
-    final ok = await _vm.reopen();
-    if (!mounted) return;
-    if (!ok) {
-      AppToast.error(context, _vm.error ?? FounderToolsStrings.reopenFailed);
-      return;
-    }
-    AppToast.confirm(context, FounderToolsStrings.reopenedToast(name));
-    AppNav.resetStack(context, [MainScreen(), const MyStartupsScreen()]);
-  }
-
-  /// Leave startup (co-founder and team member; the owner only once the
-  /// startup is closed). The person who created the startup chooses whether
-  /// her name stays on its team as "Founder (former)". Then [onLeave] lets
-  /// the list that opened Manage drop it, and a founder with no startup left
-  /// goes to "Add your startup".
+  /// Leave startup. The owner names the next owner first ([_leaveAsOwner]);
+  /// a co-founder or team member just confirms. Nobody leaves a closed
+  /// startup. Then [onLeave] lets the list that opened Manage drop it, and a
+  /// founder with no startup left goes to "Add your startup".
   Future<void> _leave() async {
     final s = _vm.startup;
-    if (_isOwner && !s.isClosed) return;
-    final name = s.name;
+    if (s.isClosed) return;
+    if (_isOwner) return _leaveAsOwner();
     final last = await _isLastStartup();
     if (!mounted) return;
-    final message = _withLastWarning(
-      _isOwner
-          ? FounderToolsStrings.leaveMessageOwnerClosed
-          : _role == StartupRole.coFounder
+    final leave = await showConfirmSheet(
+      context,
+      title: FounderToolsStrings.leaveTitle(s.name),
+      message: _role == StartupRole.coFounder
           ? FounderToolsStrings.leaveMessageCoFounder
           : FounderToolsStrings.leaveMessageMember,
-      last,
+      confirmLabel: FounderToolsStrings.leaveStartup,
+      cancelLabel: FounderToolsStrings.cancel,
+      icon: AppIcons.logout,
+      note: last ? _onlyStartupNote(s) : null,
     );
-    bool keepName;
-    if (_uid != null && _uid == s.originalFounderId) {
-      final keep = await showFounderLeaveDialog(
-        context,
-        title: FounderToolsStrings.leaveTitle(name),
-        message: message,
-      );
-      if (keep == null || !mounted) return;
-      keepName = keep;
-    } else {
-      final leave = await showDiscardDialog(
-        context,
-        title: FounderToolsStrings.leaveTitle(name),
-        message: message,
-        discardLabel: FounderToolsStrings.leaveStartup,
-        keepLabel: 'Cancel',
-      );
-      if (!leave || !mounted) return;
-      keepName = false;
-    }
-    final ok = await _vm.leave(keepFounderName: keepName);
+    if (!leave || !mounted) return;
+    final ok = await _vm.leave();
     if (!mounted) return;
     if (!ok) {
       AppToast.error(context, _vm.error ?? FounderToolsStrings.leaveFailed);
       return;
     }
     widget.onLeave?.call();
-    AppToast.confirm(context, FounderToolsStrings.leftToast(name));
+    AppToast.confirm(context, FounderToolsStrings.leftToast(s.name));
     if (await AppRouter.openIfNoStartupLeft(context)) return;
     if (mounted) AppNav.back(context);
+  }
+
+  /// The owner leaves: she picks the next owner among the people who joined,
+  /// or invites someone new by e-mail (she stays in control until it is
+  /// accepted). Alone on the team, inviting is the only way.
+  Future<void> _leaveAsOwner() async {
+    final s = _vm.startup;
+    final choices = _vm.nextOwnerChoices;
+    if (choices.isEmpty) return _inviteNewOwner(alone: true);
+    final pick = await showNextOwnerSheet(
+      context,
+      startup: s,
+      uids: [for (final c in choices) c.$1],
+    );
+    if (pick == null || !mounted) return;
+    if (pick.invite) return _inviteNewOwner(alone: false);
+    final (uid, person, _) = choices.firstWhere((c) => c.$1 == pick.uid);
+    final last = await _isLastStartup();
+    if (!mounted) return;
+    final go = await showConfirmSheet(
+      context,
+      title: FounderToolsStrings.makeOwnerTitle(person, s.name),
+      message: FounderToolsStrings.makeOwnerMessage(person, s.name),
+      confirmLabel: FounderToolsStrings.makeOwnerConfirm(person),
+      cancelLabel: FounderToolsStrings.cancel,
+      icon: AppIcons.logout,
+      note: last ? _onlyStartupNote(s) : null,
+    );
+    if (!go || !mounted) return;
+    final ok = await _vm.transferTo(uid);
+    if (!mounted) return;
+    if (!ok) {
+      AppToast.error(context, _vm.error ?? FounderToolsStrings.handoverFailed);
+      return;
+    }
+    widget.onLeave?.call();
+    AppToast.confirm(context, FounderToolsStrings.newOwnerToast(person, s.name));
+    await _afterLosingStartup();
+  }
+
+  /// The gold note under a leave confirmation when this is my only startup:
+  /// after leaving, "Add your startup" opens.
+  Widget _onlyStartupNote(Startup s) => ViewOnlyBanner.notice(
+    title: FounderToolsStrings.onlyStartupTitle(s.name),
+    message: FounderToolsStrings.onlyStartupText,
+  );
+
+  /// "Invite someone new": one sheet with what happens next and the e-mail
+  /// (not mine, not someone on the team, not an investor account), then the
+  /// invitation. The Settings tab shows "Waiting for…" until it is answered.
+  Future<void> _inviteNewOwner({required bool alone}) async {
+    final s = _vm.startup;
+    final myEmail = (AppSession.instance.user?.email ?? '').trim().toLowerCase();
+    final teamEmails = {
+      for (final m in s.team)
+        if (!m.invited && m.email.trim().isNotEmpty) m.email.trim().toLowerCase(),
+    };
+    var newUser = false;
+    final next = FounderToolsStrings.inviteOwnerMessage(s.name);
+    final email = await showOwnerEmailSheet(
+      context,
+      message: alone
+          ? '${FounderToolsStrings.nextOwnerAlone(s.name)} $next'
+          : next,
+      check: (email) async {
+        if (!Validators.isEmail(email)) {
+          return FounderToolsStrings.ownerEmailInvalid;
+        }
+        if (email == myEmail) return FounderToolsStrings.ownerEmailYou;
+        if (teamEmails.contains(email)) {
+          return FounderToolsStrings.ownerEmailOnTeam;
+        }
+        final account = await TeamLookup.instance.findByEmail(email);
+        if (account != null && !account.isFounder) {
+          return FounderToolsStrings.ownerEmailInvestor;
+        }
+        if (account != null && s.memberRoles.containsKey(account.uid)) {
+          return FounderToolsStrings.ownerEmailOnTeam;
+        }
+        newUser = account == null;
+        return null;
+      },
+    );
+    if (email == null || !mounted) return;
+    final ok = await _vm.inviteOwner(email, newUser: newUser);
+    if (!mounted) return;
+    if (!ok) {
+      AppToast.error(
+        context,
+        _vm.error ?? FounderToolsStrings.ownerInviteFailed,
+      );
+      return;
+    }
+    AppToast.confirm(context, FounderToolsStrings.ownerInviteSent(email));
+  }
+
+  /// "Cancel invitation" on the Waiting card: asked first, like the other
+  /// leave steps.
+  Future<void> _cancelOwnerInvite() async {
+    final invite = _vm.pendingOwnerInvite;
+    if (invite == null) return;
+    final go = await showConfirmSheet(
+      context,
+      title: FounderToolsStrings.cancelOwnerInviteTitle,
+      message: FounderToolsStrings.cancelOwnerInviteMessage(
+        invite.emailLower,
+        _vm.startup.name,
+      ),
+      confirmLabel: FounderToolsStrings.cancelInvitation,
+      cancelLabel: FounderToolsStrings.keepInvitation,
+      icon: AppIcons.mail,
+    );
+    if (!go || !mounted) return;
+    final ok = await _vm.cancelOwnerInvite();
+    if (!mounted) return;
+    if (ok) {
+      AppToast.confirm(context, FounderToolsStrings.ownerInviteCancelled);
+    } else {
+      AppToast.error(
+        context,
+        _vm.error ?? FounderToolsStrings.ownerInviteCancelFailed,
+      );
+    }
   }
 
   @override
@@ -488,16 +516,14 @@ class _ManageStartupScreenState extends State<ManageStartupScreen> {
           3 => InterestTab(vm: _interest, onToast: _toast, canAct: _canEdit),
           _ => ManageSettingsTab(
             role: _role,
+            startupName: s.name,
             isPublic: s.isPublic,
             onVisibilityChanged: _setPublic,
-            onDelete: _delete,
             onLeave: _leave,
-            ownerOption: s.ownerOption,
             isClosed: s.isClosed,
-            onTransfer: _transfer,
             onClose: _close,
-            onReopen: _reopen,
-            isFounder: s.originalFounderId == _uid,
+            pendingOwnerEmail: _vm.pendingOwnerInvite?.emailLower,
+            onCancelOwnerInvite: _cancelOwnerInvite,
           ),
         };
         return Scaffold(
@@ -561,8 +587,8 @@ class _ManageStartupScreenState extends State<ManageStartupScreen> {
                   child: SingleChildScrollView(
                     physics: AppRefresh.physics,
                     padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
-                    // A team member sees the same tabs, read only, with the
-                    // "View only" notice at the top of every one.
+                    // A team member sees the same tabs, read only. A closed
+                    // startup says so at the top of every one.
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
@@ -570,12 +596,14 @@ class _ManageStartupScreenState extends State<ManageStartupScreen> {
                           ViewOnlyBanner.notice(
                             title: FounderToolsStrings.closedBannerTitle,
                             message: _isOwner && s.hasOwner
-                                ? FounderToolsStrings.closedBannerOwner
-                                : FounderToolsStrings.closedBannerOthers,
+                                ? FounderToolsStrings.closedBannerOwner(
+                                    _closedDate(s),
+                                  )
+                                : FounderToolsStrings.closedBannerTeam(
+                                    _closedDate(s),
+                                  ),
                             icon: AppIcons.lock,
-                          )
-                        else if (_role == StartupRole.member)
-                          const ViewOnlyBanner(),
+                          ),
                         TabPaneSlide(index: _vm.tab, child: pane),
                       ],
                     ),

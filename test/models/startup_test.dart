@@ -143,6 +143,19 @@ void main() {
     expect(restored.isPublic, isFalse);
   });
 
+  test('a startup made in the app is saved with isArchived false', () {
+    expect(startup.toMap()[StartupFields.isArchived], isFalse);
+    expect(Startup.fromMap('s1', startup.toMap())!.isArchived, isFalse);
+  });
+
+  test('a dataset startup stays archived after loading and copying', () {
+    final map = {...startup.toMap(), StartupFields.isArchived: true};
+    final loaded = Startup.fromMap('s1', map)!;
+    expect(loaded.isArchived, isTrue);
+    expect(loaded.copyWith(name: 'Other').isArchived, isTrue);
+    expect(loaded.toMap()[StartupFields.isArchived], isTrue);
+  });
+
   test('stores the new enum values, in a stable order', () {
     final map = startup.toMap();
     expect(map[StartupFields.sector], 'fintech');

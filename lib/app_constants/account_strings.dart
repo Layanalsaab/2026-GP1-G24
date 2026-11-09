@@ -1,6 +1,9 @@
 import '../models/app_user.dart';
+import '../models/list_entries.dart';
+import '../models/startup.dart';
 import '../helpers/validators.dart';
 import 'app_strings.dart';
+import 'founder_tools_strings.dart';
 
 /// User-facing text for the Account, Edit Account, Settings, Change Password,
 /// Delete Account and Log Out screens, in one place.
@@ -44,6 +47,28 @@ class AccountStrings {
         ? '${p.substring(0, 2)} ${p.substring(2, 5)} ${p.substring(5)}'
         : p;
     return '${AppStrings.phoneCountryCode} $shown';
+  }
+
+  /// What a startup-side account is called on its own profile and in the
+  /// menu: its highest title among its startups. "Founder" when it created a
+  /// startup it still owns, then "Owner" (a startup handed to it), then
+  /// "Co-founder", then "Team member"; "Founder" before it has any.
+  /// [owned]: the startups it owns; [joined]: its role in each startup it
+  /// joined.
+  static String startupTitle(
+    String uid, {
+    required Iterable<Startup> owned,
+    required Iterable<StartupRole> joined,
+  }) {
+    if (owned.any((s) => s.originalFounderId == uid)) {
+      return FounderToolsStrings.roleFounder;
+    }
+    if (owned.isNotEmpty) return FounderToolsStrings.roleOwner;
+    if (joined.contains(StartupRole.coFounder)) {
+      return FounderToolsStrings.roleCoFounder;
+    }
+    if (joined.isNotEmpty) return FounderToolsStrings.roleMember;
+    return FounderToolsStrings.roleFounder;
   }
 
   /// "Founder · Riyadh", or just "Founder" when no city is saved.
@@ -96,28 +121,31 @@ class AccountStrings {
   // Delete account dialog
   static const deleteTitle = 'Delete your account?';
   static const deleteWarningFounder =
-      'Your account and personal information will be permanently deleted. '
-      'A startup with nobody else on it is deleted; one with a co-founder '
-      'goes to that co-founder, and one with only team members is closed '
-      'for its team.';
+      'Your account and personal information will be permanently deleted, '
+      'and your name will be removed from every startup team. A startup with '
+      'a team is closed, and its team keeps it as a closed startup; one with '
+      'nobody else on it is permanently deleted.';
 
-  /// The first line of the founder's delete confirmation; one line per
-  /// startup follows.
+  /// The first line of the founder's delete confirmation (docs: Closing a
+  /// Startup, Leaving and Deleting an Account); one line per startup follows.
   static const deleteWarningFounderBase =
-      'Your account and personal information will be permanently deleted.';
-  static String deleteDeletes(String startup) => '$startup will be deleted.';
-  static String deleteTransfers(String startup, String person) =>
-      '$startup will go to $person.';
+      'Your account and personal information will be permanently deleted, '
+      'and your name will be removed from every startup team.';
+  static String deleteDeletes(String startup) =>
+      '$startup will be permanently deleted.';
   static String deleteCloses(String startup) =>
-      '$startup will be closed. Its team keeps it.';
-  static String deleteLeavesClosed(String startup) =>
-      'You’ll leave $startup. It stays closed for its team.';
-  static String deleteLeaves(String startup) => 'You’ll leave $startup.';
+      '$startup will be closed, and its team will keep it as a closed '
+      'startup. To keep $startup active, choose a new owner before deleting '
+      'your account.';
+  static String deleteStaysClosed(String startup) =>
+      '$startup will remain closed for its team.';
+  static String deleteLeaves(String startup) =>
+      'You will be removed from $startup’s team.';
   static const deleteWarningInvestor =
       'Your account and personal information will be permanently deleted. '
       'Your requests and Investment Associations will also be removed, and '
       "you will no longer appear on any startup's profile.";
-  static const cannotBeUndone = "This can't be undone.";
+  static const cannotBeUndone = 'This cannot be undone.';
   static const deletePasswordLabel = 'Enter your password to confirm';
   static const deletePasswordHint = 'Password';
   static const passwordRequired = 'Please enter your password.';

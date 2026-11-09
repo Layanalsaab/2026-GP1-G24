@@ -19,7 +19,6 @@ class WalletStrings {
       'No tickets yet. Add one to see startups that fit what you want to invest in.';
   static const colTicket = 'Ticket';
   static const colAmount = 'Amount';
-  static const colMatches = 'Matches';
   static const loading = 'Loading tickets…';
   static const loadFailed = 'Couldn’t load your tickets. Check your connection.';
   static const tryAgain = 'Try again';

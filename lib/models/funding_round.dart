@@ -158,7 +158,7 @@ class FundingRound {
     ],
     FundingRoundFields.investorCount: investors.length,
     FundingRoundFields.wantsLeadInvestor: wantsLeadInvestor,
-    FundingRoundFields.isDataset: false,
+    FundingRoundFields.isArchived: false,
   };
 
   /// Null when the document can't be shown: no amount ("Undisclosed" dataset

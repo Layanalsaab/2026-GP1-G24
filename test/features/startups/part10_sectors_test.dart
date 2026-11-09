@@ -327,7 +327,11 @@ void main() {
         });
         expect(failedFilters(i, s), contains('sector'));
         expect(sharesOtherSector(i, s), isTrue);
-        expect(reasonsForInvestor(i, s), contains('Also in AI'));
+        // The explanation on the profile names the other sector that fits.
+        expect(
+          '${profileRows(i, s).first}',
+          '+ Sector · AI (one of its other sectors)',
+        );
       },
     );
 

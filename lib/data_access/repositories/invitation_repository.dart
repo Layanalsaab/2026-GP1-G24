@@ -199,6 +199,76 @@ class InvitationRepository {
     await _removeFromInviteIndex(existing.emailLower, existing.startupName);
   }
 
+  // ------------------------------------------------------ the next owner
+
+  /// The owner invites [email] to take [startup] over when she leaves. She
+  /// stays in control until it is accepted. Like the team's, there is one
+  /// invitation per startup and e-mail: a cancelled or declined one is
+  /// invited again. Returns it.
+  Future<Invitation> inviteOwner({
+    required Startup startup,
+    required String email,
+    required String invitedByName,
+    bool newUser = false,
+  }) async {
+    final lower = email.trim().toLowerCase();
+    final id = Invitation.idOf(startup.id, lower);
+    final existing = Invitation.fromMap(await _firestore.getDocument(_col, id));
+    final invitation = Invitation(
+      startupId: startup.id,
+      startupName: startup.name,
+      emailLower: lower,
+      role: Invitation.roleOwner,
+      invitedBy: _uid,
+      invitedByName: invitedByName,
+      newUser: newUser,
+    );
+    if (existing == null) {
+      await _firestore.setDocument(_col, id, {
+        ...invitation.toCreateMap(),
+        'createdAt': _firestore.serverTimestamp(),
+      });
+    } else {
+      await _firestore.updateDocument(_col, id, {
+        'status': InvitationStatus.pending.value,
+        'role': Invitation.roleOwner,
+        'roleText': '',
+        'contribution': '',
+        'newUser': newUser,
+        'emailSent': false,
+      });
+    }
+    await _addToInviteIndex(lower, startup.name);
+    return invitation;
+  }
+
+  /// The owner invitation of [startupId] still waiting for an answer (the
+  /// "Waiting for…" banner in Settings), or null.
+  Future<Invitation?> pendingOwnerInvite(String startupId) async {
+    for (final i in await sentFor(startupId)) {
+      if (i.isOwner && i.isPending) return i;
+    }
+    return null;
+  }
+
+  /// Cancels the owner invitation of [startup] that is still waiting, if any
+  /// (Cancel invitation, closing the startup, or handing it to a team member).
+  Future<void> cancelOwnerInvite(Startup startup) async {
+    final pending = await pendingOwnerInvite(startup.id);
+    if (pending != null) await cancel(startup.id, pending.emailLower);
+  }
+
+  /// The owner invitations I sent that were declined (the one-time "Invitation
+  /// declined" pop-up).
+  Future<List<Invitation>> declinedOwnerInvitesOfMine() async {
+    final docs = await _firestore.queryWhereEqual(_col, 'invitedBy', _uid);
+    return [
+      for (final d in docs)
+        if (Invitation.fromMap(d.data) case final i?)
+          if (i.isOwner && i.status == InvitationStatus.declined) i,
+    ];
+  }
+
   /// Sends the e-mail of [invitation] through the relay and records it.
   Future<InviteSendResult> sendEmail(Invitation invitation) async {
     try {
@@ -274,6 +344,9 @@ class InvitationRepository {
   /// and the invitation turns "accepted", together. When the startup is
   /// readable (a public one) my card in the team list is updated too.
   Future<void> accept(Invitation invitation, {required String fullName}) async {
+    if (invitation.isOwner) {
+      return _acceptOwnership(invitation, fullName: fullName);
+    }
     final uid = _uid;
     List<Map<String, Object?>>? team;
     try {
@@ -316,6 +389,62 @@ class InvitationRepository {
     ]);
     await _removeFromInviteIndex(invitation.emailLower, invitation.startupName);
     // My profile now lists this startup.
+    unawaited(PublicProfileRepository.instance.refreshMyStartups(uid));
+  }
+
+  /// I take over the startup that invited me as its next owner: I become its
+  /// owner (shown as "Owner"; the title Founder stays with whoever created
+  /// it), the previous owner leaves its team, card included, and the
+  /// invitation turns accepted, together. The rules let a person with a
+  /// pending owner invitation read the startup first.
+  Future<void> _acceptOwnership(
+    Invitation invitation, {
+    required String fullName,
+  }) async {
+    final uid = _uid;
+    final startup = Startup.fromMap(
+      invitation.startupId,
+      await _firestore.getDocument(
+        FirestoreCollections.startups,
+        invitation.startupId,
+      ),
+    );
+    if (startup == null || startup.isClosed) {
+      throw const AuthException(AuthFailure.permissionDenied);
+    }
+    final previous = startup.founderId;
+    final team = [
+      for (final m in startup.team)
+        if (m.uid != previous && m.email != invitation.emailLower) m.toMap(),
+      TeamMember(
+        name: fullName,
+        email: invitation.emailLower,
+        role: '',
+        contribution: '',
+        uid: uid,
+      ).toMap(),
+    ];
+    await _firestore.commit([
+      FirestoreWrite.update(
+        FirestoreCollections.startups,
+        invitation.startupId,
+        {
+          StartupFields.founderId: uid,
+          // Older startups get who created them now (it never changes).
+          StartupFields.foundedBy: startup.originalFounderId,
+          StartupFields.team: team,
+          StartupFields.ownerChangedAt: _firestore.serverTimestamp(),
+          StartupFields.updatedAt: _firestore.serverTimestamp(),
+        },
+      ),
+      FirestoreWrite.update(_col, invitation.id, {
+        'status': InvitationStatus.accepted.value,
+        'acceptedBy': uid,
+        'acceptedByName': fullName,
+        'respondedAt': _firestore.serverTimestamp(),
+      }),
+    ]);
+    await _removeFromInviteIndex(invitation.emailLower, invitation.startupName);
     unawaited(PublicProfileRepository.instance.refreshMyStartups(uid));
   }
 

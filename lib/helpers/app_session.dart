@@ -29,6 +29,7 @@ class AppSession extends ChangeNotifier {
   Set<String> _ownStartupIds = const {};
   Set<String> _memberStartupIds = const {};
   Map<String, StartupRole> _memberRoles = const {};
+  String? _startupTitle;
 
   /// The signed-in account; null for a guest or when signed out.
   AppUser? get user => _user;
@@ -75,6 +76,7 @@ class AppSession extends ChangeNotifier {
     _ownStartupIds = const {};
     _memberStartupIds = const {};
     _memberRoles = const {};
+    _startupTitle = null;
     notifyListeners();
   }
 
@@ -97,6 +99,13 @@ class AppSession extends ChangeNotifier {
     _memberRoles = Map.unmodifiable(roles);
   }
 
+  /// A startup-side account's highest title among its startups ("Founder",
+  /// "Owner", "Co-founder", "Team member") for the menu; null until its
+  /// startups have been read.
+  String? get startupTitle => _startupTitle;
+
+  void setStartupTitle(String? title) => _startupTitle = title;
+
   void setMemberStartupIds(Iterable<String> ids) {
     _memberStartupIds = Set.unmodifiable(ids);
     notifyListeners();
@@ -108,6 +117,7 @@ class AppSession extends ChangeNotifier {
     _ownStartupIds = const {};
     _memberStartupIds = const {};
     _memberRoles = const {};
+    _startupTitle = null;
     notifyListeners();
   }
 

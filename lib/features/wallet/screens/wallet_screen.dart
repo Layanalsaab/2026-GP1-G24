@@ -39,7 +39,11 @@ class _WalletScreenState extends State<WalletScreen> {
       _vm = given;
     } else {
       final user = AppSession.instance.user;
-      _vm = WalletViewModel(investorId: user?.uid ?? '')..load();
+      _vm = WalletViewModel(
+        investorId: user?.uid ?? '',
+        // The profile's commerce models: the 20% part of a ticket's score.
+        commerceModels: user?.investorCriteria?.commerceModels ?? const [],
+      )..load();
     }
     _vm.setOptionOrder(
       sectors: InvestorOnboardingViewModel.sectorOptions,

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../app_constants/account_strings.dart';
 import '../app_constants/home_strings.dart';
 import '../data_access/repositories/bookmark_repository.dart';
 import '../data_access/repositories/startup_repository.dart';
@@ -120,6 +121,12 @@ class _MainScreenState extends State<MainScreen> {
       }
       if (!mounted) return;
       _session.setMemberRoles(roles);
+      // The menu's title: Founder, Owner, Co-founder or Team member.
+      if (uid != null) {
+        _session.setStartupTitle(
+          AccountStrings.startupTitle(uid, owned: mine, joined: roles.values),
+        );
+      }
       _session.setMemberStartupIds(member);
       // "Matches for" lists the startups the user owns, but not closed
       // ones (they are not raising); every startup of theirs stays hidden.
@@ -193,7 +200,7 @@ class _MainScreenState extends State<MainScreen> {
       name: user.fullName,
       initials: user.initials,
       roleLine:
-          '${founder ? HomeStrings.founderRole : HomeStrings.investorRole}'
+          '${founder ? (_session.startupTitle ?? HomeStrings.founderRole) : HomeStrings.investorRole}'
           '${city == null || city.isEmpty ? '' : ' · $city'}',
       items: [
         if (founder)

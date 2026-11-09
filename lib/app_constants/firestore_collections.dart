@@ -49,6 +49,10 @@ class UserFields {
   /// Whether the profile shows the email / phone (private when missing).
   static const emailPublic = 'emailPublic';
   static const phonePublic = 'phonePublic';
+
+  /// `investors/{id}` only: true on the investors imported from the dataset
+  /// (Crunchbase), false on investors who signed up in the app.
+  static const isArchived = 'isArchived';
   static const sectorsOfInterest = 'sectorsOfInterest';
 
   // Profile photo: download URL of `users/{uid}/profile.jpg` in Storage.
@@ -168,19 +172,26 @@ class StartupFields {
   /// what stops a co-founder from removing or demoting another co-founder.
   static const coFounderIds = 'coFounderIds';
 
-  /// Who created the startup. [founderId] is the OWNER (final control), which
-  /// can move to a co-founder; this never changes. Older startups don't have
-  /// it: the owner then is the founder.
+  /// Who created the startup. [founderId] is the OWNER (control), which moves
+  /// when the founder leaves and names the next owner; this never changes.
+  /// Older startups don't have it: the owner then is the founder.
   static const foundedBy = 'foundedBy';
-
-  /// The founder after she left and chose to keep her name on the team as
-  /// "Founder (former)". Removed when she removes her name.
-  static const formerFounderId = 'formerFounderId';
 
   /// `active` or `closed`. Older startups don't have it (active).
   static const status = 'status';
   static const statusActive = 'active';
   static const statusClosed = 'closed';
+
+  /// When the startup was closed (a timestamp).
+  static const closedAt = 'closedAt';
+
+  /// When the startup last got a new owner (a timestamp).
+  static const ownerChangedAt = 'ownerChangedAt';
+
+  /// True only on the startups imported from the dataset (Crunchbase).
+  /// Startups made in the app are saved with false, and nobody can change it
+  /// in the app (firestore.rules).
+  static const isArchived = 'isArchived';
 }
 
 /// Fields of a `startups/{startupId}/fundingRounds/{roundId}` document (the
@@ -205,7 +216,10 @@ class FundingRoundFields {
   static const investorIds = 'investorIds';
   static const investorCount = 'investorCount';
   static const wantsLeadInvestor = 'wantsLeadInvestor';
-  static const isDataset = 'isDataset';
+
+  /// True only on rounds imported from the dataset (Crunchbase). Rounds added
+  /// in the app are saved with false.
+  static const isArchived = 'isArchived';
   static const createdAt = 'createdAt';
   static const updatedAt = 'updatedAt';
 

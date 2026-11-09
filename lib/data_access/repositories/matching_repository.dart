@@ -3,27 +3,30 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 
 import '../../app_constants/firestore_collections.dart';
-import '../../models/app_user.dart';
-import '../../models/home_item.dart';
+import '../../models/investment_ticket.dart';
 import '../../models/investor_profile.dart';
 import '../../models/startup.dart';
 import '../../recommender/content_ranker.dart' as ranker;
 import '../../recommender/knowledge_filter.dart';
 import '../firebase_services/firestore_service.dart';
 
-/// Explore -> Matches from the real Firestore data (lib/recommender has the
-/// rules). Hub, For You and Trending keep the sample data for now.
+/// Matching from the real Firestore data (lib/recommender has the rules).
+/// There is no Matches tab: matching lives in two places.
 ///
-/// - Investor: their answers (saved on `users/{uid}`, read through
-///   [AppUser.investorCriteria]) against the public startups.
-/// - Founder: the chosen startup against the `investors` collection.
+/// - Investor: each investment ticket of the Wallet against the listed
+///   startups ([publicStartups], [matchesForTicket]). Only `startups` where
+///   `isPublic == true` are read (the rules hide private ones anyway); the
+///   closed ones (`status == 'closed'`) are dropped here.
+/// - Founder: each open round of a startup against the `investors`
+///   collection and the open `tickets` ([investorsForStartup]).
 ///
-/// The pools stay up to date by themselves: the public startups and the
-/// investors are watched with Firestore listeners, which send the whole list
-/// once and then only the documents that change (one read each). [changes]
-/// bumps after every change, so an open Matches list is computed again at
-/// once (no extra reads). With `live: false` (tests) the pools are read once
-/// and kept for [_maxAge]; `refresh: true` reads them again.
+/// The pools stay up to date by themselves: the public startups, the
+/// investors and the open tickets are watched with Firestore listeners,
+/// which send the whole list once and then only the documents that change
+/// (one read each). [changes] bumps after every change, so an open list is
+/// computed again at once (no extra reads). With `live: false` (tests) the
+/// pools are read once and kept for [_maxAge]; `refresh: true` reads them
+/// again.
 ///
 /// Every method throws AuthException on failure (network, permission, ...),
 /// like the other repositories.
@@ -34,8 +37,8 @@ class MatchingRepository {
   /// Watch the pools with listeners (the app) or read them once (tests).
   final bool live;
 
-  /// Bumps when a watched startup or investor changed (not on the first
-  /// load). HomeViewModel listens and computes its Matches again.
+  /// Bumps when a watched startup, investor or ticket changed (not on the
+  /// first load). The Wallet and the round's Matches listen.
   final ValueNotifier<int> changes = ValueNotifier<int>(0);
 
   /// How long the first answer of a listener may take.
@@ -50,158 +53,164 @@ class MatchingRepository {
 
   _Pool? _startups;
   _Pool? _investors;
+  _Pool? _tickets;
   _LivePool? _liveStartups;
   _LivePool? _liveInvestors;
+  _LivePool? _liveTickets;
 
-  /// The startups and investors shown on Matches cards, so a tapped card
-  /// opens the real profile (see navigation/open_item.dart).
+  /// The startups and investors shown in matches, so a tapped card opens
+  /// the real profile.
   final Map<String, Startup> _shownStartups = {};
   final Map<String, InvestorProfile> _shownInvestors = {};
 
   Startup? startupById(String id) => _shownStartups[id];
   InvestorProfile? investorById(String id) => _shownInvestors[id];
 
-  /// Startups matched to the signed-in [investor], best first: only the
-  /// ones raising now. Empty until they have chosen sectors and stages.
-  Future<List<HomeItem>> startupsForInvestor(
-    AppUser investor, {
-    bool refresh = false,
-  }) async {
-    final criteria = investor.investorCriteria;
-    if (criteria == null) return const [];
-    final me = MatchInvestor.fromMap(investor.uid, {
-      ...criteria.toFields(),
-      UserFields.fullName: investor.fullName,
-    });
-    if (!me.interestsComplete) return const [];
-
-    final docs = live
-        ? await _watch(
-            _liveStartups,
-            () => _firestore.watchWhereEqual(
-              FirestoreCollections.startups,
-              StartupFields.isPublic,
-              true,
-            ),
-            (pool) => _liveStartups = pool,
-          )
-        : await _load(
-            _startups,
-            refresh,
-            () => _firestore.queryWhereEqual(
-              FirestoreCollections.startups,
-              StartupFields.isPublic,
-              true,
-            ),
-            (pool) => _startups = pool,
-          );
-    final startups = <String, Startup>{};
-    final pool = <MatchStartup>[];
+  /// Every listed startup: public (only those are read) and not closed. The
+  /// pool a ticket is matched against.
+  Future<List<Startup>> publicStartups({bool refresh = false}) async {
+    final docs = await _pool(
+      refresh,
+      () => _liveStartups,
+      (p) => _liveStartups = p,
+      () => _startups,
+      (p) => _startups = p,
+      () => _firestore.watchWhereEqual(
+        FirestoreCollections.startups,
+        StartupFields.isPublic,
+        true,
+      ),
+      () => _firestore.queryWhereEqual(
+        FirestoreCollections.startups,
+        StartupFields.isPublic,
+        true,
+      ),
+    );
+    final out = <Startup>[];
     for (final d in docs) {
       // A document the app can't show is never matched.
       final s = Startup.fromMap(d.id, d.data);
-      // A closed startup is not raising and not listed.
-      if (s == null || s.isClosed) continue;
-      startups[d.id] = s;
-      pool.add(MatchStartup.fromMap(d.id, d.data));
-    }
-    final byId = {for (final s in pool) s.id: s};
-    return [
-      for (final r in ranker.matchesForInvestor(me, pool))
-        HomeItem.fromStartup(_shownStartups[r.id] = startups[r.id]!)
-            .withMatch(r.percent, ranker.shortReason(me, byId[r.id]!)),
-    ];
-  }
-
-  /// Every public startup that is not closed (the pool a wallet ticket is
-  /// matched against). Private startups cannot be read by an investor.
-  Future<List<Startup>> publicStartups({bool refresh = false}) async {
-    final docs = live
-        ? await _watch(
-            _liveStartups,
-            () => _firestore.watchWhereEqual(
-              FirestoreCollections.startups,
-              StartupFields.isPublic,
-              true,
-            ),
-            (pool) => _liveStartups = pool,
-          )
-        : await _load(
-            _startups,
-            refresh,
-            () => _firestore.queryWhereEqual(
-              FirestoreCollections.startups,
-              StartupFields.isPublic,
-              true,
-            ),
-            (pool) => _startups = pool,
-          );
-    final out = <Startup>[];
-    for (final d in docs) {
-      final s = Startup.fromMap(d.id, d.data);
-      if (s == null || s.isClosed) continue;
+      if (s == null || !s.isListed) continue;
       _shownStartups[d.id] = s;
       out.add(s);
     }
     return out;
   }
 
-  /// Investors matched to the founder's [startup] (public or private), best
-  /// first.
-  Future<List<HomeItem>> investorsForStartup(
+  /// The matches of one [ticket] among [startups] (from [publicStartups]),
+  /// best first. [commerceModels] are the investor's profile commerce models
+  /// (labels), the 20% part of the score.
+  static List<ranker.MatchResult> matchesForTicket(
+    InvestmentTicket ticket,
+    List<String> commerceModels,
+    List<Startup> startups,
+  ) {
+    final models = MatchInvestor.fromMap(ticket.investorId, {
+      UserFields.preferredCommerceModels: commerceModels,
+    }).models;
+    return ranker.matchesForTicket(matchTicketOf(ticket), models, [
+      for (final s in startups) matchStartupOf(s),
+    ]);
+  }
+
+  /// A [Startup] as matching reads it (its stored values).
+  static MatchStartup matchStartupOf(Startup s) =>
+      MatchStartup.fromMap(s.id, s.toMap());
+
+  /// An [InvestmentTicket] as matching reads it.
+  static MatchTicket matchTicketOf(InvestmentTicket t) => MatchTicket.fromMap(
+    t.id,
+    {
+      ...t.editableFields(),
+      TicketFields.investorId: t.investorId,
+      TicketFields.status: t.status.value,
+    },
+  );
+
+  /// The investors matched to the founder's [startup] (public or private)
+  /// for its open round, best first: [startup] carries the round (stage =
+  /// the round type, fundingRequirement = its amount, raisedInRound = what
+  /// it raised). Investors with an open ticket that fits come first. A
+  /// closed startup gets none. The profiles are kept for [investorById].
+  Future<List<ranker.MatchResult>> investorsForStartup(
     Startup startup, {
     bool refresh = false,
   }) async {
+    if (startup.isClosed) return const [];
     // Every investor profile has role "investor", so this reads them all.
-    final docs = live
-        ? await _watch(
-            _liveInvestors,
-            () => _firestore.watchWhereEqual(
-              FirestoreCollections.investors,
-              UserFields.role,
-              'investor',
-            ),
-            (pool) => _liveInvestors = pool,
-          )
-        : await _load(
-            _investors,
-            refresh,
-            () => _firestore.queryWhereEqual(
-              FirestoreCollections.investors,
-              UserFields.role,
-              'investor',
-            ),
-            (pool) => _investors = pool,
-          );
-    // toMap() holds the stored values matching reads (sector, stage,
-    // businessModel, location, lookingFor, fundingRequirement).
-    final target = MatchStartup.fromMap(startup.id, startup.toMap());
-    final investors = {
-      for (final d in docs) d.id: MatchInvestor.fromMap(d.id, d.data),
-    };
+    final docs = await _pool(
+      refresh,
+      () => _liveInvestors,
+      (p) => _liveInvestors = p,
+      () => _investors,
+      (p) => _investors = p,
+      () => _firestore.watchWhereEqual(
+        FirestoreCollections.investors,
+        UserFields.role,
+        'investor',
+      ),
+      () => _firestore.queryWhereEqual(
+        FirestoreCollections.investors,
+        UserFields.role,
+        'investor',
+      ),
+    );
+    final ticketDocs = await _pool(
+      refresh,
+      () => _liveTickets,
+      (p) => _liveTickets = p,
+      () => _tickets,
+      (p) => _tickets = p,
+      () => _firestore.watchWhereEqual(
+        FirestoreCollections.tickets,
+        TicketFields.status,
+        TicketFields.open,
+      ),
+      () => _firestore.queryWhereEqual(
+        FirestoreCollections.tickets,
+        TicketFields.status,
+        TicketFields.open,
+      ),
+    );
     final data = {for (final d in docs) d.id: d.data};
-    return [
-      for (final r in ranker.matchesForStartup(
-        target,
-        investors.values.toList(),
-      ))
-        HomeItem.fromInvestor(
-          _shownInvestors[r.id] = _profile(r.id, data[r.id]!),
-        ).withMatch(r.percent, ranker.shortReason(investors[r.id]!, target)),
-    ];
+    final results = ranker.matchesForStartup(
+      matchStartupOf(startup),
+      [for (final d in docs) MatchInvestor.fromMap(d.id, d.data)],
+      tickets: [for (final d in ticketDocs) MatchTicket.fromMap(d.id, d.data)],
+    );
+    for (final r in results) {
+      _shownInvestors[r.id] = _profile(r.id, data[r.id]!);
+    }
+    return results;
   }
 
   /// Forgets the loaded pools and stops the listeners (e.g. on sign-out).
   void clear() {
     _liveStartups?.cancel();
     _liveInvestors?.cancel();
+    _liveTickets?.cancel();
     _liveStartups = null;
     _liveInvestors = null;
+    _liveTickets = null;
     _startups = null;
     _investors = null;
+    _tickets = null;
     _shownStartups.clear();
     _shownInvestors.clear();
   }
+
+  /// One pool's documents: watched ([live]) or read once and cached.
+  Future<List<FirestoreDocument>> _pool(
+    bool refresh,
+    _LivePool? Function() liveNow,
+    void Function(_LivePool) keepLive,
+    _Pool? Function() cachedNow,
+    void Function(_Pool) keepCached,
+    Stream<List<FirestoreDocument>> Function() watch,
+    Future<List<FirestoreDocument>> Function() read,
+  ) => live
+      ? _watch(liveNow(), watch, keepLive)
+      : _load(cachedNow(), refresh, read, keepCached);
 
   /// The latest documents of a watched pool; starts the listener the first
   /// time (or again after it failed) and waits for its first answer.

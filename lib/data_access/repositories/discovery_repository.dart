@@ -111,15 +111,50 @@ class DiscoveryRepository {
     }
   }
 
+  /// The signed-in founder saved [startup] (edited, closed, made public or
+  /// private): the loaded lists follow at once, without reading every
+  /// startup again. A startup that is no longer public leaves them; one that
+  /// became public joins them. Other people's changes still show at the next
+  /// load (opening the app, pull to refresh).
+  void apply(Startup startup) {
+    final i = _startups.indexWhere((s) => s.id == startup.id);
+    if (!startup.isPublic) {
+      if (i < 0) return;
+      _startups = [..._startups]..removeAt(i);
+    } else if (i < 0) {
+      _startups = [startup, ..._startups];
+    } else {
+      _startups = [..._startups]..[i] = startup;
+    }
+    changes.value++;
+  }
+
+  /// [startupId] was deleted: it leaves the loaded lists.
+  void forget(String startupId) {
+    final before = _startups.length;
+    _startups = [
+      for (final s in _startups)
+        if (s.id != startupId) s,
+    ];
+    if (_startups.length != before) changes.value++;
+  }
+
   /// Every loaded public startup / investor (for matching and ranking).
   List<Startup> get allStartups => List.unmodifiable(_startups);
   List<InvestorProfile> get allInvestors => List.unmodifiable(_investors);
 
-  /// Hub, Startups side. [excludeIds] hides the founder's own startups.
-  List<HomeItem> startups({Set<String> excludeIds = const {}}) => [
+  /// The public startups: Explore and search ([includeClosed] false), or the
+  /// Hub's Startups side ([includeClosed] true: a public closed startup is
+  /// shown there, and only there, with its Closed tag). [excludeIds] hides
+  /// the founder's own startups.
+  List<HomeItem> startups({
+    Set<String> excludeIds = const {},
+    bool includeClosed = false,
+  }) => [
     for (final s in _startups)
-      // Closed startups are not listed (their team still sees them).
-      if (s.isListed && !excludeIds.contains(s.id)) HomeItem.fromStartup(s),
+      if ((includeClosed ? s.isInHub : s.isListed) &&
+          !excludeIds.contains(s.id))
+        HomeItem.fromStartup(s),
   ];
 
   /// Hub, Investors side.

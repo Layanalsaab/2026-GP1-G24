@@ -42,10 +42,6 @@ class AccountViewModel extends ChangeNotifier with SafeNotifier {
   /// are added until the invites exist.
   List<MyStartupEntry> memberEntries = const [];
 
-  /// The startups where the founder kept her name after leaving ("Founder
-  /// (former)"), public ones only.
-  List<Startup> formerStartups = const [];
-
   /// Every startup of the founder's profile, each with their role in it.
   List<MyStartupEntry> get startupEntries => [
     for (final s in startups)
@@ -65,8 +61,16 @@ class AccountViewModel extends ChangeNotifier with SafeNotifier {
 
   bool get isFounder => _user.isFounder;
 
-  /// "Founder" / "Investor".
-  String get roleLabel => AppStrings.roleName(_user.role);
+  /// "Investor", or a startup-side account's highest title among its
+  /// startups: "Founder", "Owner", "Co-founder" or "Team member" (see
+  /// [AccountStrings.startupTitle]).
+  String get roleLabel => _user.isFounder
+      ? AccountStrings.startupTitle(
+          _user.uid,
+          owned: startups,
+          joined: [for (final e in memberEntries) e.role],
+        )
+      : AppStrings.roleName(_user.role);
 
   /// The chips under the name: a founder's sectors of interest, an
   /// investor's sectors (the typed "Other" replaces the label "Other").
@@ -145,29 +149,11 @@ class AccountViewModel extends ChangeNotifier with SafeNotifier {
       startups = await _startups.fetchMyStartups();
       _session.setOwnStartupIds(startups.map((s) => s.id));
       memberEntries = await _loadMemberEntries();
-      try {
-        formerStartups = await _startups.fetchFormerStartups();
-      } catch (_) {
-        // Only the "Founder (former)" entries are missing.
-      }
+      // The menu shows the same title as the profile.
+      if (_user.isFounder) _session.setStartupTitle(roleLabel);
       notifyListeners();
     } catch (_) {
       // Keep the list as it is.
-    }
-  }
-
-  /// "Remove my name" on a "Founder (former)" entry. False when it failed.
-  Future<bool> removeFormerName(String startupId) async {
-    try {
-      await _startups.removeMyFormerName(startupId);
-      formerStartups = [
-        for (final s in formerStartups)
-          if (s.id != startupId) s,
-      ];
-      notifyListeners();
-      return true;
-    } catch (_) {
-      return false;
     }
   }
 

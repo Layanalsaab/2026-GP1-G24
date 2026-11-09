@@ -88,6 +88,15 @@ class AppColors {
   static const sheetGrab = Color(0xFFD6D2C9);
   static const previewBar = gold100;
 
+  /// The gold notice box ("This startup is closed", "You no longer have a
+  /// startup"): fill, border, title, message and icon. One look for every
+  /// notice, in the app's gold (no blue).
+  static const noticeFill = gold100;
+  static const noticeBorder = Color(0xFFEBDDB5);
+  static const noticeTitle = Color(0xFF6A4E10);
+  static const noticeText = tagGoldText;
+  static const noticeIcon = gold700;
+
   /// Intro illustrations: pale grey bars/lines, sage bar, sage line on green.
   static const introGrey = Color(0xFFE3E1DB);
   static const introSageBar = Color(0xFFC5CCC5);

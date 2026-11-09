@@ -1,6 +1,7 @@
 # Investor ticket size and tickets (investor_tickets)
 
-Scripts for the dataset investors (`isDataset: true`) and the new `tickets`
+Scripts for the dataset investors (`isArchived: true`; called `isDataset`
+before 9 Nov) and the new `tickets`
 collection. App investors are never touched.
 
     cd tools/investor_tickets

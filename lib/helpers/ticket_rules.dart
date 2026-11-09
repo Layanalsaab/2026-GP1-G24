@@ -1,8 +1,7 @@
 import '../models/investment_ticket.dart';
 import '../models/startup.dart';
-import '../models/startup_enums.dart';
+import '../recommender/content_ranker.dart' show MatchResult;
 import 'formatters.dart';
-import 'other_check.dart';
 
 /// Errors of the ticket form (null = fine). Same wording as the prototype.
 class TicketErrors {
@@ -79,85 +78,29 @@ class TicketSend {
       '${Formatters.sar(most(ticket, remaining))}';
 }
 
-/// A startup whose open round fits a ticket.
+/// A startup in a ticket's matches (the rules and the score are in
+/// lib/recommender; see MatchingRepository.matchesForTicket).
 class TicketMatch {
-  const TicketMatch({
-    required this.startup,
-    required this.remaining,
-    required this.percent,
-    required this.reason,
-  });
+  const TicketMatch({required this.startup, required this.result});
 
   final Startup startup;
+  final MatchResult result;
 
   /// What the open round still needs (funding minus raised), in SAR.
-  final int remaining;
-  final int percent;
-  final String reason;
+  int get remaining => result.remaining;
+  int get percent => result.percent;
+
+  /// Only the sector or only the stage misses.
+  bool get close => result.close;
 }
 
-class TicketMatcher {
-  TicketMatcher._();
-
-  /// What the startup's open round still needs, or 0 when it is not raising.
-  static int remainingOf(Startup s) {
-    final funding = s.fundingRequirement;
-    if (funding == null || funding <= 0) return 0;
-    final left = funding - (s.raisedInRound ?? 0);
-    return left > 0 ? left : 0;
-  }
-
-  /// The startup's main sector is one of the ticket's: the same text by the
-  /// rule of the "Other" box ("Sports Tech" is "SportsTech"), or the ticket
-  /// has the plain "Other" and the startup's sector is an Other.
-  static bool _sectorFits(InvestmentTicket ticket, Startup s) {
-    for (final x in ticket.sectors) {
-      if (OtherCheck.same(x, s.sectorLabel)) return true;
-      if (x == 'Other' && s.sector == Sector.other) return true;
-    }
-    return false;
-  }
-
-  /// A ticket fits a startup when the startup's main sector and stage are in
-  /// the ticket and the ticket's minimum is no more than what the open round
-  /// still needs. Only open tickets match.
-  static TicketMatch? match(InvestmentTicket ticket, Startup s) {
-    if (!ticket.isOpen) return null;
-    final remaining = remainingOf(s);
-    if (remaining == 0) return null;
-    if (!_sectorFits(ticket, s)) return null;
-    if (!ticket.stages.contains(s.stage.label)) return null;
-    if (ticket.amountMin > remaining) return null;
-    final covers = ticket.amountMax >= remaining;
-    // A placeholder percentage until the real ranking is used.
-    final percent = (70 + (covers ? 15 : 8) + 5).clamp(0, 98);
-    return TicketMatch(
-      startup: s,
-      remaining: remaining,
-      percent: percent,
-      reason: 'Same sector and stage${covers ? ' · fits your range' : ''}',
-    );
-  }
-
-  /// The matches of [ticket], best first (the percentage, then the name).
-  static List<TicketMatch> matches(
-    InvestmentTicket ticket,
-    Iterable<Startup> startups,
-  ) {
-    final out = <TicketMatch>[];
-    for (final s in startups) {
-      if (s.isClosed) continue;
-      final m = match(ticket, s);
-      if (m != null) out.add(m);
-    }
-    out.sort((a, b) {
-      final byPercent = b.percent.compareTo(a.percent);
-      return byPercent != 0
-          ? byPercent
-          : a.startup.name.compareTo(b.startup.name);
-    });
-    return out;
-  }
+/// What a startup's open round still needs, or 0 when it is not raising.
+int remainingOf(Startup s) {
+  if (!s.seeksFunding) return 0;
+  final funding = s.fundingRequirement;
+  if (funding == null || funding <= 0) return 0;
+  final left = funding - (s.raisedInRound ?? 0);
+  return left > 0 ? left : 0;
 }
 
 /// "Logistics, E-commerce +1": at most [max] items, then "+N".

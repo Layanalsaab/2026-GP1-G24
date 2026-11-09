@@ -10,9 +10,11 @@ import '../../../app_constants/profile_strings.dart';
 import '../../../data_access/repositories/bookmark_repository.dart';
 import '../../../data_access/repositories/request_repository.dart';
 import '../../../models/investor_profile.dart';
+import '../../../models/match_summary.dart';
 import '../../../shared_ui/icons/app_icons.dart';
 import '../../../shared_ui/navigation/app_route.dart';
 import '../../../shared_ui/theme/app_colors.dart';
+import '../../../shared_ui/widgets/cards/match_justification.dart';
 import '../../../shared_ui/widgets/headers/profile_banner.dart';
 import '../view_models/investor_profile_view_model.dart';
 import '../widgets/investor_profile_body.dart';
@@ -24,15 +26,23 @@ import '../widgets/profile_widgets.dart';
 /// associations). The
 /// "Send investment request" bar is for founders only.
 class InvestorProfileScreen extends StatefulWidget {
-  const InvestorProfileScreen({super.key, required this.investor});
+  const InvestorProfileScreen({super.key, required this.investor, this.match});
 
   final InvestorProfile investor;
 
+  /// Opened from a round's matches: why this investor matched, shown at the
+  /// top. Null anywhere else.
+  final MatchSummary? match;
+
   /// Opens the profile with the forward transition.
-  static void open(BuildContext context, InvestorProfile investor) {
+  static void open(
+    BuildContext context,
+    InvestorProfile investor, {
+    MatchSummary? match,
+  }) {
     AppNav.push(
       context,
-      InvestorProfileScreen(investor: investor),
+      InvestorProfileScreen(investor: investor, match: match),
       greenHeader: true,
     );
   }
@@ -108,6 +118,11 @@ class _InvestorProfileScreenState extends State<InvestorProfileScreen> {
                           linkedin: _vm.linkedin,
                           onLinkedin: () => openExternalLink(_vm.linkedin),
                         ),
+                        if (widget.match != null)
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                            child: MatchJustification(summary: widget.match!),
+                          ),
                         InvestorProfileBody(
                           data: InvestorProfileData.fromInvestor(inv),
                           associations: _vm.associations,

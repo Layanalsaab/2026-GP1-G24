@@ -1,4 +1,4 @@
-// Builds the new values for the DATASET investors (isDataset == true). Writes
+// Builds the new values for the DATASET investors (isArchived == true). Writes
 // nothing to Firebase.
 //
 // WHAT IT MAKES (for the 104 dataset investors only; app investors are skipped)
@@ -180,7 +180,7 @@ function nameOptions(t, city) {
 
 // ---- run ----
 const all = JSON.parse(fs.readFileSync('output/investors_backup.json', 'utf8'));
-const dataset = all.filter((d) => d.data.isDataset === true).sort((a, b) => a.id.localeCompare(b.id));
+const dataset = all.filter((d) => d.data.isArchived === true || d.data.isDataset === true).sort((a, b) => a.id.localeCompare(b.id));
 console.log(`Dataset investors: ${dataset.length} (skipped ${all.length - dataset.length} app investors)`);
 
 const rank = (v) => Number(String(v ?? '').replace(/,/g, ''));

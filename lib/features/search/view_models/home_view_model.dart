@@ -70,7 +70,7 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
   final SessionRole role;
 
   /// The signed-in user. Replaced by [setUser] when they edit their profile
-  /// (e.g. an investor's preferences), so Matches follows.
+  /// (e.g. an investor's preferences).
   AppUser? user;
 
   void setUser(AppUser? value) {
@@ -290,7 +290,7 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
       HomeContext.support => _programs,
       HomeContext.investors => _investors,
       HomeContext.explore => [..._startups, ..._investors],
-      HomeContext.startups => _startups,
+      HomeContext.startups => _hubStartups,
     };
     final g = HomeFilters.groups(ctx);
     return list.where((it) => HomeFilters.passes(it, draft, g, '')).length;
@@ -301,9 +301,14 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
   List<HomeItem> get _programs => _discovery.programs();
   List<HomeItem> get _investors => _discovery.investors();
 
-  /// Every public startup, the user's own included: the Hub is the full
-  /// directory. Only For You ("New" and "Recommended") leaves them out.
+  /// Every public startup that isn't closed, the user's own included
+  /// (Explore and its search). Only For You ("New" and "Recommended") leaves
+  /// the user's own out.
   List<HomeItem> get _startups => _discovery.startups();
+
+  /// The Hub's Startups side: every public startup, closed ones included
+  /// (with their Closed tag): the Hub is the full directory.
+  List<HomeItem> get _hubStartups => _discovery.startups(includeClosed: true);
 
   List<HomeItem> _filtered(List<HomeItem> base) => HomeFilters.sorted([
     for (final it in base)
@@ -318,7 +323,7 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
 
   /// The cards of the Hub page (selected side).
   List<HomeItem> get hubCards =>
-      _filtered(hubSwitch == 1 ? _investors : _startups);
+      _filtered(hubSwitch == 1 ? _investors : _hubStartups);
 
   /// The Explore results view (search or filters on any sub-tab).
   List<HomeItem> get exploreResults =>

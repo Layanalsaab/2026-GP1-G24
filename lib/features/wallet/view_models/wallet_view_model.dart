@@ -6,6 +6,7 @@ import '../../../helpers/formatters.dart';
 import '../../../helpers/safe_notifier.dart';
 import '../../../helpers/ticket_rules.dart';
 import '../../../models/investment_ticket.dart';
+import '../../../models/match_summary.dart';
 import '../../../models/startup.dart';
 import '../../../app_constants/wallet_strings.dart';
 
@@ -29,6 +30,7 @@ enum RequestFilter {
 class WalletViewModel extends ChangeNotifier with SafeNotifier {
   WalletViewModel({
     required this.investorId,
+    this.commerceModels = const [],
     TicketRepository? tickets,
     MatchingRepository? matching,
     DateTime Function()? now,
@@ -38,9 +40,15 @@ class WalletViewModel extends ChangeNotifier with SafeNotifier {
     for (final c in [name, min, max, sendAmount]) {
       c.addListener(notifyListeners);
     }
+    // A startup opened, closed or changed its round: matches follow.
+    _pool.changes.addListener(_onPoolChange);
   }
 
   final String investorId;
+
+  /// The investor's profile commerce models (labels): the 20% part of every
+  /// ticket's match score.
+  final List<String> commerceModels;
 
   final TicketRepository? _ticketsOverride;
   final MatchingRepository? _matchingOverride;
@@ -84,8 +92,13 @@ class WalletViewModel extends ChangeNotifier with SafeNotifier {
     } catch (_) {
       matchesFailed = true;
     }
+    _matches.clear();
     notifyListeners();
   }
+
+  /// The watched startups changed: read the (already updated) pool again
+  /// (no extra Firestore reads).
+  void _onPoolChange() => _loadStartups();
 
   InvestmentTicket? ticketById(String id) {
     for (final t in tickets) {
@@ -96,21 +109,36 @@ class WalletViewModel extends ChangeNotifier with SafeNotifier {
 
   // ------------------------------------------------------------ matches
 
-  List<TicketMatch> matchesOf(InvestmentTicket ticket) =>
-      TicketMatcher.matches(ticket, _startups);
+  /// Matches already worked out, by ticket (and what it holds).
+  final Map<String, List<TicketMatch>> _matches = {};
 
-  /// "1 match" / "2 matches" (open), the startup (used), "—" (closed).
-  String matchesLabel(InvestmentTicket t, {String Function(String id)? name}) {
-    switch (t.status) {
-      case TicketStatus.open:
-        final n = matchesOf(t).length;
-        return n == 1 ? '1 match' : '$n matches';
-      case TicketStatus.used:
-        return usedForName(t);
-      case TicketStatus.closed:
-        return '—';
-    }
+  /// The ticket's matches, best first: listed startups that are raising,
+  /// exact matches before close ones. None for a used or closed ticket.
+  List<TicketMatch> matchesOf(InvestmentTicket ticket) {
+    if (!ticket.isOpen) return const [];
+    final key = [
+      ticket.id,
+      ticket.sectors.join('|'),
+      ticket.stages.join('|'),
+      ticket.amountMin,
+      ticket.amountMax,
+    ].join('~');
+    return _matches[key] ??= () {
+      final byId = {for (final s in _startups) s.id: s};
+      return [
+        for (final r in MatchingRepository.matchesForTicket(
+          ticket,
+          commerceModels,
+          _startups,
+        ))
+          TicketMatch(startup: byId[r.id]!, result: r),
+      ];
+    }();
   }
+
+  /// Why [match] matched [ticket], for the top of the startup's profile.
+  MatchSummary summaryOf(InvestmentTicket ticket, TicketMatch match) =>
+      MatchSummary.forTicket(ticket.name, match.result);
 
   /// The startup a used ticket was used for.
   String usedForName(InvestmentTicket t) {
@@ -530,6 +558,7 @@ class WalletViewModel extends ChangeNotifier with SafeNotifier {
 
   @override
   void dispose() {
+    _pool.changes.removeListener(_onPoolChange);
     for (final c in [name, min, max, sendAmount]) {
       c.removeListener(notifyListeners);
       c.dispose();

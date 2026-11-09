@@ -2,16 +2,18 @@ import 'package:flutter/foundation.dart';
 
 import '../../../app_constants/founder_tools_strings.dart';
 import '../../../data_access/mock_data/prototype_seed.dart';
-import '../../../data_access/repositories/interest_repository.dart';
+import '../../../data_access/repositories/invitation_repository.dart';
 import '../../../data_access/repositories/request_repository.dart';
 import '../../../data_access/repositories/startup_repository.dart';
 import '../../../helpers/app_session.dart';
 import '../../../helpers/safe_notifier.dart';
 import '../../../models/connection_request.dart';
+import '../../../models/invitation.dart';
 import '../../../models/startup.dart';
 
 /// State of Manage startup (docs/05 D3): the startup as last saved, the
-/// current tab, the visibility switch and the delete.
+/// current tab, the visibility switch, closing, and leaving (the owner names
+/// the next owner first).
 class ManageStartupViewModel extends ChangeNotifier with SafeNotifier {
   ManageStartupViewModel({required this.startup, StartupRepository? repository})
     : _repository = repository ?? StartupRepository.instance;
@@ -25,7 +27,6 @@ class ManageStartupViewModel extends ChangeNotifier with SafeNotifier {
   /// of a round will live inside the round, not in a tab.)
   int tab = 0;
 
-  bool isDeleting = false;
   bool isSavingVisibility = false;
   String? error;
 
@@ -51,7 +52,10 @@ class ManageStartupViewModel extends ChangeNotifier with SafeNotifier {
     error = null;
     notifyListeners();
     try {
-      startup = await _repository.update(startup);
+      // A closed startup: only its visibility changes (its owner only).
+      startup = before.isClosed
+          ? await _repository.setClosedVisibility(before, value)
+          : await _repository.update(startup);
       return value;
     } catch (_) {
       startup = before;
@@ -63,50 +67,87 @@ class ManageStartupViewModel extends ChangeNotifier with SafeNotifier {
     }
   }
 
-  /// Deletes the startup (and its logo). True on success.
-  Future<bool> delete() async {
-    if (isDeleting) return false;
-    isDeleting = true;
-    error = null;
-    notifyListeners();
+  /// A change (close, hand over, leave, invite) is being saved.
+  bool isBusy = false;
+
+  /// The people who joined the team (co-founders and members), who can
+  /// become the next owner: (uid, name, role), in the order of the team list.
+  List<(String, String, String)> get nextOwnerChoices {
+    final ids = startup.memberIds.toSet();
+    final ordered = <String>[
+      for (final m in startup.team)
+        if (m.uid != null && ids.contains(m.uid)) m.uid!,
+    ];
+    return [
+      for (final uid in {...ordered, ...ids})
+        (
+          uid,
+          startup.nameOf(uid, fallback: _roleLabel(uid)),
+          _roleLabel(uid),
+        ),
+    ];
+  }
+
+  String _roleLabel(String uid) => startup.memberRoles[uid] == 'coFounder'
+      ? FounderToolsStrings.roleCoFounder
+      : FounderToolsStrings.roleMember;
+
+  /// The owner invitation still waiting for an answer (the "Waiting for…"
+  /// card in Settings), or null.
+  Invitation? pendingOwnerInvite;
+
+  /// Reads [pendingOwnerInvite] (the owner, on an active startup).
+  Future<void> loadOwnerInvite() async {
+    if (startup.isClosed ||
+        startup.founderId != AppSession.instance.user?.uid ||
+        PrototypeSeed.isSampleStartup(startup.id)) {
+      return;
+    }
     try {
-      await _repository.delete(startup);
-      // Nothing of it is left behind: its requests and interest messages go
-      // too. (Its funding rounds are deleted by the repository; other
-      // people's bookmarks and the team memberships belong to the backend.)
-      RequestRepository.instance.removeForStartup(startup.id);
-      InterestRepository.instance.removeForStartup(startup.id);
-      _forget(startup.id);
-      return true;
-    } catch (_) {
-      error = FounderToolsStrings.deleteFailed;
-      return false;
-    } finally {
-      isDeleting = false;
+      pendingOwnerInvite = await InvitationRepository.instance
+          .pendingOwnerInvite(startup.id);
       notifyListeners();
+    } catch (_) {
+      // The card shows the next time.
     }
   }
 
-  /// A change (transfer, close, leave) is being saved.
-  bool isBusy = false;
-
-  /// The joined co-founders who can become the owner: (uid, name), in the
-  /// order of the team list.
-  List<(String, String)> get newOwnerChoices => [
-    for (final uid in startup.coFoundersInTeamOrder)
-      (uid, startup.nameOf(uid, fallback: FounderToolsStrings.roleCoFounder)),
-  ];
-
-  /// Gives the startup to the co-founder [uid]. True on success.
+  /// The owner leaves: the joined person [uid] becomes the owner. True on
+  /// success.
   Future<bool> transferTo(String uid) =>
-      _run(FounderToolsStrings.transferFailed, () async {
+      _run(FounderToolsStrings.handoverFailed, () async {
         startup = await _repository.transferOwnership(startup, uid);
+        _forget(startup.id);
       });
 
-  /// Closes the startup (its owner, with no co-founder on it): pending
+  /// The owner invites [email] to take over (she stays in control until it is
+  /// accepted); the invitation e-mail is sent too. True on success.
+  Future<bool> inviteOwner(String email, {required bool newUser}) =>
+      _run(FounderToolsStrings.ownerInviteFailed, () async {
+        final repo = InvitationRepository.instance;
+        final invitation = await repo.inviteOwner(
+          startup: startup,
+          email: email,
+          invitedByName: AppSession.instance.user?.fullName ?? '',
+          newUser: newUser,
+        );
+        pendingOwnerInvite = invitation;
+        // The e-mail is best effort: the invitation also waits in the app.
+        await repo.sendEmail(invitation);
+      });
+
+  /// Cancels [pendingOwnerInvite]. True on success.
+  Future<bool> cancelOwnerInvite() =>
+      _run(FounderToolsStrings.ownerInviteCancelFailed, () async {
+        await InvitationRepository.instance.cancelOwnerInvite(startup);
+        pendingOwnerInvite = null;
+      });
+
+  /// Closes the startup (its owner): permanent, kept for everyone. Waiting
   /// requests are declined too. True on success.
   Future<bool> close() => _run(FounderToolsStrings.closeFailed, () async {
     startup = await _repository.close(startup);
+    pendingOwnerInvite = null;
     final requests = RequestRepository.instance;
     for (final r in requests.inboxFor(startup.id)) {
       if (r.status == RequestStatus.pending) {
@@ -115,21 +156,15 @@ class ManageStartupViewModel extends ChangeNotifier with SafeNotifier {
     }
   });
 
-  /// Opens the closed startup again (as Private). True on success.
-  Future<bool> reopen() => _run(FounderToolsStrings.reopenFailed, () async {
-    startup = await _repository.reopen(startup);
+  /// Leaves the startup (a co-founder or team member of an active one).
+  /// Sample startups (interface only) are left by the screen that listed
+  /// them. True on success.
+  Future<bool> leave() => _run(FounderToolsStrings.leaveFailed, () async {
+    if (!PrototypeSeed.isSampleStartup(startup.id)) {
+      await _repository.leave(startup);
+    }
+    _forget(startup.id);
   });
-
-  /// Leaves the startup. [keepFounderName]: the person who created it stays on
-  /// its team as "Founder (former)". Sample startups (interface only) are
-  /// left by the screen that listed them. True on success.
-  Future<bool> leave({bool keepFounderName = false}) =>
-      _run(FounderToolsStrings.leaveFailed, () async {
-        if (!PrototypeSeed.isSampleStartup(startup.id)) {
-          await _repository.leave(startup, keepFounderName: keepFounderName);
-        }
-        _forget(startup.id);
-      });
 
   Future<bool> _run(String failed, Future<void> Function() action) async {
     if (isBusy) return false;
@@ -139,7 +174,9 @@ class ManageStartupViewModel extends ChangeNotifier with SafeNotifier {
     try {
       await action();
       return true;
-    } catch (_) {
+    } catch (e) {
+      // The real cause (e.g. PERMISSION_DENIED) for the debug console.
+      debugPrint('$failed ($e)');
       error = failed;
       return false;
     } finally {

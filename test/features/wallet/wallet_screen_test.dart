@@ -105,7 +105,7 @@ void main() {
     expect(find.text('Tap a ticket to see its details.'), findsNothing);
   });
 
-  testWidgets('the table: dot name, status word, sectors, amount, matches', (
+  testWidgets('the table: dot name, status word, sectors, amount', (
     t,
   ) async {
     await open(
@@ -130,8 +130,9 @@ void main() {
     expect(find.text('HealthTech, Fintech +1 · Pre-seed'), findsOneWidget);
     expect(find.text('100K – 300K'), findsOneWidget);
     expect(find.text('200K – 400K'), findsOneWidget);
-    expect(find.text('1 match'), findsOneWidget);
-    expect(find.text('—'), findsOneWidget);
+    // No Matches column: a ticket's matches are on its page.
+    expect(find.text('MATCHES'), findsNothing);
+    expect(find.text('1 match'), findsNothing);
     expect(find.text('Tap a ticket to see its details.'), findsOneWidget);
   });
 
@@ -336,8 +337,9 @@ void main() {
     expect(find.text('Rafeeq Health'), findsOneWidget);
     expect(find.text('HealthTech · Pre-seed'), findsWidgets);
     expect(find.text('Raising · SAR 500,000 left'), findsOneWidget);
-    expect(find.text('83% match'), findsOneWidget);
-    expect(find.text('Same sector and stage'), findsOneWidget);
+    // The card shows the % only; why it matched is on the startup's page.
+    expect(find.text('94% match'), findsOneWidget);
+    expect(find.text('Same sector and stage'), findsNothing);
 
     // Back on the list.
     await t.scrollUntilVisible(

@@ -11,6 +11,7 @@ import '../../models/team_member.dart';
 import '../firebase_services/auth_service.dart';
 import '../firebase_services/firestore_service.dart';
 import '../device_services/image_fit.dart';
+import 'discovery_repository.dart';
 import 'funding_round_repository.dart';
 import 'invitation_repository.dart';
 import 'public_profile_repository.dart';
@@ -145,107 +146,138 @@ class StartupRepository {
     }
   }
 
-  /// "Leave startup": removes ONLY the signed-in user's own membership: their
-  /// uid from `memberIds`, `memberRoles` and `coFounderIds`, and their card
-  /// from the team list (`teamMembers`), so they are not shown on the Team tab
-  /// any more. The security rules allow a member to change nothing else.
+  /// "Leave startup" (a co-founder or team member of an ACTIVE startup):
+  /// removes ONLY the signed-in user's own membership: their uid from
+  /// `memberIds`, `memberRoles` and `coFounderIds`, and their card from the
+  /// team list, so they are not shown on the Team tab any more. The security
+  /// rules allow a member to change nothing else.
   ///
-  /// [keepFounderName]: the person who created the startup (after handing it
-  /// over) stays on the team as "Founder (former)".
-  ///
-  /// Two special cases:
-  /// - the OWNER of a closed startup may leave it: nobody owns it afterwards
-  ///   (it can't be reopened), and the team keeps it;
-  /// - the last person on a closed startup nobody owns: it is deleted.
-  Future<void> leave(Startup startup, {bool keepFounderName = false}) async {
-    final uid = _founderId;
-    final keep = keepFounderName && uid == startup.originalFounderId;
-    final rest = [
-      for (final m in startup.team)
-        if (m.uid != uid) m.toMap(),
-    ];
-    final hadCard = rest.length != startup.team.length;
-    if (startup.founderId == uid) {
-      // An active startup is handed over or deleted, never left behind.
-      if (!startup.isClosed) {
-        throw const AuthException(AuthFailure.permissionDenied);
-      }
-      await _firestore.updateDocument(_collection, startup.id, {
-        StartupFields.founderId: '',
-        // Older startups get who created them now (it never changes).
-        StartupFields.foundedBy: startup.originalFounderId,
-        if (hadCard) StartupFields.team: rest,
-        if (keep) StartupFields.formerFounderId: uid,
-      });
-    } else if (!startup.hasOwner &&
-        startup.isClosed &&
-        startup.memberIds.length == 1 &&
-        startup.memberRoles.containsKey(uid)) {
-      await _deleteDocumentAndRounds(startup);
-    } else {
-      await _firestore.updateDocument(_collection, startup.id, {
-        StartupFields.memberIds: _firestore.arrayRemove([uid]),
-        '${StartupFields.memberRoles}.$uid': _firestore.deleteField(),
-        StartupFields.coFounderIds: _firestore.arrayRemove([uid]),
-        if (hadCard) StartupFields.team: rest,
-        if (keep) StartupFields.formerFounderId: uid,
-      });
+  /// Nobody leaves a closed startup (it stays in their account), and the
+  /// owner leaves only by naming the next owner ([transferOwnership], or an
+  /// owner invitation that is accepted).
+  Future<void> leave(Startup startup) async {
+    if (startup.isClosed || startup.founderId == _founderId) {
+      throw const AuthException(AuthFailure.permissionDenied);
     }
+    await _removeMe(startup);
     changes.value++;
     _refreshMyProfile();
   }
 
-  /// Leaves every startup the signed-in user is a co-founder / team member of
-  /// (used when the account is deleted). Stops at the first failure, so the
-  /// account is never deleted while it is still on a team.
-  Future<void> leaveAll() async {
-    final mine = await fetchMemberStartups();
-    for (final s in mine) {
-      await leave(s);
+  /// Drops my membership of [startup] (active or closed): my uid and my card.
+  Future<void> _removeMe(Startup startup) async {
+    final uid = _founderId;
+    final team = (await _stored(startup)).team;
+    final rest = [
+      for (final m in team)
+        if (m.uid != uid) m.toMap(),
+    ];
+    await _firestore.updateDocument(_collection, startup.id, {
+      StartupFields.memberIds: _firestore.arrayRemove([uid]),
+      '${StartupFields.memberRoles}.$uid': _firestore.deleteField(),
+      StartupFields.coFounderIds: _firestore.arrayRemove([uid]),
+      if (rest.length != team.length) StartupFields.team: rest,
+    });
+  }
+
+  /// [startup] as stored: the rules compare the team list with the stored
+  /// one, and a loaded copy shows people's current names instead.
+  Future<Startup> _stored(Startup startup) async {
+    try {
+      return Startup.fromMap(
+            startup.id,
+            await _firestore.getDocument(_collection, startup.id),
+          ) ??
+          startup;
+    } catch (_) {
+      return startup;
     }
   }
 
-  /// Gives [startup] to the joined co-founder [newOwnerId]. The current owner
-  /// stays on the team as a co-founder (and keeps their title: the person who
-  /// created the startup is always its "Founder"), and can leave afterwards.
-  /// Returns the startup as stored.
+  /// Account deletion: my membership goes from every team I'm on, closed
+  /// startups included (my information leaves with my account). Stops at the
+  /// first failure, so the account is never deleted while still on a team.
+  Future<void> leaveAll() async {
+    for (final s in await fetchMemberStartups()) {
+      await _removeMe(s);
+    }
+    changes.value++;
+  }
+
+  /// The owner leaves by handing [startup] to [newOwnerId], someone who
+  /// joined its team (a co-founder or a member). They become its owner (shown
+  /// as "Owner"; the title Founder stays with whoever created it), and the
+  /// current owner leaves the team, card included. The requests investors
+  /// sent move to the new owner. Returns the startup as stored.
   Future<Startup> transferOwnership(Startup startup, String newOwnerId) async {
     final me = _founderId;
     if (startup.founderId != me ||
         startup.isClosed ||
-        startup.memberRoles[newOwnerId] != 'coFounder') {
+        !startup.memberRoles.containsKey(newOwnerId)) {
       throw const AuthException(AuthFailure.permissionDenied);
     }
     final roles = {...startup.memberRoles}..remove(newOwnerId);
-    roles[me] = 'coFounder';
     final moved = startup.copyWith(
       founderId: newOwnerId,
       foundedBy: startup.originalFounderId,
       memberRoles: roles,
+      team: [
+        for (final m in startup.team)
+          if (m.uid != me) m,
+      ],
+      ownerChangedAt: DateTime.now(),
     );
     await _firestore.updateDocument(_collection, startup.id, {
       ...moved.toMap(),
       StartupFields.updatedAt: _firestore.serverTimestamp(),
     });
+    try {
+      await TicketRepository.instance.moveRequests(
+        startup.id,
+        from: me,
+        to: newOwnerId,
+      );
+    } catch (e) {
+      debugPrint('Could not move the requests to the new owner: $e');
+    }
+    try {
+      // Somebody invited to take over is no longer needed.
+      await InvitationRepository.instance.cancelOwnerInvite(startup);
+    } catch (e) {
+      debugPrint('Could not cancel the owner invitation: $e');
+    }
     changes.value++;
     _refreshMyProfile();
     return moved;
   }
 
-  /// Closes [startup] (its owner, with no co-founder on it): hidden from
-  /// Start.sa and read only, kept for its team. Pending invitations are
-  /// cancelled and the open round ends (Funding is unticked in the same
-  /// write). Returns the startup as stored.
+  /// Closes [startup] (its owner): permanent and read only, it stays in
+  /// everyone's account with its current visibility. Pending invitations are
+  /// cancelled, waiting investment requests are declined, and the open round
+  /// ends (Funding is unticked in the same write). Returns the startup as
+  /// stored.
   Future<Startup> close(Startup startup) async {
-    if (startup.founderId != _founderId ||
-        startup.isClosed ||
-        startup.coFounderIds.isNotEmpty) {
+    if (startup.founderId != _founderId || startup.isClosed) {
       throw const AuthException(AuthFailure.permissionDenied);
     }
     await InvitationRepository.instance.cancelAllFor(startup);
+    try {
+      await InvitationRepository.instance.cancelOwnerInvite(startup);
+    } catch (e) {
+      debugPrint('Could not cancel the owner invitation: $e');
+    }
+    try {
+      await TicketRepository.instance.declinePendingFor(
+        startup.id,
+        founderId: startup.founderId,
+      );
+    } catch (e) {
+      debugPrint('Could not decline the requests of a closed startup: $e');
+    }
     return update(
       startup.copyWith(
         isClosed: true,
+        closedAt: DateTime.now(),
         lookingFor: {...startup.lookingFor}..remove(LookingFor.funding),
         clearFunding: true,
         // Nobody can join a closed startup.
@@ -257,35 +289,31 @@ class StartupRepository {
     );
   }
 
-  /// Opens a closed startup again (its owner only). It comes back Private.
-  Future<Startup> reopen(Startup startup) async {
+  /// The owner's one control on a closed startup: whether it shows in the
+  /// Hub. Only `isPublic` changes.
+  Future<Startup> setClosedVisibility(Startup startup, bool isPublic) async {
     if (startup.founderId != _founderId || !startup.isClosed) {
       throw const AuthException(AuthFailure.permissionDenied);
     }
-    return update(startup.copyWith(isClosed: false, isPublic: false));
-  }
-
-  /// The startups where I'm shown as "Founder (former)" (public ones: a
-  /// private startup can't be read by someone who left it).
-  Future<List<Startup>> fetchFormerStartups() async {
-    final uid = _founderId;
-    final docs = await _firestore.queryWhereAll(_collection, {
-      StartupFields.formerFounderId: uid,
-      StartupFields.isPublic: true,
+    await _firestore.updateDocument(_collection, startup.id, {
+      StartupFields.isPublic: isPublic,
+      StartupFields.updatedAt: _firestore.serverTimestamp(),
     });
-    return [for (final doc in docs) ?Startup.fromMap(doc.id, doc.data)];
-  }
-
-  /// "Remove my name": I'm no longer shown as Founder (former) on [startupId].
-  Future<void> removeMyFormerName(String startupId) async {
-    if (_auth.currentAccount == null) {
-      throw const AuthException(AuthFailure.permissionDenied);
-    }
-    await _firestore.updateDocument(_collection, startupId, {
-      StartupFields.formerFounderId: _firestore.deleteField(),
-    });
+    final saved = startup.copyWith(isPublic: isPublic);
     changes.value++;
     _refreshMyProfile();
+    _showInDirectory(saved);
+    return saved;
+  }
+
+  /// The Hub and Explore lists follow my own change at once (see
+  /// [DiscoveryRepository.apply]).
+  void _showInDirectory(Startup startup) {
+    try {
+      DiscoveryRepository.instance.apply(startup);
+    } catch (e) {
+      debugPrint('Could not update the loaded lists: $e');
+    }
   }
 
   /// The signed-in founder still belongs to a startup (owned, joined or
@@ -404,48 +432,49 @@ class StartupRepository {
 
     changes.value++;
     _refreshMyProfile();
+    _showInDirectory(updated);
     return updated;
   }
 
-  /// Before the account is deleted: each startup I own is deleted (nobody
-  /// else on it), handed to its first co-founder in the team list, or closed
-  /// for its team (the delete confirmation listed which), then I leave the
-  /// teams I'm on and my "Founder (former)" names go. Stops at the first
-  /// failure, so the account is never deleted with a startup left behind.
-  Future<void> handOverAllMine() async {
+  /// Before the account is deleted (for an owner, the same as closing every
+  /// startup she owns): a startup with a team is closed for it (if it isn't
+  /// already), turns Private (nobody controls its visibility afterwards) and
+  /// my card leaves it; one with nobody else on it is deleted. Then I leave
+  /// every team I'm on. Stops at the first failure, so the account is never
+  /// deleted with a startup left behind.
+  Future<void> closeAllMine() async {
     for (final s in await fetchMyStartups()) {
-      if (s.isClosed) {
-        if (s.memberRoles.isEmpty) {
-          await delete(s);
-        } else {
-          await leave(s);
-        }
+      if (s.memberRoles.isEmpty) {
+        await delete(s);
         continue;
       }
-      switch (s.ownerOption) {
-        case OwnerOption.delete:
-          await delete(s);
-        case OwnerOption.transfer:
-          await leave(
-            await transferOwnership(s, s.coFoundersInTeamOrder.first),
-          );
-        case OwnerOption.close:
-          await leave(await close(s));
-      }
+      await _abandon(s.isClosed ? s : await close(s));
     }
     await leaveAll();
-    try {
-      for (final s in await fetchFormerStartups()) {
-        await removeMyFormerName(s.id);
-      }
-    } catch (e) {
-      // The name goes with the public profile anyway.
-      debugPrint('Could not remove a former founder name: $e');
-    }
+  }
+
+  /// My closed startup outlives my account: nobody owns it, it turns Private
+  /// (only its team sees it), and my card goes.
+  Future<void> _abandon(Startup closed) async {
+    final uid = _founderId;
+    final startup = await _stored(closed);
+    await _firestore.updateDocument(_collection, startup.id, {
+      StartupFields.founderId: '',
+      StartupFields.isPublic: false,
+      // Older startups get who created them now (it never changes).
+      StartupFields.foundedBy: startup.originalFounderId,
+      StartupFields.team: [
+        for (final m in startup.team)
+          if (m.uid != uid) m.toMap(),
+      ],
+      StartupFields.updatedAt: _firestore.serverTimestamp(),
+    });
+    changes.value++;
   }
 
   /// Deletes the startup and its funding rounds (the logo is inside the
-  /// startup) when nobody else is on it. Its pending invitations are
+  /// startup) when nobody else is on it: only when its owner deletes her
+  /// account (in the app a startup is closed, never deleted). Its pending invitations are
   /// cancelled first, so nobody is asked to join a startup that no longer
   /// exists. Every membership goes with it (the members are stored inside the
   /// startup document). Other people's bookmarks of it are dropped the next
@@ -453,11 +482,16 @@ class StartupRepository {
   /// whose startup no longer exists).
   Future<void> delete(Startup startup) async {
     if (startup.memberRoles.isNotEmpty) {
-      // Somebody else is on it: hand it over or close it instead.
+      // Somebody else is on it: it is closed for them instead.
       throw const AuthException(AuthFailure.permissionDenied);
     }
     // Before the startup goes: the rules read it to allow cancelling.
     await InvitationRepository.instance.cancelAllFor(startup);
+    try {
+      await InvitationRepository.instance.cancelOwnerInvite(startup);
+    } catch (e) {
+      debugPrint('Could not cancel the owner invitation: $e');
+    }
     // The requests investors sent to it go too (before the startup: the
     // rules read it to allow this).
     try {
@@ -468,6 +502,9 @@ class StartupRepository {
     await _deleteDocumentAndRounds(startup);
     changes.value++;
     _refreshMyProfile();
+    try {
+      DiscoveryRepository.instance.forget(startup.id);
+    } catch (_) {}
   }
 
   Future<void> _deleteDocumentAndRounds(Startup startup) async {
