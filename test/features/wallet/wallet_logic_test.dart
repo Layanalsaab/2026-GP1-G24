@@ -8,7 +8,9 @@ import 'package:startsa/features/wallet/view_models/wallet_view_model.dart';
 import 'package:startsa/helpers/ticket_rules.dart';
 import 'package:startsa/models/connection_request.dart';
 import 'package:startsa/models/investment_ticket.dart';
+import 'package:startsa/models/startup.dart';
 import 'package:startsa/models/startup_enums.dart';
+import 'package:startsa/recommender/content_ranker.dart' show MatchResult;
 
 /// Firestore kept in a map: collection -> document id -> data.
 class MemoryFirestore extends FirestoreService {
@@ -156,58 +158,68 @@ void main() {
     });
   });
 
-  group('TicketMatcher', () {
-    // Rafeeq Health: HealthTech, Pre-seed, raising SAR 500,000.
+  group('ticket matches (lib/recommender)', () {
+    // Rafeeq Health: HealthTech, Pre-seed, B2C, raising SAR 500,000.
     final rafeeq = PrototypeSeed.rafeeq;
 
+    List<TicketMatch> matches(
+      InvestmentTicket t,
+      List<Startup> startups, {
+      List<String> models = const [],
+    }) {
+      final byId = {for (final s in startups) s.id: s};
+      return [
+        for (final r in MatchingRepository.matchesForTicket(t, models, startups))
+          TicketMatch(startup: byId[r.id]!, result: r),
+      ];
+    }
+
     test('what a round still needs is funding minus raised', () {
-      expect(TicketMatcher.remainingOf(rafeeq), 500000);
-      expect(
-        TicketMatcher.remainingOf(rafeeq.copyWith(raisedInRound: 200000)),
-        300000,
-      );
-      expect(
-        TicketMatcher.remainingOf(rafeeq.copyWith(raisedInRound: 900000)),
-        0,
-      );
+      expect(remainingOf(rafeeq), 500000);
+      expect(remainingOf(rafeeq.copyWith(raisedInRound: 200000)), 300000);
+      expect(remainingOf(rafeeq.copyWith(raisedInRound: 900000)), 0);
     });
 
     test('same sector and stage, minimum within what is left', () {
-      final m = TicketMatcher.match(ticket(), rafeeq)!;
+      final m = matches(ticket(), [rafeeq]).single;
       expect(m.remaining, 500000);
-      // 70 + 8 (the maximum does not cover what is left) + 5.
-      expect(m.percent, 83);
-      expect(m.reason, 'Same sector and stage');
+      // No commerce models; the ticket's 300K covers 60% of the 500K left:
+      // (0.41 + 0.29 + 0.12 * 0.6) / 0.82.
+      expect(m.percent, 94);
+      expect(m.close, isFalse);
     });
 
-    test('a maximum that covers what is left adds 15 and the reason', () {
-      final m = TicketMatcher.match(ticket(max: 500000), rafeeq)!;
-      expect(m.percent, 90);
-      expect(m.reason, 'Same sector and stage · fits your range');
+    test('the profile commerce models count 20%', () {
+      final m = matches(
+        ticket(),
+        [rafeeq],
+        models: const ['Business-to-Business (B2B)'],
+      ).single;
+      expect(m.percent, 77); // Rafeeq is B2C: 0.41 + 0.29 + 0.12 * 0.6
     });
 
-    test('no match: sector, stage, minimum too high, closed or used', () {
-      expect(TicketMatcher.match(ticket(sectors: ['Fintech']), rafeeq), isNull);
-      expect(TicketMatcher.match(ticket(stages: ['Seed']), rafeeq), isNull);
+    test('close: only the sector or only the stage differs', () {
+      expect(matches(ticket(sectors: ['Fintech']), [rafeeq]).single.close, isTrue);
+      expect(matches(ticket(stages: ['Seed']), [rafeeq]).single.close, isTrue);
       expect(
-        TicketMatcher.match(ticket(min: 600000, max: 700000), rafeeq),
-        isNull,
-      );
-      expect(
-        TicketMatcher.match(ticket(status: TicketStatus.closed), rafeeq),
-        isNull,
-      );
-      expect(
-        TicketMatcher.match(ticket(status: TicketStatus.used), rafeeq),
-        isNull,
+        matches(ticket(sectors: ['Fintech'], stages: ['Seed']), [rafeeq]),
+        isEmpty,
       );
     });
 
-    test('a startup that is not raising does not match', () {
+    test('no match: minimum too high, or the ticket is closed or used', () {
+      expect(matches(ticket(min: 600000, max: 700000), [rafeeq]), isEmpty);
+      expect(matches(ticket(status: TicketStatus.closed), [rafeeq]), isEmpty);
+      expect(matches(ticket(status: TicketStatus.used), [rafeeq]), isEmpty);
+    });
+
+    test('a startup that is not raising, closed or private never matches', () {
       expect(
-        TicketMatcher.match(ticket(), rafeeq.copyWith(raisedInRound: 500000)),
-        isNull,
+        matches(ticket(), [rafeeq.copyWith(raisedInRound: 500000)]),
+        isEmpty,
       );
+      expect(matches(ticket(), [rafeeq.copyWith(isClosed: true)]), isEmpty);
+      expect(matches(ticket(), [rafeeq.copyWith(isPublic: false)]), isEmpty);
     });
 
     test('a typed sector matches by the Other rule (case, spaces, one s)', () {
@@ -215,30 +227,29 @@ void main() {
         sector: Sector.other,
         sectorOther: 'Sports Tech',
       );
-      expect(
-        TicketMatcher.match(ticket(sectors: ['SportsTech']), sports),
-        isNotNull,
-      );
-      expect(
-        TicketMatcher.match(ticket(sectors: ['sportstechs']), sports),
-        isNotNull,
-      );
-      expect(TicketMatcher.match(ticket(sectors: ['Fashion']), sports), isNull);
+      bool exact(List<String> sectors) {
+        final m = matches(ticket(sectors: sectors), [sports]);
+        return m.isNotEmpty && !m.single.close;
+      }
+
+      expect(exact(['SportsTech']), isTrue);
+      expect(exact(['sportstechs']), isTrue);
+      expect(exact(['Fashion']), isFalse);
       // A ticket with the plain "Other" matches any Other sector.
-      expect(
-        TicketMatcher.match(ticket(sectors: ['Other']), sports),
-        isNotNull,
-      );
-      expect(TicketMatcher.match(ticket(sectors: ['Other']), rafeeq), isNull);
+      expect(exact(['Other']), isTrue);
+      expect(matches(ticket(sectors: ['Other']), [rafeeq]).single.close, isTrue);
     });
 
-    test('best first', () {
-      final other = rafeeq.copyWith(name: 'Alpha', fundingRequirement: 200000);
-      final list = TicketMatcher.matches(ticket(max: 250000), [rafeeq, other]);
-      // Alpha: the maximum covers the 200,000 left -> 90; Rafeeq 83.
+    test('best first: exact before close, then by name', () {
+      final alpha = rafeeq.copyWith(id: 'alpha', name: 'Alpha');
+      final seed = rafeeq.copyWith(
+        id: 'seed',
+        name: 'Aardvark',
+        stage: StartupStage.seed,
+      );
       expect(
-        [for (final m in list) m.startup.name],
-        ['Alpha', 'Rafeeq Health'],
+        [for (final m in matches(ticket(), [seed, rafeeq, alpha])) m.startup.name],
+        ['Alpha', 'Rafeeq Health', 'Aardvark'],
       );
     });
   });
@@ -311,7 +322,12 @@ void main() {
     test('loads the tickets newest first and counts matches', () async {
       await seed([
         ticket(id: 'inv1-T1'),
-        ticket(id: 'inv1-T2', name: 'Ticket 2', sectors: ['Fintech']),
+        ticket(
+          id: 'inv1-T2',
+          name: 'Ticket 2',
+          sectors: ['Fintech'],
+          stages: ['Series A'],
+        ),
         ticket(id: 'inv1-T3', name: 'Ticket 3', status: TicketStatus.closed),
       ]);
       vm = await make();
@@ -319,9 +335,10 @@ void main() {
         [for (final t in vm.tickets) t.id],
         ['inv1-T3', 'inv1-T2', 'inv1-T1'],
       );
-      expect(vm.matchesLabel(vm.ticketById('inv1-T1')!), '1 match');
-      expect(vm.matchesLabel(vm.ticketById('inv1-T2')!), '0 matches');
-      expect(vm.matchesLabel(vm.ticketById('inv1-T3')!), '—');
+      expect(vm.matchesOf(vm.ticketById('inv1-T1')!).length, 1);
+      expect(vm.matchesOf(vm.ticketById('inv1-T2')!), isEmpty);
+      // A closed ticket has no matches.
+      expect(vm.matchesOf(vm.ticketById('inv1-T3')!), isEmpty);
     });
 
     test('a failed load says so', () async {
@@ -528,7 +545,17 @@ void main() {
       vm.startSend(t, 'mock-rafeeq');
       expect(vm.sendingTo, isNull);
       vm.sendAmount.text = '200,000';
-      final fake = TicketMatcher.match(ticket(), PrototypeSeed.rafeeq)!;
+      final fake = TicketMatch(
+        startup: PrototypeSeed.rafeeq,
+        result: const MatchResult(
+          id: 'mock-rafeeq',
+          name: 'Rafeeq Health',
+          score: 1,
+          percent: 100,
+          rows: [],
+          remaining: 500000,
+        ),
+      );
       expect(await vm.sendRequest(t, fake), isFalse);
       expect(db.store[FirestoreCollections.requests], isNull);
     });

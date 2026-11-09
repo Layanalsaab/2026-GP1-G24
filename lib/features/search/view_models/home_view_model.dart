@@ -57,7 +57,7 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
   final SessionRole role;
 
   /// The signed-in user. Replaced by [setUser] when they edit their profile
-  /// (e.g. an investor's preferences), so Matches follows.
+  /// (e.g. an investor's preferences).
   AppUser? user;
 
   void setUser(AppUser? value) {

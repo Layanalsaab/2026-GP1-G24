@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import '../../../data_access/repositories/discovery_repository.dart';
 import '../../../helpers/formatters.dart';
 import '../../../models/funding_round.dart';
-import '../../../models/home_item.dart';
+import '../../../models/match_summary.dart';
 import '../../../models/connection_request.dart';
 import '../../../models/investor_profile.dart';
 import '../../connection_requests/screens/requests_tab.dart';
@@ -452,9 +452,9 @@ class _Matches extends StatefulWidget {
 }
 
 class _MatchesState extends State<_Matches> {
-  late Future<List<HomeItem>> _future = _load();
+  late Future<List<MatchResult>> _future = _load();
 
-  Future<List<HomeItem>> _load() => widget.vm.matchesFor(widget.round);
+  Future<List<MatchResult>> _load() => widget.vm.matchesFor(widget.round);
 
   /// New investors / startups arrived (a listener, outside of build).
   void _again() {
@@ -476,9 +476,11 @@ class _MatchesState extends State<_Matches> {
     super.didUpdateWidget(old);
     final a = old.round;
     final b = widget.round;
-    // The round's type or amount changed (Edit round): new matches. A build
-    // follows, so no setState here.
-    if (a.type != b.type || a.amount != b.amount) _future = _load();
+    // The round's type, amount or raised changed (Edit round): new matches.
+    // A build follows, so no setState here.
+    if (a.type != b.type || a.amount != b.amount || a.raised != b.raised) {
+      _future = _load();
+    }
   }
 
   @override
@@ -487,18 +489,23 @@ class _MatchesState extends State<_Matches> {
     super.dispose();
   }
 
-  void _open(HomeItem item) {
-    final profile = widget.vm.matchedInvestor(item.id);
+  /// Opens the investor; their profile starts with why they matched.
+  void _open(MatchResult match) {
+    final profile = widget.vm.matchedInvestor(match.id);
     if (profile == null) {
       AppToast.error(context, 'This investor’s profile isn’t available.');
       return;
     }
-    InvestorProfileScreen.open(context, profile);
+    InvestorProfileScreen.open(
+      context,
+      profile,
+      match: widget.vm.summaryOf(match),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<List<HomeItem>>(
+    return FutureBuilder<List<MatchResult>>(
       future: _future,
       builder: (context, snap) {
         if (snap.connectionState != ConnectionState.done) {
@@ -517,7 +524,7 @@ class _MatchesState extends State<_Matches> {
             ),
           );
         }
-        final items = snap.data ?? const <HomeItem>[];
+        final items = snap.data ?? const <MatchResult>[];
         if (items.isEmpty) {
           return ManageCard(
             child: Text(
@@ -530,12 +537,12 @@ class _MatchesState extends State<_Matches> {
           children: [
             for (final item in items) ...[
               _PersonTile(
-                name: item.name,
+                name: widget.vm.matchedInvestor(item.id)?.name ?? item.name,
                 title: widget.vm.matchedInvestor(item.id)?.title ?? 'Investor',
-                city: item.city,
-                imageUrl: item.imageUrl,
-                matchPercent: item.matchPercent,
-                matchReason: item.matchReason,
+                city: widget.vm.matchedInvestor(item.id)?.city ?? '',
+                imageUrl: widget.vm.matchedInvestor(item.id)?.photoUrl,
+                // The % only: why they matched is on their profile.
+                matchPercent: item.percent,
                 onTap: () => _open(item),
               ),
               const SizedBox(height: 10),
@@ -550,7 +557,8 @@ class _MatchesState extends State<_Matches> {
 // ------------------------------------------------------------------ tile
 
 /// One investor: avatar, name, "Title · City" and, for a match, the pill
-/// ("86% match") with the reason. Tappable when [onTap] is set.
+/// ("86% match"; why they matched is on their profile). Tappable when
+/// [onTap] is set.
 class _PersonTile extends StatelessWidget {
   const _PersonTile({
     required this.name,
@@ -558,7 +566,6 @@ class _PersonTile extends StatelessWidget {
     required this.city,
     this.imageUrl,
     this.matchPercent,
-    this.matchReason,
     this.onTap,
   });
 
@@ -569,13 +576,11 @@ class _PersonTile extends StatelessWidget {
   final String city;
   final String? imageUrl;
   final int? matchPercent;
-  final String? matchReason;
   final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final match = matchPercent;
-    final reason = (matchReason ?? '').trim();
     return Semantics(
       button: onTap != null,
       label: [name, title, city].where((t) => t.trim().isNotEmpty).join(', '),
@@ -625,38 +630,23 @@ class _PersonTile extends StatelessWidget {
                     ),
                   if (match != null) ...[
                     const SizedBox(height: 6),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 4,
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 9,
-                            vertical: 3,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.mossChip,
-                            borderRadius: BorderRadius.circular(999),
-                          ),
-                          child: Text(
-                            '$match% match',
-                            style: AppText.sans(
-                              size: 12.5,
-                              color: AppColors.moss600,
-                              weight: FontWeight.w700,
-                            ),
-                          ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 9,
+                        vertical: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.mossChip,
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Text(
+                        '$match% match',
+                        style: AppText.sans(
+                          size: 12.5,
+                          color: AppColors.moss600,
+                          weight: FontWeight.w700,
                         ),
-                        if (reason.isNotEmpty)
-                          Text(
-                            reason,
-                            style: AppText.sans(
-                              size: 12.5,
-                              color: AppColors.grey,
-                            ),
-                          ),
-                      ],
+                      ),
                     ),
                   ],
                 ],

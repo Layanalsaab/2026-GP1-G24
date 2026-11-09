@@ -9,10 +9,12 @@ import '../../../data_access/repositories/bookmark_repository.dart';
 import '../../../data_access/repositories/interest_repository.dart';
 import '../../../data_access/repositories/request_repository.dart';
 import '../../../models/startup.dart';
+import '../../../models/match_summary.dart';
 import '../../../shared_ui/icons/app_icons.dart';
 import '../../../shared_ui/navigation/app_route.dart';
 import '../../../shared_ui/theme/app_colors.dart';
 import '../../../shared_ui/theme/app_text.dart';
+import '../../../shared_ui/widgets/cards/match_justification.dart';
 import '../../../shared_ui/widgets/headers/header_buttons.dart';
 import '../../../shared_ui/widgets/headers/tabbed_header.dart';
 import '../../profiles/screens/investor_profile_screen.dart';
@@ -31,9 +33,14 @@ class StartupProfileScreen extends StatefulWidget {
     super.key,
     required this.startup,
     this.preview = false,
+    this.match,
   });
 
   final Startup startup;
+
+  /// Opened from a ticket's matches: why this startup matched, shown at the
+  /// top. Null anywhere else.
+  final MatchSummary? match;
 
   /// The founder's own view ("Preview · This is how others see your
   /// startup"). Also turned on automatically for a founder's own startup.
@@ -44,10 +51,11 @@ class StartupProfileScreen extends StatefulWidget {
     BuildContext context, {
     required Startup startup,
     bool preview = false,
+    MatchSummary? match,
   }) {
     AppNav.push(
       context,
-      StartupProfileScreen(startup: startup, preview: preview),
+      StartupProfileScreen(startup: startup, preview: preview, match: match),
       greenHeader: true,
     );
   }
@@ -188,6 +196,11 @@ class _StartupProfileScreenState extends State<StartupProfileScreen> {
                               message: FounderToolsStrings.closedBannerPublic,
                               icon: AppIcons.lock,
                             ),
+                          ),
+                        if (widget.match != null)
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                            child: MatchJustification(summary: widget.match!),
                           ),
                         TabPaneSlide(
                           index: _vm.tab,
