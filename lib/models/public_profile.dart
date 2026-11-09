@@ -16,11 +16,8 @@ class ProfileStartupRef {
   /// shown as a full card). Never stored.
   final Startup? startup;
 
-  /// `founder`, `coFounder`, `member` or [formerFounder].
+  /// `founder`, `coFounder` or `member`.
   final String role;
-
-  /// The founder after she left the startup and kept her name on its team.
-  static const formerFounder = 'formerFounder';
 
   static ProfileStartupRef? fromMap(Object? raw) {
     if (raw is! Map) return null;

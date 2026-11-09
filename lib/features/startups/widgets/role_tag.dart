@@ -29,9 +29,9 @@ class RoleTag extends StatelessWidget {
   /// The dashed tag in red ("Declined").
   final bool warn;
 
-  /// The capsule of [uid] in [startup]: their title ("Founder" stays with
-  /// whoever created it) and "Co-founder · Owner" for an owner who didn't
-  /// create it. [fallback] is used when [uid] has no role there (samples).
+  /// The capsule of [uid] in [startup]: their title ("Founder" for whoever
+  /// created it) and "Owner" for an owner who didn't create it. [fallback] is
+  /// used when [uid] has no role there (samples).
   static RoleTag forStartup(
     Startup startup,
     String? uid, {
@@ -41,7 +41,7 @@ class RoleTag extends StatelessWidget {
     return RoleTag(
       title,
       label: StartupRole.isTransferredOwner(startup, uid)
-          ? FounderToolsStrings.roleOwnerCoFounder
+          ? FounderToolsStrings.roleOwner
           : null,
     );
   }
@@ -52,7 +52,7 @@ class RoleTag extends StatelessWidget {
     String? uid, {
     required StartupRole fallback,
   }) => StartupRole.isTransferredOwner(startup, uid)
-      ? FounderToolsStrings.roleOwnerCoFounder
+      ? FounderToolsStrings.roleOwner
       : labelOf(StartupRole.titleOf(startup, uid) ?? fallback);
 
   static String labelOf(StartupRole role) => switch (role) {
@@ -137,7 +137,7 @@ class PrivateTag extends StatelessWidget {
 }
 
 /// A muted-grey capsule with the size and type of [RoleTag]: "Private",
-/// "Closed", "Founder (former)".
+/// "Closed".
 class GreyTag extends StatelessWidget {
   const GreyTag(this.label, {super.key});
 
@@ -208,11 +208,9 @@ List<Widget> teamTagsOf(
   bool declined = false,
   String? ownerId,
 }) {
-  if (member.former) {
-    return const [GreyTag(FounderToolsStrings.roleFormerFounder)];
-  }
   final you = isYou ? 'You · ' : '';
-  // An owner who didn't create the startup (ownership was transferred).
+  // An owner who didn't create the startup (the founder left and named
+  // them): "Owner".
   final owner =
       ownerId != null &&
       ownerId.isNotEmpty &&
@@ -224,7 +222,7 @@ List<Widget> teamTagsOf(
       : owner
       ? RoleTag(
           StartupRole.coFounder,
-          label: '$you${FounderToolsStrings.roleOwnerCoFounder}',
+          label: '$you${FounderToolsStrings.roleOwner}',
         )
       : member.coFounder
       ? RoleTag(StartupRole.coFounder, label: '${you}Co-founder')

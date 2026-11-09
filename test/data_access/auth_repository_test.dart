@@ -282,13 +282,13 @@ void main() {
       expect(auth.calls, isNot(contains('reauth')));
       expect(auth.calls, contains('delete'));
       expect(users.deletedProfiles, contains('uid1'));
-      // The startups were handed over, closed or deleted first.
-      expect(startups.handedOver, isTrue);
+      // The startups were closed for their teams or deleted first.
+      expect(startups.closedAllMine, isTrue);
     });
 
-    test('when handing the startups over fails, nothing is deleted', () async {
+    test('when closing the startups fails, nothing is deleted', () async {
       auth.signedIn = verified();
-      startups.handOverFails = AuthFailure.network;
+      startups.closeAllFails = AuthFailure.network;
       expect(await failureOf(() => repo.deleteAccount()), AuthFailure.network);
       expect(auth.calls, isNot(contains('delete')));
       expect(users.deletedProfiles, isEmpty);

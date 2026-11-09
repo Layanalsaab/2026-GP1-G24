@@ -4,6 +4,15 @@ import '../app_constants/startup_strings.dart';
 class Formatters {
   Formatters._();
 
+  static const _monthsShort = [
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+  ];
+
+  /// A date as "8 Nov 2026" (the Closed banner).
+  static String dayMonthYear(DateTime date) =>
+      '${date.day} ${_monthsShort[date.month - 1]} ${date.year}';
+
   /// 1500000 -> "1,500,000".
   static String thousands(int value) {
     final digits = value.abs().toString();

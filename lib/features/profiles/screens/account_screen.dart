@@ -22,8 +22,6 @@ import '../widgets/contact_section.dart';
 import '../../../shared_ui/widgets/cards/home_card.dart';
 import '../../../shared_ui/widgets/cards/profile_blocks.dart';
 import '../../../shared_ui/widgets/headers/profile_banner.dart';
-import '../../../shared_ui/widgets/overlays/app_bottom_sheet.dart';
-import '../../../shared_ui/widgets/overlays/app_toast.dart';
 import '../../startup_profile/screens/startup_profile_screen.dart';
 import '../../startups/screens/manage_startup_screen.dart';
 import '../../startups/screens/startup_steps_screen.dart';
@@ -124,7 +122,7 @@ class _OwnProfileScreenState extends State<OwnProfileScreen> {
             ],
           ),
         ),
-        if (_vm.startupEntries.isEmpty && _vm.formerStartups.isEmpty)
+        if (_vm.startupEntries.isEmpty)
           const ProfileText(ProfileStrings.noStartups, muted: true)
         else ...[
           for (var i = 0; i < _vm.startupEntries.length; i++)
@@ -157,36 +155,6 @@ class _OwnProfileScreenState extends State<OwnProfileScreen> {
                 },
               ),
             ),
-          // Startups she left but kept her name on: tapping one offers
-          // "Remove my name".
-          for (var i = 0; i < _vm.formerStartups.length; i++)
-            Padding(
-              padding: EdgeInsets.only(
-                top: i == 0 && _vm.startupEntries.isEmpty ? 0 : 16,
-              ),
-              child: Builder(
-                builder: (context) {
-                  final s = _vm.formerStartups[i];
-                  final item = HomeItem.fromStartup(s);
-                  return HomeCard(
-                    name: item.name,
-                    tag: item.tag,
-                    city: item.city,
-                    body: item.line,
-                    bodyMaxLines: 2,
-                    animate: false,
-                    badges: [
-                      const GreyTag(FounderToolsStrings.roleFormerFounder),
-                      if (s.isClosed)
-                        const GreyTag(FounderToolsStrings.closedPill),
-                    ],
-                    imageUrl: item.imageUrl,
-                    imageData: item.imageData,
-                    onTap: () => _removeFormerName(s.id, s.name),
-                  );
-                },
-              ),
-            ),
         ],
       ],
     );
@@ -200,25 +168,6 @@ class _OwnProfileScreenState extends State<OwnProfileScreen> {
       onLeave: () => unawaited(_vm.leave(entry.startup.id, alreadyLeft: true)),
     );
     if (mounted) await _vm.refreshStartups();
-  }
-
-  /// "Remove my name" from a startup where I'm "Founder (former)".
-  Future<void> _removeFormerName(String id, String name) async {
-    final go = await showConfirmSheet(
-      context,
-      title: FounderToolsStrings.removeNameTitle(name),
-      message: FounderToolsStrings.removeNameMessage(name),
-      confirmLabel: FounderToolsStrings.removeName,
-      icon: AppIcons.person,
-    );
-    if (!go || !mounted) return;
-    final ok = await _vm.removeFormerName(id);
-    if (!mounted) return;
-    if (ok) {
-      AppToast.confirm(context, FounderToolsStrings.nameRemoved);
-    } else {
-      AppToast.error(context, FounderToolsStrings.removeNameFailed);
-    }
   }
 
   @override

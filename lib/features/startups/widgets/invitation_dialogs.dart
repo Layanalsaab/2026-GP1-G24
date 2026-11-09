@@ -19,6 +19,8 @@ Future<bool?> showInvitationDecision(
       ? 'A founder'
       : invitation.invitedByName.trim();
   final role = invitation.isCoFounder ? 'a co-founder' : 'a team member';
+  // Invited to take the startup over as its owner.
+  final owner = invitation.isOwner;
   return showAppDialog<bool>(
     context,
     builder: (ctx) => AppDialog(
@@ -26,19 +28,23 @@ Future<bool?> showInvitationDecision(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const _DialogIcon(),
+          const DialogIcon(),
           const SizedBox(height: 16),
           Semantics(
             header: true,
             child: Text(
-              'Join ${invitation.startupName}?',
+              owner
+                  ? 'Become the owner of ${invitation.startupName}?'
+                  : 'Join ${invitation.startupName}?',
               textAlign: TextAlign.center,
               style: AppText.sans(size: 21, weight: FontWeight.w700),
             ),
           ),
           const SizedBox(height: 10),
           Text(
-            '$who invited you to join ${invitation.startupName} as $role.',
+            owner
+                ? '$who invited you to take over ${invitation.startupName} as its owner. You would have full control of it, including its team, its visibility and its settings.'
+                : '$who invited you to join ${invitation.startupName} as $role.',
             textAlign: TextAlign.center,
             style: AppText.sans(size: 15, color: AppColors.grey, height: 22),
           ),
@@ -75,7 +81,7 @@ Future<bool?> showInvitedInvestorDialog(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const _DialogIcon(),
+          const DialogIcon(),
           const SizedBox(height: 16),
           Semantics(
             header: true,
@@ -111,8 +117,13 @@ Future<bool?> showInvitedInvestorDialog(
   );
 }
 
-class _DialogIcon extends StatelessWidget {
-  const _DialogIcon();
+/// The round icon at the top of the startup pop-ups (invitations, and the
+/// one-time notices about my startups): a 64 px moss 100 circle with a 28 px
+/// moss 600 [icon], popping in.
+class DialogIcon extends StatelessWidget {
+  const DialogIcon({super.key, this.icon = AppIcons.people});
+
+  final String icon;
 
   @override
   Widget build(BuildContext context) {
@@ -126,11 +137,7 @@ class _DialogIcon extends StatelessWidget {
             shape: BoxShape.circle,
           ),
           alignment: Alignment.center,
-          child: const AppIcon.filled(
-            AppIcons.people,
-            size: 28,
-            color: AppColors.moss600,
-          ),
+          child: AppIcon.filled(icon, size: 28, color: AppColors.moss600),
         ),
       ),
     );

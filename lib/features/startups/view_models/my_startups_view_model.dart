@@ -168,7 +168,13 @@ class MyStartupsViewModel extends ChangeNotifier with SafeNotifier {
           ),
         );
     }
-    return list;
+    // Closed startups go under the active ones (each part keeps the sort).
+    return [
+      for (final e in list)
+        if (!e.startup.isClosed) e,
+      for (final e in list)
+        if (e.startup.isClosed) e,
+    ];
   }
 
   bool _matches(MyStartupEntry e) {

@@ -343,6 +343,32 @@ void main() {
       );
     });
 
+    test('a new account is not made owner without being asked', () async {
+      invites.myEmail = 'sara@gmail.com';
+      invites.store['S1~sara@gmail.com'] = pending('sara@gmail.com');
+      invites.store['S2~sara@gmail.com'] = const Invitation(
+        startupId: 'S2',
+        startupName: 'Naql',
+        emailLower: 'sara@gmail.com',
+        role: Invitation.roleOwner,
+        invitedBy: 'u2',
+      );
+      const sara = AppUser(
+        uid: 's1',
+        role: AccountRole.founder,
+        fullName: 'Sara',
+        email: 'sara@gmail.com',
+      );
+      final joined = await InvitationClaimer.acceptAll(
+        sara,
+        repository: invites,
+      );
+      // The team is joined; the owner invitation waits for Accept / Decline.
+      expect(joined, ['Rafeeq Health']);
+      expect(invites.accepted, hasLength(1));
+      expect(invites.store['S2~sara@gmail.com']!.isPending, isTrue);
+    });
+
     test('an investor can not join: the invitations are declined', () async {
       invites.myEmail = 'sara@gmail.com';
       invites.store['S1~sara@gmail.com'] = pending('sara@gmail.com');
@@ -460,6 +486,40 @@ void main() {
       expect(find.text('sara@gmail.com'), findsOneWidget);
     });
 
+    testWidgets('an owner invitation asks to take over, with Decline', (
+      t,
+    ) async {
+      AppSession.instance = AppSession()
+        ..signIn(
+          const AppUser(
+            uid: 'sara1',
+            role: AccountRole.founder,
+            fullName: 'Sara',
+            email: 'sara@gmail.com',
+          ),
+        );
+      invites.store['S1~sara@gmail.com'] = const Invitation(
+        startupId: 'S1',
+        startupName: 'Rafeeq Health',
+        emailLower: 'sara@gmail.com',
+        role: Invitation.roleOwner,
+        invitedBy: 'u1',
+        invitedByName: 'Fahad Alotaibi',
+      );
+      await pump(t, 'S1~sara@gmail.com');
+      expect(
+        find.text('You’re invited to take over Rafeeq Health'),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining('invited you to become the owner of Rafeeq Health'),
+        findsOneWidget,
+      );
+      expect(find.text('Become the owner'), findsOneWidget);
+      expect(find.text('Decline'), findsOneWidget);
+      expect(find.text('Join the team'), findsNothing);
+    });
+
     testWidgets('a missing or cancelled invitation says so', (t) async {
       AppSession.instance = AppSession();
       await pump(t, 'S1~nobody@gmail.com');
@@ -467,9 +527,9 @@ void main() {
     });
   });
 
-  group('who may change the team after a transfer', () {
-    // Noura created the startup and handed it to Layan; Huda is another
-    // co-founder and Reem a member.
+  group('who may change the team after a hand-over', () {
+    // Noura created the startup, then left and named Layan its owner; Huda
+    // is a co-founder and Reem a member.
     Startup handedOver() => Startup.fromMap('S10', {
       'founderId': 'layan',
       'foundedBy': 'noura',
@@ -480,17 +540,9 @@ void main() {
       'businessModel': 'b2b',
       'location': 'riyadh',
       'lookingFor': ['partnership'],
-      'memberIds': ['noura', 'huda', 'reem'],
-      'memberRoles': {'noura': 'coFounder', 'huda': 'coFounder', 'reem': 'member'},
+      'memberIds': ['huda', 'reem'],
+      'memberRoles': {'huda': 'coFounder', 'reem': 'member'},
       'teamMembers': [
-        {
-          'fullName': 'Noura',
-          'email': 'noura@gmail.com',
-          'role': 'CEO',
-          'contribution': 'x',
-          'isFounder': true,
-          'uid': 'noura',
-        },
         {
           'fullName': 'Layan',
           'email': 'layan@gmail.com',
@@ -532,35 +584,28 @@ void main() {
       final vm = formWithTeam(initial: handedOver());
       addTearDown(vm.dispose);
       expect(vm.canRemoveMember(card(vm, 'reem')), isTrue);
-      expect(vm.canRemoveMember(card(vm, 'noura')), isFalse);
       expect(vm.canRemoveMember(card(vm, 'layan')), isFalse);
       expect(vm.canChangeCoFounder(card(vm, 'reem')), isFalse);
     });
 
-    test('the owner removes a co-founder and the founder', () {
+    test('the owner removes a co-founder; nobody gets a Founder card', () {
       AppSession.instance = AppSession()..signIn(person('layan'));
       final vm = formWithTeam(initial: handedOver());
       addTearDown(vm.dispose);
       expect(vm.canRemoveMember(card(vm, 'huda')), isTrue);
-      expect(vm.canRemoveMember(card(vm, 'noura')), isTrue);
       expect(vm.canChangeCoFounder(card(vm, 'huda')), isTrue);
-      // The owner doesn't get a Founder card of their own.
-      expect(vm.team.where((m) => m.isFounder).single.uid, 'noura');
+      // The founder left, and an owner who didn't create it isn't a Founder.
+      expect(vm.team.where((m) => m.isFounder), isEmpty);
     });
 
-    test('saving keeps the founder a co-founder, and her name if removed', () {
+    test('saving keeps who created it and leaves the founder off', () {
       AppSession.instance = AppSession()..signIn(person('layan'));
       final vm = formWithTeam(initial: handedOver());
       addTearDown(vm.dispose);
-      final kept = vm.startupToSave();
-      expect(kept.memberRoles['noura'], 'coFounder');
-      expect(kept.foundedBy, 'noura');
-      expect(kept.formerFounderId, isNull);
-      vm.openMemberEditor(vm.team.indexWhere((m) => m.uid == 'noura'));
-      vm.removeMember();
-      final removed = vm.startupToSave();
-      expect(removed.memberRoles.containsKey('noura'), isFalse);
-      expect(removed.formerFounderId, 'noura');
+      final saved = vm.startupToSave();
+      expect(saved.founderId, 'layan');
+      expect(saved.foundedBy, 'noura');
+      expect(saved.memberRoles.containsKey('noura'), isFalse);
     });
   });
 

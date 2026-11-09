@@ -170,6 +170,49 @@ class TicketRepository {
     await _commitDeletes(FirestoreCollections.requests, requests);
   }
 
+  /// A startup was closed: the requests still waiting are declined. Only its
+  /// owner can (the requests are addressed to [founderId]).
+  Future<void> declinePendingFor(
+    String startupId, {
+    required String founderId,
+  }) async {
+    final docs = await _firestore.queryWhereAll(FirestoreCollections.requests, {
+      'startupId': startupId,
+      'founderId': founderId,
+    });
+    final pending = [
+      for (final d in docs)
+        if (d.data['status'] == RequestStatus.pending.value) d,
+    ];
+    if (pending.isEmpty) return;
+    await _firestore.commit([
+      for (final d in pending)
+        FirestoreWrite.update(FirestoreCollections.requests, d.id, {
+          'status': RequestStatus.declined.value,
+        }),
+    ]);
+  }
+
+  /// The owner handed the startup to [to]: the requests sent to it move to the
+  /// new owner, so they see them. Done by the previous owner ([from]).
+  Future<void> moveRequests(
+    String startupId, {
+    required String from,
+    required String to,
+  }) async {
+    final docs = await _firestore.queryWhereAll(FirestoreCollections.requests, {
+      'startupId': startupId,
+      'founderId': from,
+    });
+    if (docs.isEmpty) return;
+    await _firestore.commit([
+      for (final d in docs)
+        FirestoreWrite.update(FirestoreCollections.requests, d.id, {
+          'founderId': to,
+        }),
+    ]);
+  }
+
   Future<void> _commitDeletes(
     String collection,
     List<FirestoreDocument> docs,

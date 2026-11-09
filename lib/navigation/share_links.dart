@@ -84,7 +84,9 @@ class ShareLinks {
             (session.ownStartupIds.contains(startup.id) ||
                 startup.founderId == uid ||
                 StartupRole.of(startup, uid) != null);
-        if (startup == null || (!startup.isListed && !belongs)) {
+        // A public closed startup opens (it says it is closed); a private
+        // one only for its team.
+        if (startup == null || (!startup.isInHub && !belongs)) {
           AppToast.errorGlobal(startupGone);
           return;
         }

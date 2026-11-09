@@ -11,6 +11,7 @@ import '../data_access/repositories/invitation_repository.dart';
 import '../data_access/repositories/team_lookup.dart';
 import '../app_constants/app_config.dart';
 import '../features/startups/widgets/invitation_dialogs.dart';
+import '../features/startups/widgets/startup_notices.dart';
 import '../helpers/invitation_claimer.dart';
 import '../data_access/repositories/request_repository.dart';
 import '../data_access/repositories/startup_repository.dart';
@@ -54,7 +55,7 @@ class AppRouter {
   /// investor who did not finish the investor steps to step 3; everyone else
   /// to Home. [welcomeBack] shows "Welcome back" with the first name.
   ///
-  /// [lostStartup]: the founder just deleted or left their last startup, so
+  /// [lostStartup]: the founder just left their last startup, so
   /// "Add your startup" explains why it opened. A founder who had a startup
   /// before ([AppUser.onboardingCompleted]) gets the same note at log in
   /// (e.g. after the owner removed them from their only team).
@@ -113,9 +114,17 @@ class AppRouter {
     } else if (welcomeBack) {
       AppToast.showGlobal('Welcome back, ${user.firstName}');
     }
+    // What happened to my startups since last time (closed, a new owner, an
+    // owner invitation declined): one pop-up each, once.
+    if (user.role == AccountRole.founder) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final ctx = AppToast.navigatorKey.currentContext;
+        if (ctx != null) unawaited(StartupNotices.showPending(ctx));
+      });
+    }
   }
 
-  /// After the user deleted or left a startup in the app: when it was their
+  /// After the user left a startup in the app: when it was their
   /// last one, the same steps as a log in run at once (pending invitations
   /// first, then "Add your startup" with a note). Returns true when it
   /// navigated; false when they still have a startup (or it can't tell:
@@ -147,8 +156,11 @@ class AppRouter {
     final joined = <String>[];
     final repo = InvitationRepository.instance;
     for (final invitation in await InvitationClaimer.pending()) {
-      var accept = AppConfig.autoJoinExistingAccounts;
-      if (!AppConfig.autoJoinExistingAccounts) {
+      // Taking a startup over as its owner is always asked (Accept /
+      // Decline); joining a team may happen at once.
+      final ask = invitation.isOwner || !AppConfig.autoJoinExistingAccounts;
+      var accept = !ask;
+      if (ask) {
         if (!context.mounted) return joined;
         final answer = await showInvitationDecision(context, invitation);
         if (answer == null) continue; // decide later
@@ -169,6 +181,35 @@ class AppRouter {
       }
     }
     return joined;
+  }
+
+  /// A new account (just verified): the invitations to take a startup over
+  /// as its owner are asked one by one (Accept / Decline), after the teams
+  /// were joined. Returns the startups it now owns. Dismissing a pop-up
+  /// leaves that invitation pending (asked again at the next log in).
+  static Future<List<String>> askOwnerInvitations(
+    BuildContext context,
+    AppUser user,
+  ) async {
+    final owned = <String>[];
+    final repo = InvitationRepository.instance;
+    for (final invitation in await InvitationClaimer.pending()) {
+      if (!invitation.isOwner) continue;
+      if (!context.mounted) break;
+      final answer = await showInvitationDecision(context, invitation);
+      if (answer == null) continue;
+      try {
+        if (answer) {
+          await repo.accept(invitation, fullName: user.fullName);
+          owned.add(invitation.startupName);
+        } else {
+          await repo.decline(invitation);
+        }
+      } catch (_) {
+        // Stays pending: it is asked again next time.
+      }
+    }
+    return owned;
   }
 
   /// Pull to refresh: checks the invitations that arrived since the last

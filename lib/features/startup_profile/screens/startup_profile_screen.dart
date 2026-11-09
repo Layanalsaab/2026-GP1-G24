@@ -74,7 +74,6 @@ class _StartupProfileScreenState extends State<StartupProfileScreen> {
     }
     if (!mounted) return;
     await _vm.loadRounds();
-    await _vm.loadFormerFounder();
   }
 
   @override
