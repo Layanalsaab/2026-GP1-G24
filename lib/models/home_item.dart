@@ -41,6 +41,7 @@ class HomeItem {
     this.imageUrl,
     this.imageData,
     this.createdAt,
+    this.closed = false,
   });
 
   final HomeItemKind kind;
@@ -112,6 +113,9 @@ class HomeItem {
   /// unknown (programs, older documents).
   final DateTime? createdAt;
 
+  /// A closed startup (shown in the Hub only, with a Closed tag).
+  final bool closed;
+
   /// `s-<id>`, `i-<id>`, `p-<id>`: the key a bookmark is stored under.
   String get bookmarkKey => switch (kind) {
     HomeItemKind.startup => 's-$id',
@@ -166,6 +170,7 @@ class HomeItem {
     imageUrl: imageUrl,
     imageData: imageData,
     createdAt: createdAt,
+    closed: closed,
   );
 
   factory HomeItem.fromStartup(Startup s) => HomeItem(
@@ -194,6 +199,7 @@ class HomeItem {
     imageUrl: s.logoUrl,
     imageData: s.logoData,
     createdAt: s.createdAt,
+    closed: s.isClosed,
   );
 
   factory HomeItem.fromInvestor(InvestorProfile i) {

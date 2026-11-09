@@ -2,62 +2,57 @@ import 'package:flutter/material.dart';
 
 import '../../../app_constants/founder_tools_strings.dart';
 import '../../../models/list_entries.dart';
-import '../../../models/startup.dart';
 import 'founder_ui.dart';
 import 'manage_card.dart';
 
 /// Manage startup -> Settings: one white card per row, each a full-width
 /// button with a 40 px icon tile, a title with sub-text and, where needed, a
-/// control on the right.
+/// control on the right (docs: Closing a Startup, Leaving and Deleting an
+/// Account).
 ///
-/// * **Public startup / Private startup** (owner and co-founder, not on a closed startup):
-///   globe, a switch.
-/// * The owner gets ONE way to end the startup ([ownerOption]):
-///   **Delete startup** (nobody else on it), **Transfer ownership** (a
-///   co-founder joined) or **Close startup** (only members).
-/// * A closed startup: the owner gets **Reopen startup** and **Leave
-///   startup** (nobody owns it afterwards).
-/// * **Leave startup** (co-founder and team member): red leave icon, red
-///   title.
+/// * **Public startup / Private startup** (globe, a switch): the owner and
+///   co-founders of an active startup; on a closed startup only its owner
+///   (it is the one thing left to change).
+/// * The owner of an active startup: **Close startup** (permanent, kept for
+///   everyone) and **Leave startup** (she names the next owner first). While
+///   a person she invited to take over hasn't answered, a "Waiting for…" card
+///   with **Cancel invitation** replaces Leave.
+/// * Co-founders and team members of an active startup: **Leave startup**.
+/// * Nobody leaves a closed startup.
 ///
 /// What a role cannot do is not shown at all.
 class ManageSettingsTab extends StatelessWidget {
   const ManageSettingsTab({
     super.key,
     required this.role,
+    required this.startupName,
     required this.isPublic,
     required this.onVisibilityChanged,
-    required this.onDelete,
     required this.onLeave,
-    this.ownerOption = OwnerOption.delete,
     this.isClosed = false,
-    this.onTransfer,
     this.onClose,
-    this.onReopen,
-    this.isFounder = false,
+    this.pendingOwnerEmail,
+    this.onCancelOwnerInvite,
   });
 
   /// What the user may do here ([StartupRole.founder] is the owner).
   final StartupRole role;
+  final String startupName;
   final bool isPublic;
   final ValueChanged<bool> onVisibilityChanged;
-  final VoidCallback onDelete;
   final VoidCallback onLeave;
-  final OwnerOption ownerOption;
   final bool isClosed;
-  final VoidCallback? onTransfer;
   final VoidCallback? onClose;
-  final VoidCallback? onReopen;
 
-  /// The user created this startup (the Founder title), whether or not they
-  /// still own it.
-  final bool isFounder;
+  /// The e-mail of the person invited to take over, still waiting.
+  final String? pendingOwnerEmail;
+  final VoidCallback? onCancelOwnerInvite;
 
   @override
   Widget build(BuildContext context) {
     final owner = role == StartupRole.founder;
     final cards = <Widget>[
-      if (role.canManage && !isClosed)
+      if ((role.canManage && !isClosed) || (owner && isClosed))
         _SettingCard(
           icon: AppIcons.globe,
           fill: AppColors.moss50,
@@ -67,9 +62,13 @@ class ManageSettingsTab extends StatelessWidget {
           title: isPublic
               ? FounderToolsStrings.visibilityPublicTitle
               : FounderToolsStrings.visibilityPrivateTitle,
-          text: isPublic
-              ? FounderToolsStrings.publicProfileOn
-              : FounderToolsStrings.publicProfileOff,
+          text: isClosed
+              ? (isPublic
+                    ? FounderToolsStrings.closedPublicText
+                    : FounderToolsStrings.closedPrivateText)
+              : (isPublic
+                    ? FounderToolsStrings.publicProfileOn
+                    : FounderToolsStrings.publicProfileOff),
           onTap: () => onVisibilityChanged(!isPublic),
           trailing: AppSwitch(
             value: isPublic,
@@ -79,36 +78,7 @@ class ManageSettingsTab extends StatelessWidget {
                 : FounderToolsStrings.visibilityPrivateTitle,
           ),
         ),
-      if (owner && isClosed)
-        _SettingCard(
-          icon: AppIcons.rocket,
-          fill: AppColors.moss50,
-          color: AppColors.moss600,
-          title: FounderToolsStrings.reopenStartup,
-          text: FounderToolsStrings.reopenStartupText,
-          onTap: onReopen ?? () {},
-        ),
-      // Nobody else on it (also once closed): it can be deleted.
-      if (owner && ownerOption == OwnerOption.delete)
-        _SettingCard(
-          icon: AppIcons.trash,
-          fill: AppColors.errorFill,
-          color: AppColors.error,
-          title: FounderToolsStrings.deleteStartup,
-          text: FounderToolsStrings.deleteStartupText,
-          danger: true,
-          onTap: onDelete,
-        ),
-      if (owner && !isClosed && ownerOption == OwnerOption.transfer)
-        _SettingCard(
-          icon: AppIcons.people,
-          fill: AppColors.moss50,
-          color: AppColors.moss600,
-          title: FounderToolsStrings.transferOwnership,
-          text: FounderToolsStrings.transferOwnershipText,
-          onTap: onTransfer ?? () {},
-        ),
-      if (owner && !isClosed && ownerOption == OwnerOption.close)
+      if (owner && !isClosed)
         _SettingCard(
           icon: AppIcons.lock,
           fill: AppColors.errorFill,
@@ -118,19 +88,26 @@ class ManageSettingsTab extends StatelessWidget {
           danger: true,
           onTap: onClose ?? () {},
         ),
-      // The owner leaves only a closed startup that has a team (an active
-      // one is handed over or deleted, and an empty one deleted, never left
-      // behind).
-      if (!owner || (isClosed && ownerOption != OwnerOption.delete))
+      if (owner && !isClosed && pendingOwnerEmail != null)
+        _SettingCard(
+          icon: AppIcons.people,
+          fill: AppColors.moss50,
+          color: AppColors.moss600,
+          title: FounderToolsStrings.cancelInvitation,
+          text: FounderToolsStrings.ownerWaiting(
+            pendingOwnerEmail!,
+            startupName,
+          ),
+          onTap: onCancelOwnerInvite ?? () {},
+        )
+      else if (!isClosed)
         _SettingCard(
           icon: AppIcons.logout,
           fill: AppColors.errorFill,
           color: AppColors.error,
           title: FounderToolsStrings.leaveStartup,
           text: owner
-              ? FounderToolsStrings.leaveClosedOwnerText
-              : isFounder
-              ? FounderToolsStrings.leaveFounderText
+              ? FounderToolsStrings.leaveOwnerText
               : role == StartupRole.coFounder
               ? FounderToolsStrings.leaveCoFounderText
               : FounderToolsStrings.leaveMemberText,
@@ -138,6 +115,16 @@ class ManageSettingsTab extends StatelessWidget {
           onTap: onLeave,
         ),
     ];
+    if (cards.isEmpty) {
+      // A team member of a closed startup: nothing to change.
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Text(
+          FounderToolsStrings.closedNoSettings,
+          style: AppText.sans(size: 14, height: 20, color: AppColors.grey),
+        ),
+      );
+    }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [

@@ -3,7 +3,6 @@ import 'package:flutter/foundation.dart';
 import '../../../app_constants/profile_strings.dart';
 import '../../../data_access/repositories/discovery_repository.dart';
 import '../../../data_access/repositories/funding_round_repository.dart';
-import '../../../data_access/repositories/public_profile_repository.dart';
 import '../../../data_access/repositories/request_repository.dart';
 import '../../../helpers/app_session.dart';
 import '../../../helpers/formatters.dart';
@@ -11,7 +10,6 @@ import '../../../helpers/safe_notifier.dart';
 import '../../../models/funding_round.dart';
 import '../../../models/investor_profile.dart';
 import '../../../models/startup.dart';
-import '../../../models/team_member.dart';
 
 /// What the startup profile shows for one [Startup] and who is looking at it
 /// (docs/05 section C1): the selected tab, the preview / CTA rules and the
@@ -35,40 +33,12 @@ class StartupProfileViewModel extends ChangeNotifier with SafeNotifier {
        _roundsOverride = roundsRepository,
        _forcedPreview = preview {
     if (rounds == null) loadRounds();
-    loadFormerFounder();
   }
-
-  /// The founder after she left, when she kept her name on the team
-  /// ("Founder (former)"): her current name and photo. Null when there is
-  /// none, or her account was deleted.
-  TeamMember? formerFounder;
 
   /// Pull to refresh: the startup is replaced by the latest copy.
   void replaceStartup(Startup fresh) {
     startup = fresh;
     notifyListeners();
-  }
-
-  Future<void> loadFormerFounder() async {
-    final id = startup.formerFounderId;
-    if (id == null) return;
-    try {
-      final live = await PublicProfileRepository.instance.liveOf([id]);
-      final person = live[id];
-      if (person == null) return;
-      formerFounder = TeamMember(
-        name: person.name,
-        role: '',
-        contribution: '',
-        isFounder: true,
-        uid: id,
-        photoData: person.photoData,
-        former: true,
-      );
-      notifyListeners();
-    } catch (_) {
-      // The team shows without her.
-    }
   }
 
   /// The funding rounds shown on the Funding tab and in the Raising tile,
@@ -232,7 +202,10 @@ class StartupProfileViewModel extends ChangeNotifier with SafeNotifier {
     final sample = _discovery.founderNameOf(startup);
     if (sample != null) return sample;
     final user = _session.user;
-    if (user != null && user.uid == startup.originalFounderId) {
+    // Only while she is still its owner: after leaving she is not on it.
+    if (user != null &&
+        user.uid == startup.originalFounderId &&
+        user.uid == startup.founderId) {
       return user.fullName;
     }
     return null;

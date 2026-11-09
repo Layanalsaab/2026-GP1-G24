@@ -123,7 +123,7 @@ void main() {
       expect(find.text('View only'), findsNothing);
     });
 
-    testWidgets('a team member gets the View only notice on every tab', (
+    testWidgets('a team member gets no View only notice on any tab', (
       t,
     ) async {
       await _pump(
@@ -141,12 +141,10 @@ void main() {
         'Settings',
       ]) {
         await _goTo(t, tab);
-        expect(find.text('View only'), findsOneWidget, reason: tab);
+        expect(find.text('View only'), findsNothing, reason: tab);
         expect(
-          find.text(
-            'You’re a team member. Only the founder and co-founders can make changes.',
-          ),
-          findsOneWidget,
+          find.textContaining('Only the founder and co-founders'),
+          findsNothing,
           reason: tab,
         );
       }

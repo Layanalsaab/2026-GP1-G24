@@ -124,8 +124,6 @@ class PublicProfileRepository {
         role = 'coFounder';
       } else if (onTeam) {
         role = 'member';
-      } else if (s.formerFounderId == personId) {
-        role = ProfileStartupRef.formerFounder;
       } else {
         role = null;
       }
@@ -145,14 +143,8 @@ class PublicProfileRepository {
       final repo = StartupRepository.instance;
       final mine = await repo.fetchMyStartups();
       final joined = await repo.fetchMemberStartups();
-      var former = const <Startup>[];
-      try {
-        former = await repo.fetchFormerStartups();
-      } catch (_) {
-        // Only the "Founder (former)" entries are missing.
-      }
-      // The title: whoever created a startup is its founder, also after
-      // handing it over; an owner who didn't create it is a co-founder.
+      // The title: whoever created a startup is its founder; an owner who
+      // didn't create it is listed with the co-founders.
       String titleIn(Startup s) => s.originalFounderId == uid
           ? 'founder'
           : (s.founderId == uid || s.memberRoles[uid] == 'coFounder')
@@ -161,12 +153,6 @@ class PublicProfileRepository {
       final refs = <ProfileStartupRef>[
         for (final s in [...mine, ...joined])
           ProfileStartupRef(id: s.id, name: s.name, role: titleIn(s)),
-        for (final s in former)
-          ProfileStartupRef(
-            id: s.id,
-            name: s.name,
-            role: ProfileStartupRef.formerFounder,
-          ),
       ];
       await _firestore.updateDocument(_col, uid, {
         'startups': [for (final r in refs.take(30)) r.toMap()],

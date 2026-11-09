@@ -1,31 +1,23 @@
 import 'package:flutter/material.dart';
 
 import '../../../shared_ui/icons/app_icons.dart';
+import '../../../shared_ui/theme/app_colors.dart';
 import '../../../shared_ui/theme/app_text.dart';
 
-/// The notice at the top of every Manage tab for a team member: light blue
-/// box (`#EEF2F8`, 1 px `#D7E1F0`, radius 16, padding 12 / 14), a white 36 px
-/// tile with a navy lock, "View only" (15.5 bold navy) and the reason.
-///
-/// The same box carries the other notices of the founder tools ("Closed",
-/// "You no longer have a startup") through [ViewOnlyBanner.notice].
+/// The notices of the founder tools ("Closed", "You no longer have a
+/// startup"): a soft gold box ([AppColors.noticeFill], 1 px
+/// [AppColors.noticeBorder], radius 16, padding 12 / 14), a white 36 px tile
+/// with a gold icon, a title (15.5 bold) and the reason. Every notice uses
+/// this one widget, so they all look the same. (Team members no longer get a "View only" notice: the
+/// tabs simply have no editing for them.)
 class ViewOnlyBanner extends StatelessWidget {
-  const ViewOnlyBanner({super.key})
-    : title = viewOnlyTitle,
-      message = viewOnlyMessage,
-      icon = AppIcons.lock;
-
-  /// A notice with its own words (and icon) in the same box.
+  /// A notice with its own words (and icon).
   const ViewOnlyBanner.notice({
     super.key,
     required this.title,
     required this.message,
     this.icon = AppIcons.info,
   });
-
-  static const viewOnlyTitle = 'View only';
-  static const viewOnlyMessage =
-      'You’re a team member. Only the founder and co-founders can make changes.';
 
   final String title;
   final String message;
@@ -41,9 +33,9 @@ class ViewOnlyBanner extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
-          color: const Color(0xFFEEF2F8),
+          color: AppColors.noticeFill,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFFD7E1F0)),
+          border: Border.all(color: AppColors.noticeBorder),
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -59,7 +51,7 @@ class ViewOnlyBanner extends StatelessWidget {
                 child: AppIcon.filled(
                   icon,
                   size: 18,
-                  color: const Color(0xFF1F3A5F),
+                  color: AppColors.noticeIcon,
                 ),
               ),
             ),
@@ -73,7 +65,7 @@ class ViewOnlyBanner extends StatelessWidget {
                     style: AppText.sans(
                       size: 15.5,
                       weight: FontWeight.w700,
-                      color: const Color(0xFF1F3A5F),
+                      color: AppColors.noticeTitle,
                     ),
                   ),
                   Text(
@@ -81,7 +73,7 @@ class ViewOnlyBanner extends StatelessWidget {
                     style: AppText.sans(
                       size: 13.5,
                       height: 19,
-                      color: const Color(0xFF3C5A86),
+                      color: AppColors.noticeText,
                     ),
                   ),
                 ],

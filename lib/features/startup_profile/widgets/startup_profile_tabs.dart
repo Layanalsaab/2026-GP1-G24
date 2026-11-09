@@ -236,11 +236,6 @@ class StartupProfilePane extends StatelessWidget {
         );
       }
     }
-    // The founder after she left, when she kept her name on the team.
-    final former = viewModel.formerFounder;
-    if (former != null && !team.any((m) => m.uid == former.uid)) {
-      team.insert(0, former);
-    }
     int rank(TeamMember m) => m.isFounder ? 0 : (m.coFounder ? 1 : 2);
     final shown = [
       for (final m in team)

@@ -230,8 +230,9 @@ Future<void> showInfoSheet(
 
 /// Delete / confirm sheet content (prototype `sheet.isDelete`): a 60 px red
 /// circle with a [icon] (default trash, Pop), title 21/700, message 15/22 grey,
-/// a danger button ([confirmLabel]) and a white "Cancel" button. Pops with
-/// `true` on confirm and `false` on cancel; see [showConfirmSheet].
+/// an optional [note] under it (e.g. a notice box), a danger button
+/// ([confirmLabel]) and a white "Cancel" button. Pops with `true` on confirm
+/// and `false` on cancel; see [showConfirmSheet].
 class ConfirmSheet extends StatelessWidget {
   const ConfirmSheet({
     super.key,
@@ -240,6 +241,7 @@ class ConfirmSheet extends StatelessWidget {
     required this.confirmLabel,
     this.cancelLabel = 'Cancel',
     this.icon = AppIcons.trash,
+    this.note,
   });
 
   final String title;
@@ -247,6 +249,7 @@ class ConfirmSheet extends StatelessWidget {
   final String confirmLabel;
   final String cancelLabel;
   final String icon;
+  final Widget? note;
 
   @override
   Widget build(BuildContext context) {
@@ -282,35 +285,57 @@ class ConfirmSheet extends StatelessWidget {
               textAlign: TextAlign.center,
               style: AppText.sans(size: 15, color: AppColors.grey, height: 22),
             ),
-            const SizedBox(height: 22),
+            if (note != null) ...[const SizedBox(height: 16), note!],
+            SizedBox(height: note != null ? 10 : 22),
             AppButton(
               label: confirmLabel,
               variant: AppButtonVariant.danger,
               onPressed: () => Navigator.of(context).pop(true),
             ),
             const SizedBox(height: 10),
-            Pressable(
+            SheetCancelButton(
+              label: cancelLabel,
               onTap: () => Navigator.of(context).pop(false),
-              child: Semantics(
-                button: true,
-                label: cancelLabel,
-                excludeSemantics: true,
-                child: Container(
-                  height: 48,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: AppColors.surface,
-                    borderRadius: BorderRadius.circular(AppRadius.button),
-                    border: Border.all(color: AppColors.border),
-                  ),
-                  child: Text(
-                    cancelLabel,
-                    style: AppText.sans(size: 16, weight: FontWeight.w600),
-                  ),
-                ),
-              ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// The white "Cancel" button under a sheet's main button ([ConfirmSheet] and
+/// the sheets built like it): 48 high, white, 1 px border, 16/600 ink.
+class SheetCancelButton extends StatelessWidget {
+  const SheetCancelButton({
+    super.key,
+    required this.onTap,
+    this.label = 'Cancel',
+  });
+
+  final VoidCallback? onTap;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Pressable(
+      onTap: onTap,
+      child: Semantics(
+        button: true,
+        label: label,
+        excludeSemantics: true,
+        child: Container(
+          height: 48,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(AppRadius.button),
+            border: Border.all(color: AppColors.border),
+          ),
+          child: Text(
+            label,
+            style: AppText.sans(size: 16, weight: FontWeight.w600),
+          ),
         ),
       ),
     );
@@ -325,6 +350,7 @@ Future<bool> showConfirmSheet(
   required String confirmLabel,
   String cancelLabel = 'Cancel',
   String icon = AppIcons.trash,
+  Widget? note,
 }) async {
   final r = await showAppBottomSheet<bool>(
     context,
@@ -334,6 +360,7 @@ Future<bool> showConfirmSheet(
       confirmLabel: confirmLabel,
       cancelLabel: cancelLabel,
       icon: icon,
+      note: note,
     ),
   );
   return r ?? false;

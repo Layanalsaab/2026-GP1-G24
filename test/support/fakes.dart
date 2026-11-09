@@ -513,13 +513,9 @@ class FakeStartupRepository implements StartupRepository {
   @override
   Future<List<Startup>> fetchMemberStartups() async => List.of(memberOf);
 
-  /// Startups left with "Keep my name as Founder (former)" ticked.
-  final List<String> leftKeepingName = [];
-
   @override
-  Future<void> leave(Startup startup, {bool keepFounderName = false}) async {
+  Future<void> leave(Startup startup) async {
     left.add(startup.id);
-    if (keepFounderName) leftKeepingName.add(startup.id);
     memberOf.removeWhere((s) => s.id == startup.id);
     startups.removeWhere((s) => s.id == startup.id);
   }
@@ -527,36 +523,43 @@ class FakeStartupRepository implements StartupRepository {
   @override
   Future<void> leaveAll() async => memberOf.clear();
 
-  /// (startup id, new owner) of every transfer.
+  /// (startup id, new owner) of every hand-over.
   final List<(String, String)> transfers = [];
 
   @override
   Future<Startup> transferOwnership(Startup startup, String newOwnerId) async {
     transfers.add((startup.id, newOwnerId));
     final roles = {...startup.memberRoles}..remove(newOwnerId);
-    roles[startup.founderId] = 'coFounder';
     final moved = startup.copyWith(
       founderId: newOwnerId,
       foundedBy: startup.originalFounderId,
       memberRoles: roles,
+      team: [
+        for (final m in startup.team)
+          if (m.uid != startup.founderId) m,
+      ],
     );
+    // The previous owner is no longer on it.
     startups.removeWhere((s) => s.id == startup.id);
-    memberOf.add(moved);
     return moved;
   }
 
   @override
   Future<Startup> close(Startup startup) async {
-    final closed = startup.copyWith(isClosed: true);
+    final closed = startup.copyWith(isClosed: true, closedAt: DateTime.now());
     _replace(closed);
     return closed;
   }
 
+  /// (startup id, public) of every visibility change on a closed startup.
+  final List<(String, bool)> closedVisibility = [];
+
   @override
-  Future<Startup> reopen(Startup startup) async {
-    final open = startup.copyWith(isClosed: false, isPublic: false);
-    _replace(open);
-    return open;
+  Future<Startup> setClosedVisibility(Startup startup, bool isPublic) async {
+    closedVisibility.add((startup.id, isPublic));
+    final changed = startup.copyWith(isPublic: isPublic);
+    _replace(changed);
+    return changed;
   }
 
   void _replace(Startup s) {
@@ -564,31 +567,20 @@ class FakeStartupRepository implements StartupRepository {
     if (i >= 0) startups[i] = s;
   }
 
-  /// Startups where the signed-in user is "Founder (former)".
-  final List<Startup> former = [];
-
-  @override
-  Future<List<Startup>> fetchFormerStartups() async => List.of(former);
-
-  @override
-  Future<void> removeMyFormerName(String startupId) async =>
-      former.removeWhere((s) => s.id == startupId);
-
   @override
   Future<bool> hasAnyStartup() async =>
       startups.isNotEmpty || memberOf.isNotEmpty;
 
-  /// Account deletion: each owned startup handed over, closed or deleted.
-  bool handedOver = false;
-  AuthFailure? handOverFails;
+  /// Account deletion: each owned startup closed for its team or deleted.
+  bool closedAllMine = false;
+  AuthFailure? closeAllFails;
 
   @override
-  Future<void> handOverAllMine() async {
-    if (handOverFails != null) throw AuthException(handOverFails!);
-    handedOver = true;
+  Future<void> closeAllMine() async {
+    if (closeAllFails != null) throw AuthException(closeAllFails!);
+    closedAllMine = true;
     startups.clear();
     memberOf.clear();
-    former.clear();
   }
 
   @override
@@ -723,4 +715,42 @@ class FakeInvitationRepository implements InvitationRepository {
 
   @override
   Future<List<TeamMember>?> reconcileTeam(Startup startup) async => null;
+
+  @override
+  Future<Invitation> inviteOwner({
+    required Startup startup,
+    required String email,
+    required String invitedByName,
+    bool newUser = false,
+  }) async {
+    final invitation = Invitation(
+      startupId: startup.id,
+      startupName: startup.name,
+      emailLower: email.trim().toLowerCase(),
+      role: Invitation.roleOwner,
+      invitedBy: 'uid1',
+      invitedByName: invitedByName,
+      newUser: newUser,
+    );
+    store[invitation.id] = invitation;
+    return invitation;
+  }
+
+  @override
+  Future<Invitation?> pendingOwnerInvite(String startupId) async => store
+      .values
+      .where((i) => i.startupId == startupId && i.isOwner && i.isPending)
+      .firstOrNull;
+
+  @override
+  Future<void> cancelOwnerInvite(Startup startup) async {
+    final pending = await pendingOwnerInvite(startup.id);
+    if (pending != null) await cancel(startup.id, pending.emailLower);
+  }
+
+  @override
+  Future<List<Invitation>> declinedOwnerInvitesOfMine() async => [
+    for (final i in store.values)
+      if (i.isOwner && i.status == InvitationStatus.declined) i,
+  ];
 }

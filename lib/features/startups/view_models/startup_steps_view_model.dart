@@ -986,8 +986,7 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
 
   /// "Remove this member" on [m]'s card. Nobody removes their own card (they
   /// leave instead) or the owner's; only the owner removes a co-founder who
-  /// joined, or the founder after the startup was handed over (her card then
-  /// stays as "Founder (former)"). Co-founders can remove members.
+  /// joined. Co-founders can remove members.
   bool canRemoveMember(TeamMember m) {
     final me = AppSession.instance.user?.uid;
     final owner = initial?.founderId;
@@ -1528,22 +1527,8 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
       memberRoles: _roles(),
       // Who created it and whether it is closed never change here.
       foundedBy: initial?.originalFounderId,
-      formerFounderId: _formerFounderAfterSave(),
       isClosed: initial?.isClosed ?? false,
     );
-  }
-
-  /// The owner removed the founder (after the startup was handed over): her
-  /// card stays on the team as "Founder (former)" (she can remove it from her
-  /// profile). Otherwise what was saved.
-  String? _formerFounderAfterSave() {
-    final s = initial;
-    if (s == null) return null;
-    final founder = s.originalFounderId;
-    final wasOnTeam = s.memberRoles.containsKey(founder);
-    final stillOnTeam = team.any((m) => m.uid == founder && !m.invited);
-    if (founder != s.founderId && wasOnTeam && !stillOnTeam) return founder;
-    return s.formerFounderId;
   }
 
   /// The picked types in list order, "Other" replaced by what was typed.
@@ -1593,8 +1578,7 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
       // The owner is never in memberRoles.
       if (uid == null || m.invited || uid == owner) continue;
       inTeam.add(uid);
-      // Only people who already have access change role. The person who
-      // created the startup stays a co-founder after handing it over.
+      // Only people who already have access change role.
       if (roles.containsKey(uid)) {
         roles[uid] = m.coFounder || m.isFounder ? 'coFounder' : 'member';
       }

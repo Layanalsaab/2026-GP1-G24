@@ -6,6 +6,7 @@ import '../../models/app_user.dart';
 import '../../models/auth_failure.dart';
 import '../firebase_services/auth_service.dart';
 import 'bookmark_repository.dart';
+import 'invitation_repository.dart';
 import 'startup_repository.dart';
 import 'ticket_repository.dart';
 import 'team_lookup.dart';
@@ -274,9 +275,9 @@ class AuthRepository {
   /// signed-in user delete their own document. If any step fails, the steps
   /// after it don't run, so a wrong password deletes nothing.
   ///
-  /// The founder's startups are handed over or deleted
-  /// (StartupRepository.handOverAllMine), and a team member leaves the teams
-  /// they belong to.
+  /// The founder's startups with a team are closed for it, and the ones with
+  /// nobody else on them deleted (StartupRepository.closeAllMine); the account
+  /// leaves every team it is on.
   // TODO(Sprint 2+): also delete the founder's requests and Investment
   // Associations once those collections exist (PBI 13).
   ///
@@ -292,11 +293,21 @@ class AuthRepository {
     } else if (!_auth.signedInRecently) {
       throw const AuthException(AuthFailure.requiresRecentLogin);
     }
-    // A founder's startups are deleted, handed to a co-founder or closed for
-    // their team, and the account leaves the teams it is on. If any of that
+    // A founder's startups with a team are closed for it (the others
+    // deleted), and the account leaves the teams it is on. If any of that
     // fails, NOTHING else is deleted (the account stays and the user tries
     // again), so a startup is never left with a deleted owner.
-    await StartupRepository.instance.handOverAllMine();
+    await StartupRepository.instance.closeAllMine();
+    // Invitations still waiting for this person are declined, so an owner
+    // waiting for them to take over isn't left waiting.
+    try {
+      final invitations = InvitationRepository.instance;
+      for (final i in await invitations.pendingForMe()) {
+        await invitations.decline(i);
+      }
+    } catch (_) {
+      // Carry on: they simply stay unanswered.
+    }
     // Nobody can find or open a person who no longer exists.
     await TeamLookup.instance.remove(uid: account.uid, email: account.email);
     // Saved bookmarks live under the user document and are not deleted

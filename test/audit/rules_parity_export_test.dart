@@ -347,8 +347,8 @@ void main() {
         isPublic: false,
       ),
     );
-    // With co-founders on it the owner can't delete it: ownership goes to a
-    // joined co-founder, and the old owner stays as a co-founder.
+    // The owner leaves by naming a joined co-founder the next owner (she
+    // leaves the team).
     final current = Startup.fromMap(
       saved.id,
       await db.getDocument(FirestoreCollections.startups, saved.id),

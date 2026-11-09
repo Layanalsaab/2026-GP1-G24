@@ -702,9 +702,9 @@ void main() {
       await tester.tap(tab('Settings'));
       await tester.pumpAndSettle();
       expect(find.text('Public startup'), findsOneWidget);
-      await tester.tap(find.text('Delete startup'));
+      await tester.tap(find.text('Close startup'));
       await tester.pumpAndSettle();
-      expect(find.text('Delete Rafeeq Health?'), findsOneWidget);
+      expect(find.text('Close Rafeeq Health?'), findsOneWidget);
     });
 
     testWidgets('the share icon opens the share sheet; Copy link says so', (

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../app_constants/founder_tools_strings.dart';
 import '../../../app_constants/home_strings.dart';
 import '../../../data_access/repositories/bookmark_repository.dart';
 import '../../../helpers/app_session.dart';
@@ -13,6 +14,7 @@ import '../../../shared_ui/theme/app_text.dart';
 import '../../../shared_ui/widgets/cards/avatars.dart';
 import '../../../shared_ui/widgets/cards/home_card.dart';
 import '../../../shared_ui/widgets/lists/empty_state.dart';
+import '../../startups/widgets/role_tag.dart';
 import '../view_models/home_view_model.dart';
 
 /// One entry of a [HomeColumn]: the [child] plus the CSS-style margins the
@@ -135,7 +137,10 @@ class HomeItemCard extends StatelessWidget {
           matchReason: showMatch ? item.matchReason : null,
           highlight: item.highlight,
           highlightReason: item.highlightReason,
-          badges: badges,
+          // A closed startup (Hub only) says so; My Startups passes its own.
+          badges: badges.isEmpty && item.closed
+              ? const [GreyTag(FounderToolsStrings.closedPill)]
+              : badges,
           actionLabel: actionLabel,
           onTap: onTap ?? () => openHomeItem(context, item),
           // The share sheet (the teammate's change), with the startup's name

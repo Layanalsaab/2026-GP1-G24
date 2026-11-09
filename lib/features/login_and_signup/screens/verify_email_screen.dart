@@ -169,9 +169,13 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen>
     unawaited(TeamLookup.instance.publish(user, emailVerified: true));
     if (user.role == AccountRole.founder) {
       // A new account joins every team that invited its e-mail, and then has
-      // no need to create a startup first.
+      // no need to create a startup first. Taking a startup over as its
+      // owner is asked (Accept / Decline).
       final joined = await InvitationClaimer.acceptAll(user);
       if (!mounted) return;
+      final owned = await AppRouter.askOwnerInvitations(context, user);
+      if (!mounted) return;
+      joined.addAll(owned);
       if (joined.isNotEmpty) {
         SignupFlow.current = null;
         try {

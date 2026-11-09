@@ -176,13 +176,7 @@ class _TeamMemberProfileScreenState extends State<TeamMemberProfileScreen> {
       bodyMaxLines: 2,
       animate: false,
       badges: [
-        if (ref.role == ProfileStartupRef.formerFounder)
-          const GreyTag(FounderToolsStrings.roleFormerFounder)
-        else
-          RoleTag(
-            role,
-            label: owner ? FounderToolsStrings.roleOwnerCoFounder : null,
-          ),
+        RoleTag(role, label: owner ? FounderToolsStrings.roleOwner : null),
         if (st != null && st.isClosed)
           const GreyTag(FounderToolsStrings.closedPill),
       ],

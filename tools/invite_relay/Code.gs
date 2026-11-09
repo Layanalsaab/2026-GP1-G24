@@ -100,16 +100,26 @@ function sendInvitation_(id, inv) {
   const who = inv.invitedByName || 'A founder';
   const startup = inv.startupName || 'a startup';
   const role = inv.role === 'coFounder' ? 'Co-founder' : 'Team member';
+  // Invited to take the startup over as its owner: they accept or decline in
+  // the app (nothing is automatic).
+  const owner = inv.role === 'owner';
   const link = INVITE_LINK_BASE + '?i=' + encodeURIComponent(id);
-  const subject = who + ' invited you to join ' + startup + ' on Start.sa';
+  const subject = owner
+    ? who + ' invited you to become the owner of ' + startup + ' on Start.sa'
+    : who + ' invited you to join ' + startup + ' on Start.sa';
+  const next = owner
+    ? ", and you'll be asked whether you accept becoming the owner."
+    : ", and you'll be added to the team automatically.";
 
   const text =
     'Hi,\n\n' +
-    who + ' added you to the ' + startup + ' team on Start.sa as a ' + role + '.\n\n' +
+    (owner
+      ? who + ' invited you to take over ' + startup + ' on Start.sa as its owner.\n\n'
+      : who + ' added you to the ' + startup + ' team on Start.sa as a ' + role + '.\n\n') +
     'If you have the Start.sa app installed, open this link:\n' + link + '\n' +
     "If you don't have the app yet, install it first, then come back to this email and open the link again.\n\n" +
     (inv.newUser ? 'Create your Start.sa account using this email, ' : 'Sign in or create your account using this email, ') + inv.emailLower +
-    ", and you'll be added to the team automatically.\n\n" +
+    next + '\n\n' +
     "If you weren't expecting this, you can ignore this email.";
 
   // The same design as the "Verify your email" and "Reset your password"
@@ -127,16 +137,20 @@ function sendInvitation_(id, inv) {
     '</td></tr>' +
     // Body
     '<tr><td bgcolor="#ffffff" style="background:#ffffff;padding:34px;color:#1a1a1a;line-height:1.6;text-align:center;">' +
-    '<h2 style="margin:0 0 12px 0;color:#17502e;font-size:21px;">You&#39;re invited to join ' + esc_(startup) + '</h2>' +
-    '<p style="margin:0 0 6px 0;font-size:15px;color:#374151;"><strong>' + esc_(who) + '</strong> added you to the <strong>' + esc_(startup) +
-    '</strong> team on Start.sa as a <strong>' + esc_(role) + '</strong>.</p>' +
+    '<h2 style="margin:0 0 12px 0;color:#17502e;font-size:21px;">' +
+    (owner ? 'You&#39;re invited to become the owner of ' : 'You&#39;re invited to join ') + esc_(startup) + '</h2>' +
+    (owner
+      ? '<p style="margin:0 0 6px 0;font-size:15px;color:#374151;"><strong>' + esc_(who) + '</strong> invited you to take over <strong>' + esc_(startup) +
+        '</strong> on Start.sa as its <strong>owner</strong>.</p>'
+      : '<p style="margin:0 0 6px 0;font-size:15px;color:#374151;"><strong>' + esc_(who) + '</strong> added you to the <strong>' + esc_(startup) +
+        '</strong> team on Start.sa as a <strong>' + esc_(role) + '</strong>.</p>') +
     '<p style="margin:0 0 28px 0;font-size:15px;color:#374151;">If you have the Start.sa app installed, tap the button below. ' +
     'If you don&#39;t have it yet, install the app first, then come back to this email and tap the button.</p>' +
     '<table cellpadding="0" cellspacing="0" align="center"><tr><td align="center" bgcolor="#1E7A3C" style="border-radius:9px;">' +
     '<a href="' + esc_(link) + '" style="display:inline-block;padding:13px 34px;color:#ffffff;text-decoration:none;font-weight:bold;font-size:15px;">' + (inv.newUser ? 'Create your account' : 'Open Start.sa') + '</a>' +
     '</td></tr></table>' +
     '<p style="margin:28px 0 0 0;font-size:15px;color:#374151;">' + (inv.newUser ? 'Create your Start.sa account using this email, ' : 'Sign in or create your account using this email, ') + '<strong>' + esc_(inv.emailLower) +
-    '</strong>, and you&#39;ll be added to the team automatically.</p>' +
+    '</strong>' + esc_(next).replace(/'/g, '&#39;') + '</p>' +
     '<p style="margin:32px 0 0 0;font-size:11.5px;color:#9aa1a8;">Button not working? Paste this link into your browser:<br>' +
     '<a href="' + esc_(link) + '" style="color:#9aa1a8;word-break:break-all;">' + esc_(link) + '</a></p>' +
     '</td></tr>' +

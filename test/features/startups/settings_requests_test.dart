@@ -12,6 +12,7 @@ import 'package:startsa/data_access/repositories/user_repository.dart';
 import 'package:startsa/features/startups/screens/manage_startup_screen.dart';
 import 'package:startsa/features/startups/screens/my_startups_screen.dart';
 import 'package:startsa/helpers/app_session.dart';
+import 'package:startsa/models/connection_request.dart';
 import 'package:startsa/models/list_entries.dart';
 import 'package:startsa/models/startup.dart';
 import 'package:startsa/shared_ui/theme/app_theme.dart';
@@ -82,15 +83,23 @@ void main() {
   });
 
   group('Settings tab', () {
-    testWidgets('founder: Public startup and Delete, no Leave', (t) async {
+    testWidgets('owner: Public startup, Close and Leave, no Delete', (t) async {
       await _open(t);
       expect(find.text('Public startup'), findsOneWidget);
-      expect(find.text('Delete startup'), findsOneWidget);
-      expect(find.text('Leave startup'), findsNothing);
+      expect(find.text('Close startup'), findsOneWidget);
       expect(
-        find.text('Removes the startup and all its requests'),
+        find.text(
+          'Permanently closes the startup so it can no longer be edited, while your team keeps access.',
+        ),
         findsOneWidget,
       );
+      expect(find.text('Leave startup'), findsOneWidget);
+      expect(
+        find.text('Choose who will take over as owner before you leave.'),
+        findsOneWidget,
+      );
+      expect(find.text('Delete startup'), findsNothing);
+      expect(find.text('Transfer ownership'), findsNothing);
     });
 
     testWidgets('the visibility title follows the switch', (t) async {
@@ -115,10 +124,10 @@ void main() {
       expect(find.text(publicText), findsOneWidget);
     });
 
-    testWidgets('co-founder: Public startup and Leave, no Delete', (t) async {
+    testWidgets('co-founder: Public startup and Leave, no Close', (t) async {
       await _open(t, role: StartupRole.coFounder);
       expect(find.text('Public startup'), findsOneWidget);
-      expect(find.text('Delete startup'), findsNothing);
+      expect(find.text('Close startup'), findsNothing);
       expect(find.text('Leave startup'), findsOneWidget);
       expect(
         find.text('You’ll stop being a co-founder of this startup'),
@@ -129,7 +138,7 @@ void main() {
     testWidgets('team member: only Leave', (t) async {
       await _open(t, role: StartupRole.member);
       expect(find.text('Public startup'), findsNothing);
-      expect(find.text('Delete startup'), findsNothing);
+      expect(find.text('Close startup'), findsNothing);
       expect(find.text('Leave startup'), findsOneWidget);
       expect(
         find.text('You’ll be removed from this startup’s team'),
@@ -137,60 +146,51 @@ void main() {
       );
     });
 
-    testWidgets('owner with a joined co-founder: Transfer, no Delete', (
+    testWidgets('a closed startup: its owner only has the visibility switch', (
       t,
     ) async {
-      await _open(
-        t,
-        startup: PrototypeSeed.rafeeq.copyWith(
-          memberRoles: const {'layan': 'coFounder'},
-        ),
-      );
-      expect(find.text('Transfer ownership'), findsOneWidget);
-      expect(find.text('Delete startup'), findsNothing);
-      expect(find.text('Close startup'), findsNothing);
-      expect(find.text('Leave startup'), findsNothing);
-    });
-
-    testWidgets('owner with only team members: Close, no Delete', (t) async {
-      await _open(
-        t,
-        startup: PrototypeSeed.rafeeq.copyWith(
-          memberRoles: const {'reem': 'member'},
-        ),
-      );
-      expect(find.text('Close startup'), findsOneWidget);
-      expect(find.text('Delete startup'), findsNothing);
-      expect(find.text('Transfer ownership'), findsNothing);
-    });
-
-    testWidgets('a closed startup: Reopen and Leave for its owner', (t) async {
       await _open(
         t,
         startup: PrototypeSeed.rafeeq.copyWith(
           isClosed: true,
-          memberRoles: const {'reem': 'member'},
+          isPublic: true,
+          memberRoles: const {'sample-faisal': 'member'},
         ),
       );
-      expect(find.text('Reopen startup'), findsOneWidget);
-      expect(find.text('Leave startup'), findsOneWidget);
-      expect(find.text('Public startup'), findsNothing);
+      expect(find.text('Public startup'), findsOneWidget);
+      expect(find.text('Shown in the Hub as a closed startup.'), findsOneWidget);
       expect(find.text('Close startup'), findsNothing);
+      expect(find.text('Leave startup'), findsNothing);
       expect(
         find.text(
-          'This startup is hidden from Start.sa and can’t be changed. You can reopen it from Settings.',
+          'You closed this startup. It cannot be edited or reopened, but you can still choose whether it appears in the Hub.',
         ),
         findsOneWidget,
       );
+      await t.tap(find.text('Public startup'));
+      await t.pumpAndSettle();
+      expect(find.text('Private startup'), findsOneWidget);
+      expect(find.text('Visible only to its team.'), findsOneWidget);
+      final repo = StartupRepository.instance as FakeStartupRepository;
+      expect(repo.closedVisibility, [('mock-rafeeq', false)]);
+      await t.pump(const Duration(seconds: 4));
     });
 
-    testWidgets('a closed startup with nobody else: Reopen and Delete', (
+    testWidgets('a closed startup: a team member can change nothing', (
       t,
     ) async {
-      await _open(t, startup: PrototypeSeed.rafeeq.copyWith(isClosed: true));
-      expect(find.text('Reopen startup'), findsOneWidget);
-      expect(find.text('Delete startup'), findsOneWidget);
+      await _open(
+        t,
+        role: StartupRole.member,
+        startup: PrototypeSeed.rafeeq.copyWith(isClosed: true),
+      );
       expect(find.text('Leave startup'), findsNothing);
+      expect(find.text('Public startup'), findsNothing);
+      expect(
+        find.text('This startup is closed, so there is nothing to change here.'),
+        findsOneWidget,
+      );
+      expect(find.text('This startup has been closed.'), findsOneWidget);
     });
 
     testWidgets('Leave asks, then removes the user and goes back', (t) async {
@@ -212,24 +212,73 @@ void main() {
       await t.pump(const Duration(seconds: 4));
     });
 
-    testWidgets('Delete removes the startup, its requests and its interest', (
+    testWidgets('the owner alone is asked to invite the next owner', (
+      t,
+    ) async {
+      await _open(t);
+      await t.tap(find.text('Leave startup'));
+      await t.pumpAndSettle();
+      // One sheet: what happens next and the e-mail.
+      expect(find.text('Invite a new owner'), findsOneWidget);
+      expect(
+        find.textContaining('There is no one else on Rafeeq Health’s team.'),
+        findsOneWidget,
+      );
+      expect(find.text('Send invitation'), findsOneWidget);
+      await t.tap(find.text('Cancel').last);
+      await t.pumpAndSettle();
+      expect(find.text('Invite a new owner'), findsNothing);
+    });
+
+    testWidgets('the owner names a joined member the next owner', (t) async {
+      await _open(
+        t,
+        startup: PrototypeSeed.rafeeq.copyWith(
+          memberRoles: const {'sample-faisal': 'member'},
+        ),
+      );
+      await t.tap(find.text('Leave startup'));
+      await t.pumpAndSettle();
+      // A card for every joined person, then "Invite someone new".
+      expect(find.text('Choose the next owner'), findsOneWidget);
+      expect(
+        find.text('Select who will manage Rafeeq Health after you leave.'),
+        findsOneWidget,
+      );
+      expect(find.text('Invite someone new'), findsOneWidget);
+      await t.tap(find.text('Faisal Alkhaldi'));
+      await t.pumpAndSettle();
+      expect(
+        find.text('Make Faisal Alkhaldi the owner of Rafeeq Health?'),
+        findsOneWidget,
+      );
+      await t.tap(find.text('Make Faisal Alkhaldi the owner'));
+      await t.pump();
+      await t.pump(const Duration(milliseconds: 600));
+      final repo = StartupRepository.instance as FakeStartupRepository;
+      expect(repo.transfers, [('mock-rafeeq', 'sample-faisal')]);
+      await t.pump(const Duration(seconds: 4));
+    });
+
+    testWidgets('Close asks, then closes it and declines waiting requests', (
       t,
     ) async {
       final requests = RequestRepository.instance;
-      final interests = InterestRepository.instance;
-      expect(requests.inboxFor('mock-rafeeq'), isNotEmpty);
-      expect(interests.inboxFor('mock-rafeeq'), isNotEmpty);
       await _open(t);
-      await t.tap(find.text('Delete startup'));
+      await t.tap(find.text('Close startup'));
       await t.pumpAndSettle();
-      expect(find.text('Delete Rafeeq Health?'), findsOneWidget);
-      await t.tap(find.text('Delete startup').last);
+      expect(find.text('Close Rafeeq Health?'), findsOneWidget);
+      await t.tap(find.text('Close startup').last);
       await t.pump();
       await t.pump(const Duration(milliseconds: 600));
-      expect(requests.inboxFor('mock-rafeeq'), isEmpty);
-      expect(interests.inboxFor('mock-rafeeq'), isEmpty);
       final repo = StartupRepository.instance as FakeStartupRepository;
-      expect(repo.startups, isEmpty);
+      expect(repo.startups.single.isClosed, isTrue);
+      expect(
+        requests
+            .inboxFor('mock-rafeeq')
+            .where((r) => r.status == RequestStatus.pending),
+        isEmpty,
+      );
       await t.pump(const Duration(seconds: 4));
     });
   });

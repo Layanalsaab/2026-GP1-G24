@@ -96,7 +96,11 @@ class _InviteScreenState extends State<InviteScreen> {
       }
       if (!mounted) return;
       if (accept) {
-        AppToast.showGlobal('You’ve been added to ${invitation.startupName}');
+        AppToast.showGlobal(
+          invitation.isOwner
+              ? FounderToolsStrings.noticeNewOwnerTitle(invitation.startupName)
+              : 'You’ve been added to ${invitation.startupName}',
+        );
       }
       AppRouter.openHome(context);
     } catch (_) {
@@ -160,6 +164,8 @@ class _InviteScreenState extends State<InviteScreen> {
         ? 'A founder'
         : inv.invitedByName.trim();
     final role = inv.isCoFounder ? 'a co-founder' : 'a team member';
+    // Invited to take the startup over as its owner.
+    final owner = inv.isOwner;
     final me = _me;
     final other = me != null && !_signedInAsInvited;
     return Column(
@@ -177,13 +183,17 @@ class _InviteScreenState extends State<InviteScreen> {
         ),
         const SizedBox(height: 16),
         Text(
-          'You’re invited to join ${inv.startupName}',
+          owner
+              ? 'You’re invited to take over ${inv.startupName}'
+              : 'You’re invited to join ${inv.startupName}',
           textAlign: TextAlign.center,
           style: AppText.sans(size: 21, weight: FontWeight.w700),
         ),
         const SizedBox(height: 8),
         Text(
-          '$who invited you as $role${inv.roleText.trim().isEmpty ? '' : ' (${inv.roleText.trim()})'}.',
+          owner
+              ? '$who invited you to become the owner of ${inv.startupName}. You would have full control of it, including its team, its visibility and its settings.'
+              : '$who invited you as $role${inv.roleText.trim().isEmpty ? '' : ' (${inv.roleText.trim()})'}.',
           textAlign: TextAlign.center,
           style: AppText.sans(size: 15, color: AppColors.grey, height: 22),
         ),
@@ -208,14 +218,17 @@ class _InviteScreenState extends State<InviteScreen> {
         const SizedBox(height: 22),
         if (_signedInAsInvited) ...[
           AppButton(
-            label: AppConfig.autoJoinExistingAccounts
+            label: owner
+                ? 'Become the owner'
+                : AppConfig.autoJoinExistingAccounts
                 ? 'Join the team'
                 : 'Accept',
             loading: _busy,
             onPressed: () => _answer(true),
           ),
-          // Declining comes back with the notifications.
-          if (!AppConfig.autoJoinExistingAccounts) ...[
+          // Taking a startup over can always be declined; joining a team
+          // can when it isn't automatic.
+          if (owner || !AppConfig.autoJoinExistingAccounts) ...[
             const SizedBox(height: 4),
             AppButton(
               label: 'Decline',

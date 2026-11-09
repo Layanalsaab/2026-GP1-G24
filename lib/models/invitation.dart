@@ -46,9 +46,12 @@ class Invitation {
     this.newUser = false,
   });
 
-  /// `coFounder` or `member` (the same words as `Startup.memberRoles`).
+  /// `coFounder` or `member` (the same words as `Startup.memberRoles`), or
+  /// `owner`: the owner invited this person to take the startup over when
+  /// she leaves (she stays in control until it is accepted).
   static const roleCoFounder = 'coFounder';
   static const roleMember = 'member';
+  static const roleOwner = 'owner';
 
   final String startupId;
   final String startupName;
@@ -77,6 +80,7 @@ class Invitation {
   final bool newUser;
 
   bool get isCoFounder => role == roleCoFounder;
+  bool get isOwner => role == roleOwner;
   bool get isPending => status == InvitationStatus.pending;
 
   String get id => idOf(startupId, emailLower);

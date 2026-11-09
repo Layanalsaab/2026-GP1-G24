@@ -27,7 +27,7 @@
 <body>
   <main class="card">
     <div class="logo">S</div>
-    <h1>You’re invited to join a team on Start.sa</h1>
+    <h1 id="title">You’re invited to join a team on Start.sa</h1>
 
     <!-- Android only: opens THIS invite link in the Start.sa app, addressed to
          the app by its package name. That works even when Android has not
@@ -61,7 +61,20 @@
         .then(function (r) { return r.ok ? r.json() : null; })
         .then(function (d) {
           var f = d && d.fields;
-          if (f && f.newUser && f.newUser.booleanValue) {
+          if (!f) return;
+          var newUser = !!(f.newUser && f.newUser.booleanValue);
+          // Invited to take a startup over as its owner: nothing happens
+          // until they accept it in the app.
+          if (f.role && f.role.stringValue === 'owner') {
+            document.title = 'Become the owner of a startup on Start.sa';
+            document.getElementById('title').textContent =
+              'You’re invited to become the owner of a startup on Start.sa';
+            document.getElementById('how').textContent =
+              (newUser
+                ? 'Sign up with the email this invitation was sent to. '
+                : 'Log in with the email this invitation was sent to. ') +
+              'You’ll then be asked whether you accept becoming the owner. Don’t have the app yet? Install it, then come back to this email.';
+          } else if (newUser) {
             document.getElementById('how').textContent =
               'Sign up with the email this invitation was sent to, and you’ll be added to the team automatically. Don’t have the app yet? Install it, then come back to this email.';
           }
