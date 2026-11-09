@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../app_constants/home_strings.dart';
+import '../../../data_access/repositories/bookmark_repository.dart';
 import '../../../data_access/repositories/discovery_repository.dart';
 import '../../../data_access/repositories/interaction_repository.dart';
 import '../../../helpers/app_session.dart';
@@ -45,11 +46,23 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
        _ownIds = ownStartupIds,
        _own = ownStartups {
     // The lists fill in when Firestore answers.
-    _discovery.changes.addListener(notifyListeners);
+    _discovery.changes.addListener(_onDiscovery);
+    _seenBookmarks = {..._bookmarks.keys.value};
+    _bookmarks.keys.addListener(_onBookmarks);
+  }
+
+  final BookmarkRepository _bookmarks = BookmarkRepository.instance;
+
+  void _onDiscovery() {
+    _forYou = null;
+    notifyListeners();
   }
 
   /// Loads the public startups and investors (again).
-  Future<void> refreshDirectory() => _discovery.refresh();
+  Future<void> refreshDirectory() {
+    _forYou = null;
+    return _discovery.refresh();
+  }
 
   bool get isLoadingDirectory => _discovery.isLoading;
   bool get directoryFailed => _discovery.loadFailed;
@@ -63,6 +76,7 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
   void setUser(AppUser? value) {
     if (identical(value, user)) return;
     user = value;
+    _forYou = null;
     notifyListeners();
   }
 
@@ -102,6 +116,7 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
   }) {
     _own = startups;
     _ownIds = {for (final s in startups) s.id, ...alsoHide};
+    _forYou = null;
     notifyListeners();
   }
 
@@ -131,6 +146,7 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
   void selectTab(HomeTab value) {
     if (value == tab) return;
     tab = value;
+    _forYou = null;
     _clearQuery();
     notifyListeners();
   }
@@ -139,6 +155,7 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
   void selectExploreTab(int index) {
     if (index == exploreTab) return;
     exploreTab = index;
+    _forYou = null;
     notifyListeners();
   }
 
@@ -324,9 +341,47 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
 
   /// "Recommended startups for you" (investor) or "Recommended investors for
   /// you" (founder): one list, no switch.
-  List<HomeItem> get recommended => isFounder
-      ? _discovery.recommendedInvestors()
-      : _discovery.recommendedStartups(excludeIds: _ownIds);
+  List<HomeItem> get recommended => _forYou ??= _computeForYou();
+
+  /// The last For You list. It stays as it is while For You is on screen (a
+  /// card must not vanish when you bookmark it) and is worked out again the
+  /// next time For You opens or is refreshed.
+  List<HomeItem>? _forYou;
+
+  List<HomeItem> _computeForYou() {
+    final saved = {
+      for (final k in _bookmarks.keys.value)
+        k: _bookmarks.savedAt(k) ?? DateTime.now(),
+    };
+    return isFounder
+        ? _discovery.recommendedInvestors(
+            own: _own,
+            bookmarks: saved,
+          )
+        : _discovery.recommendedStartups(
+            excludeIds: _ownIds,
+            criteria: user?.investorCriteria,
+            investorId: user?.uid,
+            bookmarks: saved,
+          );
+  }
+
+  Set<String> _seenBookmarks = {};
+
+  void _onBookmarks() {
+    final now = _bookmarks.keys.value;
+    // Many at once means the saved bookmarks were just loaded (or cleared):
+    // use them right away. One toggle waits until For You is left.
+    final bulk = now.difference(_seenBookmarks).length > 1 ||
+        _seenBookmarks.difference(now).length > 1;
+    _seenBookmarks = {...now};
+    final onForYou =
+        tab == HomeTab.explore && effectiveExploreTab == 0 && !filtering;
+    if (bulk || !onForYou) {
+      _forYou = null;
+      if (bulk) notifyListeners();
+    }
+  }
 
   /// The heading of For You and the text of its (i) button.
   String get recommendedTitle => isFounder
@@ -371,7 +426,8 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
 
   @override
   void dispose() {
-    _discovery.changes.removeListener(notifyListeners);
+    _discovery.changes.removeListener(_onDiscovery);
+    _bookmarks.keys.removeListener(_onBookmarks);
     searchController.dispose();
     super.dispose();
   }

@@ -31,6 +31,9 @@ class InvestorProfile {
     this.ledRound,
     this.commerceModels = const [],
     this.photoUrl,
+    this.ticketBand,
+    this.roundMin,
+    this.roundMax,
   });
 
   final String id;
@@ -95,6 +98,12 @@ class InvestorProfile {
 
   /// Profile photo (null: the default picture).
   final String? photoUrl;
+
+  /// "How much do you usually invest" band and the round size (SAR) the
+  /// investor takes: the ticket and round-size checks of the matching.
+  final String? ticketBand;
+  final int? roundMin;
+  final int? roundMax;
 
   /// "SAR 500K – 1M" from two amounts (K thousands, M millions); one amount
   /// gives "SAR 500K"; none gives "".
@@ -162,6 +171,9 @@ class InvestorProfile {
       ledRound: c?.hasLedRound,
       commerceModels: shortModels.isEmpty ? const [] : shortModels.split(', '),
       photoUrl: _text(d['photoUrl']),
+      ticketBand: c?.ticketBand,
+      roundMin: c?.roundMin,
+      roundMax: c?.roundMax,
     );
   }
 
@@ -213,5 +225,8 @@ class InvestorProfile {
     ledRound: ledRound,
     commerceModels: commerceModels,
     photoUrl: photoUrl,
+    ticketBand: ticketBand,
+    roundMin: roundMin,
+    roundMax: roundMax,
   );
 }

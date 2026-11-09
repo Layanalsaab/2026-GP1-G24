@@ -234,17 +234,19 @@ void main() {
       expect(i.recommendedTitle, 'Recommended startups for you');
       expect(
         i.recommendedInfo,
-        'Based on your investment criteria: the sectors, stages and commerce '
-        'models you want to invest in, and how much you usually invest.',
+        'Based on the sectors, stages and commerce models you want to invest '
+        'in, how much you invest, your open tickets, and the startups you '
+        'bookmark. The more you bookmark, the more it follows your taste.',
       );
       final f = vm(SessionRole.founder);
       expect(f.recommended.every((x) => x.kind == HomeItemKind.investor), isTrue);
       expect(f.recommendedTitle, 'Recommended investors for you');
       expect(
         f.recommendedInfo,
-        'Based on your startup: its sector, stage, commerce model and how much '
-        'you are raising, compared with each investor’s interests and usual '
-        'investment size.',
+        'Based on each of your startups: its sector, stage, commerce model and '
+        'how much you are raising, on the investors’ open tickets, and on the '
+        'investors you bookmark. The more you bookmark, the more it follows '
+        'your taste.',
       );
       i.dispose();
       f.dispose();

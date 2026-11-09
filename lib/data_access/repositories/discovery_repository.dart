@@ -2,9 +2,13 @@ import 'package:flutter/foundation.dart';
 
 import '../../app_constants/firestore_collections.dart';
 import '../../models/home_item.dart';
+import '../../models/investment_ticket.dart';
+import '../../models/investor_criteria.dart';
 import '../../models/investor_profile.dart';
 import '../../models/program.dart';
 import '../../models/startup.dart';
+import '../../recommender/for_you.dart';
+import '../../recommender/knowledge_filter.dart' show sectorValue;
 import '../firebase_services/firestore_service.dart';
 import '../mock_data/prototype_seed.dart';
 import 'request_repository.dart';
@@ -25,11 +29,15 @@ class DiscoveryRepository {
       sample = false;
 
   /// Tests: the sample startups and investors, no Firestore.
-  DiscoveryRepository.sample()
-    : _firestore = null,
-      sample = true,
-      _startups = List.of(PrototypeSeed.startups),
-      _investors = List.of(PrototypeSeed.investors);
+  DiscoveryRepository.sample({
+    List<Startup>? startups,
+    List<InvestorProfile>? investors,
+    List<InvestmentTicket> tickets = const [],
+  }) : _firestore = null,
+       sample = true,
+       _startups = List.of(startups ?? PrototypeSeed.startups),
+       _investors = List.of(investors ?? PrototypeSeed.investors),
+       _tickets = List.of(tickets);
 
   /// The app-wide instance. Tests replace it with a fake.
   static DiscoveryRepository instance = DiscoveryRepository();
@@ -39,12 +47,20 @@ class DiscoveryRepository {
   /// time ("Show more").
   static const startupLimit = 2000;
   static const investorLimit = 2000;
+  static const ticketLimit = 3000;
 
   final FirestoreService? _firestore;
   final bool sample;
 
   List<Startup> _startups = [];
   List<InvestorProfile> _investors = [];
+  List<InvestmentTicket> _tickets = [];
+
+  /// The open investment tickets of [investorId] (what they want right now).
+  List<InvestmentTicket> openTicketsOf(String investorId) => [
+    for (final t in _tickets)
+      if (t.investorId == investorId && t.isOpen) t,
+  ];
 
   /// Bumps whenever the lists were (re)loaded.
   final ValueNotifier<int> changes = ValueNotifier<int>(0);
@@ -68,10 +84,23 @@ class DiscoveryRepository {
           limit: startupLimit,
         ),
         db.listCollection(FirestoreCollections.investors, limit: investorLimit),
+        // Signed-in people can read the tickets; for anyone else (or when it
+        // fails) For You simply goes without them.
+        db
+            .queryWhereEqual(
+              FirestoreCollections.tickets,
+              TicketFields.status,
+              TicketFields.open,
+              limit: ticketLimit,
+            )
+            .catchError((_) => <FirestoreDocument>[]),
       ]);
       _startups = [for (final d in results[0]) ?Startup.fromMap(d.id, d.data)];
       _investors = [
         for (final d in results[1]) ?InvestorProfile.fromMap(d.id, d.data),
+      ];
+      _tickets = [
+        for (final d in results[2]) ?InvestmentTicket.fromMap(d.id, d.data),
       ];
     } catch (e) {
       loadFailed = true;
@@ -146,16 +175,16 @@ class DiscoveryRepository {
     ]..sort((a, b) => b.createdAt!.compareTo(a.createdAt!));
     return [
       for (final s in dated)
-        HomeItem.fromStartup(
-          s,
-        ).withHighlight(joinedAgo(s.createdAt!, now: today)),
+        HomeItem.fromStartup(s)
+            .withHighlight(joinedAgo(s.createdAt!, now: today)),
     ];
   }
 
-  static int _daysSince(DateTime created, DateTime today) =>
-      DateTime(today.year, today.month, today.day)
-          .difference(DateTime(created.year, created.month, created.day))
-          .inDays;
+  static int _daysSince(DateTime created, DateTime today) => DateTime(
+    today.year,
+    today.month,
+    today.day,
+  ).difference(DateTime(created.year, created.month, created.day)).inDays;
 
   /// "Joined today" / "Joined yesterday" / "Joined 3 days ago" / "Joined 2
   /// weeks ago" / "Joined 4 months ago" / "Joined over a year ago".
@@ -223,11 +252,121 @@ class DiscoveryRepository {
     return 'Joined ${months[created.month - 1]} ${created.year}';
   }
 
-  /// "Recommended for you": the first three of each side.
-  List<HomeItem> recommendedStartups({Set<String> excludeIds = const {}}) =>
-      startups(excludeIds: excludeIds).take(3).toList();
+  /// For You, investor side: startups like the investor's criteria and their
+  /// open tickets, pulled toward the startups they bookmarked ([bookmarks]:
+  /// key -> when). A startup is left out when its amount is outside their
+  /// ticket and round size, unless one of their open tickets takes it; a
+  /// startup an open ticket takes (amount, sector, stage) ranks higher. With
+  /// nothing to go on it is the first three.
+  List<HomeItem> recommendedStartups({
+    Set<String> excludeIds = const {},
+    InvestorCriteria? criteria,
+    String? investorId,
+    Map<String, DateTime> bookmarks = const {},
+    DateTime? now,
+  }) {
+    final at = now ?? DateTime.now();
+    final tickets = investorId == null
+        ? const <InvestmentTicket>[]
+        : openTicketsOf(investorId);
+    final taste = Taste.build(
+      criteria == null ? Features.empty : criteriaFeatures(criteria),
+      [
+        for (final e in bookmarks.entries)
+          if (e.key.startsWith('s-'))
+            if (startupById(e.key.substring(2)) case final s?)
+              Signal(startupFeatures(s), e.value),
+        for (final t in tickets)
+          Signal(
+            ticketFeatures(t),
+            t.createdAt ?? at,
+            strength: ticketStrength,
+          ),
+      ],
+      now: at,
+    );
+    final candidates = <Candidate<Startup>>[
+      for (final s in _startups)
+        if (s.isListed &&
+            !excludeIds.contains(s.id) &&
+            !bookmarks.containsKey('s-${s.id}') &&
+            (sizesFit(
+                  s,
+                  ticketBand: criteria?.ticketBand,
+                  roundMin: criteria?.roundMin,
+                  roundMax: criteria?.roundMax,
+                ) ||
+                ticketFits(s, tickets)))
+          Candidate(s, s.name, startupFeatures(s), s.sector.value),
+    ];
+    final picks = recommendBest<Startup>(
+      [taste],
+      candidates,
+      bonus: (c, _) => ticketBonus(c.item, tickets),
+    );
+    if (picks.isEmpty) return startups(excludeIds: excludeIds).take(3).toList();
+    return [for (final p in picks) HomeItem.fromStartup(p.item)];
+  }
 
-  List<HomeItem> recommendedInvestors() => investors().take(3).toList();
+  /// For You, founder side: each of the founder's startups ([own]) is its
+  /// own taste, pulled toward the investors they bookmarked. An investor is
+  /// scored against every startup whose amount their ticket and round size
+  /// (or one of their open tickets) take, and ranked by the best of those; an
+  /// open ticket that takes the startup's amount, sector and stage ranks the
+  /// investor higher. When two investors tie, the one that fits more of the
+  /// startups goes first. With no startup, only the bookmarks count.
+  List<HomeItem> recommendedInvestors({
+    List<Startup> own = const [],
+    Map<String, DateTime> bookmarks = const {},
+    DateTime? now,
+  }) {
+    final signals = [
+      for (final e in bookmarks.entries)
+        if (e.key.startsWith('i-'))
+          if (investorById(e.key.substring(2)) case final i?)
+            Signal(investorFeatures(i), e.value),
+    ];
+    final at = now ?? DateTime.now();
+    final tastes = own.isEmpty
+        ? [Taste.build(Features.empty, signals, now: at)]
+        : [
+            for (final s in own)
+              Taste.build(startupFeatures(s), signals, now: at),
+          ];
+    final tickets = <String, List<InvestmentTicket>>{};
+    for (final t in _tickets) {
+      if (t.isOpen) (tickets[t.investorId] ??= []).add(t);
+    }
+    final candidates = <Candidate<InvestorProfile>>[
+      for (final i in _investors)
+        if (!bookmarks.containsKey('i-${i.id}'))
+          Candidate(
+            i,
+            i.name,
+            investorFeatures(i),
+            i.sectors.isEmpty ? null : sectorValue[i.sectors.first],
+          ),
+    ];
+    final picks = recommendBest<InvestorProfile>(
+      tastes,
+      candidates,
+      allowed: own.isEmpty
+          ? null
+          : (c, t) =>
+                sizesFit(
+                  own[t],
+                  ticketBand: c.item.ticketBand,
+                  roundMin: c.item.roundMin,
+                  roundMax: c.item.roundMax,
+                ) ||
+                ticketFits(own[t], tickets[c.item.id] ?? const []),
+      bonus: own.isEmpty
+          ? null
+          : (c, t) => ticketBonus(own[t], tickets[c.item.id] ?? const []),
+    );
+    if (picks.isEmpty) return investors().take(3).toList();
+    return [for (final p in picks) HomeItem.fromInvestor(p.item)];
+  }
 
   // ---- Profile lookups ----
 
