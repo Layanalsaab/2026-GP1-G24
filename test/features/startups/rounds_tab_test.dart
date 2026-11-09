@@ -443,7 +443,7 @@ void main() {
       expect(find.text('No investors recorded'), findsOneWidget);
     });
 
-    testWidgets('Matches: the top five investors with percent and reason', (
+    testWidgets('Matches: the top five investors with the percent only', (
       t,
     ) async {
       Map<String, dynamic> investor(int n) => {
@@ -470,7 +470,8 @@ void main() {
       // Seven fit; only five are shown.
       expect(find.textContaining('Matched Investor'), findsNWidgets(5));
       expect(find.text('100% match'), findsNWidgets(5));
-      expect(find.text('Same sector & stage'), findsNWidgets(5));
+      // Why they matched is on the investor's profile, not on the card.
+      expect(find.text('Same sector & stage'), findsNothing);
       // "Angel Investor · [pin] Riyadh" on every match card.
       expect(find.text('Angel Investor'), findsAtLeastNWidgets(5));
       expect(find.text('Riyadh'), findsAtLeastNWidgets(5));
@@ -484,6 +485,16 @@ void main() {
       await t.tap(find.text('Matched Investor 1'));
       await t.pumpAndSettle();
       expect(find.byType(InvestorProfileScreen), findsOneWidget);
+      // The profile starts with the match and why.
+      expect(
+        find.text(
+          '100% match with your startup Rafeeq Health',
+          findRichText: true,
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Sector · HealthTech', findRichText: true), findsOneWidget);
+      expect(find.text('Stage · Seed', findRichText: true), findsOneWidget);
     });
 
     testWidgets('Edit round: pre-filled, confirm, then the round is updated', (

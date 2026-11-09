@@ -13,9 +13,9 @@ import '../../../helpers/round_limits.dart';
 import '../../../helpers/safe_notifier.dart';
 import '../../../helpers/startup_validators.dart';
 import '../../../models/funding_round.dart';
-import '../../../models/home_item.dart';
 import '../../../models/investor_profile.dart';
 import '../../../models/list_entries.dart';
+import '../../../models/match_summary.dart';
 import '../../../models/startup.dart';
 import '../../../models/startup_enums.dart';
 
@@ -268,16 +268,19 @@ class RoundsViewModel extends ChangeNotifier with SafeNotifier {
   ValueListenable<int> get matchChanges => _matching.changes;
 
   /// The top [matchesShown] investors for an OPEN [round]: the startup with
-  /// the round's type as its stage and the round's amount as its ask, against
-  /// the investors' interests, with the same score as the rest of matching
-  /// (sector 0.41, stage 0.29, commerce model 0.18). Works for a private
-  /// startup too. Throws AuthException when the investors can't be read.
-  Future<List<HomeItem>> matchesFor(FundingRound round) async {
+  /// the round's type as its stage, the round's amount as its ask and what
+  /// it raised, against the investors' open tickets first, then their
+  /// profiles (lib/recommender has the rules: sector 0.41, stage 0.29,
+  /// commerce model 0.18). Works for a private startup too; a closed one
+  /// gets none. Throws AuthException when the investors can't be read.
+  Future<List<MatchResult>> matchesFor(FundingRound round) async {
     final s = _latest;
-    if (s == null || !round.isOpen) return const [];
+    if (s == null || s.isClosed || !round.isOpen) return const [];
     final target = s.copyWith(
       stage: round.type,
+      lookingFor: {...s.lookingFor, LookingFor.funding},
       fundingRequirement: round.amount,
+      raisedInRound: round.raised,
     );
     final all = await _matching.investorsForStartup(target);
     return all.take(matchesShown).toList();
@@ -285,6 +288,10 @@ class RoundsViewModel extends ChangeNotifier with SafeNotifier {
 
   /// The profile of a matched investor shown in [matchesFor].
   InvestorProfile? matchedInvestor(String id) => _matching.investorById(id);
+
+  /// Why [match] matched, for the top of the investor's profile.
+  MatchSummary summaryOf(MatchResult match) =>
+      MatchSummary.forStartup(_latest?.name ?? 'this startup', match);
 
   /// The startup as the screen has it now.
   Startup? get startup => _latest;

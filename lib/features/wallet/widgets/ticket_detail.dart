@@ -5,6 +5,7 @@ import '../../../helpers/formatters.dart';
 import '../../../helpers/ticket_rules.dart';
 import '../../../models/connection_request.dart';
 import '../../../models/investment_ticket.dart';
+import '../../../models/match_summary.dart';
 import '../../../shared_ui/widgets/overlays/app_dialog.dart';
 import '../../startup_profile/screens/startup_profile_screen.dart';
 import '../../startups/widgets/founder_ui.dart';
@@ -49,13 +50,14 @@ class TicketDetail extends StatelessWidget {
     }
   }
 
-  void _openStartup(BuildContext context, String id) {
+  /// Opens a startup; from a match, its profile starts with why it matched.
+  void _openStartup(BuildContext context, String id, {MatchSummary? match}) {
     final startup = vm.startupById(id);
     if (startup == null) {
       AppToast.error(context, 'This startup isn’t available.');
       return;
     }
-    StartupProfileScreen.open(context, startup: startup);
+    StartupProfileScreen.open(context, startup: startup, match: match);
   }
 
   @override
@@ -105,7 +107,11 @@ class TicketDetail extends StatelessWidget {
           _Matches(
             vm: vm,
             ticket: ticket,
-            onOpen: (id) => _openStartup(context, id),
+            onOpen: (m) => _openStartup(
+              context,
+              m.startup.id,
+              match: vm.summaryOf(ticket, m),
+            ),
           ),
         ],
       ],
@@ -342,7 +348,7 @@ class _Matches extends StatelessWidget {
 
   final WalletViewModel vm;
   final InvestmentTicket ticket;
-  final ValueChanged<String> onOpen;
+  final ValueChanged<TicketMatch> onOpen;
 
   @override
   Widget build(BuildContext context) {
@@ -360,7 +366,7 @@ class _Matches extends StatelessWidget {
             vm: vm,
             ticket: ticket,
             match: m,
-            onOpen: () => onOpen(m.startup.id),
+            onOpen: () => onOpen(m),
           ),
           const SizedBox(height: 10),
         ],
@@ -477,37 +483,24 @@ class _MatchCard extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 6),
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 4,
-                          crossAxisAlignment: WrapCrossAlignment.center,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 9,
-                                vertical: 3,
-                              ),
-                              decoration: BoxDecoration(
-                                color: AppColors.mossChip,
-                                borderRadius: BorderRadius.circular(999),
-                              ),
-                              child: Text(
-                                '${match.percent}% match',
-                                style: AppText.sans(
-                                  size: 12.5,
-                                  color: AppColors.moss600,
-                                  weight: FontWeight.w700,
-                                ),
-                              ),
+                        // The % only: why it matched is on the profile.
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 9,
+                            vertical: 3,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.mossChip,
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Text(
+                            '${match.percent}% match',
+                            style: AppText.sans(
+                              size: 12.5,
+                              color: AppColors.moss600,
+                              weight: FontWeight.w700,
                             ),
-                            Text(
-                              match.reason,
-                              style: AppText.sans(
-                                size: 12.5,
-                                color: AppColors.grey,
-                              ),
-                            ),
-                          ],
+                          ),
                         ),
                       ],
                     ),

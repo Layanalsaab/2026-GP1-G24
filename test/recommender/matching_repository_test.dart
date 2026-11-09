@@ -3,8 +3,7 @@ import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:startsa/data_access/firebase_services/firestore_service.dart';
 import 'package:startsa/data_access/repositories/matching_repository.dart';
-import 'package:startsa/models/app_user.dart';
-import 'package:startsa/models/home_item.dart';
+import 'package:startsa/models/investment_ticket.dart';
 import 'package:startsa/models/investor_criteria.dart';
 import 'package:startsa/models/startup.dart';
 import 'package:startsa/models/startup_enums.dart';
@@ -71,15 +70,6 @@ void main() {
     stages: ['Seed'],
     commerceModels: ['Business-to-Business (B2B)'],
   );
-  const investorUser = AppUser(
-    uid: 'u1',
-    role: AccountRole.investor,
-    fullName: 'Test Investor',
-    email: 'test@example.com',
-    city: 'Riyadh',
-    investorCriteria: criteria,
-  );
-
   late _FakeFirestore firestore;
   late MatchingRepository repo;
 
@@ -90,7 +80,34 @@ void main() {
         (id: 'close', data: _startup({'name': 'Close', 'stage': 'series_a'})),
         (id: 'none', data: _startup({'sector': 'media', 'stage': 'series_b'})),
         (id: 'private', data: _startup({'isPublic': false})),
+        (id: 'closed', data: _startup({'status': 'closed'})),
         (id: 'broken', data: _startup({'sector': 'not-a-sector'})),
+      ],
+      'tickets': [
+        (
+          id: 'ANG-3-T1',
+          data: {
+            'investorId': 'ANG-3',
+            'name': 'Ticket 1',
+            'sectors': ['Fintech'],
+            'stages': ['Seed'],
+            'amountMin': 100000,
+            'amountMax': 500000,
+            'status': 'open',
+          },
+        ),
+        (
+          id: 'ANG-2-T1',
+          data: {
+            'investorId': 'ANG-2',
+            'name': 'Ticket 1',
+            'sectors': ['Fintech'],
+            'stages': ['Seed'],
+            'amountMin': 100000,
+            'amountMax': 500000,
+            'status': 'used',
+          },
+        ),
       ],
       'investors': [
         (id: 'ANG-1', data: _investor({})),
@@ -116,39 +133,52 @@ void main() {
     repo = MatchingRepository(firestore: firestore, live: false);
   });
 
-  test('investor: public startups, exact before close, as cards', () async {
-    final items = await repo.startupsForInvestor(investorUser);
-    expect(items.map((i) => i.id), ['exact', 'close']);
-    expect(items.every((i) => i.kind == HomeItemKind.startup), isTrue);
-    expect(items[0].matchPercent, 100);
-    expect(items[0].matchReason, 'Same sector & stage');
-    expect(items[1].matchPercent, 67); // (0.41 + 0.18) / 0.88
-    expect(items[1].matchReason, 'Close match · same sector');
+  InvestmentTicket ticket([Map<String, dynamic> over = const {}]) =>
+      InvestmentTicket.fromMap(over['id'] as String? ?? 'u1-T1', {
+        'investorId': 'u1',
+        'name': 'Ticket 1',
+        'sectors': ['Fintech'],
+        'stages': ['Seed'],
+        'amountMin': 100000,
+        'amountMax': 500000,
+        'status': 'open',
+        ...over,
+      })!;
+
+  test('publicStartups: public and not closed only', () async {
+    final all = await repo.publicStartups();
+    // A document the app can't show ('broken') is left out too.
+    expect(all.map((s) => s.id), ['exact', 'close', 'none']);
+    expect(all.every((s) => s.isPublic && !s.isClosed), isTrue);
     expect(firestore.queries, ['startups.isPublic']);
-    // A tapped card opens the real startup.
+    // A tapped match opens the real startup.
     expect(repo.startupById('close')?.name, 'Close');
   });
 
-  test('investor: the pool is kept; refresh reads again', () async {
-    await repo.startupsForInvestor(investorUser);
-    await repo.startupsForInvestor(investorUser);
+  test('the pool is kept; refresh reads again', () async {
+    await repo.publicStartups();
+    await repo.publicStartups();
     expect(firestore.queries.length, 1);
-    await repo.startupsForInvestor(investorUser, refresh: true);
+    await repo.publicStartups(refresh: true);
     expect(firestore.queries.length, 2);
   });
 
-  test('investor without answers: no matches and no reads', () async {
-    const blank = AppUser(
-      uid: 'u2',
-      role: AccountRole.investor,
-      fullName: 'New Investor',
-      email: 'new@example.com',
+  test('a ticket: exact before close, private and closed never', () async {
+    final pool = await repo.publicStartups();
+    final r = MatchingRepository.matchesForTicket(
+      ticket(),
+      criteria.commerceModels,
+      pool,
     );
-    expect(await repo.startupsForInvestor(blank), isEmpty);
-    expect(firestore.queries, isEmpty);
+    expect(r.map((m) => m.id), ['exact', 'close']);
+    // SAR 2M left, the ticket goes up to 500K: round fit 0.25.
+    expect(r[0].percent, 91); // 0.41 + 0.29 + 0.18 + 0.12 * 0.25
+    expect(r[1].percent, 62); // the stage differs: 0.41 + 0.18 + 0.03
+    expect(r[1].close, isTrue);
+    expect(r[0].remaining, 2000000);
   });
 
-  test('investor: only startups that are raising', () async {
+  test('a ticket matches only startups that are raising', () async {
     firestore.collections['startups']!.add((
       id: 'quiet',
       data: _startup({
@@ -157,74 +187,73 @@ void main() {
         'fundingRequirement': null,
       }),
     ));
-    final items = await repo.startupsForInvestor(investorUser);
-    expect(items.map((i) => i.id), ['exact', 'close']);
+    final pool = await repo.publicStartups();
+    final r = MatchingRepository.matchesForTicket(ticket(), const [], pool);
+    expect(r.map((m) => m.id), ['exact', 'close']);
   });
 
-  test('founder: investors for a private startup, as cards', () async {
+  test('founder: open tickets first, then profiles (private startup)', () async {
     final mine = Startup.fromMap(
       'mine',
       _startup({'founderId': 'u9', 'name': 'Mine', 'isPublic': false}),
     )!;
-    final items = await repo.investorsForStartup(mine);
-    expect(items.map((i) => i.id), ['ANG-1', 'ANG-2']);
-    expect(items.every((i) => i.kind == HomeItemKind.investor), isTrue);
-    // ANG-1: (0.41 + 0.29 / sqrt 2) / 0.70 = 0.879 (no boosts)
-    expect(items[0].matchPercent, 88);
-    expect(items[0].matchReason, 'Same sector & stage');
-    expect(items[0].line, 'Backs early fintech teams.');
-    expect(items[0].stage, 'Pre-seed – Seed');
-    expect(items[1].matchReason, 'Close match · same sector');
-    expect(firestore.queries, ['investors.role']);
+    final r = await repo.investorsForStartup(mine);
+    // ANG-3's profile doesn't fit, but their open ticket does.
+    expect(r.map((m) => m.id), ['ANG-3', 'ANG-1', 'ANG-2']);
+    expect(r[0].ticketId, 'ANG-3-T1');
+    // ANG-1: (0.41 + 0.29 / sqrt 2) / 0.70 = 0.879 (no commerce models)
+    expect(r[1].percent, 88);
+    expect(r[1].ticketId, isNull);
+    expect(r[2].close, isTrue);
+    expect(firestore.queries, ['investors.role', 'tickets.status']);
     final profile = repo.investorById('ANG-1')!;
     expect(profile.profileBio, 'Backs early fintech teams.');
     expect(profile.ticketRange, 'SAR 100K – 500K');
     expect(profile.title, 'Angel Investor');
   });
 
-  test(
-    'founder: a long bio is cut on the card, whole on the profile',
-    () async {
-      final long =
-          'A seasoned entrepreneur with over 20 years of experience in the '
-          'technology industry, with a passion for innovation and growth. '
-          'I founded a savings platform and mentored more than 150 startups.';
-      firestore.collections['investors']![0] = (
-        id: 'ANG-1',
-        data: _investor({'bio': long}),
-      );
-      final mine = Startup.fromMap('mine', _startup({'founderId': 'u9'}))!;
-      final card = (await repo.investorsForStartup(mine)).first;
-      expect(
-        card.line.length,
-        lessThanOrEqualTo(MatchingRepository.cardBioMax + 1),
-      );
-      expect(card.line, endsWith('…'));
-      // Cut after a full sentence still ends with "…"; a short bio is whole.
-      expect(
-        MatchingRepository.cardPreview(
-          '${'Word ' * 20}ends here. More text follows.',
-        ),
-        endsWith('…'),
-      );
-      expect(
-        MatchingRepository.cardPreview('Backs early teams.'),
-        'Backs early teams.',
-      );
-      expect(repo.investorById('ANG-1')!.profileBio, long);
-    },
-  );
+  test('founder: a closed startup gets no matches and reads nothing', () async {
+    final closed = Startup.fromMap(
+      'mine',
+      _startup({'founderId': 'u9', 'status': 'closed'}),
+    )!;
+    expect(await repo.investorsForStartup(closed), isEmpty);
+    expect(firestore.queries, isEmpty);
+  });
+
+  test('founder: a long bio is cut for cards, whole on the profile', () async {
+    final long =
+        'A seasoned entrepreneur with over 20 years of experience in the '
+        'technology industry, with a passion for innovation and growth. '
+        'I founded a savings platform and mentored more than 150 startups.';
+    firestore.collections['investors']![0] = (
+      id: 'ANG-1',
+      data: _investor({'bio': long}),
+    );
+    final mine = Startup.fromMap('mine', _startup({'founderId': 'u9'}))!;
+    await repo.investorsForStartup(mine);
+    final about = repo.investorById('ANG-1')!.about!;
+    expect(about.length, lessThanOrEqualTo(MatchingRepository.cardBioMax + 1));
+    expect(about, endsWith('…'));
+    // Cut after a full sentence still ends with "…"; a short bio is whole.
+    expect(
+      MatchingRepository.cardPreview(
+        '${'Word ' * 20}ends here. More text follows.',
+      ),
+      endsWith('…'),
+    );
+    expect(
+      MatchingRepository.cardPreview('Backs early teams.'),
+      'Backs early teams.',
+    );
+    expect(repo.investorById('ANG-1')!.profileBio, long);
+  });
 
   test('a read that fails throws (the screens show a calm message)', () async {
     final broken = MatchingRepository(firestore: _FailingFirestore(), live: false);
-    await expectLater(broken.startupsForInvestor(investorUser), throwsA(anything));
     await expectLater(broken.publicStartups(), throwsA(anything));
-  });
-
-  test('publicStartups: every public startup that is not closed', () async {
-    final all = await repo.publicStartups();
-    expect(all, isNotEmpty);
-    expect(all.every((s) => s.isPublic && !s.isClosed), isTrue);
+    final mine = Startup.fromMap('mine', _startup({'founderId': 'u9'}))!;
+    await expectLater(broken.investorsForStartup(mine), throwsA(anything));
   });
 
   group('live updates (Firestore listeners)', () {
@@ -238,30 +267,26 @@ void main() {
 
     tearDown(() => liveRepo.clear());
 
-    test(
-      'a founder edits a startup: the investor list follows the listener',
-      () async {
-        final first = liveRepo.startupsForInvestor(investorUser);
-        live.send('startups', [
-          (id: 'a', data: _startup({'name': 'Alpha'})),
-        ]);
-        expect((await first).map((i) => i.id), ['a']);
-        var changed = 0;
-        liveRepo.changes.addListener(() => changed++);
-        // Another founder makes their startup fit (no new query is made).
-        live.send('startups', [
-          (id: 'a', data: _startup({'name': 'Alpha'})),
-          (id: 'b', data: _startup({'name': 'Beta'})),
-        ]);
-        await _settle();
-        expect(changed, greaterThan(0));
-        final again = await liveRepo.startupsForInvestor(investorUser);
-        expect(again.map((i) => i.id), ['a', 'b']);
-        expect(live.listens, ['startups']); // one listener, started once
-      },
-    );
+    test('a startup opens a round: the pool follows the listener', () async {
+      final first = liveRepo.publicStartups();
+      live.send('startups', [
+        (id: 'a', data: _startup({'name': 'Alpha'})),
+      ]);
+      expect((await first).map((s) => s.id), ['a']);
+      var changed = 0;
+      liveRepo.changes.addListener(() => changed++);
+      // Another founder's startup arrives, and Alpha closes (no new query).
+      live.send('startups', [
+        (id: 'a', data: _startup({'name': 'Alpha', 'status': 'closed'})),
+        (id: 'b', data: _startup({'name': 'Beta'})),
+      ]);
+      await _settle();
+      expect(changed, greaterThan(0));
+      expect((await liveRepo.publicStartups()).map((s) => s.id), ['b']);
+      expect(live.listens, ['startups']); // one listener, started once
+    });
 
-    test('the founder edits their startup: the investors follow', () async {
+    test('investors and open tickets are watched for a round', () async {
       final a = Startup.fromMap('a', _startup({'founderId': 'u9'}))!;
       final first = liveRepo.investorsForStartup(a);
       live.send('investors', [
@@ -275,27 +300,50 @@ void main() {
           }),
         ),
       ]);
-      expect((await first).map((i) => i.id), ['ANG-1']);
-      // Saved as Media / Series B: the new copy gives other investors.
+      await _settle();
+      live.send('tickets', const []);
+      expect((await first).map((m) => m.id), ['ANG-1']);
+      // ANG-3 opens a ticket that fits: they come first (no new query).
+      live.send('tickets', [
+        (
+          id: 'ANG-3-T1',
+          data: {
+            'investorId': 'ANG-3',
+            'name': 'Ticket 1',
+            'sectors': ['Fintech'],
+            'stages': ['Seed'],
+            'amountMin': 100000,
+            'amountMax': 500000,
+            'status': 'open',
+          },
+        ),
+      ]);
+      await _settle();
+      expect(
+        (await liveRepo.investorsForStartup(a)).map((m) => m.id),
+        ['ANG-3', 'ANG-1'],
+      );
+      // Saved as Media / Series B: other investors.
       final edited = a.copyWith(
         sector: Sector.fromValue('media'),
         stage: StartupStage.seriesB,
       );
       expect(
-        (await liveRepo.investorsForStartup(edited)).map((i) => i.id),
+        (await liveRepo.investorsForStartup(edited)).map((m) => m.id),
         ['ANG-3'],
       );
+      expect(live.listens, ['investors', 'tickets']);
     });
 
     test('a listener error: it throws, and a new listener starts next time', () async {
-      final failed = liveRepo.startupsForInvestor(investorUser);
+      final failed = liveRepo.publicStartups();
       live.fail('startups');
       await expectLater(failed, throwsA(anything));
-      final retry = liveRepo.startupsForInvestor(investorUser);
+      final retry = liveRepo.publicStartups();
       live.send('startups', [
         (id: 'a', data: _startup({'name': 'Alpha'})),
       ]);
-      expect((await retry).map((i) => i.id), ['a']);
+      expect((await retry).map((s) => s.id), ['a']);
       expect(live.listens, ['startups', 'startups']);
     });
   });
