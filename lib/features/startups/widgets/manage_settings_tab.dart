@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../app_constants/founder_tools_strings.dart';
 import '../../../models/list_entries.dart';
 import 'founder_ui.dart';
+import 'view_only_banner.dart';
 import 'manage_card.dart';
 
 /// Manage startup -> Settings: one white card per row, each a full-width
@@ -14,11 +15,9 @@ import 'manage_card.dart';
 ///   co-founders of an active startup; on a closed startup only its owner
 ///   (it is the one thing left to change).
 /// * The owner of an active startup: **Close startup** (permanent, kept for
-///   everyone) and **Leave startup** (she names the next owner first). While
-///   a person she invited to take over hasn't answered, a "Waiting for…" card
-///   with **Cancel invitation** replaces Leave.
-/// * Co-founders and team members of an active startup: **Leave startup**.
-/// * Nobody leaves a closed startup.
+///   everyone).
+/// * **Leave startup** is not here: it sits at the bottom of the Details tab
+///   ([ManageLeaveSection]).
 ///
 /// What a role cannot do is not shown at all.
 class ManageSettingsTab extends StatelessWidget {
@@ -28,11 +27,8 @@ class ManageSettingsTab extends StatelessWidget {
     required this.startupName,
     required this.isPublic,
     required this.onVisibilityChanged,
-    required this.onLeave,
     this.isClosed = false,
     this.onClose,
-    this.pendingOwnerEmail,
-    this.onCancelOwnerInvite,
   });
 
   /// What the user may do here ([StartupRole.founder] is the owner).
@@ -40,13 +36,8 @@ class ManageSettingsTab extends StatelessWidget {
   final String startupName;
   final bool isPublic;
   final ValueChanged<bool> onVisibilityChanged;
-  final VoidCallback onLeave;
   final bool isClosed;
   final VoidCallback? onClose;
-
-  /// The e-mail of the person invited to take over, still waiting.
-  final String? pendingOwnerEmail;
-  final VoidCallback? onCancelOwnerInvite;
 
   @override
   Widget build(BuildContext context) {
@@ -88,39 +79,15 @@ class ManageSettingsTab extends StatelessWidget {
           danger: true,
           onTap: onClose ?? () {},
         ),
-      if (owner && !isClosed && pendingOwnerEmail != null)
-        _SettingCard(
-          icon: AppIcons.people,
-          fill: AppColors.moss50,
-          color: AppColors.moss600,
-          title: FounderToolsStrings.cancelInvitation,
-          text: FounderToolsStrings.ownerWaiting(
-            pendingOwnerEmail!,
-            startupName,
-          ),
-          onTap: onCancelOwnerInvite ?? () {},
-        )
-      else if (!isClosed)
-        _SettingCard(
-          icon: AppIcons.logout,
-          fill: AppColors.errorFill,
-          color: AppColors.error,
-          title: FounderToolsStrings.leaveStartup,
-          text: owner
-              ? FounderToolsStrings.leaveOwnerText
-              : role == StartupRole.coFounder
-              ? FounderToolsStrings.leaveCoFounderText
-              : FounderToolsStrings.leaveMemberText,
-          danger: true,
-          onTap: onLeave,
-        ),
     ];
     if (cards.isEmpty) {
       // A team member of a closed startup: nothing to change.
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 8),
         child: Text(
-          FounderToolsStrings.closedNoSettings,
+          isClosed
+              ? FounderToolsStrings.closedNoSettings
+              : FounderToolsStrings.noSettings,
           style: AppText.sans(size: 14, height: 20, color: AppColors.grey),
         ),
       );
@@ -207,6 +174,102 @@ class _SettingCard extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Manage startup -> Details, below the sections: **Leave startup** (the
+/// owner names the next owner first). While a person she invited to take over
+/// hasn't answered, a "Waiting for…" card with **Resend email** and **Cancel
+/// invitation** replaces Leave. Co-founders and team members of an active
+/// startup just see Leave startup. Nobody leaves a closed startup, so it shows
+/// nothing then.
+class ManageLeaveSection extends StatelessWidget {
+  const ManageLeaveSection({
+    super.key,
+    required this.role,
+    required this.startupName,
+    required this.onLeave,
+    this.isClosed = false,
+    this.pendingOwnerEmail,
+    this.onCancelOwnerInvite,
+    this.ownerInviteDaysLeft,
+    this.onResendOwnerInvite,
+    this.expiredOwnerEmail,
+  });
+
+  final StartupRole role;
+  final String startupName;
+  final VoidCallback onLeave;
+  final bool isClosed;
+
+  /// The e-mail of the person invited to take over, still waiting.
+  final String? pendingOwnerEmail;
+  final VoidCallback? onCancelOwnerInvite;
+
+  /// Days left of the waiting invitation (null: unknown), and "Resend email".
+  final int? ownerInviteDaysLeft;
+  final VoidCallback? onResendOwnerInvite;
+
+  /// An invitation that ended after 30 days without an answer.
+  final String? expiredOwnerEmail;
+
+  @override
+  Widget build(BuildContext context) {
+    if (isClosed) return const SizedBox.shrink();
+    final owner = role == StartupRole.founder;
+    final cards = <Widget>[
+      if (owner && !isClosed && pendingOwnerEmail != null) ...[
+        _SettingCard(
+          icon: AppIcons.mail,
+          fill: AppColors.moss50,
+          color: AppColors.moss600,
+          title: FounderToolsStrings.resendEmail,
+          text: FounderToolsStrings.ownerResendText(ownerInviteDaysLeft),
+          onTap: onResendOwnerInvite ?? () {},
+        ),
+        _SettingCard(
+          icon: AppIcons.people,
+          fill: AppColors.moss50,
+          color: AppColors.moss600,
+          title: FounderToolsStrings.cancelInvitation,
+          text: FounderToolsStrings.ownerWaiting(
+            pendingOwnerEmail!,
+            startupName,
+          ),
+          onTap: onCancelOwnerInvite ?? () {},
+        ),
+      ] else if (!isClosed) ...[
+        if (owner && expiredOwnerEmail != null)
+          ViewOnlyBanner.notice(
+            title: FounderToolsStrings.ownerInviteExpiredTitle,
+            message: FounderToolsStrings.ownerInviteExpiredText(
+              expiredOwnerEmail!,
+            ),
+          ),
+        _SettingCard(
+          icon: AppIcons.logout,
+          fill: AppColors.errorFill,
+          color: AppColors.error,
+          title: FounderToolsStrings.leaveStartup,
+          text: owner
+              ? FounderToolsStrings.leaveOwnerText
+              : role == StartupRole.coFounder
+              ? FounderToolsStrings.leaveCoFounderText
+              : FounderToolsStrings.leaveMemberText,
+          danger: true,
+          onTap: onLeave,
+        ),
+      ],
+    ];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (var i = 0; i < cards.length; i++) ...[
+          if (i > 0) const SizedBox(height: 12),
+          cards[i],
+        ],
+      ],
     );
   }
 }

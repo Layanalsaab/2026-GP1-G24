@@ -223,23 +223,25 @@ class InvitationRepository {
       invitedByName: invitedByName,
       newUser: newUser,
     );
-    if (existing == null) {
-      await _firestore.setDocument(_col, id, {
-        ...invitation.toCreateMap(),
-        'createdAt': _firestore.serverTimestamp(),
-      });
-    } else {
-      await _firestore.updateDocument(_col, id, {
-        'status': InvitationStatus.pending.value,
-        'role': Invitation.roleOwner,
-        'roleText': '',
-        'contribution': '',
-        'newUser': newUser,
-        'emailSent': false,
-      });
-    }
+    // Inviting again (after a cancel, a decline or an expiry) is a NEW
+    // invitation: the old document goes first so it gets a new date, and with
+    // it a new 30 days.
+    if (existing != null) await _firestore.deleteDocument(_col, id);
+    await _firestore.setDocument(_col, id, {
+      ...invitation.toCreateMap(),
+      'createdAt': _firestore.serverTimestamp(),
+    });
     await _addToInviteIndex(lower, startup.name);
-    return invitation;
+    return Invitation(
+      startupId: invitation.startupId,
+      startupName: invitation.startupName,
+      emailLower: invitation.emailLower,
+      role: invitation.role,
+      invitedBy: invitation.invitedBy,
+      invitedByName: invitation.invitedByName,
+      newUser: invitation.newUser,
+      createdAt: DateTime.now(),
+    );
   }
 
   /// The owner invitation of [startupId] still waiting for an answer (the
@@ -337,7 +339,13 @@ class InvitationRepository {
       'emailLower': account.email.trim().toLowerCase(),
       'status': InvitationStatus.pending.value,
     });
-    return [for (final d in docs) ?Invitation.fromMap(d.data)];
+    final now = DateTime.now();
+    return [
+      for (final d in docs)
+        if (Invitation.fromMap(d.data) case final i?)
+          // An owner invitation nobody answered in 30 days is no longer asked.
+          if (!i.isExpired(now)) i,
+    ];
   }
 
   /// Joins the team: I am added to the startup (with the invitation's role)
@@ -375,7 +383,8 @@ class InvitationRepository {
           'memberIds': _firestore.arrayUnion([uid]),
           'memberRoles.$uid': invitation.role,
           // The rules protect the joined co-founders through this list.
-          if (invitation.isCoFounder) 'coFounderIds': _firestore.arrayUnion([uid]),
+          if (invitation.isCoFounder)
+            'coFounderIds': _firestore.arrayUnion([uid]),
           'teamMembers': ?team,
           'updatedAt': _firestore.serverTimestamp(),
         },

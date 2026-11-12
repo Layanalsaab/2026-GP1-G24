@@ -44,6 +44,7 @@ class Invitation {
     this.acceptedBy,
     this.acceptedByName = '',
     this.newUser = false,
+    this.createdAt,
   });
 
   /// `coFounder` or `member` (the same words as `Startup.memberRoles`), or
@@ -78,6 +79,31 @@ class Invitation {
   /// invitation was made: the e-mail and the link then say "Create your
   /// account" only (never "log in").
   final bool newUser;
+
+  /// When the invitation was made (the server time).
+  final DateTime? createdAt;
+
+  /// An invitation to take a startup over as its owner is open for 30 days;
+  /// after that nobody can accept it and the owner invites again.
+  static const ownerValidFor = Duration(days: 30);
+
+  /// When an owner invitation stops being valid, or null (not an owner
+  /// invitation, or no date yet).
+  DateTime? get expiresAt =>
+      isOwner && createdAt != null ? createdAt!.add(ownerValidFor) : null;
+
+  /// A pending owner invitation that was not answered in time.
+  bool isExpired(DateTime now) =>
+      isPending && expiresAt != null && now.isAfter(expiresAt!);
+
+  /// Whole days left of an owner invitation (0 = today), or null.
+  int? daysLeft(DateTime now) {
+    final end = expiresAt;
+    if (end == null) return null;
+    final left = end.difference(now);
+    if (left.isNegative) return 0;
+    return (left.inHours / 24).floor();
+  }
 
   bool get isCoFounder => role == roleCoFounder;
   bool get isOwner => role == roleOwner;
@@ -135,6 +161,9 @@ class Invitation {
       acceptedBy: data['acceptedBy'] as String?,
       acceptedByName: (data['acceptedByName'] as String?) ?? '',
       newUser: data['newUser'] == true,
+      createdAt: data['createdAt'] is DateTime
+          ? data['createdAt'] as DateTime
+          : null,
     );
   }
 }
