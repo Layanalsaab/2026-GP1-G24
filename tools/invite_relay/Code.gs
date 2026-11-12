@@ -18,7 +18,7 @@ const PROJECT_ID = 'startsa-ea49e';
 const WEB_API_KEY = 'AIzaSyBwlOChGLt1IWyioAmX7heK7-bx_lWsi0Q';
 const SENDER_NAME = 'Start.sa';
 // The logo of the Verify email / Reset password e-mails.
-const LOGO_URL = 'https://i.ibb.co/PvQK0Z2q/Whats-App-Image-2026-08-31-at-9-09-53-PM.jpg';
+const LOGO_URL = 'https://res.cloudinary.com/lcdtlm3u/image/upload/f_png,q_auto/WhatsApp_Image_2026-08-31_at_9.09.53_PM';
 const INVITE_LINK_BASE = 'https://startsa-ea49e.web.app/invite';
 const RESEND_AFTER_MS = 60 * 60 * 1000; // one e-mail per invitation per hour
 
