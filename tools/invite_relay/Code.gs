@@ -20,7 +20,6 @@ const SENDER_NAME = 'Start.sa';
 // The logo of the Verify email / Reset password e-mails.
 const LOGO_URL = 'https://res.cloudinary.com/lcdtlm3u/image/upload/f_png,q_auto/WhatsApp_Image_2026-08-31_at_9.09.53_PM';
 const INVITE_LINK_BASE = 'https://startsa-ea49e.web.app/invite';
-const RESEND_AFTER_MS = 60 * 60 * 1000; // one e-mail per invitation per hour
 
 function doPost(e) {
   try {
@@ -36,9 +35,6 @@ function doPost(e) {
     if (!inv) return reply_(false, 'invitation not found');
     if (inv.invitedBy !== uid) return reply_(false, 'not your invitation');
     if (inv.status !== 'pending') return reply_(false, 'invitation is not pending');
-    if (inv.lastSentAt && Date.now() - inv.lastSentAt < RESEND_AFTER_MS) {
-      return reply_(false, 'sent recently');
-    }
     if (MailApp.getRemainingDailyQuota() < 1) return reply_(false, 'daily limit reached');
 
     sendInvitation_(invitationId, inv);

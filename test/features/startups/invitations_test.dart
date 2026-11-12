@@ -84,8 +84,7 @@ void main() {
       expect(Invitation.idOf('S1', ' Sara@Gmail.com '), 'S1~sara@gmail.com');
     });
 
-    test('canResend: never sent, or an hour ago', () {
-      final now = DateTime(2026, 10, 25, 12);
+    test('canResend: any pending invitation, however recently sent', () {
       Invitation inv({DateTime? sent}) => Invitation(
         startupId: 's',
         startupName: 'S',
@@ -94,15 +93,8 @@ void main() {
         invitedBy: 'u',
         lastSentAt: sent,
       );
-      expect(inv().canResend(now), isTrue);
-      expect(
-        inv(sent: now.subtract(const Duration(minutes: 5))).canResend(now),
-        isFalse,
-      );
-      expect(
-        inv(sent: now.subtract(const Duration(hours: 2))).canResend(now),
-        isTrue,
-      );
+      expect(inv().canResend, isTrue);
+      expect(inv(sent: DateTime.now()).canResend, isTrue);
     });
 
     test('fromMap reads what toCreateMap writes', () {

@@ -69,12 +69,11 @@ void main() {
       vm = ChangePasswordViewModel(authRepository: auth);
     });
 
-    Future<bool> go(String cur, String next, String confirm) =>
-        vm.submit(
-          currentPassword: cur,
-          newPassword: next,
-          confirmPassword: confirm,
-        );
+    Future<bool> go(String cur, String next, String confirm) => vm.submit(
+      currentPassword: cur,
+      newPassword: next,
+      confirmPassword: confirm,
+    );
 
     test('empty current password is asked for', () async {
       expect(await go('', 'Newpass1!x', 'Newpass1!x'), isFalse);
@@ -221,10 +220,7 @@ void main() {
         const InvestorCriteria(commerceModels: ['Other']).commerceModelsShort,
         'Other',
       );
-      expect(
-        const InvestorCriteria(stages: ['Seed']).stageRange,
-        'Seed',
-      );
+      expect(const InvestorCriteria(stages: ['Seed']).stageRange, 'Seed');
     });
 
     test('a document with none of the answers gives none', () {
@@ -309,10 +305,9 @@ void main() {
       expect(inv.newUser, isFalse);
       expect(stored()['status'], 'pending');
       expect(stored()['invitedBy'], 'f1');
-      expect(
-        db.store['inviteEmails']!['layan@gmail.com']!['names'],
-        ['Rafeeq'],
-      );
+      expect(db.store['inviteEmails']!['layan@gmail.com']!['names'], [
+        'Rafeeq',
+      ]);
     });
 
     test('inviting a person without an account is marked newUser', () async {
@@ -359,84 +354,99 @@ void main() {
       expect((await repo.pendingForMe()).single.startupId, 's1');
     });
 
-    test('accepting: joined with the role, card linked, name replaced', () async {
-      who('f1', 'f1@gmail.com');
-      final inv = await repo.ensure(
-        startup: startup,
-        member: layan,
-        invitedByName: 'F',
-      );
-      who('m1', 'layan@gmail.com');
-      await repo.accept(inv, fullName: 'Layan Alsaab');
-      final s = db.store['startups']!['s1']!;
-      expect(s['memberIds'], ['m1']);
-      expect((s['memberRoles'] as Map)['m1'], 'coFounder');
-      final card = (s['teamMembers'] as List).cast<Map>().firstWhere(
-        (m) => m['email'] == 'layan@gmail.com',
-      );
-      expect(card['fullName'], 'Layan Alsaab');
-      expect(card['uid'], 'm1');
-      expect(card['invited'], isFalse);
-      expect(stored()['status'], 'accepted');
-      expect(stored()['acceptedBy'], 'm1');
-      expect(stored()['acceptedByName'], 'Layan Alsaab');
-      expect(db.store['inviteEmails']!['layan@gmail.com']!['names'], isEmpty);
-      // Inviting a joined person again changes nothing.
-      who('f1', 'f1@gmail.com');
-      final again = await repo.ensure(
-        startup: startup,
-        member: layan,
-        invitedByName: 'F',
-      );
-      expect(again.status, InvitationStatus.accepted);
-    });
+    test(
+      'accepting: joined with the role, card linked, name replaced',
+      () async {
+        who('f1', 'f1@gmail.com');
+        final inv = await repo.ensure(
+          startup: startup,
+          member: layan,
+          invitedByName: 'F',
+        );
+        who('m1', 'layan@gmail.com');
+        await repo.accept(inv, fullName: 'Layan Alsaab');
+        final s = db.store['startups']!['s1']!;
+        expect(s['memberIds'], ['m1']);
+        expect((s['memberRoles'] as Map)['m1'], 'coFounder');
+        final card = (s['teamMembers'] as List).cast<Map>().firstWhere(
+          (m) => m['email'] == 'layan@gmail.com',
+        );
+        expect(card['fullName'], 'Layan Alsaab');
+        expect(card['uid'], 'm1');
+        expect(card['invited'], isFalse);
+        expect(stored()['status'], 'accepted');
+        expect(stored()['acceptedBy'], 'm1');
+        expect(stored()['acceptedByName'], 'Layan Alsaab');
+        expect(db.store['inviteEmails']!['layan@gmail.com']!['names'], isEmpty);
+        // Inviting a joined person again changes nothing.
+        who('f1', 'f1@gmail.com');
+        final again = await repo.ensure(
+          startup: startup,
+          member: layan,
+          invitedByName: 'F',
+        );
+        expect(again.status, InvitationStatus.accepted);
+      },
+    );
 
-    test('declining: declined stays declined until the card is removed', () async {
-      who('f1', 'f1@gmail.com');
-      final inv = await repo.ensure(
-        startup: startup,
-        member: layan,
-        invitedByName: 'F',
-      );
-      who('m1', 'layan@gmail.com');
-      await repo.decline(inv);
-      expect(stored()['status'], 'declined');
-      who('f1', 'f1@gmail.com');
-      final again = await repo.ensure(
-        startup: startup,
-        member: layan,
-        invitedByName: 'F',
-      );
-      expect(again.status, InvitationStatus.declined);
-      // Removing a declined card forgets it, so inviting starts fresh.
-      await repo.cancel('s1', 'layan@gmail.com');
-      expect(db.store['invitations']!.containsKey('s1~layan@gmail.com'), isFalse);
-    });
+    test(
+      'declining: declined stays declined until the card is removed',
+      () async {
+        who('f1', 'f1@gmail.com');
+        final inv = await repo.ensure(
+          startup: startup,
+          member: layan,
+          invitedByName: 'F',
+        );
+        who('m1', 'layan@gmail.com');
+        await repo.decline(inv);
+        expect(stored()['status'], 'declined');
+        who('f1', 'f1@gmail.com');
+        final again = await repo.ensure(
+          startup: startup,
+          member: layan,
+          invitedByName: 'F',
+        );
+        expect(again.status, InvitationStatus.declined);
+        // Removing a declined card forgets it, so inviting starts fresh.
+        await repo.cancel('s1', 'layan@gmail.com');
+        expect(
+          db.store['invitations']!.containsKey('s1~layan@gmail.com'),
+          isFalse,
+        );
+      },
+    );
 
-    test('the sign-up warning lists the startups that invited an e-mail', () async {
-      who('f1', 'f1@gmail.com');
-      await repo.ensure(startup: startup, member: layan, invitedByName: 'F');
-      expect(await repo.invitedBy('LAYAN@gmail.com'), ['Rafeeq']);
-      expect(await repo.invitedBy('nobody@gmail.com'), isEmpty);
-    });
+    test(
+      'the sign-up warning lists the startups that invited an e-mail',
+      () async {
+        who('f1', 'f1@gmail.com');
+        await repo.ensure(startup: startup, member: layan, invitedByName: 'F');
+        expect(await repo.invitedBy('LAYAN@gmail.com'), ['Rafeeq']);
+        expect(await repo.invitedBy('nobody@gmail.com'), isEmpty);
+      },
+    );
 
-    test('the founder reconciles a card whose owner joined a private startup', () async {
-      who('f1', 'f1@gmail.com');
-      final inv = await repo.ensure(
-        startup: startup,
-        member: layan,
-        invitedByName: 'F',
-      );
-      who('m1', 'layan@gmail.com');
-      await repo.accept(inv, fullName: 'Layan Alsaab');
-      who('f1', 'f1@gmail.com');
-      // The founder's copy of the startup still shows the card as invited.
-      final fixed = await repo.reconcileTeam(startup);
-      final card = fixed!.firstWhere((m) => m.email == 'layan@gmail.com');
-      expect(card.invited, isFalse);
-      expect(card.uid, 'm1');
-      expect(card.name, 'Layan Alsaab');
-    });
+    test(
+      'the founder reconciles a card whose owner joined a private startup',
+      () async {
+        who('f1', 'f1@gmail.com');
+        final inv = await repo.ensure(
+          startup: startup,
+          member: layan,
+          invitedByName: 'F',
+        );
+        who('m1', 'layan@gmail.com');
+        await repo.accept(inv, fullName: 'Layan Alsaab');
+        who('f1', 'f1@gmail.com');
+        // The founder's copy of the startup still shows the card as invited.
+        final fixed = await repo.reconcileTeam(startup);
+        final card = fixed!.firstWhere((m) => m.email == 'layan@gmail.com');
+        expect(card.invited, isFalse);
+        expect(card.uid, 'm1');
+        expect(card.name, 'Layan Alsaab');
+      },
+    );
 
     test('nothing to reconcile when nobody accepted', () async {
       who('f1', 'f1@gmail.com');
@@ -444,18 +454,16 @@ void main() {
       expect(await repo.reconcileTeam(startup), isNull);
     });
 
-    test('resending is allowed once an hour', () {
-      final sent = DateTime(2026, 1, 1, 12);
+    test('resending is allowed any time while pending', () {
       final inv = Invitation(
         startupId: 's1',
         startupName: 'Rafeeq',
         emailLower: 'a@b.co',
         role: 'member',
         invitedBy: 'f1',
-        lastSentAt: sent,
+        lastSentAt: DateTime(2026, 1, 1, 12),
       );
-      expect(inv.canResend(sent.add(const Duration(minutes: 59))), isFalse);
-      expect(inv.canResend(sent.add(const Duration(hours: 1))), isTrue);
+      expect(inv.canResend, isTrue);
       expect(
         Invitation(
           startupId: 's',
@@ -464,7 +472,7 @@ void main() {
           role: 'member',
           invitedBy: 'f',
           status: InvitationStatus.accepted,
-        ).canResend(sent),
+        ).canResend,
         isFalse,
       );
     });

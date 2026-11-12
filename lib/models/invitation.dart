@@ -114,11 +114,8 @@ class Invitation {
   static String idOf(String startupId, String email) =>
       '$startupId~${email.trim().toLowerCase()}';
 
-  /// What a founder can resend: nothing was sent yet, or an hour has passed.
-  bool canResend(DateTime now) =>
-      isPending &&
-      (lastSentAt == null ||
-          now.difference(lastSentAt!) >= const Duration(hours: 1));
+  /// A founder can send the e-mail again whenever the invitation is pending.
+  bool get canResend => isPending;
 
   Map<String, Object?> toCreateMap() => {
     'startupId': startupId,
