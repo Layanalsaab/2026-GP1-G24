@@ -147,7 +147,7 @@ void main() {
     });
 
     testWidgets('Details: Leave startup under the sections', (t) async {
-      await _open(t, tab: 'Details');
+      await _open(t, tab: 'Startup Team');
       await _toLeave(t);
       expect(find.text('Leave startup'), findsOneWidget);
       expect(
@@ -157,19 +157,19 @@ void main() {
     });
 
     testWidgets('Details: co-founder and team member can leave', (t) async {
-      await _open(t, role: StartupRole.coFounder, tab: 'Details');
+      await _open(t, role: StartupRole.coFounder, tab: 'Startup Team');
       await _toLeave(t);
       expect(
-        find.text('You’ll stop being a co-founder of this startup'),
+        find.text('You will no longer be a co-founder of this startup'),
         findsOneWidget,
       );
     });
 
     testWidgets('Details: a team member sees Leave too', (t) async {
-      await _open(t, role: StartupRole.member, tab: 'Details');
+      await _open(t, role: StartupRole.member, tab: 'Startup Team');
       await _toLeave(t);
       expect(
-        find.text('You’ll be removed from this startup’s team'),
+        find.text('You will no longer be on this startup’s team'),
         findsOneWidget,
       );
     });
@@ -232,7 +232,7 @@ void main() {
         t,
         role: StartupRole.coFounder,
         onLeave: () => left = true,
-        tab: 'Details',
+        tab: 'Startup Team',
       );
       await _toLeave(t);
       await t.tap(find.text('Leave startup'));
@@ -252,7 +252,7 @@ void main() {
     });
 
     testWidgets('the owner alone is asked to invite the next owner', (t) async {
-      await _open(t, tab: 'Details');
+      await _open(t, tab: 'Startup Team');
       await _toLeave(t);
       await t.tap(find.text('Leave startup'));
       await t.pumpAndSettle();
@@ -274,7 +274,7 @@ void main() {
         startup: PrototypeSeed.rafeeq.copyWith(
           memberRoles: const {'sample-faisal': 'member'},
         ),
-        tab: 'Details',
+        tab: 'Startup Team',
       );
       await _toLeave(t);
       await t.tap(find.text('Leave startup'));
@@ -329,8 +329,8 @@ void main() {
       final tabs = find.byType(ScrollableHeaderTabBar);
       for (final label in [
         'Dashboard',
-        'Details',
-        'Rounds',
+        'Startup Overview',
+        'Startup Ask',
         'EOI',
         'Settings',
       ]) {
@@ -372,7 +372,7 @@ void main() {
     await t.pumpAndSettle();
     final details = find.descendant(
       of: find.byType(ScrollableHeaderTabBar),
-      matching: find.text('Details'),
+      matching: find.text('Startup Team'),
     );
     await t.ensureVisible(details);
     await t.pumpAndSettle();

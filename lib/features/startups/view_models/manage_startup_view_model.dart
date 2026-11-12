@@ -23,8 +23,9 @@ class ManageStartupViewModel extends ChangeNotifier with SafeNotifier {
   /// The startup as last saved.
   Startup startup;
 
-  /// 0 Dashboard, 1 Details, 2 Rounds, 3 Interest, 4 Settings. (The requests
-  /// of a round will live inside the round, not in a tab.)
+  /// 0 Dashboard, 1 Interest (EOI), 2-7 the six steps of the add-startup form
+  /// (Startup Overview ... Startup Ask, the same tabs as the startup page), 8
+  /// Settings. (The requests of a round live inside the round.)
   int tab = 0;
 
   bool isSavingVisibility = false;

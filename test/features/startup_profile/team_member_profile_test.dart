@@ -102,7 +102,7 @@ void main() {
       // a lock and no value.
       expect(find.text('Contact Information'), findsOneWidget);
       expect(find.text('Email is private'), findsOneWidget);
-      expect(find.text('Phone is private'), findsOneWidget);
+      expect(find.text('Phone Number is private'), findsOneWidget);
       expect(find.text('Private'), findsNWidgets(2));
     });
 
@@ -110,7 +110,7 @@ void main() {
       await pump(t, _profile(email: 'k@gmail.com', emailPublic: true));
       expect(find.text('Contact Information'), findsOneWidget);
       expect(find.text('k@gmail.com'), findsOneWidget);
-      expect(find.text('Phone is private'), findsOneWidget);
+      expect(find.text('Phone Number is private'), findsOneWidget);
       expect(find.textContaining('+966'), findsNothing);
     });
 

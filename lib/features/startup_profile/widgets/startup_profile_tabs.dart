@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../app_constants/founder_tools_strings.dart';
 import '../../../app_constants/profile_strings.dart';
+import '../../../data_access/repositories/team_lookup.dart';
 import '../../../helpers/app_session.dart';
 import '../../../helpers/formatters.dart';
 import '../../../models/investor_profile.dart';
@@ -10,6 +11,7 @@ import '../../../shared_ui/icons/app_icons.dart';
 import '../../../shared_ui/theme/app_colors.dart';
 import '../../../shared_ui/theme/app_text.dart';
 import '../../../shared_ui/widgets/cards/avatars.dart';
+import '../../../shared_ui/widgets/overlays/app_toast.dart';
 import '../../../shared_ui/widgets/cards/profile_blocks.dart'
     show ProfileSection;
 import '../../profiles/screens/account_screen.dart';
@@ -32,9 +34,33 @@ class StartupProfilePane extends StatelessWidget {
     super.key,
     required this.viewModel,
     required this.onOpenInvestor,
+    this.onEdit,
+    this.teamFooter,
+    this.roundsSection,
+    this.padded = true,
+    this.openInvited = false,
   });
 
   final StartupProfileViewModel viewModel;
+
+  /// Manage startup only: shows an "Edit" action on each section's card and
+  /// calls this with the step number (0 Overview ... 5 Ask). Null (the
+  /// profile everybody else sees) shows none.
+  final ValueChanged<int>? onEdit;
+
+  /// Manage startup only: under the Startup Team cards (Leave startup).
+  final Widget? teamFooter;
+
+  /// Manage startup only: replaces the read-only round card and rounds table
+  /// of Startup Ask with the page that manages the rounds.
+  final Widget? roundsSection;
+
+  /// False when the parent already pads the pane (Manage startup).
+  final bool padded;
+
+  /// Manage startup only: the team can open the profile of a person who was
+  /// invited and has an account, even before they accepted or saw it.
+  final bool openInvited;
 
   /// Opens an associated investor's profile.
   final ValueChanged<InvestorProfile> onOpenInvestor;
@@ -49,7 +75,9 @@ class StartupProfilePane extends StatelessWidget {
       final i => _section(i),
     };
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
+      padding: padded
+          ? const EdgeInsets.fromLTRB(16, 16, 16, 28)
+          : EdgeInsets.zero,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -64,14 +92,15 @@ class StartupProfilePane extends StatelessWidget {
 
   // ------------------------------------------------------- the form's steps
 
+  VoidCallback? _editOf(int i) => onEdit == null ? null : () => onEdit!(i);
+
   /// One of the first four steps (Overview, Description, Target Market,
   /// Finance and Growth): the heading of the step and the same body Manage ->
   /// Details opens.
   List<Widget> _section(int i) => [
     _SectionCard(
-      icon: ManageDetailsTab.iconOf(i),
       title: FounderToolsStrings.stepTitles[i],
-      tone: i.isOdd ? _Tone.gold : _Tone.moss,
+      onEdit: _editOf(i),
       child: ManageDetailsTab.sectionBody(viewModel.startup, i),
     ),
   ];
@@ -81,12 +110,17 @@ class StartupProfilePane extends StatelessWidget {
   /// none chosen there is no card.
   Widget? _askCard() {
     final rows = _askRows();
-    if (rows == null) return null;
+    // Manage startup always has the card (so Edit is there to add an ask).
+    if (rows == null && onEdit == null) return null;
     return _SectionCard(
-      icon: ManageDetailsTab.iconOf(5),
       title: FounderToolsStrings.stepTitles[5],
-      tone: _Tone.gold,
-      child: rows,
+      onEdit: _editOf(5),
+      child:
+          rows ??
+          Text(
+            'Not added yet',
+            style: AppText.sans(size: 14, height: 22, color: AppColors.hint),
+          ),
     );
   }
 
@@ -136,27 +170,31 @@ class StartupProfilePane extends StatelessWidget {
   List<Widget> _ask() => [
     // No card at all when the startup chose nothing.
     ?_askCard(),
-    _CurrentRoundCard(round: viewModel.currentRound),
-    Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Text(
-          'Funding rounds',
-          style: AppText.sans(size: 19, height: 26, weight: FontWeight.w700),
-        ),
-        Text(
-          'All amounts in SAR',
-          style: AppText.sans(size: 13, color: const Color(0xFF8C918D)),
-        ),
-        const SizedBox(height: 12),
-        // The same table as Manage, read only (the startup's real rounds).
-        RoundsTable(
-          rounds: viewModel.roundsNewestFirst,
-          emptyText: viewModel.roundsEmptyText,
-          centerEmpty: true,
-        ),
-      ],
-    ),
+    if (roundsSection != null)
+      roundsSection!
+    else
+      _CurrentRoundCard(round: viewModel.currentRound),
+    if (roundsSection == null)
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            'Funding rounds',
+            style: AppText.sans(size: 19, height: 26, weight: FontWeight.w700),
+          ),
+          Text(
+            'All amounts in SAR',
+            style: AppText.sans(size: 13, color: const Color(0xFF8C918D)),
+          ),
+          const SizedBox(height: 12),
+          // The same table as Manage, read only (the startup's real rounds).
+          RoundsTable(
+            rounds: viewModel.roundsNewestFirst,
+            emptyText: viewModel.roundsEmptyText,
+            centerEmpty: true,
+          ),
+        ],
+      ),
   ];
 
   /// Founder first, then the co-founders, then the members (each group in the
@@ -195,7 +233,7 @@ class StartupProfilePane extends StatelessWidget {
 
   List<Widget> _team(BuildContext context) {
     final people = _people();
-    if (people.isEmpty && viewModel.associated.isEmpty) {
+    if (people.isEmpty && viewModel.associated.isEmpty && onEdit == null) {
       return [
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 24),
@@ -209,34 +247,64 @@ class StartupProfilePane extends StatelessWidget {
     }
     final me = AppSession.instance.user?.uid;
     return [
-      if (people.isNotEmpty)
+      if (people.isNotEmpty || onEdit != null)
         _SectionCard(
-          icon: AppIcons.people,
           title: ProfileStrings.team,
-          child: _Rows([
-            for (final m in people)
-              _PersonRow(
-                member: m,
-                isYou: me != null && m.uid == me,
-                ownerId: viewModel.startup.founderId,
-                // Invited people (shown only to the team) are not tappable.
-                onTap: m.invited && !m.isFounder
-                    ? null
-                    : () => _openPerson(context, m, me),
-              ),
-          ]),
+          onEdit: _editOf(4),
+          child: people.isEmpty
+              ? Text(
+                  'Not added yet',
+                  style: AppText.sans(
+                    size: 14,
+                    height: 22,
+                    color: AppColors.hint,
+                  ),
+                )
+              : _Rows([
+                  for (final m in people)
+                    _PersonRow(
+                      member: m,
+                      isYou: me != null && m.uid == me,
+                      ownerId: viewModel.startup.founderId,
+                      // Invited people (shown only to the team) open only in
+                      // Manage startup, and only when they have an account.
+                      onTap: m.invited && !m.isFounder
+                          ? (openInvited
+                                ? () => _openInvitedPerson(context, m)
+                                : null)
+                          : () => _openPerson(context, m, me),
+                    ),
+                ]),
         ),
       if (viewModel.associated.isNotEmpty)
         _SectionCard(
-          icon: AppIcons.workOut,
           title: ProfileStrings.associatedInvestors,
-          tone: _Tone.gold,
           child: _Rows([
             for (final i in viewModel.associated)
               _InvestorRow(investor: i, onTap: () => onOpenInvestor(i)),
           ]),
         ),
+      ?teamFooter,
     ];
+  }
+
+  /// An invited person: their account is found by the e-mail they were
+  /// invited with. No account yet means no profile to open.
+  Future<void> _openInvitedPerson(BuildContext context, TeamMember m) async {
+    final account = m.email.trim().isEmpty
+        ? null
+        : await TeamLookup.instance.findByEmail(m.email);
+    if (!context.mounted) return;
+    if (account == null || !account.isFounder) {
+      AppToast.show(context, 'This person has no profile yet.');
+      return;
+    }
+    TeamMemberProfileScreen.open(
+      context,
+      m.copyWith(uid: account.uid),
+      startupName: viewModel.startup.name,
+      startupId: viewModel.startup.id,
+    );
   }
 
   /// Opens a person's profile: mine opens my own profile.
@@ -254,73 +322,25 @@ class StartupProfilePane extends StatelessWidget {
   }
 }
 
-enum _Tone { moss, gold }
-
-/// A white card with a small icon tile and a 19 / 26 bold title (the Manage
-/// card: padding 18, radius 20).
+/// A section of the startup page: the same white card as the founder and
+/// investor profiles (a plain title, the content indented under it).
 class _SectionCard extends StatelessWidget {
-  const _SectionCard({
-    required this.icon,
-    required this.title,
-    required this.child,
-    this.tone = _Tone.moss,
-  });
+  const _SectionCard({required this.title, required this.child, this.onEdit});
 
-  final String icon;
   final String title;
   final Widget child;
-  final _Tone tone;
+
+  /// Manage startup: the "Edit" action at the right of the title.
+  final VoidCallback? onEdit;
 
   @override
-  Widget build(BuildContext context) {
-    final gold = tone == _Tone.gold;
-    return ManageCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 34,
-                height: 34,
-                decoration: BoxDecoration(
-                  color: gold ? AppColors.tagGoldFill : AppColors.moss100,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Center(
-                  child: AppIcon.filled(
-                    icon,
-                    size: 18,
-                    color: gold ? AppColors.tagGoldText : AppColors.moss600,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Semantics(
-                  header: true,
-                  child: Text(
-                    title,
-                    style: AppText.sans(
-                      size: 19,
-                      height: 26,
-                      weight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          // The content sits indented under its (bold) heading.
-          Padding(
-            padding: const EdgeInsets.only(left: ProfileSection.contentIndent),
-            child: child,
-          ),
-        ],
-      ),
-    );
-  }
+  Widget build(BuildContext context) => ProfileSection(
+    title: title,
+    rise: false,
+    actionLabel: onEdit == null ? null : 'Edit',
+    onAction: onEdit,
+    child: child,
+  );
 }
 
 // ----------------------------------------------------------------- rows

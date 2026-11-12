@@ -75,7 +75,7 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('Email'), findsOneWidget);
-    expect(find.text('Phone'), findsOneWidget);
+    expect(find.text('Phone Number'), findsOneWidget);
     // The email is private, the phone is public.
     expect(find.text('Private. Only you can see your email'), findsOneWidget);
     expect(find.text('Shown on your profile'), findsOneWidget);
@@ -115,7 +115,7 @@ void main() {
     expect(find.text('open@gmail.com'), findsOneWidget);
     expect(find.textContaining('+966'), findsOneWidget);
     expect(find.text('Email is private'), findsNothing);
-    expect(find.text('Phone is private'), findsNothing);
+    expect(find.text('Phone Number is private'), findsNothing);
     expect(find.text('Private'), findsNothing);
     expect(find.text('Shown on your profile'), findsNothing);
     expect(
@@ -143,7 +143,7 @@ void main() {
       await _pump(t, const InvestorProfileScreen(investor: closed));
       await _toContact(t);
       expect(find.text('Email is private'), findsOneWidget);
-      expect(find.text('Phone is private'), findsOneWidget);
+      expect(find.text('Phone Number is private'), findsOneWidget);
       expect(find.text('Private'), findsNWidgets(2));
       expect(
         find.byWidgetPredicate((w) => w is AppIcon && w.path == AppIcons.lock),

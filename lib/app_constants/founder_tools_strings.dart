@@ -284,17 +284,18 @@ class FounderToolsStrings {
   static const nowPrivate = 'Startup is now private';
   static const leaveStartup = 'Leave startup';
   static const leaveCoFounderText =
-      'You’ll stop being a co-founder of this startup';
-  static const leaveMemberText = 'You’ll be removed from this startup’s team';
+      'You will no longer be a co-founder of this startup';
+  static const leaveMemberText =
+      'You will no longer be on this startup’s team';
 
   /// The owner: she names the next owner first.
   static const leaveOwnerText =
       'Choose who will take over as owner before you leave.';
   static String leaveTitle(String name) => 'Leave $name?';
   static const leaveMessageCoFounder =
-      'You won’t be able to edit this startup anymore. The owner or a co-founder can add you again.';
+      'You will no longer be able to edit this startup. The owner or a co-founder can add you again.';
   static const leaveMessageMember =
-      'You’ll be removed from this startup’s team. The owner or a co-founder can add you again.';
+      'You will no longer be on this startup’s team. The owner or a co-founder can add you again.';
   static const noPermissionAnymore =
       'You don’t have permission to edit this startup anymore.';
   static String leftToast(String name) => 'You left $name';
