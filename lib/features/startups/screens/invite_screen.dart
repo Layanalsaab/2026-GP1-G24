@@ -54,17 +54,24 @@ class _InviteScreenState extends State<InviteScreen> {
       found = null;
     }
     if (!mounted) return;
-    // Nobody had an account with this e-mail (and nobody is signed in): there
-    // is nothing to log in to, so go straight to "Create your account".
-    if (found != null &&
-        found.isPending &&
-        found.newUser &&
-        AppSession.instance.user == null) {
-      SignupScreen.openReplacing(
-        context,
-        AccountRole.founder,
-        email: found.emailLower,
-      );
+    // Nobody is signed in: go straight to the screen that fits, with the
+    // invited e-mail filled in. No account yet -> "Create your account";
+    // an account already -> "Log in".
+    if (found != null && found.isPending && AppSession.instance.user == null) {
+      if (found.newUser) {
+        SignupScreen.openReplacing(
+          context,
+          AccountRole.founder,
+          email: found.emailLower,
+        );
+      } else {
+        Navigator.of(context).pushReplacement(
+          AppRoute<void>(
+            builder: (_) => LoginScreen(email: found!.emailLower),
+            greenHeader: true,
+          ),
+        );
+      }
       return;
     }
     setState(() {
@@ -79,6 +86,22 @@ class _InviteScreenState extends State<InviteScreen> {
       _me != null &&
       _me!.isFounder &&
       _me!.email.trim().toLowerCase() == _invitation?.emailLower;
+
+  /// Signed in with an investor account that has the invited email: it can't
+  /// join a team, and logging out would not help.
+  bool get _investorWithThatEmail =>
+      _me != null &&
+      !_me!.isFounder &&
+      _me!.email.trim().toLowerCase() == _invitation?.emailLower;
+
+  /// Signs out and opens Log in (or Create your account for somebody who
+  /// has none) with the invited email already filled in.
+  Future<void> _logOutAndContinue(Invitation inv) => AppRouter.logOut(
+    context,
+    toLogin: true,
+    email: inv.emailLower,
+    signup: inv.newUser,
+  );
 
   Future<void> _answer(bool accept) async {
     final invitation = _invitation;
@@ -132,6 +155,8 @@ class _InviteScreenState extends State<InviteScreen> {
                       padding: EdgeInsets.all(24),
                       child: Center(child: CircularProgressIndicator()),
                     )
+                  : (inv != null && inv.isExpired(DateTime.now()))
+                  ? _unavailable(FounderToolsStrings.inviteExpired)
                   : (inv == null || !inv.isPending)
                   ? _unavailable()
                   : _details(inv),
@@ -142,12 +167,14 @@ class _InviteScreenState extends State<InviteScreen> {
     );
   }
 
-  Widget _unavailable() => Column(
+  Widget _unavailable([
+    String message = 'This invitation is no longer active.',
+  ]) => Column(
     mainAxisSize: MainAxisSize.min,
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
       Text(
-        'This invitation is no longer active.',
+        message,
         textAlign: TextAlign.center,
         style: AppText.sans(size: 20, weight: FontWeight.w700),
       ),
@@ -236,12 +263,36 @@ class _InviteScreenState extends State<InviteScreen> {
               onPressed: _busy ? null : () => _answer(false),
             ),
           ],
-        ] else if (other) ...[
+        ] else if (_investorWithThatEmail) ...[
+          // Logging out would not help: an investor account can't join.
           Text(
-            'You’re signed in with a different account. Log out, then sign in '
-            'or create an account with ${inv.emailLower}.',
+            FounderToolsStrings.inviteInvestorAccount,
             textAlign: TextAlign.center,
             style: AppText.sans(size: 14, color: AppColors.grey, height: 21),
+          ),
+          const SizedBox(height: 14),
+          AppButton(
+            label: 'Continue',
+            onPressed: () => AppRouter.openHome(context),
+          ),
+        ] else if (other) ...[
+          // Somebody else is signed in on this phone: one tap signs them out
+          // and opens Log in (or Create account) with the invited email.
+          Text(
+            FounderToolsStrings.inviteSignedInAs(me.email, inv.emailLower),
+            textAlign: TextAlign.center,
+            style: AppText.sans(size: 14, color: AppColors.grey, height: 21),
+          ),
+          const SizedBox(height: 14),
+          AppButton(
+            label: FounderToolsStrings.inviteLogOutContinue,
+            onPressed: () => _logOutAndContinue(inv),
+          ),
+          const SizedBox(height: 4),
+          AppButton(
+            label: FounderToolsStrings.inviteStayHere,
+            variant: AppButtonVariant.ghost,
+            onPressed: () => AppRouter.openHome(context),
           ),
         ] else ...[
           AppButton(

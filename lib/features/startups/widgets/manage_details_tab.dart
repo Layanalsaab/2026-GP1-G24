@@ -33,12 +33,16 @@ class ManageDetailsTab extends StatelessWidget {
     required this.canEdit,
     required this.onEdit,
     this.myRole = StartupRole.founder,
+    this.footer,
   });
 
   final Startup startup;
 
   /// The user's role (tags their own row in Startup Team).
   final StartupRole myRole;
+
+  /// Shown under the sections (Leave startup).
+  final Widget? footer;
 
   /// The open section (0-based, same as the form's steps), or null.
   final int? openIndex;
@@ -110,7 +114,7 @@ class ManageDetailsTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ManageCard(
+    final sections = ManageCard(
       padding: EdgeInsets.zero,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -131,6 +135,11 @@ class ManageDetailsTab extends StatelessWidget {
           ],
         ],
       ),
+    );
+    if (footer == null) return sections;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [sections, const SizedBox(height: 16), footer!],
     );
   }
 

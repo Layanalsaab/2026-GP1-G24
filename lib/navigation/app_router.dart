@@ -18,6 +18,7 @@ import '../data_access/repositories/startup_repository.dart';
 import '../features/login_and_signup/screens/investor_investments_screen.dart';
 import '../features/login_and_signup/screens/welcome_screen.dart';
 import '../features/login_and_signup/screens/login_screen.dart';
+import '../features/login_and_signup/screens/signup_screen.dart';
 import '../features/login_and_signup/view_models/signup_flow.dart';
 import '../features/startups/screens/startup_steps_screen.dart';
 import '../helpers/app_session.dart';
@@ -237,9 +238,15 @@ class AppRouter {
 
   /// Signs out of Firebase, forgets the session data and returns to Welcome
   /// with the back transition. A guest simply leaves.
+  ///
+  /// With [email] the next screen starts with that address: Log in, or, with
+  /// [signup], "Create your account" (an invitation sent to somebody who has
+  /// no account yet).
   static Future<void> logOut(
     BuildContext context, {
     bool toLogin = false,
+    String? email,
+    bool signup = false,
   }) async {
     if (!AppSession.instance.isGuest) {
       try {
@@ -259,12 +266,17 @@ class AppRouter {
     if (!context.mounted) return;
     if (toLogin) {
       // Back transition to the Log in screen (the stack is cleared).
-      AppNav.reset(
-        context,
-        const LoginScreen(),
-        kind: RouteKind.back,
-        greenHeader: true,
-      );
+      Widget screen = LoginScreen(email: email);
+      if (signup && email != null) {
+        final flow = SignupFlow(role: AccountRole.founder)..fromInvite = true;
+        SignupFlow.current = flow;
+        screen = SignupScreen(
+          role: AccountRole.founder,
+          flow: flow,
+          email: email,
+        );
+      }
+      AppNav.reset(context, screen, kind: RouteKind.back, greenHeader: true);
     } else {
       openStart(context);
     }

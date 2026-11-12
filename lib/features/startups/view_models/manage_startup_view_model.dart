@@ -80,11 +80,7 @@ class ManageStartupViewModel extends ChangeNotifier with SafeNotifier {
     ];
     return [
       for (final uid in {...ordered, ...ids})
-        (
-          uid,
-          startup.nameOf(uid, fallback: _roleLabel(uid)),
-          _roleLabel(uid),
-        ),
+        (uid, startup.nameOf(uid, fallback: _roleLabel(uid)), _roleLabel(uid)),
     ];
   }
 
@@ -97,6 +93,10 @@ class ManageStartupViewModel extends ChangeNotifier with SafeNotifier {
   Invitation? pendingOwnerInvite;
 
   /// Reads [pendingOwnerInvite] (the owner, on an active startup).
+  /// The e-mail of an owner invitation that was not answered in 30 days (it
+  /// is cancelled when Settings opens). The tab says so once.
+  String? expiredOwnerEmail;
+
   Future<void> loadOwnerInvite() async {
     if (startup.isClosed ||
         startup.founderId != AppSession.instance.user?.uid ||
@@ -104,8 +104,17 @@ class ManageStartupViewModel extends ChangeNotifier with SafeNotifier {
       return;
     }
     try {
-      pendingOwnerInvite = await InvitationRepository.instance
-          .pendingOwnerInvite(startup.id);
+      final found = await InvitationRepository.instance.pendingOwnerInvite(
+        startup.id,
+      );
+      if (found != null && found.isExpired(DateTime.now())) {
+        // Nobody answered in 30 days: it ends, and she may invite again.
+        await InvitationRepository.instance.cancelOwnerInvite(startup);
+        expiredOwnerEmail = found.emailLower;
+        pendingOwnerInvite = null;
+      } else {
+        pendingOwnerInvite = found;
+      }
       notifyListeners();
     } catch (_) {
       // The card shows the next time.
@@ -132,9 +141,24 @@ class ManageStartupViewModel extends ChangeNotifier with SafeNotifier {
           newUser: newUser,
         );
         pendingOwnerInvite = invitation;
+        expiredOwnerEmail = null;
         // The e-mail is best effort: the invitation also waits in the app.
-        await repo.sendEmail(invitation);
+        ownerEmailResult = await repo.sendEmail(invitation);
       });
+
+  /// What happened to the e-mail of the last owner invitation or resend.
+  InviteSendResult? ownerEmailResult;
+
+  /// "Resend email": sends the waiting owner invitation again (the relay
+  /// allows one e-mail per invitation per hour). Returns what happened.
+  Future<InviteSendResult> resendOwnerInvite() async {
+    final invite = pendingOwnerInvite;
+    if (invite == null) return InviteSendResult.failed;
+    final result = await InvitationRepository.instance.sendEmail(invite);
+    ownerEmailResult = result;
+    notifyListeners();
+    return result;
+  }
 
   /// Cancels [pendingOwnerInvite]. True on success.
   Future<bool> cancelOwnerInvite() =>

@@ -375,7 +375,10 @@ class _ManageStartupScreenState extends State<ManageStartupScreen> {
       return;
     }
     widget.onLeave?.call();
-    AppToast.confirm(context, FounderToolsStrings.newOwnerToast(person, s.name));
+    AppToast.confirm(
+      context,
+      FounderToolsStrings.newOwnerToast(person, s.name),
+    );
     await _afterLosingStartup();
   }
 
@@ -391,10 +394,13 @@ class _ManageStartupScreenState extends State<ManageStartupScreen> {
   /// invitation. The Settings tab shows "Waiting for…" until it is answered.
   Future<void> _inviteNewOwner({required bool alone}) async {
     final s = _vm.startup;
-    final myEmail = (AppSession.instance.user?.email ?? '').trim().toLowerCase();
+    final myEmail = (AppSession.instance.user?.email ?? '')
+        .trim()
+        .toLowerCase();
     final teamEmails = {
       for (final m in s.team)
-        if (!m.invited && m.email.trim().isNotEmpty) m.email.trim().toLowerCase(),
+        if (!m.invited && m.email.trim().isNotEmpty)
+          m.email.trim().toLowerCase(),
     };
     var newUser = false;
     final next = FounderToolsStrings.inviteOwnerMessage(s.name);
@@ -432,7 +438,40 @@ class _ManageStartupScreenState extends State<ManageStartupScreen> {
       );
       return;
     }
-    AppToast.confirm(context, FounderToolsStrings.ownerInviteSent(email));
+    // The invitation is saved; say whether the email really left.
+    final sent = _vm.ownerEmailResult;
+    if (sent == InviteSendResult.sent || sent == null) {
+      AppToast.confirm(context, FounderToolsStrings.ownerInviteSent(email));
+    } else {
+      AppToast.error(context, _emailProblem(sent));
+    }
+  }
+
+  /// Why the email did not leave (the invitation itself is saved).
+  String _emailProblem(InviteSendResult result) => switch (result) {
+    InviteSendResult.offline => FounderToolsStrings.invitesOffline,
+    InviteSendResult.dailyLimit => FounderToolsStrings.invitesLimit,
+    InviteSendResult.tooSoon => FounderToolsStrings.ownerEmailTooSoon,
+    _ => FounderToolsStrings.ownerInviteSavedNoEmail,
+  };
+
+  /// "Resend email" on the Waiting card.
+  Future<void> _resendOwnerInvite() async {
+    final invite = _vm.pendingOwnerInvite;
+    if (invite == null) return;
+    final result = await _vm.resendOwnerInvite();
+    if (!mounted) return;
+    if (result == InviteSendResult.sent) {
+      AppToast.confirm(
+        context,
+        FounderToolsStrings.ownerEmailResent(invite.emailLower),
+      );
+    } else if (result == InviteSendResult.failed ||
+        result == InviteSendResult.notConfigured) {
+      AppToast.error(context, FounderToolsStrings.ownerEmailResendFailed);
+    } else {
+      AppToast.error(context, _emailProblem(result));
+    }
   }
 
   /// "Cancel invitation" on the Waiting card: asked first, like the other
@@ -500,6 +539,19 @@ class _ManageStartupScreenState extends State<ManageStartupScreen> {
             canEdit: _canEdit,
             onEdit: _editSection,
             myRole: _role,
+            footer: ManageLeaveSection(
+              role: _role,
+              startupName: s.name,
+              onLeave: _leave,
+              isClosed: s.isClosed,
+              pendingOwnerEmail: _vm.pendingOwnerInvite?.emailLower,
+              onCancelOwnerInvite: _cancelOwnerInvite,
+              onResendOwnerInvite: _resendOwnerInvite,
+              ownerInviteDaysLeft: _vm.pendingOwnerInvite?.daysLeft(
+                DateTime.now(),
+              ),
+              expiredOwnerEmail: _vm.expiredOwnerEmail,
+            ),
           ),
           2 => ManageRoundsTab(
             vm: _rounds,
@@ -519,11 +571,8 @@ class _ManageStartupScreenState extends State<ManageStartupScreen> {
             startupName: s.name,
             isPublic: s.isPublic,
             onVisibilityChanged: _setPublic,
-            onLeave: _leave,
             isClosed: s.isClosed,
             onClose: _close,
-            pendingOwnerEmail: _vm.pendingOwnerInvite?.emailLower,
-            onCancelOwnerInvite: _cancelOwnerInvite,
           ),
         };
         return Scaffold(

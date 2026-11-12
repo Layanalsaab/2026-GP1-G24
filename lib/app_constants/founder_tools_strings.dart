@@ -348,6 +348,7 @@ class FounderToolsStrings {
   /// The Public / Private switch of a closed startup (its owner only).
   static const closedPublicText = 'Shown in the Hub as a closed startup.';
   static const closedPrivateText = 'Visible only to its team.';
+  static const noSettings = 'There is nothing to change here.';
   static const closedNoSettings =
       'This startup is closed, so there is nothing to change here.';
 
@@ -389,6 +390,36 @@ class FounderToolsStrings {
   static String ownerWaiting(String email, String name) =>
       'Waiting for $email to accept becoming the owner of $name.';
   static const cancelInvitation = 'Cancel invitation';
+
+  // Resend, expiry and what happened to the email
+  static const resendEmail = 'Resend email';
+  static String ownerExpires(int? days) => switch (days) {
+    null => 'The invitation expires after 30 days.',
+    <= 0 => 'The invitation expires today.',
+    1 => 'The invitation expires tomorrow.',
+    final d => 'The invitation expires in $d days.',
+  };
+  static String ownerResendText(int? days) =>
+      'Send the email again. ${ownerExpires(days)}';
+  static const ownerInviteExpiredTitle = 'Invitation expired';
+  static String ownerInviteExpiredText(String email) =>
+      '$email didn’t answer within 30 days, so the invitation ended. You are still the owner. Choose "Leave startup" in Details to invite someone again.';
+  static const ownerInviteSavedNoEmail =
+      'The invitation is saved, but the email couldn’t be sent. The person will see it in the app when they log in. You can resend the email from Settings.';
+  static String ownerEmailResent(String email) => 'Email sent again to $email.';
+  static const ownerEmailTooSoon =
+      'An email was sent less than an hour ago. Try again later.';
+  static const ownerEmailResendFailed =
+      'We couldn’t send the email. The invitation is still waiting in the app.';
+
+  // The invitation page, when someone else is signed in
+  static String inviteSignedInAs(String mine, String invited) =>
+      'You’re signed in as $mine, but this invitation is for $invited.';
+  static const inviteLogOutContinue = 'Log out and continue';
+  static const inviteStayHere = 'Stay signed in';
+  static const inviteInvestorAccount =
+      'This email belongs to an investor account. An investor account can’t be part of a startup’s team.';
+  static const inviteExpired = 'This invitation has expired.';
   static const cancelOwnerInviteTitle = 'Cancel the invitation?';
   static String cancelOwnerInviteMessage(String email, String name) =>
       '$email will no longer be able to take over $name. You will remain the owner.';

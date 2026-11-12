@@ -53,6 +53,12 @@ Future<void> _open(
   await t.pumpAndSettle();
 }
 
+/// Leave startup sits at the bottom of the Details tab: bring it into view.
+Future<void> _toLeave(WidgetTester t) async {
+  await t.ensureVisible(find.text('Leave startup'));
+  await t.pumpAndSettle();
+}
+
 /// Test-only memberships (they used to be built-in sample data): Naql as
 /// co-founder, Mizan Learn as team member.
 final _teamStartups = [
@@ -83,7 +89,9 @@ void main() {
   });
 
   group('Settings tab', () {
-    testWidgets('owner: Public startup, Close and Leave, no Delete', (t) async {
+    testWidgets('owner: Public startup and Close, no Leave, no Delete', (
+      t,
+    ) async {
       await _open(t);
       expect(find.text('Public startup'), findsOneWidget);
       expect(find.text('Close startup'), findsOneWidget);
@@ -93,11 +101,8 @@ void main() {
         ),
         findsOneWidget,
       );
-      expect(find.text('Leave startup'), findsOneWidget);
-      expect(
-        find.text('Choose who will take over as owner before you leave.'),
-        findsOneWidget,
-      );
+      // Leave startup is in Details, not here.
+      expect(find.text('Leave startup'), findsNothing);
       expect(find.text('Delete startup'), findsNothing);
       expect(find.text('Transfer ownership'), findsNothing);
     });
@@ -124,22 +129,45 @@ void main() {
       expect(find.text(publicText), findsOneWidget);
     });
 
-    testWidgets('co-founder: Public startup and Leave, no Close', (t) async {
+    testWidgets('co-founder: Public startup, no Close, no Leave here', (
+      t,
+    ) async {
       await _open(t, role: StartupRole.coFounder);
       expect(find.text('Public startup'), findsOneWidget);
       expect(find.text('Close startup'), findsNothing);
+      expect(find.text('Leave startup'), findsNothing);
+    });
+
+    testWidgets('team member: nothing to change in Settings', (t) async {
+      await _open(t, role: StartupRole.member);
+      expect(find.text('Public startup'), findsNothing);
+      expect(find.text('Close startup'), findsNothing);
+      expect(find.text('Leave startup'), findsNothing);
+      expect(find.text('There is nothing to change here.'), findsOneWidget);
+    });
+
+    testWidgets('Details: Leave startup under the sections', (t) async {
+      await _open(t, tab: 'Details');
+      await _toLeave(t);
       expect(find.text('Leave startup'), findsOneWidget);
+      expect(
+        find.text('Choose who will take over as owner before you leave.'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('Details: co-founder and team member can leave', (t) async {
+      await _open(t, role: StartupRole.coFounder, tab: 'Details');
+      await _toLeave(t);
       expect(
         find.text('You’ll stop being a co-founder of this startup'),
         findsOneWidget,
       );
     });
 
-    testWidgets('team member: only Leave', (t) async {
-      await _open(t, role: StartupRole.member);
-      expect(find.text('Public startup'), findsNothing);
-      expect(find.text('Close startup'), findsNothing);
-      expect(find.text('Leave startup'), findsOneWidget);
+    testWidgets('Details: a team member sees Leave too', (t) async {
+      await _open(t, role: StartupRole.member, tab: 'Details');
+      await _toLeave(t);
       expect(
         find.text('You’ll be removed from this startup’s team'),
         findsOneWidget,
@@ -200,7 +228,13 @@ void main() {
 
     testWidgets('Leave asks, then removes the user and goes back', (t) async {
       var left = false;
-      await _open(t, role: StartupRole.coFounder, onLeave: () => left = true);
+      await _open(
+        t,
+        role: StartupRole.coFounder,
+        onLeave: () => left = true,
+        tab: 'Details',
+      );
+      await _toLeave(t);
       await t.tap(find.text('Leave startup'));
       await t.pumpAndSettle();
       expect(find.text('Leave Rafeeq Health?'), findsOneWidget);
@@ -218,7 +252,8 @@ void main() {
     });
 
     testWidgets('the owner alone is asked to invite the next owner', (t) async {
-      await _open(t);
+      await _open(t, tab: 'Details');
+      await _toLeave(t);
       await t.tap(find.text('Leave startup'));
       await t.pumpAndSettle();
       // One sheet: what happens next and the e-mail.
@@ -239,7 +274,9 @@ void main() {
         startup: PrototypeSeed.rafeeq.copyWith(
           memberRoles: const {'sample-faisal': 'member'},
         ),
+        tab: 'Details',
       );
+      await _toLeave(t);
       await t.tap(find.text('Leave startup'));
       await t.pumpAndSettle();
       // A card for every joined person, then "Invite someone new".
@@ -333,14 +370,15 @@ void main() {
     expect(find.text('Naql'), findsOneWidget); // the co-founder sample
     await t.tap(find.text('Naql'));
     await t.pumpAndSettle();
-    final settings = find.descendant(
+    final details = find.descendant(
       of: find.byType(ScrollableHeaderTabBar),
-      matching: find.text('Settings'),
+      matching: find.text('Details'),
     );
-    await t.ensureVisible(settings);
+    await t.ensureVisible(details);
     await t.pumpAndSettle();
-    await t.tap(settings);
+    await t.tap(details);
     await t.pumpAndSettle();
+    await _toLeave(t);
     await t.tap(find.text('Leave startup'));
     await t.pumpAndSettle();
     await t.tap(find.text('Leave startup').last);
