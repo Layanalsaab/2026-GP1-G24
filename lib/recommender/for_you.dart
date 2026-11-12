@@ -23,8 +23,8 @@ const Map<String, double> groupWeights = {
   'model': 0.18,
 };
 
-/// A startup's other sectors count half of its main one.
-const double otherSectorWeight = 0.5;
+/// A startup's other sectors count the same as its main one.
+const double otherSectorWeight = 1;
 
 /// A bookmark counts half as much after this many days, but never less than
 /// [oldestBookmarkWeight]: past bookmarks keep counting.
@@ -339,10 +339,27 @@ double ticketBonus(Startup s, Iterable<InvestmentTicket> tickets) {
   return tickets.any((t) => _inRange(t, need)) ? ticketAmountBonus : 0;
 }
 
-/// The ticket and round-size checks of the matching. They only fail when the
+/// The amount check: the onboarding answers (see [sizesFit]) still count, and
+/// an open ticket that takes the startup's amount, sector and stage (see
+/// [ticketFits]) also makes it fit.
+bool amountFits(
+  Startup s, {
+  Iterable<InvestmentTicket> tickets = const [],
+  String? ticketBand,
+  int? roundMin,
+  int? roundMax,
+}) =>
+    sizesFit(
+      s,
+      ticketBand: ticketBand,
+      roundMin: roundMin,
+      roundMax: roundMax,
+    ) ||
+    ticketFits(s, tickets);
+
+/// The onboarding amount check of the matching. It only fails when the
 /// startup is raising and its amount is outside what the investor takes; an
-/// answer that is missing is not checked. (An open ticket that takes the
-/// amount, see [ticketFits], also makes it fit.)
+/// answer that is missing is not checked.
 bool sizesFit(Startup s, {String? ticketBand, int? roundMin, int? roundMax}) {
   final need = s.fundingRequirement ?? 0;
   if (!s.seeksFunding || need <= 0) return true;

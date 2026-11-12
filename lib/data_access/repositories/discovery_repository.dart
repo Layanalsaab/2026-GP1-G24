@@ -290,9 +290,9 @@ class DiscoveryRepository {
   /// For You, investor side: startups like the investor's criteria and their
   /// open tickets, pulled toward the startups they bookmarked ([bookmarks]:
   /// key -> when). A startup is left out when its amount is outside their
-  /// ticket and round size, unless one of their open tickets takes it; a
-  /// startup an open ticket takes (amount, sector, stage) ranks higher. With
-  /// nothing to go on it is the first three.
+  /// onboarding amount, unless one of their open tickets takes it; a startup
+  /// an open ticket takes (amount, sector, stage) ranks higher. With nothing
+  /// to go on it is the first three.
   List<HomeItem> recommendedStartups({
     Set<String> excludeIds = const {},
     InvestorCriteria? criteria,
@@ -325,13 +325,13 @@ class DiscoveryRepository {
         if (s.isListed &&
             !excludeIds.contains(s.id) &&
             !bookmarks.containsKey('s-${s.id}') &&
-            (sizesFit(
-                  s,
-                  ticketBand: criteria?.ticketBand,
-                  roundMin: criteria?.roundMin,
-                  roundMax: criteria?.roundMax,
-                ) ||
-                ticketFits(s, tickets)))
+            amountFits(
+              s,
+              tickets: tickets,
+              ticketBand: criteria?.ticketBand,
+              roundMin: criteria?.roundMin,
+              roundMax: criteria?.roundMax,
+            ))
           Candidate(s, s.name, startupFeatures(s), s.sector.value),
     ];
     final picks = recommendBest<Startup>(
@@ -345,8 +345,8 @@ class DiscoveryRepository {
 
   /// For You, founder side: each of the founder's startups ([own]) is its
   /// own taste, pulled toward the investors they bookmarked. An investor is
-  /// scored against every startup whose amount their ticket and round size
-  /// (or one of their open tickets) take, and ranked by the best of those; an
+  /// scored against every startup whose amount their onboarding answers (or
+  /// one of their open tickets) take, and ranked by the best of those; an
   /// open ticket that takes the startup's amount, sector and stage ranks the
   /// investor higher. When two investors tie, the one that fits more of the
   /// startups goes first. With no startup, only the bookmarks count.
@@ -387,14 +387,13 @@ class DiscoveryRepository {
       candidates,
       allowed: own.isEmpty
           ? null
-          : (c, t) =>
-                sizesFit(
-                  own[t],
-                  ticketBand: c.item.ticketBand,
-                  roundMin: c.item.roundMin,
-                  roundMax: c.item.roundMax,
-                ) ||
-                ticketFits(own[t], tickets[c.item.id] ?? const []),
+          : (c, t) => amountFits(
+              own[t],
+              tickets: tickets[c.item.id] ?? const [],
+              ticketBand: c.item.ticketBand,
+              roundMin: c.item.roundMin,
+              roundMax: c.item.roundMax,
+            ),
       bonus: own.isEmpty
           ? null
           : (c, t) => ticketBonus(own[t], tickets[c.item.id] ?? const []),

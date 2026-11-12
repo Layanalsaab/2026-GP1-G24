@@ -25,7 +25,7 @@ Candidate<String> _c(String name, Features f, String? sector) =>
 
 void main() {
   group('features', () {
-    test('a startup: main sector 1, other sectors half, "Other" dropped', () {
+    test('a startup: all sectors count the same, "Other" dropped', () {
       final s = PrototypeSeed.rafeeq.copyWith(
         sector: Sector.healthtech,
         otherSectors: ['Fintech', 'Other'],
@@ -33,7 +33,7 @@ void main() {
         businessModel: BusinessModel.b2b,
       );
       final f = startupFeatures(s);
-      expect(f.groups['sector'], {'healthtech': 1.0, 'fintech': 0.5});
+      expect(f.groups['sector'], {'healthtech': 1.0, 'fintech': 1.0});
       expect(f.groups['stage'], {'seed': 1.0});
       expect(f.groups['model'], {'b2b': 1.0});
     });
@@ -409,8 +409,31 @@ void main() {
       locations: const [],
     );
 
+    test('investor: an open ticket adds to the onboarding amount', () {
+      const criteria = InvestorCriteria(
+        sectors: ['HealthTech'],
+        stages: ['Seed'],
+        roundMin: 100000,
+        roundMax: 1000000,
+      );
+      final big = startup('big', ask: 5000000);
+      final small = startup('small', ask: 300000);
+      List<String> ids(List<InvestmentTicket> tickets) =>
+          DiscoveryRepository.sample(
+                startups: [big, small],
+                investors: const [],
+                tickets: tickets,
+              )
+              .recommendedStartups(criteria: criteria, investorId: 'inv')
+              .map((i) => i.id)
+              .toList();
+
+      expect(ids(const []), ['small']);
+      expect(ids([ticket(min: 1000000, max: 10000000)]), ['big', 'small']);
+    });
+
     test(
-      'investor: an open ticket brings in a startup the profile excludes',
+      'investor: with every ticket removed the onboarding amount is back',
       () {
         const criteria = InvestorCriteria(
           sectors: ['HealthTech'],
@@ -418,20 +441,21 @@ void main() {
           roundMin: 100000,
           roundMax: 1000000,
         );
-        final big = startup('big', ask: 5000000);
-        final small = startup('small', ask: 300000);
-        final without = DiscoveryRepository.sample(
-          startups: [big, small],
+        final repo = DiscoveryRepository.sample(
+          startups: [
+            startup('big', ask: 5000000),
+            startup('small', ask: 300000),
+          ],
           investors: const [],
-        ).recommendedStartups(criteria: criteria, investorId: 'inv');
-        expect(without.map((i) => i.id), ['small']);
-
-        final withTicket = DiscoveryRepository.sample(
-          startups: [big, small],
-          investors: const [],
-          tickets: [ticket(min: 1000000, max: 10000000)],
-        ).recommendedStartups(criteria: criteria, investorId: 'inv');
-        expect(withTicket.map((i) => i.id), ['big', 'small']);
+          tickets: [
+            ticket(min: 1000000, max: 10000000, status: TicketStatus.closed),
+          ],
+        );
+        final out = repo.recommendedStartups(
+          criteria: criteria,
+          investorId: 'inv',
+        );
+        expect(out.map((i) => i.id), ['small']);
       },
     );
 
