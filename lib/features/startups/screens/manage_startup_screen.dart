@@ -22,12 +22,14 @@ import '../../connection_requests/view_models/interest_view_model.dart';
 import '../../connection_requests/view_models/requests_view_model.dart';
 import '../../engagement_analytics/view_models/activity_view_model.dart';
 import '../../fundraising_calculator/screens/valuation_calculator_screen.dart';
+import '../../profiles/screens/investor_profile_screen.dart';
 import '../../startup_profile/screens/startup_profile_screen.dart';
+import '../../startup_profile/view_models/startup_profile_view_model.dart';
+import '../../startup_profile/widgets/startup_profile_tabs.dart';
 import '../view_models/manage_startup_view_model.dart';
 import '../view_models/rounds_view_model.dart';
 import '../widgets/founder_ui.dart';
 import '../widgets/manage_dashboard_tab.dart';
-import '../widgets/manage_details_tab.dart';
 import '../widgets/manage_rounds_tab.dart';
 import '../widgets/role_tag.dart';
 import '../widgets/view_only_banner.dart';
@@ -36,9 +38,10 @@ import '../widgets/owner_handover_dialogs.dart';
 import 'my_startups_screen.dart';
 import 'startup_steps_screen.dart';
 
-/// Manage startup (docs/05 D3): tabbed green header (Dashboard, Details,
-/// Rounds, Requests, Interest, Settings; the tab bar scrolls sideways) and the
-/// pane of the selected tab. [role] is the user's role in this startup.
+/// Manage startup (docs/05 D3): tabbed green header (Dashboard, EOI, then the
+/// six tabs of the startup page: Startup Overview, Startup Description, Target
+/// Market, Finance and Growth, Startup Team, Startup Ask, and Settings; the
+/// tab bar scrolls sideways) and the pane of the selected tab. [role] is the user's role in this startup.
 class ManageStartupScreen extends StatefulWidget {
   const ManageStartupScreen({
     super.key,
@@ -104,6 +107,13 @@ class _ManageStartupScreenState extends State<ManageStartupScreen> {
   late final ActivityViewModel _activity = ActivityViewModel(
     startupId: widget.startup.id,
   );
+  // The six step tabs are the startup page itself (the same cards), with Edit
+  // buttons, Leave startup and the rounds added for the team.
+  late final StartupProfileViewModel _profile = StartupProfileViewModel(
+    startup: widget.startup,
+    preview: true,
+    rounds: const [],
+  );
 
   @override
   void initState() {
@@ -146,6 +156,7 @@ class _ManageStartupScreenState extends State<ManageStartupScreen> {
     _requests.dispose();
     _interest.dispose();
     _activity.dispose();
+    _profile.dispose();
     super.dispose();
   }
 
@@ -164,9 +175,6 @@ class _ManageStartupScreenState extends State<ManageStartupScreen> {
     city: _vm.startup.location.label,
   );
 
-  /// The open section of the Details tab (0-based, like the form's steps).
-  int? _openSection;
-
   /// The user's role here: the one passed in, else read from the startup.
   late final StartupRole _role =
       widget.role ??
@@ -179,9 +187,6 @@ class _ManageStartupScreenState extends State<ManageStartupScreen> {
   bool get _isOwner => _role == StartupRole.founder;
 
   String? get _uid => AppSession.instance.user?.uid;
-
-  void _toggleSection(int i) =>
-      setState(() => _openSection = _openSection == i ? null : i);
 
   /// Edit pill: opens ONLY that section of the form, filled in. Saving goes
   /// back here and updates the Details tab.
@@ -199,17 +204,20 @@ class _ManageStartupScreenState extends State<ManageStartupScreen> {
     }
   }
 
-  /// Valuation tile: the Finance and Growth editor, or (view only) the
-  /// Details tab with that section open.
+  /// Valuation tile: the Finance and Growth editor, or (view only) its tab.
   void _openValuation() {
     const finance = 3;
     if (_canEdit) {
       _editSection(finance);
     } else {
-      setState(() => _openSection = finance);
-      _vm.selectTab(1);
+      _vm.selectTab(_firstStepTab + finance);
     }
   }
+
+  /// The tab of the first form step (Startup Overview).
+  static const _firstStepTab = 2;
+  static const _askTab = _firstStepTab + 5;
+  static const _settingsTab = _firstStepTab + 6;
 
   void _preview() =>
       StartupProfileScreen.open(context, startup: _vm.startup, preview: true);
@@ -520,26 +528,40 @@ class _ManageStartupScreenState extends State<ManageStartupScreen> {
                     .acceptedFor(s.id)
                     .fold<int>(0, (sum, r) => sum + r.amount),
               );
+        // The startup page's own tabs, kept in step with this screen.
+        if (!identical(_profile.startup, s)) _profile.replaceStartup(s);
+        _profile.rounds = _rounds.rounds;
+        if (_vm.tab >= _firstStepTab && _vm.tab < _settingsTab) {
+          _profile.selectTab(_vm.tab - _firstStepTab);
+        }
         final pane = switch (_vm.tab) {
           0 => ManageDashboardTab(
             startup: s,
             openRound: _rounds.openRound,
             activity: _activity,
-            onRaising: () => _vm.selectTab(2),
+            onRaising: () => _vm.selectTab(_askTab),
             onValuation: _openValuation,
             onCalculator: _calculator,
             emptyInvestorsText: _role == StartupRole.member
                 ? FounderToolsStrings.associatedEmptyMember
                 : FounderToolsStrings.associatedEmpty,
           ),
-          1 => ManageDetailsTab(
-            startup: s,
-            openIndex: _openSection,
-            onToggle: _toggleSection,
-            canEdit: _canEdit,
-            onEdit: _editSection,
-            myRole: _role,
-            footer: ManageLeaveSection(
+          1 => InterestTab(vm: _interest, onToast: _toast, canAct: _canEdit),
+          _settingsTab => ManageSettingsTab(
+            role: _role,
+            startupName: s.name,
+            isPublic: s.isPublic,
+            onVisibilityChanged: _setPublic,
+            isClosed: s.isClosed,
+            onClose: _close,
+          ),
+          _ => StartupProfilePane(
+            viewModel: _profile,
+            padded: false,
+            openInvited: true,
+            onOpenInvestor: (i) => InvestorProfileScreen.open(context, i),
+            onEdit: _canEdit ? _editSection : null,
+            teamFooter: ManageLeaveSection(
               role: _role,
               startupName: s.name,
               onLeave: _leave,
@@ -552,27 +574,18 @@ class _ManageStartupScreenState extends State<ManageStartupScreen> {
               ),
               expiredOwnerEmail: _vm.expiredOwnerEmail,
             ),
-          ),
-          2 => ManageRoundsTab(
-            vm: _rounds,
-            canManage: _canEdit,
-            requests: _requests,
-            onCheck: (r) => ValuationCalculatorScreen.open(
-              context,
-              startup: s,
-              funding: r.amount,
-              equityPercent: r.equityPercent,
+            roundsSection: ManageRoundsTab(
+              vm: _rounds,
+              canManage: _canEdit,
+              requests: _requests,
+              onCheck: (r) => ValuationCalculatorScreen.open(
+                context,
+                startup: s,
+                funding: r.amount,
+                equityPercent: r.equityPercent,
+              ),
+              onToast: _toast,
             ),
-            onToast: _toast,
-          ),
-          3 => InterestTab(vm: _interest, onToast: _toast, canAct: _canEdit),
-          _ => ManageSettingsTab(
-            role: _role,
-            startupName: s.name,
-            isPublic: s.isPublic,
-            onVisibilityChanged: _setPublic,
-            isClosed: s.isClosed,
-            onClose: _close,
           ),
         };
         return Scaffold(
@@ -618,12 +631,11 @@ class _ManageStartupScreenState extends State<ManageStartupScreen> {
                 scrollableTabs: true,
                 tabs: [
                   const HeaderTab(FounderToolsStrings.tabDashboard),
-                  const HeaderTab(FounderToolsStrings.tabDetails),
-                  const HeaderTab(FounderToolsStrings.tabRounds),
                   HeaderTab(
                     FounderToolsStrings.tabInterest,
                     badge: _interest.newCount,
                   ),
+                  for (final t in FounderToolsStrings.stepTitles) HeaderTab(t),
                   const HeaderTab(FounderToolsStrings.tabSettings),
                 ],
                 selectedIndex: _vm.tab,

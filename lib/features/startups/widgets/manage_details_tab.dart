@@ -354,7 +354,60 @@ class _EditPill extends StatelessWidget {
 
 // ------------------------------------------------------------ section bodies
 
-/// A question / label above its answer. An empty answer reads "Not added yet".
+/// A small grey label with a gold bar (the look of the investor's interests).
+class _GoldLabel extends StatelessWidget {
+  const _GoldLabel(this.label);
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(width: 3, height: 12, color: AppColors.gold),
+        const SizedBox(width: 8),
+        Flexible(
+          child: Text(
+            label,
+            style: AppText.sans(
+              size: 12.5,
+              weight: FontWeight.w600,
+              color: AppColors.grey,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// The answer under a [_GoldLabel]: a little to the right, under the label's
+/// text (past its gold bar). An empty answer reads "Not added yet".
+class _Answer extends StatelessWidget {
+  const _Answer(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final empty = text.trim().isEmpty;
+    return Padding(
+      padding: const EdgeInsets.only(left: 11),
+      child: Text(
+        empty ? ManageDetailsTab._notAdded : text.trim(),
+        style: AppText.sans(
+          size: 14,
+          height: 22,
+          weight: FontWeight.w500,
+          color: empty ? AppColors.hint : AppColors.ink,
+        ),
+      ),
+    );
+  }
+}
+
+/// A question / label above its answer: the gold-bar label, the answer
+/// indented under it.
 class _QA extends StatelessWidget {
   const _QA(this.label, this.answer);
 
@@ -363,30 +416,14 @@ class _QA extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final empty = answer.trim().isEmpty;
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            label,
-            style: AppText.sans(
-              size: 14,
-              height: 20,
-              weight: FontWeight.w600,
-              color: AppColors.moss600,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            empty ? ManageDetailsTab._notAdded : answer.trim(),
-            style: AppText.sans(
-              size: 16,
-              height: 24,
-              color: empty ? AppColors.hint : AppColors.ink,
-            ),
-          ),
+          _GoldLabel(label),
+          const SizedBox(height: 6),
+          _Answer(answer),
         ],
       ),
     );
@@ -455,36 +492,32 @@ class _Market extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _QA(FounderToolsStrings.customersLabel, s.customers),
-        Text(
-          'Target market size',
-          style: AppText.sans(
-            size: 14,
-            height: 20,
-            weight: FontWeight.w600,
-            color: AppColors.moss600,
-          ),
-        ),
-        const SizedBox(height: 4),
+        const _GoldLabel('Target market size'),
+        const SizedBox(height: 6),
         if (size.isEmpty)
-          Text(
-            ManageDetailsTab._notAdded,
-            style: AppText.sans(size: 16, height: 24, color: AppColors.hint),
-          )
-        else ...[
-          Text(
-            size,
-            style: AppText.sans(
-              size: 28,
-              height: 34,
-              weight: FontWeight.w700,
-              color: AppColors.green,
+          const _Answer('')
+        else
+          Padding(
+            padding: const EdgeInsets.only(left: 11),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  size,
+                  style: AppText.sans(
+                    size: 28,
+                    height: 34,
+                    weight: FontWeight.w700,
+                    color: AppColors.green,
+                  ),
+                ),
+                Text(
+                  'Total yearly revenue in the target market',
+                  style: AppText.sans(size: 13, color: AppColors.grey),
+                ),
+              ],
             ),
           ),
-          Text(
-            'Total yearly revenue in the target market',
-            style: AppText.sans(size: 13, color: AppColors.grey),
-          ),
-        ],
       ],
     );
   }
@@ -524,23 +557,12 @@ class _Finance extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 14),
-        Text(
-          'Expected revenue next 3 years',
-          style: AppText.sans(
-            size: 14,
-            height: 20,
-            weight: FontWeight.w600,
-            color: AppColors.moss600,
-          ),
-        ),
-        const SizedBox(height: 4),
+        const _GoldLabel('Expected revenue next 3 years'),
+        const SizedBox(height: 6),
         if (!hasRevenue)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 14),
-            child: Text(
-              ManageDetailsTab._notAdded,
-              style: AppText.sans(size: 16, height: 24, color: AppColors.hint),
-            ),
+          const Padding(
+            padding: EdgeInsets.only(bottom: 14),
+            child: _Answer(''),
           )
         else
           Padding(

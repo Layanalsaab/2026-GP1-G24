@@ -152,7 +152,7 @@ void main() {
         // detail says so, with a lock, and shows no value.
         expect(find.text('Contact Information'), findsOneWidget);
         expect(find.text('Email is private'), findsOneWidget);
-        expect(find.text('Phone is private'), findsOneWidget);
+        expect(find.text('Phone Number is private'), findsOneWidget);
         expect(find.text('Private'), findsNWidgets(2));
         expect(
           find.text('Only the details marked Public are shown to others.'),
@@ -194,7 +194,7 @@ void main() {
         expect(find.text('open@gmail.com'), findsOneWidget);
         expect(find.text('Email is private'), findsNothing);
         // The private phone: no number, a lock and the Private tag.
-        expect(find.text('Phone is private'), findsOneWidget);
+        expect(find.text('Phone Number is private'), findsOneWidget);
         expect(find.text('Private'), findsOneWidget);
         expect(
           find.byWidgetPredicate(

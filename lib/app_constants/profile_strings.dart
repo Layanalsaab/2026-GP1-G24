@@ -94,7 +94,7 @@ class ProfileStrings {
   /// What someone else sees for a detail that is private ("Email is private").
   static String detailPrivate(String label) => '$label is private';
   static const email = 'Email';
-  static const phone = 'Phone';
+  static const phone = 'Phone Number';
   static const contactPublic = 'Public';
   static const contactOnlyYou = 'Only you';
 

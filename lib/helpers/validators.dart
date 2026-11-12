@@ -63,15 +63,23 @@ class Validators {
 
   // ---------------------------------------------------------------- email
 
-  static bool isEmail(String? value) =>
-      _emailPattern.hasMatch((value ?? '').trim());
+  /// The basic shape (name@domain.ext), and a domain that does not end with
+  /// the same word twice ("name@gmail.com.com" is a typo, not an address).
+  static bool _wellFormed(String v) {
+    if (!_emailPattern.hasMatch(v)) return false;
+    final labels = v.substring(v.lastIndexOf('@') + 1).toLowerCase().split('.');
+    final n = labels.length;
+    return n < 2 || labels[n - 1] != labels[n - 2];
+  }
+
+  static bool isEmail(String? value) => _wellFormed((value ?? '').trim());
 
   /// Log in, verify and forgot-password: "Please enter your email address."
   /// when empty, "Enter a valid email address" when malformed.
   static String? email(String? value) {
     final v = (value ?? '').trim();
     if (v.isEmpty) return ValidationStrings.emailRequired;
-    if (!_emailPattern.hasMatch(v)) return ValidationStrings.emailInvalid;
+    if (!_wellFormed(v)) return ValidationStrings.emailInvalid;
     return null;
   }
 
@@ -106,7 +114,7 @@ class Validators {
   /// are never locked out.
   static bool isSignupEmail(String? value) {
     final v = (value ?? '').trim().toLowerCase();
-    if (!_emailPattern.hasMatch(v)) return false;
+    if (!_wellFormed(v)) return false;
     final domain = v.substring(v.lastIndexOf('@') + 1);
     return _allowedDomains.contains(domain) || _isUniversityDomain(domain);
   }
@@ -132,7 +140,7 @@ class Validators {
   /// Sign-up: shown live once something is typed.
   static String? emailLive(String? value) {
     final v = (value ?? '').trim();
-    if (v.isEmpty || _emailPattern.hasMatch(v)) return null;
+    if (v.isEmpty || _wellFormed(v)) return null;
     return ValidationStrings.emailLive;
   }
 
