@@ -48,6 +48,14 @@ class StartupFilterSheet extends StatelessWidget {
                       onTap: () => vm.setVisibility(v),
                     ),
                   const SizedBox(height: 8),
+                  const _GroupTitle(FounderToolsStrings.statusGroup),
+                  for (final v in StatusFilter.values)
+                    PickerOptionRow(
+                      label: v.label,
+                      selected: vm.status == v,
+                      onTap: () => vm.setStatus(v),
+                    ),
+                  const SizedBox(height: 8),
                   const _GroupTitle(FounderToolsStrings.roleGroup),
                   for (final r in RoleFilter.values)
                     PickerOptionRow(

@@ -6,6 +6,7 @@ import '../../../data_access/repositories/team_lookup.dart';
 import '../../../helpers/app_session.dart';
 import '../../../helpers/formatters.dart';
 import '../../../models/investor_profile.dart';
+import '../../../models/list_entries.dart';
 import '../../../models/team_member.dart';
 import '../../../shared_ui/icons/app_icons.dart';
 import '../../../shared_ui/theme/app_colors.dart';
@@ -101,7 +102,15 @@ class StartupProfilePane extends StatelessWidget {
     _SectionCard(
       title: FounderToolsStrings.stepTitles[i],
       onEdit: _editOf(i),
-      child: ManageDetailsTab.sectionBody(viewModel.startup, i),
+      child: ManageDetailsTab.sectionBody(
+        viewModel.startup,
+        i,
+        // Mine (or my team's): "your SAM". Somebody else's: "the startup's".
+        mine:
+            viewModel.isPreview ||
+            StartupRole.of(viewModel.startup, AppSession.instance.user?.uid) !=
+                null,
+      ),
     ),
   ];
 

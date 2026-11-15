@@ -75,7 +75,7 @@ void main() {
       await _pump(t, BookmarksScreen(items: _saved));
       expect(find.text('Bookmarks'), findsOneWidget);
       expect(find.text('All types'), findsOneWidget);
-      expect(find.text('Newest first'), findsOneWidget);
+      expect(find.text('Newest'), findsOneWidget);
       expect(find.textContaining('saved'), findsNothing);
       expect(find.text('Rafeeq Health'), findsOneWidget);
     });
@@ -132,7 +132,7 @@ void main() {
       await _pump(t, MyStartupsScreen(teamStartups: _teamStartups));
       expect(find.text('My Startups'), findsOneWidget);
       expect(find.text('All startups'), findsOneWidget);
-      expect(find.text('Newest first'), findsOneWidget);
+      expect(find.text('Newest'), findsOneWidget);
       expect(
         find.textContaining(RegExp(r'^\d+ startups?$')),
         findsNothing,
@@ -148,6 +148,9 @@ void main() {
     testWidgets('the role filter has four options', (t) async {
       await _pump(t, MyStartupsScreen(teamStartups: _teamStartups));
       await _tapPill(t, 'All startups');
+      // The sheet has three groups now: scroll down to My role.
+      await t.drag(find.text('VISIBILITY'), const Offset(0, -400));
+      await t.pumpAndSettle();
       for (final o in ['All', 'Founder', 'Co-founder', 'Team member']) {
         expect(find.text(o), findsWidgets, reason: o);
       }
@@ -166,6 +169,9 @@ void main() {
       await _tapPill(t, 'All startups');
       expect(find.text('Filter startups'), findsOneWidget);
       expect(find.text('VISIBILITY'), findsOneWidget);
+      expect(find.text('STATUS'), findsOneWidget);
+      await t.drag(find.text('VISIBILITY'), const Offset(0, -400));
+      await t.pumpAndSettle();
       expect(find.text('MY ROLE'), findsOneWidget);
       // Founder: no sample founder startup, so nothing matches.
       await t.tap(find.text('Founder').last);

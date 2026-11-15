@@ -8,6 +8,7 @@ import '../../../app_constants/founder_tools_strings.dart';
 import '../../../data_access/repositories/bookmark_repository.dart';
 import '../../../data_access/repositories/interest_repository.dart';
 import '../../../data_access/repositories/request_repository.dart';
+import '../../../helpers/formatters.dart';
 import '../../../models/startup.dart';
 import '../../../models/match_summary.dart';
 import '../../../shared_ui/icons/app_icons.dart';
@@ -191,11 +192,18 @@ class _StartupProfileScreenState extends State<StartupProfileScreen> {
                           header,
                         // A closed startup says so above its tabs.
                         if (_vm.startup.isClosed)
-                          const Padding(
-                            padding: EdgeInsets.fromLTRB(16, 16, 16, 0),
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
                             child: ViewOnlyBanner.notice(
                               title: FounderToolsStrings.closedBannerTitle,
-                              message: FounderToolsStrings.closedBannerPublic,
+                              // The day it was closed.
+                              message: FounderToolsStrings.closedBannerPublic(
+                                _vm.startup.closedAt == null
+                                    ? null
+                                    : Formatters.dayMonthYear(
+                                        _vm.startup.closedAt!,
+                                      ),
+                              ),
                               icon: AppIcons.lock,
                             ),
                           ),

@@ -113,7 +113,7 @@ void main() {
     );
     await t.pump(const Duration(milliseconds: 800));
     expect(find.text('All types'), findsOneWidget);
-    expect(find.text('Newest first'), findsOneWidget);
+    expect(find.text('Newest'), findsOneWidget);
     expect(find.byType(HomeCard), findsNWidgets(3));
   });
 }

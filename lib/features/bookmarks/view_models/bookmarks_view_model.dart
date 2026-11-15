@@ -21,10 +21,10 @@ enum BookmarkType {
 }
 
 enum BookmarkSort {
-  newest(HomeStrings.newestFirst),
-  oldest(HomeStrings.oldestFirst),
-  name(HomeStrings.nameAZ),
-  nameDesc(HomeStrings.nameZA);
+  newest(HomeStrings.sortNewest),
+  oldest(HomeStrings.sortOldest),
+  name(HomeStrings.sortNameAZ),
+  nameDesc(HomeStrings.sortNameZA);
 
   const BookmarkSort(this.label);
 

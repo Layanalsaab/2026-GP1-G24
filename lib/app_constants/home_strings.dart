@@ -20,9 +20,9 @@ class HomeStrings {
   static const recommendedStartups = 'Recommended startups for you';
   static const recommendedInvestors = 'Recommended investors for you';
   static const forYouInfoInvestor =
-      'Based on the sectors, stages and commerce models you want to invest in, how much you invest, your open tickets, and the startups you bookmark. The more you bookmark, the more it follows your taste.';
+      'Based on:\n• Your sectors, stages and commerce models\n• How much you invest\n• Your open tickets\n• The startups you bookmark';
   static const forYouInfoFounder =
-      'Based on each of your startups: its sector, stage, commerce model and how much you are raising, on the investors’ open tickets, and on the investors you bookmark. The more you bookmark, the more it follows your taste.';
+      'Based on:\n• Your startup’s sector, stage and commerce model\n• How much you are raising\n• Investors’ open tickets\n• The investors you bookmark';
   static const newestStartups = 'Newest startups';
   static const noNewStartupsTitle = 'No new startups';
   static const noNewStartupsMessage =
@@ -78,15 +78,11 @@ class HomeStrings {
   // Bookmarks screen
   static const bookmarksTitle = 'Bookmarks';
   static const filterByTypeTitle = 'Filter by type';
-  static const sortBookmarksTitle = 'Sort bookmarks';
+  static const sortBookmarksTitle = sortTitle;
   static const allTypes = 'All types';
   static const typeStartups = 'Startups';
   static const typeInvestors = 'Investors';
   static const typePrograms = 'Support Channels';
-  static const newestFirst = 'Newest first';
-  static const oldestFirst = 'Oldest first';
-  static const nameAZ = 'Name (A–Z)';
-  static const nameZA = 'Name (Z–A)';
   static const noBookmarksTitle = 'No bookmarks yet';
   static const noBookmarksMessage =
       'Tap the bookmark icon on any startup, investor or support channel to save it here.';

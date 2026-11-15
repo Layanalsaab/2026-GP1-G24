@@ -50,6 +50,9 @@ enum HomeFilterField {
   raising,
   partner,
   support,
+
+  /// A startup's status: Active or Closed.
+  status,
 }
 
 /// The advanced search groups, the filtering and the sorting of the home
@@ -208,6 +211,11 @@ class HomeFilters {
             field: HomeFilterField.city,
             drop: true,
           ),
+          // The Hub also lists closed startups (with their Closed tag).
+          HomeFilterGroup('Status', [
+            FounderToolsStrings.statusActive,
+            FounderToolsStrings.statusClosed,
+          ], field: HomeFilterField.status),
         ];
     }
   }
@@ -296,6 +304,8 @@ class HomeFilters {
         return it.city == v;
       case HomeFilterField.model:
         return it.commerceModel == v;
+      case HomeFilterField.status:
+        return v == FounderToolsStrings.statusClosed ? it.closed : !it.closed;
     }
   }
 

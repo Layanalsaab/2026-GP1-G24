@@ -80,9 +80,9 @@ class WalletStrings {
   static const requestsHeading = 'Investment Requests';
   static const requestsSub = 'Sent with this ticket';
   static const noTicketRequests = 'No requests sent with this ticket yet.';
-  static const matchesHeading = 'Matches';
-  static const matchesSub = 'Open rounds that fit this ticket';
-  static const noMatches = 'No matching rounds right now.';
+  static const matchesHeading = 'Suggested Startups';
+  static const matchesSub = 'Startups with an open round that matches this ticket';
+  static const noMatches = 'No startups with a matching open round right now.';
   static const matchesFailed =
       'Couldn’t load the matches. Check your connection.';
   static const findingMatches = 'Finding matches…';

@@ -169,6 +169,7 @@ void main() {
         'Raising',
         'Commerce model',
         'Headquarters',
+        'Status',
       ]);
       expect(HomeFilters.groups(HomeContext.explore).length, 4);
       expect(HomeFilters.groups(HomeContext.support).first.title, 'Type');
@@ -218,36 +219,34 @@ void main() {
       m.dispose();
     });
 
-    test('For You has no switch: an investor gets startups, a founder investors', () {
-      final i = vm(SessionRole.investor);
-      expect(i.recommended, isNotEmpty);
-      expect(
-        i.recommended.every((x) => x.kind == HomeItemKind.startup),
-        isTrue,
-      );
-      expect(i.recommendedTitle, 'Recommended startups for you');
-      expect(
-        i.recommendedInfo,
-        'Based on the sectors, stages and commerce models you want to invest '
-        'in, how much you invest, your open tickets, and the startups you '
-        'bookmark. The more you bookmark, the more it follows your taste.',
-      );
-      final f = vm(SessionRole.founder);
-      expect(
-        f.recommended.every((x) => x.kind == HomeItemKind.investor),
-        isTrue,
-      );
-      expect(f.recommendedTitle, 'Recommended investors for you');
-      expect(
-        f.recommendedInfo,
-        'Based on each of your startups: its sector, stage, commerce model and '
-        'how much you are raising, on the investors’ open tickets, and on the '
-        'investors you bookmark. The more you bookmark, the more it follows '
-        'your taste.',
-      );
-      i.dispose();
-      f.dispose();
-    });
+    test(
+      'For You has no switch: an investor gets startups, a founder investors',
+      () {
+        final i = vm(SessionRole.investor);
+        expect(i.recommended, isNotEmpty);
+        expect(
+          i.recommended.every((x) => x.kind == HomeItemKind.startup),
+          isTrue,
+        );
+        expect(i.recommendedTitle, 'Recommended startups for you');
+        expect(
+          i.recommendedInfo,
+          'Based on:\n• Your sectors, stages and commerce models\n• How much you invest\n• Your open tickets\n• The startups you bookmark',
+        );
+        final f = vm(SessionRole.founder);
+        expect(
+          f.recommended.every((x) => x.kind == HomeItemKind.investor),
+          isTrue,
+        );
+        expect(f.recommendedTitle, 'Recommended investors for you');
+        expect(
+          f.recommendedInfo,
+          'Based on:\n• Your startup’s sector, stage and commerce model\n• How much you are raising\n• Investors’ open tickets\n• The investors you bookmark',
+        );
+        i.dispose();
+        f.dispose();
+      },
+    );
 
     test('For You keeps the startups the founder belongs to out', () {
       final id = PrototypeSeed.startups.first.id;

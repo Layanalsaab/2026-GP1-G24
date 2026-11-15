@@ -129,7 +129,7 @@ void main() {
     await t.pumpAndSettle();
     // Manage has its tabs (the public page has Overview / Business / ...).
     expect(find.text('Dashboard'), findsWidgets);
-    expect(find.text('Rounds'), findsWidgets);
+    expect(find.text('Startup Ask'), findsWidgets);
   });
 
   testWidgets('Hub card vs My Startups card: same width, same parts', (

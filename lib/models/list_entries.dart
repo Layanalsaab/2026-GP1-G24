@@ -2,7 +2,7 @@ import 'home_item.dart';
 import 'startup.dart';
 
 /// One saved item on the Bookmarks screen: the card to show and when it was
-/// saved ("Newest first" / "Oldest first" sort by [savedAt]).
+/// saved ("Newest" / "Oldest" sort by [savedAt]).
 ///
 /// Built from the user's saved bookmarks by `BookmarkRepository.savedItems`.
 class SavedBookmark {

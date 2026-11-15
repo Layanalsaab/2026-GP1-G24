@@ -331,7 +331,7 @@ void main() {
     expect(find.text('Sent with this ticket'), findsOneWidget);
     expect(find.text('No requests sent with this ticket yet.'), findsOneWidget);
     await t.scrollUntilVisible(
-      find.text('Open rounds that fit this ticket'),
+      find.text('Startups with an open round that matches this ticket'),
       200,
       scrollable: find.byType(Scrollable).first,
     );
@@ -372,37 +372,37 @@ void main() {
     expect(find.text('Ticket closed'), findsOneWidget);
     expect(find.text('Edit ticket'), findsNothing);
     expect(find.text('Closed'), findsOneWidget);
-    expect(find.text('Open rounds that fit this ticket'), findsNothing);
+    expect(
+      find.text('Startups with an open round that matches this ticket'),
+      findsNothing,
+    );
     // Let the toast go away.
     await t.pumpAndSettle(const Duration(seconds: 5));
   });
 
-  testWidgets('Edit ticket: the form with the values, Save changes confirms', (
-    t,
-  ) async {
-    final vm = await open(
-      t,
-      tickets: [ticket(id: 'inv1-T1', name: 'Health bets')],
-    );
-    await press(t, find.text('Health bets'));
-    await press(t, find.text('Edit ticket'));
-    // The form replaces the buttons while it is open.
-    expect(find.text('Save changes'), findsOneWidget);
-    expect(find.text('Close ticket'), findsNothing);
-    vm.max.text = '400,000';
-    await t.pumpAndSettle();
-    await press(t, find.text('Save changes'));
-    expect(find.text('Save changes?'), findsOneWidget);
-    expect(
-      find.text('Your changes will be saved to this ticket.'),
-      findsOneWidget,
-    );
-    await press(t, find.text('Save changes').last);
-    expect(find.text('Ticket saved'), findsOneWidget);
-    expect(find.text('SAR 400,000'), findsOneWidget);
-    // Let the toast go away.
-    await t.pumpAndSettle(const Duration(seconds: 5));
-  });
+  testWidgets(
+    'Edit ticket: the form with the values, Save changes saves at once',
+    (t) async {
+      final vm = await open(
+        t,
+        tickets: [ticket(id: 'inv1-T1', name: 'Health bets')],
+      );
+      await press(t, find.text('Health bets'));
+      await press(t, find.text('Edit ticket'));
+      // The form replaces the buttons while it is open.
+      expect(find.text('Save changes'), findsOneWidget);
+      expect(find.text('Close ticket'), findsNothing);
+      vm.max.text = '400,000';
+      await t.pumpAndSettle();
+      await press(t, find.text('Save changes'));
+      // Saved at once: nothing to confirm.
+      expect(find.text('Save changes?'), findsNothing);
+      expect(find.text('Ticket saved'), findsOneWidget);
+      expect(find.text('SAR 400,000'), findsOneWidget);
+      // Let the toast go away.
+      await t.pumpAndSettle(const Duration(seconds: 5));
+    },
+  );
 
   testWidgets('Edit ticket: only the form (no matches, no requests)', (
     t,
@@ -415,7 +415,10 @@ void main() {
     await press(t, find.text('Edit ticket'));
     expect(find.text('Save changes'), findsOneWidget);
     expect(find.text('Investment Requests'), findsNothing);
-    expect(find.text('Open rounds that fit this ticket'), findsNothing);
+    expect(
+      find.text('Startups with an open round that matches this ticket'),
+      findsNothing,
+    );
     expect(find.text('Created 2d ago'), findsNothing);
   });
 

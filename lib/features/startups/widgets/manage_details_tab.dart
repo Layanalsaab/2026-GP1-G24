@@ -143,7 +143,7 @@ class ManageDetailsTab extends StatelessWidget {
     );
   }
 
-  Widget _body(int i) => sectionBody(startup, i, myRole);
+  Widget _body(int i) => sectionBody(startup, i, role: myRole);
 
   /// The read-only content of section [i] (0-based, the form's steps). The
   /// startup page shows these same widgets under the same six tab names, so
@@ -151,16 +151,20 @@ class ManageDetailsTab extends StatelessWidget {
   /// add-startup form.
   static Widget sectionBody(
     Startup s,
-    int i, [
+    int i, {
     StartupRole role = StartupRole.member,
-  ]) {
+
+    /// True for the startup's own team (the tip speaks to them: "your SAM");
+    /// false for anybody else looking at it ("the startup's SAM").
+    bool mine = true,
+  }) {
     switch (i) {
       case 0:
         return _Overview(s);
       case 1:
         return _Description(s);
       case 2:
-        return _Market(s);
+        return _Market(s, mine: mine);
       case 3:
         return _Finance(s);
       case 4:
@@ -481,10 +485,21 @@ class _Description extends StatelessWidget {
   }
 }
 
-class _Market extends StatelessWidget {
-  const _Market(this.s);
+class _Market extends StatefulWidget {
+  const _Market(this.s, {this.mine = true});
 
   final Startup s;
+  final bool mine;
+
+  @override
+  State<_Market> createState() => _MarketState();
+}
+
+class _MarketState extends State<_Market> {
+  bool _infoOpen = false;
+
+  Startup get s => widget.s;
+  bool get mine => widget.mine;
 
   @override
   Widget build(BuildContext context) {
@@ -493,7 +508,25 @@ class _Market extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _QA(FounderToolsStrings.customersLabel, s.customers),
-        const _GoldLabel('Target market size'),
+        // The same (i) as in the add-startup form.
+        Row(
+          children: [
+            const Flexible(child: _GoldLabel('Target market size')),
+            const SizedBox(width: 2),
+            InfoButton(
+              open: _infoOpen,
+              onTap: () => setState(() => _infoOpen = !_infoOpen),
+            ),
+          ],
+        ),
+        if (_infoOpen) ...[
+          const SizedBox(height: 4),
+          InfoTip(
+            mine
+                ? FounderToolsStrings.marketInfo
+                : FounderToolsStrings.marketInfoOther,
+          ),
+        ],
         const SizedBox(height: 6),
         if (size.isEmpty)
           const _Answer('')

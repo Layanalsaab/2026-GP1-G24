@@ -19,7 +19,7 @@ class FounderToolsStrings {
   static const notRaising = 'Not raising right now';
   static const allStartups = 'All startups';
   static const filterStartupsTitle = 'Filter startups';
-  static const sortStartupsTitle = 'Sort startups';
+  static const sortStartupsTitle = 'Sort by';
   static const visibilityGroup = 'VISIBILITY';
   static const roleGroup = 'MY ROLE';
   static const optionAll = 'All';
@@ -113,6 +113,9 @@ class FounderToolsStrings {
   static const marketLabel = 'Target market size';
   static const marketInfo =
       'Your SAM (serviceable available market): the total amount the customers you can realistically reach spend per year on products like yours. Enter it in SAR.';
+  /// The same tip when somebody else looks at the startup.
+  static const marketInfoOther =
+      "The startup's SAM (serviceable available market): the total amount the customers it can realistically reach spend per year on products like theirs, in SAR.";
   static const teamLabel = 'Team members';
   static const teamSub = 'Including you as a founder';
   static const teamInfo =
@@ -341,12 +344,16 @@ class FounderToolsStrings {
   static String closedBannerTeam(String? date) => date == null
       ? 'This startup has been closed.'
       : 'This startup was closed on $date.';
-  static const closedBannerPublic =
-      'This startup has been closed and is no longer accepting requests.';
+  static String closedBannerPublic(String? date) => date == null
+      ? 'This startup has been closed and is no longer accepting requests.'
+      : 'This startup was closed on $date and is no longer accepting requests.';
 
   /// The Public / Private switch of a closed startup (its owner only).
   static const closedPublicText = 'Shown in the Hub as a closed startup.';
   static const closedPrivateText = 'Visible only to its team.';
+  static const statusGroup = 'STATUS';
+  static const statusActive = 'Active';
+  static const statusClosed = 'Closed';
   static const noSettings = 'There is nothing to change here.';
   static const closedNoSettings =
       'This startup is closed, so there is nothing to change here.';

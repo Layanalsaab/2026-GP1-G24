@@ -15,9 +15,9 @@ import '../view_models/wallet_view_model.dart';
 /// tickets table. [editing] true: "Edit ticket" with the current values and
 /// "Cancel" / "Save changes", on the ticket page.
 ///
-/// Add saves straight away (the ticket can be edited later). Save changes asks
-/// first, but only when something changed (nothing changed just closes the
-/// form). Cancel after a change asks "Discard changes?".
+/// Add and Save changes both save at once, with no confirm (a ticket can be
+/// edited again). Save changes with nothing changed just closes the form.
+/// Cancel after a change asks "Discard changes?".
 class TicketForm extends StatelessWidget {
   const TicketForm({super.key, required this.vm, this.editing = false});
 
@@ -77,17 +77,8 @@ class TicketForm extends StatelessWidget {
       vm.cancelForm();
       return;
     }
-    // A new ticket is added straight away (it can be edited later); only
-    // saving changes to an existing one asks first.
-    if (editing) {
-      final go = await showSaveConfirmDialog(
-        context,
-        title: WalletStrings.saveTitle,
-        message: WalletStrings.saveMessage,
-        confirmLabel: WalletStrings.saveChanges,
-      );
-      if (!go || !context.mounted) return;
-    }
+    // Adding and saving changes both happen at once: nothing to confirm (a
+    // ticket can always be edited again).
     final ok = await vm.submit();
     if (!context.mounted) return;
     if (!ok && vm.error != null) {

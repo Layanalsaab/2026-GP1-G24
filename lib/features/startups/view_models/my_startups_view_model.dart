@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../../../app_constants/founder_tools_strings.dart';
+import '../../../app_constants/home_strings.dart';
 import '../../../data_access/mock_data/prototype_seed.dart';
 import '../../../data_access/repositories/startup_repository.dart';
 import '../../../helpers/app_session.dart';
@@ -18,6 +19,16 @@ enum VisibilityFilter {
   final String label;
 }
 
+/// "STATUS" group of the My Startups filter.
+enum StatusFilter {
+  all(FounderToolsStrings.optionAll),
+  active(FounderToolsStrings.statusActive),
+  closed(FounderToolsStrings.statusClosed);
+
+  const StatusFilter(this.label);
+  final String label;
+}
+
 /// "MY ROLE" group of the My Startups filter.
 enum RoleFilter {
   all(FounderToolsStrings.optionAll),
@@ -30,10 +41,10 @@ enum RoleFilter {
 }
 
 enum StartupSort {
-  newest('Newest first'),
-  oldest('Oldest first'),
-  name('Name (A–Z)'),
-  nameDesc('Name (Z–A)');
+  newest(HomeStrings.sortNewest),
+  oldest(HomeStrings.sortOldest),
+  name(HomeStrings.sortNameAZ),
+  nameDesc(HomeStrings.sortNameZA);
 
   const StartupSort(this.label);
   final String label;
@@ -109,6 +120,7 @@ class MyStartupsViewModel extends ChangeNotifier with SafeNotifier {
 
   VisibilityFilter visibility = VisibilityFilter.all;
   RoleFilter role = RoleFilter.all;
+  StatusFilter status = StatusFilter.all;
   StartupSort sort = StartupSort.newest;
 
   /// True only until the first load finishes.
@@ -138,16 +150,20 @@ class MyStartupsViewModel extends ChangeNotifier with SafeNotifier {
 
   /// Any filter other than the default is on.
   bool get filtered =>
-      visibility != VisibilityFilter.all || role != RoleFilter.all;
+      visibility != VisibilityFilter.all ||
+      role != RoleFilter.all ||
+      status != StatusFilter.all;
 
   /// "All startups", the single active option ("Private", "Team member") or
   /// "2 filters".
   String get filterLabel {
-    final v = visibility != VisibilityFilter.all;
-    final r = role != RoleFilter.all;
-    if (v && r) return FounderToolsStrings.filtersCount(2);
-    if (v) return visibility.label;
-    if (r) return role.label;
+    final on = [
+      if (visibility != VisibilityFilter.all) visibility.label,
+      if (role != RoleFilter.all) role.label,
+      if (status != StatusFilter.all) status.label,
+    ];
+    if (on.length > 1) return FounderToolsStrings.filtersCount(on.length);
+    if (on.length == 1) return on.first;
     return FounderToolsStrings.allStartups;
   }
 
@@ -193,6 +209,14 @@ class MyStartupsViewModel extends ChangeNotifier with SafeNotifier {
       case VisibilityFilter.private:
         if (e.startup.isPublic) return false;
     }
+    switch (status) {
+      case StatusFilter.all:
+        break;
+      case StatusFilter.active:
+        if (e.startup.isClosed) return false;
+      case StatusFilter.closed:
+        if (!e.startup.isClosed) return false;
+    }
     // "My role" filters on the title (the person who created a startup stays
     // its Founder after handing it over).
     final title = titleOf(e);
@@ -213,6 +237,11 @@ class MyStartupsViewModel extends ChangeNotifier with SafeNotifier {
     notifyListeners();
   }
 
+  void setStatus(StatusFilter value) {
+    status = value;
+    notifyListeners();
+  }
+
   void setRole(RoleFilter value) {
     role = value;
     notifyListeners();
@@ -226,6 +255,7 @@ class MyStartupsViewModel extends ChangeNotifier with SafeNotifier {
   void resetFilters() {
     visibility = VisibilityFilter.all;
     role = RoleFilter.all;
+    status = StatusFilter.all;
     notifyListeners();
   }
 
