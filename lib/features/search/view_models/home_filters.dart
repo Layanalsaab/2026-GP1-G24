@@ -80,7 +80,9 @@ class HomeFilters {
   ];
   static const _sort = HomeFilterGroup('Sort by', [
     'Newest',
+    'Oldest',
     'Name A–Z',
+    'Name Z–A',
   ], single: true);
 
   /// The groups shown in the sheet for [ctx].
@@ -113,7 +115,12 @@ class HomeFilters {
             'Thuwal',
             'Dammam',
           ], field: HomeFilterField.city),
-          HomeFilterGroup('Sort by', ['Name A–Z', 'Newest'], single: true),
+          HomeFilterGroup('Sort by', [
+            'Newest',
+            'Oldest',
+            'Name A–Z',
+            'Name Z–A',
+          ], single: true),
         ];
       case HomeContext.investors:
         return [
@@ -292,13 +299,29 @@ class HomeFilters {
     }
   }
 
-  /// Applies "Sort by": Name A-Z, or Newest (latest createdAt first; items
+  /// Applies "Sort by": Name A-Z / Z-A, or Newest / Oldest by createdAt (items
   /// with no date go last, in their old order).
   static List<HomeItem> sorted(List<HomeItem> list, AdvancedSelection sel) {
     final s = (sel['Sort by'] ?? const <String>{}).firstOrNull;
     if (s == 'Name A–Z') {
       return [...list]
         ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+    }
+    if (s == 'Name Z–A') {
+      return [...list]
+        ..sort((a, b) => b.name.toLowerCase().compareTo(a.name.toLowerCase()));
+    }
+    if (s == 'Oldest') {
+      // Nothing has a date (e.g. Support Channels): the list as it is.
+      if (list.every((it) => it.createdAt == null)) return list;
+      final order = {for (var i = 0; i < list.length; i++) list[i]: i};
+      return [...list]..sort((a, b) {
+        final da = a.createdAt, db = b.createdAt;
+        if (da != null && db != null && da != db) return da.compareTo(db);
+        if (da == null && db != null) return 1;
+        if (da != null && db == null) return -1;
+        return order[a]!.compareTo(order[b]!);
+      });
     }
     if (s == 'Newest') {
       // Nothing has a date (e.g. Support Channels): keep the old behaviour.

@@ -44,21 +44,24 @@ class RequestsViewModel extends ChangeNotifier with SafeNotifier {
   final RequestRepository _requests;
   final DiscoveryRepository _discovery;
 
-  RequestStatus filter = RequestStatus.pending;
+  /// The chosen chip: a status, or null for All.
+  RequestStatus? filter = RequestStatus.pending;
 
-  void select(RequestStatus status) {
+  void select(RequestStatus? status) {
     if (status == filter) return;
     filter = status;
     notifyListeners();
   }
 
-  int count(RequestStatus status) =>
-      _requests.inboxFor(startupId).where((r) => r.status == status).length;
+  int count(RequestStatus? status) => _requests
+      .inboxFor(startupId)
+      .where((r) => status == null || r.status == status)
+      .length;
 
   /// The requests of the current filter, with investor names.
   List<RequestRow> get rows => [
     for (final r in _requests.inboxFor(startupId))
-      if (r.status == filter) _row(r),
+      if (filter == null || r.status == filter) _row(r),
   ];
 
   RequestRow _row(ConnectionRequest r) {

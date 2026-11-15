@@ -20,7 +20,8 @@ class WalletStrings {
   static const colTicket = 'Ticket';
   static const colAmount = 'Amount';
   static const loading = 'Loading tickets…';
-  static const loadFailed = 'Couldn’t load your tickets. Check your connection.';
+  static const loadFailed =
+      'Couldn’t load your tickets. Check your connection.';
   static const tryAgain = 'Try again';
 
   // Form
@@ -42,7 +43,8 @@ class WalletStrings {
   static const saveTitle = 'Save changes?';
   static const saveMessage = 'Your changes will be saved to this ticket.';
   static const discardTitle = 'Discard changes?';
-  static const discardMessage = 'If you go back now, your changes will be lost.';
+  static const discardMessage =
+      'If you go back now, your changes will be lost.';
   static const discard = 'Discard';
   static const keepEditing = 'Keep editing';
   static const closeTicket = 'Close ticket';
@@ -75,7 +77,7 @@ class WalletStrings {
   static const minimum = 'Minimum';
   static const maximum = 'Maximum';
   static const usedFor = 'Used for';
-  static const requestsHeading = 'Requests';
+  static const requestsHeading = 'Investment Requests';
   static const requestsSub = 'Sent with this ticket';
   static const noTicketRequests = 'No requests sent with this ticket yet.';
   static const matchesHeading = 'Matches';

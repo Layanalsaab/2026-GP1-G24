@@ -19,6 +19,30 @@ class PinCity extends StatelessWidget {
   static const double pinSize = 14;
   static const double gap = 4;
 
+  /// The pin and the city inside a line of text (for a `Text.rich`). A widget
+  /// inside a line does not inherit the line's style, so pass the SAME [style]
+  /// as the line: the city then has its font, size and colour. The pin is
+  /// [pinColor], or the text colour.
+  static InlineSpan span(
+    String city, {
+    required TextStyle style,
+    Color? pinColor,
+  }) => WidgetSpan(
+    alignment: PlaceholderAlignment.middle,
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        AppIcon.filled(
+          AppIcons.pin,
+          size: pinSize,
+          color: pinColor ?? style.color,
+        ),
+        const SizedBox(width: gap),
+        Text(city, style: style),
+      ],
+    ),
+  );
+
   @override
   Widget build(BuildContext context) {
     final text = (city ?? '').trim();

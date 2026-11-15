@@ -143,7 +143,11 @@ class InvestorProfile {
     return InvestorProfile(
       id: id,
       name: name,
-      title: _text(d['title']) ?? 'Investor',
+      // An investor who signed up in the app is an angel investor too.
+      title: switch (_text(d['title'])) {
+        null || 'Investor' => 'Angel Investor',
+        final t => t,
+      },
       city: city,
       sectors: _strings(d['preferredSectors']),
       stages: _strings(d['preferredStages']),

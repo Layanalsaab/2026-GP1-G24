@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../app_constants/founder_tools_strings.dart';
 import '../../../app_constants/wallet_strings.dart';
 import '../../../helpers/formatters.dart';
 import '../../../models/investment_ticket.dart';
@@ -7,7 +8,7 @@ import '../../../shared_ui/widgets/overlays/app_dialog.dart';
 import '../../startups/widgets/founder_ui.dart';
 import '../../startups/widgets/manage_card.dart';
 import '../view_models/wallet_view_model.dart';
-import 'ticket_detail.dart' show RequestStatusPill;
+import '../../connection_requests/widgets/request_status_pill.dart';
 
 /// Investment Wallet -> Requests: the requests the investor sent through
 /// their tickets, with the All / Pending / Accepted / Declined filters.
@@ -51,7 +52,10 @@ class WalletRequestsTab extends StatelessWidget {
               children: [
                 for (final f in RequestFilter.values)
                   AppFilterChip(
-                    label: f.label,
+                    label: FounderToolsStrings.filterLabel(
+                      f.label,
+                      vm.countOf(f),
+                    ),
                     selected: vm.filter == f,
                     onTap: () => vm.setFilter(f),
                   ),
@@ -149,7 +153,7 @@ class _RequestCard extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  vm.ago(r.createdAt),
+                  vm.dateOf(r.createdAt),
                   style: AppText.sans(size: 13.5, color: AppColors.grey),
                 ),
               ],

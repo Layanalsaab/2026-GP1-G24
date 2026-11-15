@@ -17,6 +17,9 @@ class AccountStrings {
   static const helpAndSupport = 'Help & Support';
   static const emailLabel = 'Email';
   static const cityLabel = 'City';
+
+  /// What an investor is called on their profile (the dataset says the same).
+  static const investorTitle = 'Angel Investor';
   static const bioLabel = 'Bio';
   static const notAddedYet = 'Not added yet';
   static const sectorsOfInterest = 'Sectors of interest';

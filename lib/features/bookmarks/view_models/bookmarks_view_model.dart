@@ -23,7 +23,8 @@ enum BookmarkType {
 enum BookmarkSort {
   newest(HomeStrings.newestFirst),
   oldest(HomeStrings.oldestFirst),
-  name(HomeStrings.nameAZ);
+  name(HomeStrings.nameAZ),
+  nameDesc(HomeStrings.nameZA);
 
   const BookmarkSort(this.label);
 
@@ -67,6 +68,11 @@ class BookmarksViewModel extends ChangeNotifier {
         list.sort(
           (a, b) =>
               a.item.name.toLowerCase().compareTo(b.item.name.toLowerCase()),
+        );
+      case BookmarkSort.nameDesc:
+        list.sort(
+          (a, b) =>
+              b.item.name.toLowerCase().compareTo(a.item.name.toLowerCase()),
         );
     }
     return list;

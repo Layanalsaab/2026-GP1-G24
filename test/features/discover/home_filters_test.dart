@@ -107,7 +107,12 @@ void main() {
           'Series C',
         ]);
         expect(g['Sort by']!.single, isTrue);
-        expect(g['Sort by']!.options, ['Newest', 'Name A–Z']);
+        expect(g['Sort by']!.options, [
+          'Newest',
+          'Oldest',
+          'Name A–Z',
+          'Name Z–A',
+        ]);
       },
     );
 

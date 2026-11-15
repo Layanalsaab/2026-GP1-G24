@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../helpers/open_link.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text.dart';
 
@@ -21,6 +22,7 @@ class BoxGrid extends StatelessWidget {
     this.page = false,
     this.fullWidthLast = false,
     this.wrap = const {},
+    this.links = const {},
   });
 
   /// The startup page's bigger boxes: cream #FAF8F4, label 13 grey, value 17
@@ -32,6 +34,10 @@ class BoxGrid extends StatelessWidget {
 
   /// Labels whose value is shown in moss green (the Website).
   final Set<String> accent;
+
+  /// Labels whose value is a web address: tapping it opens the real website
+  /// (shown in green and underlined).
+  final Set<String> links;
 
   /// Labels whose value may use as many lines as it needs (a long list of
   /// sectors); every other value stops at two lines.
@@ -62,6 +68,7 @@ class BoxGrid extends StatelessWidget {
                   accent.contains(items[i].$1),
                   page,
                   wrap.contains(items[i].$1),
+                  links.contains(items[i].$1),
                 ),
               ),
               const SizedBox(width: 8),
@@ -74,6 +81,7 @@ class BoxGrid extends StatelessWidget {
                         accent.contains(items[i + 1].$1),
                         page,
                         wrap.contains(items[i + 1].$1),
+                        links.contains(items[i + 1].$1),
                       )
                     : const SizedBox.shrink(),
               ),
@@ -92,6 +100,7 @@ class BoxGrid extends StatelessWidget {
           accent.contains(items.last.$1),
           page,
           wrap.contains(items.last.$1),
+          links.contains(items.last.$1),
         ),
       );
     }
@@ -110,8 +119,10 @@ class _Box extends StatelessWidget {
     this.accent,
     this.page,
     this.wrap,
+    this.link,
   );
 
+  final bool link;
   final bool wrap;
   final bool page;
   final bool accent;
@@ -122,7 +133,8 @@ class _Box extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final empty = value.trim().isEmpty;
-    return Container(
+    final opens = link && !empty;
+    final box = Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
         color: page ? const Color(0xFFFAF8F4) : const Color(0xFFF7F4EC),
@@ -141,16 +153,33 @@ class _Box extends StatelessWidget {
             empty ? emptyText : value.trim(),
             maxLines: wrap ? null : 2,
             overflow: wrap ? TextOverflow.visible : TextOverflow.ellipsis,
-            style: AppText.sans(
-              size: page ? 17 : 15,
-              height: 20,
-              weight: page ? FontWeight.w700 : FontWeight.w600,
-              color: empty
-                  ? AppColors.hint
-                  : (accent ? AppColors.moss600 : AppColors.ink),
-            ),
+            style:
+                AppText.sans(
+                  size: page ? 17 : 15,
+                  height: 20,
+                  weight: page ? FontWeight.w700 : FontWeight.w600,
+                  color: empty
+                      ? AppColors.hint
+                      : (accent || opens ? AppColors.moss600 : AppColors.ink),
+                ).copyWith(
+                  decoration: opens ? TextDecoration.underline : null,
+                  decorationColor: AppColors.moss600,
+                ),
           ),
         ],
+      ),
+    );
+    if (!opens) return box;
+    // A web address: tapping it opens the real website.
+    return Semantics(
+      button: true,
+      link: true,
+      label: '$label, ${value.trim()}',
+      excludeSemantics: true,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => openExternalLink(value),
+        child: box,
       ),
     );
   }

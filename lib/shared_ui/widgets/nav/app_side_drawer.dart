@@ -8,6 +8,7 @@ import '../../motion/motion.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_metrics.dart';
 import '../../theme/app_text.dart';
+import '../cards/pin_city.dart';
 import '../lists/press_surface.dart';
 import '../overlays/app_overlay_route.dart';
 
@@ -43,6 +44,7 @@ Future<void> openAppDrawer(
   required String name,
   required String initials,
   required String roleLine,
+  String? city,
   required List<AppDrawerItem> items,
   required VoidCallback onViewProfile,
   required VoidCallback onLogOut,
@@ -56,6 +58,7 @@ Future<void> openAppDrawer(
         name: name,
         initials: initials,
         roleLine: roleLine,
+        city: city,
         items: items,
         onViewProfile: onViewProfile,
         onLogOut: onLogOut,
@@ -83,6 +86,7 @@ class AppSideDrawer extends StatelessWidget {
     required this.name,
     required this.initials,
     required this.roleLine,
+    this.city,
     required this.items,
     required this.onViewProfile,
     required this.onLogOut,
@@ -92,6 +96,9 @@ class AppSideDrawer extends StatelessWidget {
   final String name;
   final String initials;
   final String roleLine;
+
+  /// The user's city, shown after the role with its pin.
+  final String? city;
   final List<AppDrawerItem> items;
   final VoidCallback onViewProfile;
   final VoidCallback onLogOut;
@@ -126,6 +133,7 @@ class AppSideDrawer extends StatelessWidget {
               name: name,
               initials: initials,
               roleLine: roleLine,
+              city: city,
               onViewProfile: () => _then(context, onViewProfile),
             ),
             Expanded(
@@ -193,12 +201,14 @@ class _Header extends StatelessWidget {
     required this.name,
     required this.initials,
     required this.roleLine,
+    this.city,
     required this.onViewProfile,
   });
 
   final String name;
   final String initials;
   final String roleLine;
+  final String? city;
   final VoidCallback onViewProfile;
 
   @override
@@ -252,10 +262,35 @@ class _Header extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 2),
-                Text(
-                  roleLine,
-                  style: AppText.sans(size: 13, color: AppColors.onGreenMuted),
-                ),
+                if ((city ?? '').trim().isEmpty)
+                  Text(
+                    roleLine,
+                    style: AppText.sans(
+                      size: 13,
+                      color: AppColors.onGreenMuted,
+                    ),
+                  )
+                else
+                  // "Founder · [pin] Riyadh": the pin takes the line's colour.
+                  Text.rich(
+                    TextSpan(
+                      children: [
+                        TextSpan(text: '$roleLine · '),
+                        PinCity.span(
+                          city!.trim(),
+                          style: AppText.sans(
+                            size: 13,
+                            color: AppColors.onGreenMuted,
+                          ),
+                        ),
+                      ],
+                    ),
+                    semanticsLabel: '$roleLine, ${city!.trim()}',
+                    style: AppText.sans(
+                      size: 13,
+                      color: AppColors.onGreenMuted,
+                    ),
+                  ),
                 const SizedBox(height: 12),
                 Pressable(
                   onTap: onViewProfile,

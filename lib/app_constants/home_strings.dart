@@ -51,7 +51,9 @@ class HomeStrings {
       'Support channels are not available yet. Check back soon.';
   static const sortTitle = 'Sort by';
   static const sortNewest = 'Newest';
+  static const sortOldest = 'Oldest';
   static const sortNameAZ = 'Name A–Z';
+  static const sortNameZA = 'Name Z–A';
   static const nothingYetTitle = 'Nothing here yet';
   static const nothingYetMessage =
       'New startups and investors will appear here.';
@@ -70,7 +72,7 @@ class HomeStrings {
   static const settings = 'Settings';
   static const wallet = 'Investment Wallet';
   static const founderRole = 'Founder';
-  static const investorRole = 'Investor';
+  static const investorRole = 'Angel Investor';
   static const notificationCount = 4;
 
   // Bookmarks screen
@@ -84,6 +86,7 @@ class HomeStrings {
   static const newestFirst = 'Newest first';
   static const oldestFirst = 'Oldest first';
   static const nameAZ = 'Name (A–Z)';
+  static const nameZA = 'Name (Z–A)';
   static const noBookmarksTitle = 'No bookmarks yet';
   static const noBookmarksMessage =
       'Tap the bookmark icon on any startup, investor or support channel to save it here.';

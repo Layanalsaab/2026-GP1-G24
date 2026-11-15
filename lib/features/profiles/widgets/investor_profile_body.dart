@@ -232,8 +232,8 @@ class InvestorProfileBody extends StatelessWidget {
                       imageData: associations[i].logoData,
                     ),
                     title: associations[i].name,
-                    subtitle:
-                        '${associations[i].sectorLabel} · ${associations[i].location.label}',
+                    subtitle: associations[i].sectorLabel,
+                    city: associations[i].location.label,
                     onTap: () => StartupProfileScreen.open(
                       context,
                       startup: associations[i],

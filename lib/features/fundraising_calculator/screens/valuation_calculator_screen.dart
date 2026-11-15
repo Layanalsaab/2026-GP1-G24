@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../app_constants/founder_tools_strings.dart';
 import '../../../models/funding_round.dart';
 import '../../../models/startup.dart';
+import '../../../shared_ui/widgets/cards/pin_city.dart';
 import '../../startups/widgets/founder_ui.dart';
 import '../../../shared_ui/widgets/overlays/app_dialog.dart';
 import '../../startups/widgets/manage_card.dart';
@@ -218,8 +219,20 @@ class _InputsCard extends StatelessWidget {
                       startup.name,
                       style: AppText.sans(size: 16, weight: FontWeight.w600),
                     ),
-                    Text(
-                      '${startup.sectorLabel} · ${startup.location.label}',
+                    Text.rich(
+                      TextSpan(
+                        children: [
+                          TextSpan(text: '${startup.sectorLabel} · '),
+                          PinCity.span(
+                            startup.location.label,
+                            style: AppText.sans(
+                              size: 13,
+                              color: AppColors.grey,
+                            ),
+                            pinColor: AppColors.hint,
+                          ),
+                        ],
+                      ),
                       style: AppText.sans(size: 13, color: AppColors.grey),
                     ),
                   ],
@@ -318,8 +331,7 @@ class _ResultCardState extends State<_ResultCard> {
   // the (i) tip that's open in this card, if any
   String? _open;
 
-  void _toggle(String key) =>
-      setState(() => _open = _open == key ? null : key);
+  void _toggle(String key) => setState(() => _open = _open == key ? null : key);
 
   Widget _label(String text, String key) => Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -488,8 +500,7 @@ class _OwnershipCard extends StatefulWidget {
 class _OwnershipCardState extends State<_OwnershipCard> {
   String? _open;
 
-  void _toggle(String key) =>
-      setState(() => _open = _open == key ? null : key);
+  void _toggle(String key) => setState(() => _open = _open == key ? null : key);
 
   @override
   Widget build(BuildContext context) {
@@ -605,7 +616,10 @@ class _OwnershipCardState extends State<_OwnershipCard> {
                     Flexible(
                       child: Text(
                         FounderToolsStrings.yourDilution,
-                        style: AppText.sans(size: 13, color: AppColors.metaText),
+                        style: AppText.sans(
+                          size: 13,
+                          color: AppColors.metaText,
+                        ),
                       ),
                     ),
                     InfoButton(

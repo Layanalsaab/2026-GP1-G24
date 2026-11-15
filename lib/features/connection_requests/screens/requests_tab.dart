@@ -5,6 +5,7 @@ import '../../../models/connection_request.dart';
 import '../../startups/widgets/founder_ui.dart';
 import '../../startups/widgets/manage_card.dart';
 import '../view_models/requests_view_model.dart';
+import '../widgets/request_status_pill.dart';
 
 /// Manage startup -> Requests (docs/05 D3): Pending / Accepted / Declined
 /// chips and one card per investor request. [onCheck] opens the valuation
@@ -25,7 +26,8 @@ class RequestsTab extends StatelessWidget {
   final void Function(ConnectionRequest request) onCheck;
   final void Function(String message) onToast;
 
-  static const _filters = [
+  static const _filters = <(RequestStatus?, String)>[
+    (null, 'All'),
     (RequestStatus.pending, FounderToolsStrings.pending),
     (RequestStatus.accepted, FounderToolsStrings.accepted),
     (RequestStatus.declined, FounderToolsStrings.declined),
@@ -59,7 +61,9 @@ class RequestsTab extends StatelessWidget {
             if (rows.isEmpty)
               ManageCard(
                 child: Text(
-                  FounderToolsStrings.requestsEmpty(vm.filter.value),
+                  vm.filter == null
+                      ? 'No requests yet.'
+                      : FounderToolsStrings.requestsEmpty(vm.filter!.value),
                   style: AppText.sans(
                     size: 16,
                     height: 24,
@@ -230,21 +234,22 @@ class _RequestCard extends StatelessWidget {
                 ),
               ],
             ),
-            RequestStatus.accepted => const Align(
-              alignment: Alignment.centerLeft,
-              child: AppPill(
-                label: FounderToolsStrings.acceptedPill,
-                icon: AppIcons.check,
-                weight: FontWeight.w600,
-              ),
+            // The same pill as the investor's wallet.
+            RequestStatus.accepted => Row(
+              children: [
+                const RequestStatusPill(status: RequestStatus.accepted),
+                const SizedBox(width: 8),
+                Flexible(
+                  child: Text(
+                    FounderToolsStrings.acceptedNote,
+                    style: AppText.sans(size: 13, color: AppColors.grey),
+                  ),
+                ),
+              ],
             ),
             RequestStatus.declined => const Align(
               alignment: Alignment.centerLeft,
-              child: AppPill(
-                label: FounderToolsStrings.declinedPill,
-                tone: AppPillTone.grey,
-                weight: FontWeight.w600,
-              ),
+              child: RequestStatusPill(status: RequestStatus.declined),
             ),
           },
         ],

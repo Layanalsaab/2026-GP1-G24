@@ -519,6 +519,11 @@ class WalletViewModel extends ChangeNotifier with SafeNotifier {
     notifyListeners();
   }
 
+  /// How many requests a filter holds (All counts every one).
+  int countOf(RequestFilter f) => f == RequestFilter.all
+      ? requests.length
+      : requests.where((r) => r.status.value == f.name).length;
+
   int get pendingCount => requests.where((r) => r.isPending).length;
 
   List<TicketRequest> get visibleRequests => [
@@ -555,6 +560,11 @@ class WalletViewModel extends ChangeNotifier with SafeNotifier {
   }
 
   String ago(DateTime? when) => timeAgo(when, now: _fixedNow?.call());
+
+  /// A real date ("8 Nov 2026"). A time the server hasn't stamped yet is
+  /// today.
+  String dateOf(DateTime? when) =>
+      Formatters.dayMonthYear(when ?? _fixedNow?.call() ?? DateTime.now());
 
   @override
   void dispose() {

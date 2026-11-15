@@ -118,14 +118,12 @@ class MatchingRepository {
       MatchStartup.fromMap(s.id, s.toMap());
 
   /// An [InvestmentTicket] as matching reads it.
-  static MatchTicket matchTicketOf(InvestmentTicket t) => MatchTicket.fromMap(
-    t.id,
-    {
-      ...t.editableFields(),
-      TicketFields.investorId: t.investorId,
-      TicketFields.status: t.status.value,
-    },
-  );
+  static MatchTicket matchTicketOf(InvestmentTicket t) =>
+      MatchTicket.fromMap(t.id, {
+        ...t.editableFields(),
+        TicketFields.investorId: t.investorId,
+        TicketFields.status: t.status.value,
+      });
 
   /// The investors matched to the founder's [startup] (public or private)
   /// for its open round, best first: [startup] carries the round (stage =
@@ -283,7 +281,10 @@ class MatchingRepository {
     return InvestorProfile(
       id: id,
       name: text(UserFields.fullName) ?? 'Investor',
-      title: text(UserFields.title) ?? 'Investor',
+      title: switch (text(UserFields.title)) {
+        null || 'Investor' => 'Angel Investor',
+        final t => t,
+      },
       city: city,
       sectors: labels(d[UserFields.preferredSectors]),
       stages: labels(d[UserFields.preferredStages]),

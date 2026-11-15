@@ -7,6 +7,7 @@ import 'package:startsa/data_access/mock_data/prototype_seed.dart';
 import 'package:startsa/data_access/repositories/matching_repository.dart';
 import 'package:startsa/data_access/repositories/ticket_repository.dart';
 import 'package:startsa/features/wallet/screens/wallet_screen.dart';
+import 'package:startsa/helpers/formatters.dart';
 import 'package:startsa/features/wallet/view_models/wallet_view_model.dart';
 import 'package:startsa/models/investment_ticket.dart';
 import 'package:startsa/shared_ui/theme/app_theme.dart';
@@ -105,9 +106,7 @@ void main() {
     expect(find.text('Tap a ticket to see its details.'), findsNothing);
   });
 
-  testWidgets('the table: dot name, status word, sectors, amount', (
-    t,
-  ) async {
+  testWidgets('the table: dot name, status word, sectors, amount', (t) async {
     await open(
       t,
       tickets: [
@@ -161,14 +160,10 @@ void main() {
     vm.min.text = '100,000';
     vm.max.text = '300,000';
     await t.pumpAndSettle();
+    // Valid: the ticket is added straight away, nothing to confirm (it can
+    // be edited later).
     await press(t, find.text('Add ticket').last);
-    expect(find.text('Add ticket?'), findsOneWidget);
-    expect(
-      find.text('This ticket will be added to your wallet.'),
-      findsOneWidget,
-    );
-
-    await press(t, find.text('Add ticket').last);
+    expect(find.text('Add ticket?'), findsNothing);
     expect(find.text('Ticket added'), findsOneWidget);
     expect(find.text('New ticket'), findsNothing);
     expect(find.text('100K – 300K'), findsOneWidget);
@@ -323,10 +318,16 @@ void main() {
     expect(find.text('Minimum'), findsOneWidget);
     expect(find.text('SAR 100,000'), findsOneWidget);
     expect(find.text('SAR 300,000'), findsOneWidget);
-    expect(find.text('Created 2d ago'), findsOneWidget);
+    // A real date, not "2d ago".
+    expect(
+      find.text(
+        'Created ${Formatters.dayMonthYear(DateTime.now().subtract(const Duration(days: 2)))}',
+      ),
+      findsOneWidget,
+    );
     expect(find.text('Edit ticket'), findsOneWidget);
     expect(find.text('Close ticket'), findsOneWidget);
-    expect(find.text('Requests'), findsWidgets);
+    expect(find.text('Investment Requests'), findsOneWidget);
     expect(find.text('Sent with this ticket'), findsOneWidget);
     expect(find.text('No requests sent with this ticket yet.'), findsOneWidget);
     await t.scrollUntilVisible(
@@ -403,6 +404,35 @@ void main() {
     await t.pumpAndSettle(const Duration(seconds: 5));
   });
 
+  testWidgets('Edit ticket: only the form (no matches, no requests)', (
+    t,
+  ) async {
+    await open(
+      t,
+      tickets: [ticket(id: 'inv1-T1', name: 'Health bets')],
+    );
+    await press(t, find.text('Health bets'));
+    await press(t, find.text('Edit ticket'));
+    expect(find.text('Save changes'), findsOneWidget);
+    expect(find.text('Investment Requests'), findsNothing);
+    expect(find.text('Open rounds that fit this ticket'), findsNothing);
+    expect(find.text('Created 2d ago'), findsNothing);
+  });
+
+  testWidgets('Edit ticket: nothing changed closes without asking', (t) async {
+    await open(
+      t,
+      tickets: [ticket(id: 'inv1-T1', name: 'Health bets')],
+    );
+    await press(t, find.text('Health bets'));
+    await press(t, find.text('Edit ticket'));
+    await press(t, find.text('Save changes'));
+    expect(find.text('Save changes?'), findsNothing);
+    // Back on the ticket page.
+    expect(find.text('Edit ticket'), findsOneWidget);
+    expect(find.text('Ticket saved'), findsNothing);
+  });
+
   testWidgets('Send request: form, errors, confirm, toast and the pill', (
     t,
   ) async {
@@ -440,7 +470,10 @@ void main() {
     expect(find.text('Request sent to Rafeeq Health'), findsOneWidget);
     expect(find.text('Request sent'), findsOneWidget);
     // It also shows under "Requests" of the ticket.
-    expect(find.text('SAR 200,000 · just now'), findsOneWidget);
+    expect(
+      find.text('SAR 200,000 · ${Formatters.dayMonthYear(DateTime.now())}'),
+      findsOneWidget,
+    );
     expect(find.text('Pending'), findsOneWidget);
     // Let the toast go away.
     await t.pumpAndSettle(const Duration(seconds: 5));
@@ -512,14 +545,27 @@ void main() {
     // The badge counts the pending requests.
     expect(find.text('1'), findsOneWidget);
     await press(t, find.text('Requests').first);
-    for (final f in ['All', 'Pending', 'Accepted', 'Declined']) {
-      expect(find.text(f), findsWidgets);
+    // The same chips as the founder's requests, each with its count.
+    for (final f in [
+      'All · 2',
+      'Pending · 1',
+      'Accepted · 0',
+      'Declined · 1',
+    ]) {
+      expect(find.widgetWithText(AppFilterChip, f), findsOneWidget);
     }
     expect(find.text('Rafeeq Health'), findsOneWidget);
     expect(find.text('Daftar'), findsOneWidget);
     expect(find.text('Ticket: Health bets'), findsNWidgets(2));
     expect(find.text('SAR 150,000'), findsOneWidget);
-    expect(find.text('3h ago'), findsOneWidget);
+    expect(
+      find.text(
+        Formatters.dayMonthYear(
+          DateTime.now().subtract(const Duration(hours: 3)),
+        ),
+      ),
+      findsOneWidget,
+    );
 
     // A card does not open anything.
     await press(t, find.text('Rafeeq Health'));
@@ -527,10 +573,10 @@ void main() {
     expect(find.text('Investment Wallet'), findsOneWidget);
 
     // Filter.
-    await press(t, find.widgetWithText(AppFilterChip, 'Declined'));
+    await press(t, find.widgetWithText(AppFilterChip, 'Declined · 1'));
     expect(find.text('Daftar'), findsOneWidget);
     expect(find.text('Rafeeq Health'), findsNothing);
-    await press(t, find.widgetWithText(AppFilterChip, 'All'));
+    await press(t, find.widgetWithText(AppFilterChip, 'All · 2'));
 
     // Only the pending one has Withdraw.
     expect(find.text('Withdraw'), findsOneWidget);

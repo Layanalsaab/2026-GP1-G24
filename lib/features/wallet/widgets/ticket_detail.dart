@@ -3,14 +3,13 @@ import 'package:flutter/material.dart';
 import '../../../app_constants/wallet_strings.dart';
 import '../../../helpers/formatters.dart';
 import '../../../helpers/ticket_rules.dart';
-import '../../../models/connection_request.dart';
 import '../../../models/investment_ticket.dart';
 import '../../../models/match_summary.dart';
 import '../../../shared_ui/widgets/overlays/app_dialog.dart';
+import '../../connection_requests/widgets/request_status_pill.dart';
 import '../../startup_profile/screens/startup_profile_screen.dart';
 import '../../startups/widgets/founder_ui.dart';
 import '../../startups/widgets/manage_card.dart';
-import '../../startups/widgets/manage_rounds_tab.dart' show PillButton;
 import '../../startups/widgets/round_detail.dart'
     show DetailBackLink, InfoBox, SectionTitle;
 import '../view_models/wallet_view_model.dart';
@@ -71,48 +70,49 @@ class TicketDetail extends StatelessWidget {
       children: [
         DetailBackLink(label: WalletStrings.allTickets, onTap: onBack),
         const SizedBox(height: 14),
-        if (editingThis) ...[
-          TicketForm(vm: vm, editing: true),
-          const SizedBox(height: 14),
-        ],
-        _TicketCard(
-          vm: vm,
-          ticket: ticket,
-          // Open ticket, and no form open.
-          canChange: ticket.isOpen && !vm.formOpen && !vm.editOpen,
-          onEdit: () => vm.openEdit(ticket),
-          onClose: () => _close(context, ticket),
-          onOpenStartup: () => _openStartup(context, ticket.startupId!),
-        ),
-        const SizedBox(height: 22),
-        const SectionTitle(
-          title: WalletStrings.requestsHeading,
-          subtitle: WalletStrings.requestsSub,
-        ),
-        const SizedBox(height: 10),
-        if (mine.isEmpty)
-          const ManageCard(child: _Grey(WalletStrings.noTicketRequests))
-        else
-          for (final r in mine) ...[
-            _RequestRow(vm: vm, request: r),
-            const SizedBox(height: 10),
-          ],
-        if (ticket.isOpen) ...[
-          const SizedBox(height: 12),
-          const SectionTitle(
-            title: WalletStrings.matchesHeading,
-            subtitle: WalletStrings.matchesSub,
-          ),
-          const SizedBox(height: 10),
-          _Matches(
+        // Editing: the form alone (no matches, no requests under it).
+        if (editingThis)
+          TicketForm(vm: vm, editing: true)
+        else ...[
+          _TicketCard(
             vm: vm,
             ticket: ticket,
-            onOpen: (m) => _openStartup(
-              context,
-              m.startup.id,
-              match: vm.summaryOf(ticket, m),
-            ),
+            // Open ticket, and no form open.
+            canChange: ticket.isOpen && !vm.formOpen && !vm.editOpen,
+            onEdit: () => vm.openEdit(ticket),
+            onClose: () => _close(context, ticket),
+            onOpenStartup: () => _openStartup(context, ticket.startupId!),
           ),
+          const SizedBox(height: 22),
+          const SectionTitle(
+            title: WalletStrings.requestsHeading,
+            subtitle: WalletStrings.requestsSub,
+          ),
+          const SizedBox(height: 10),
+          if (mine.isEmpty)
+            const ManageCard(child: _Grey(WalletStrings.noTicketRequests))
+          else
+            for (final r in mine) ...[
+              _RequestRow(vm: vm, request: r),
+              const SizedBox(height: 10),
+            ],
+          if (ticket.isOpen) ...[
+            const SizedBox(height: 12),
+            const SectionTitle(
+              title: WalletStrings.matchesHeading,
+              subtitle: WalletStrings.matchesSub,
+            ),
+            const SizedBox(height: 10),
+            _Matches(
+              vm: vm,
+              ticket: ticket,
+              onOpen: (m) => _openStartup(
+                context,
+                m.startup.id,
+                match: vm.summaryOf(ticket, m),
+              ),
+            ),
+          ],
         ],
       ],
     );
@@ -206,7 +206,7 @@ class _TicketCard extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            'Created ${vm.ago(t.createdAt)}',
+            'Created ${vm.dateOf(t.createdAt)}',
             style: AppText.sans(size: 13, color: AppColors.grey),
           ),
           if (t.status == TicketStatus.used && t.startupId != null) ...[
@@ -239,7 +239,7 @@ class _TicketCard extends StatelessWidget {
           ],
           if (canChange) ...[
             const SizedBox(height: 16),
-            // Same styles as Edit round (outline) and Close round (white pill).
+            // The same outline button as Edit round.
             Row(
               children: [
                 Expanded(
@@ -251,7 +251,14 @@ class _TicketCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 12),
-                PillButton(label: WalletStrings.closeTicket, onTap: onClose),
+                Expanded(
+                  child: AppButton(
+                    label: WalletStrings.closeTicket,
+                    variant: AppButtonVariant.outline,
+                    size: AppButtonSize.small,
+                    onPressed: onClose,
+                  ),
+                ),
               ],
             ),
           ],
@@ -295,7 +302,7 @@ class _RequestRow extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  '${Formatters.sar(r.amount)} · ${vm.ago(r.createdAt)}',
+                  '${Formatters.sar(r.amount)} · ${vm.dateOf(r.createdAt)}',
                   style: AppText.sans(
                     size: 13.5,
                     height: 19,
@@ -311,30 +318,6 @@ class _RequestRow extends StatelessWidget {
       ),
     );
   }
-}
-
-/// Pending (gold), Accepted (green), Declined (grey).
-class RequestStatusPill extends StatelessWidget {
-  const RequestStatusPill({super.key, required this.status});
-
-  final RequestStatus status;
-
-  @override
-  Widget build(BuildContext context) => AppPill(
-    label: switch (status) {
-      RequestStatus.pending => 'Pending',
-      RequestStatus.accepted => 'Accepted',
-      RequestStatus.declined => 'Declined',
-    },
-    tone: switch (status) {
-      RequestStatus.pending => AppPillTone.gold,
-      RequestStatus.accepted => AppPillTone.moss,
-      RequestStatus.declined => AppPillTone.grey,
-    },
-    height: 26,
-    fontSize: 12.5,
-    weight: FontWeight.w600,
-  );
 }
 
 // --------------------------------------------------------------- matches
@@ -362,12 +345,7 @@ class _Matches extends StatelessWidget {
     return Column(
       children: [
         for (final m in matches) ...[
-          _MatchCard(
-            vm: vm,
-            ticket: ticket,
-            match: m,
-            onOpen: () => onOpen(m),
-          ),
+          _MatchCard(vm: vm, ticket: ticket, match: m, onOpen: () => onOpen(m)),
           const SizedBox(height: 10),
         ],
       ],

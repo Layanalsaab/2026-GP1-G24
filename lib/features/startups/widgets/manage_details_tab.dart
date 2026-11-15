@@ -444,6 +444,7 @@ class _Overview extends StatelessWidget {
         _QA('Brief description', s.briefDescription),
         BoxGrid(
           wrap: const {'Sectors'},
+          links: const {'Website'},
           items: [
             (
               s.sectorLabels.length > 1 ? 'Sectors' : 'Sector',

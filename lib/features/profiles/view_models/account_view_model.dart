@@ -70,7 +70,7 @@ class AccountViewModel extends ChangeNotifier with SafeNotifier {
           owned: startups,
           joined: [for (final e in memberEntries) e.role],
         )
-      : AppStrings.roleName(_user.role);
+      : AccountStrings.investorTitle;
 
   /// The chips under the name: a founder's sectors of interest, an
   /// investor's sectors (the typed "Other" replaces the label "Other").

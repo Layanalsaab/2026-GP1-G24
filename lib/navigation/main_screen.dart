@@ -165,13 +165,18 @@ class _MainScreenState extends State<MainScreen> {
     if (result != null) _vm.applySelection(result);
   }
 
-  /// The Hub's sort button: Newest or Name A–Z; picking the chosen one again
+  /// The Hub's sort button: Newest, Oldest, Name A–Z or Name Z–A; picking the chosen one again
   /// goes back to the default order.
   Future<void> _openSort() async {
     final r = await showPickerSheet(
       context,
       title: HomeStrings.sortTitle,
-      options: const [HomeStrings.sortNewest, HomeStrings.sortNameAZ],
+      options: const [
+        HomeStrings.sortNewest,
+        HomeStrings.sortOldest,
+        HomeStrings.sortNameAZ,
+        HomeStrings.sortNameZA,
+      ],
       selected: _vm.sortChoice,
     );
     if (r != null) _vm.setSort(r.value);
@@ -199,9 +204,10 @@ class _MainScreenState extends State<MainScreen> {
       context,
       name: user.fullName,
       initials: user.initials,
-      roleLine:
-          '${founder ? (_session.startupTitle ?? HomeStrings.founderRole) : HomeStrings.investorRole}'
-          '${city == null || city.isEmpty ? '' : ' · $city'}',
+      roleLine: founder
+          ? (_session.startupTitle ?? HomeStrings.founderRole)
+          : HomeStrings.investorRole,
+      city: city,
       items: [
         if (founder)
           AppDrawerItem(

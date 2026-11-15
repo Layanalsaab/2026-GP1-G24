@@ -6,6 +6,7 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_metrics.dart';
 import '../../theme/app_text.dart';
 import '../lists/press_surface.dart';
+import 'pin_city.dart';
 
 /// Colour of the 34 px icon box of a [ProfileCard].
 enum ProfileIconTone { moss, gold, red }
@@ -310,6 +311,7 @@ class ListRow extends StatelessWidget {
     required this.leading,
     required this.title,
     this.subtitle,
+    this.city,
     this.onTap,
     this.showDivider = false,
     this.trailing,
@@ -321,6 +323,7 @@ class ListRow extends StatelessWidget {
     required this.leading,
     required this.title,
     this.subtitle,
+    this.city,
     this.onTap,
     this.showDivider = false,
     this.trailing,
@@ -330,6 +333,9 @@ class ListRow extends StatelessWidget {
   final Widget leading;
   final String title;
   final String? subtitle;
+
+  /// A city, shown after the subtitle with its pin.
+  final String? city;
   final VoidCallback? onTap;
   final bool showDivider;
 
@@ -362,7 +368,9 @@ class ListRow extends StatelessWidget {
         onTap: onTap,
         pressedColor: const Color(0xFFF7F5F0),
         hoverColor: const Color(0xFFF7F5F0),
-        semanticLabel: subtitle == null ? title : '$title, $subtitle',
+        semanticLabel: subtitle == null
+            ? title
+            : '$title, $subtitle${(city ?? '').isEmpty ? '' : ', $city'}',
         child: Padding(
           padding: EdgeInsets.symmetric(vertical: _card ? 8 : 6),
           child: Row(
@@ -384,15 +392,38 @@ class ListRow extends StatelessWidget {
                       ),
                     ),
                     if (subtitle != null)
-                      Text(
-                        subtitle!,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppText.sans(
-                          size: _card ? 12.5 : 13,
-                          color: _card ? AppColors.grey : AppColors.metaText,
-                          height: _card ? 17 : 18,
-                        ),
+                      Builder(
+                        builder: (context) {
+                          final style = AppText.sans(
+                            size: _card ? 12.5 : 13,
+                            color: _card ? AppColors.grey : AppColors.metaText,
+                            height: _card ? 17 : 18,
+                          );
+                          final place = (city ?? '').trim();
+                          if (place.isEmpty) {
+                            return Text(
+                              subtitle!,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: style,
+                            );
+                          }
+                          return Text.rich(
+                            TextSpan(
+                              children: [
+                                TextSpan(text: '$subtitle · '),
+                                PinCity.span(
+                                  place,
+                                  style: style,
+                                  pinColor: AppColors.hint,
+                                ),
+                              ],
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: style,
+                          );
+                        },
                       ),
                   ],
                 ),

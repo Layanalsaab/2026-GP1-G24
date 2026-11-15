@@ -187,7 +187,7 @@ class UserRepository {
         UserFields.linkedin: keep(UserFields.linkedin),
         UserFields.valueOffered: keep(UserFields.valueOffered),
         UserFields.lookingFor: keep(UserFields.lookingFor),
-        UserFields.title: 'Investor',
+        UserFields.title: 'Angel Investor',
         UserFields.photoUrl: keep(UserFields.photoUrl),
         // Investors who sign up in the app are never dataset investors.
         UserFields.isArchived: false,

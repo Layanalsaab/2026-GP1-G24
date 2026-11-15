@@ -28,6 +28,7 @@ import '../../startup_profile/view_models/startup_profile_view_model.dart';
 import '../../startup_profile/widgets/startup_profile_tabs.dart';
 import '../view_models/manage_startup_view_model.dart';
 import '../view_models/rounds_view_model.dart';
+import '../../../shared_ui/widgets/cards/pin_city.dart';
 import '../widgets/founder_ui.dart';
 import '../widgets/manage_dashboard_tab.dart';
 import '../widgets/manage_rounds_tab.dart';
@@ -605,12 +606,24 @@ class _ManageStartupScreenState extends State<ManageStartupScreen> {
                     LiveDot(on: s.isListed),
                     const SizedBox(width: 6),
                     Flexible(
-                      child: Text(
-                        '${s.isClosed
-                            ? FounderToolsStrings.closedPill
-                            : s.isPublic
-                            ? FounderToolsStrings.publicPill
-                            : FounderToolsStrings.privatePill} · ${s.sectorLabel} · ${s.stageLabel}',
+                      child: Text.rich(
+                        TextSpan(
+                          children: [
+                            TextSpan(
+                              text:
+                                  '${s.isClosed
+                                      ? FounderToolsStrings.closedPill
+                                      : s.isPublic
+                                      ? FounderToolsStrings.publicPill
+                                      : FounderToolsStrings.privatePill} · ${s.sectorLabel} · ${s.stageLabel} · ',
+                            ),
+                            // The city with its pin, like the startup page.
+                            PinCity.span(
+                              s.location.label,
+                              style: AppText.onGreenMeta,
+                            ),
+                          ],
+                        ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: AppText.onGreenMeta,

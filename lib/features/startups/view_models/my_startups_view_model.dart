@@ -32,7 +32,8 @@ enum RoleFilter {
 enum StartupSort {
   newest('Newest first'),
   oldest('Oldest first'),
-  name('Name (A–Z)');
+  name('Name (A–Z)'),
+  nameDesc('Name (Z–A)');
 
   const StartupSort(this.label);
   final String label;
@@ -165,6 +166,12 @@ class MyStartupsViewModel extends ChangeNotifier with SafeNotifier {
         list.sort(
           (a, b) => a.startup.name.toLowerCase().compareTo(
             b.startup.name.toLowerCase(),
+          ),
+        );
+      case StartupSort.nameDesc:
+        list.sort(
+          (a, b) => b.startup.name.toLowerCase().compareTo(
+            a.startup.name.toLowerCase(),
           ),
         );
     }

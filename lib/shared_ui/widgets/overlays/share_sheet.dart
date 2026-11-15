@@ -130,8 +130,7 @@ class _ShareOptions extends StatelessWidget {
 
     // The message, then "Take a look:" and the link (a ready message
     // already ends with its link).
-    final text =
-        fullText ?? '$_message\n${ProfileStrings.shareTakeALook} $url';
+    final text = fullText ?? '$_message\n${ProfileStrings.shareTakeALook} $url';
     final subject = ProfileStrings.shareEmailSubject(title);
     final options = <_ShareOption>[
       _ShareOption(

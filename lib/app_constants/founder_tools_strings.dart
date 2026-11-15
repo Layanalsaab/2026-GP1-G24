@@ -265,8 +265,7 @@ class FounderToolsStrings {
   static const checkInCalculator = 'Check in calculator';
   static const decline = 'Decline';
   static const accept = 'Accept';
-  static const acceptedPill = 'Accepted · now an associated investor';
-  static const declinedPill = 'Declined';
+  static const acceptedNote = 'Now an associated investor';
   static String filterLabel(String label, int n) => '$label · $n';
   static String requestsEmpty(String status) => 'No $status requests.';
   static String acceptedToast(String name) =>
@@ -285,8 +284,7 @@ class FounderToolsStrings {
   static const leaveStartup = 'Leave startup';
   static const leaveCoFounderText =
       'You will no longer be a co-founder of this startup';
-  static const leaveMemberText =
-      'You will no longer be on this startup’s team';
+  static const leaveMemberText = 'You will no longer be on this startup’s team';
 
   /// The owner: she names the next owner first.
   static const leaveOwnerText =

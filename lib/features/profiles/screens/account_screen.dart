@@ -289,8 +289,8 @@ class _OwnProfileScreenState extends State<OwnProfileScreen> {
                                       imageData: _vm.associations[i].logoData,
                                     ),
                                     title: _vm.associations[i].name,
-                                    subtitle:
-                                        '${_vm.associations[i].sectorLabel} · ${_vm.associations[i].location.label}',
+                                    subtitle: _vm.associations[i].sectorLabel,
+                                    city: _vm.associations[i].location.label,
                                     onTap: () => StartupProfileScreen.open(
                                       context,
                                       startup: _vm.associations[i],

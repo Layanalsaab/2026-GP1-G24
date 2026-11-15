@@ -9,6 +9,7 @@ import '../../../models/startup.dart';
 import '../../engagement_analytics/screens/activity_card.dart';
 import '../../engagement_analytics/view_models/activity_view_model.dart';
 import '../../profiles/screens/investor_profile_screen.dart';
+import '../../../shared_ui/widgets/cards/pin_city.dart';
 import 'founder_ui.dart';
 import 'manage_card.dart';
 import 'stat_tile.dart';
@@ -146,8 +147,21 @@ class ManageDashboardTab extends StatelessWidget {
                                           weight: FontWeight.w600,
                                         ),
                                       ),
-                                      Text(
-                                        '${i.title} · ${i.city}',
+                                      Text.rich(
+                                        TextSpan(
+                                          children: [
+                                            TextSpan(text: '${i.title} · '),
+                                            PinCity.span(
+                                              i.city,
+                                              style: AppText.sans(
+                                                size: 14,
+                                                height: 20,
+                                                color: AppColors.grey,
+                                              ),
+                                              pinColor: AppColors.hint,
+                                            ),
+                                          ],
+                                        ),
                                         style: AppText.sans(
                                           size: 14,
                                           height: 20,
