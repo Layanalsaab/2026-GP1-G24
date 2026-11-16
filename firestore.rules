@@ -826,6 +826,70 @@ service cloud.firestore {
         && d.amount <= s.fundingRequirement - (raised == null ? 0 : raised);
     }
 
+    // ------------------------------------------------- requests to a ticket
+    // A startup's request to an investor, sent from one of the investor's
+    // OPEN tickets (the investor sees it as "Request received"). It is the
+    // other direction of `requests` above, so it has its own collection and
+    // the two lists never mix.
+    //
+    // ticketRequests/{startupId}~{ticketId}: one request per startup per
+    // ticket. Only the OWNER of an active startup sends it; the amount is
+    // inside the ticket's range and no more than the open round still needs.
+    // The investor answers it (accepted / declined, once); the sender can
+    // withdraw a pending one. Only the two people involved can read it.
+    function validTicketRequestToInvestor(d, id) {
+      let t = get(/databases/$(database)/documents/tickets/$(d.ticketId)).data;
+      let s = get(/databases/$(database)/documents/startups/$(d.startupId)).data;
+      let raised = s.get('raisedInRound', 0);
+      return id == d.startupId + '~' + d.ticketId
+        && s.founderId == request.auth.uid
+        && statusOf(s) == 'active'
+        && t.investorId == d.investorId
+        && t.status == 'open'
+        && d.amount >= t.amountMin
+        && d.amount <= t.amountMax
+        && s.get('fundingRequirement', 0) > 0
+        && d.amount <= s.fundingRequirement - (raised == null ? 0 : raised)
+        && d.startupName == s.name;
+    }
+
+    match /ticketRequests/{requestId} {
+      allow read: if request.auth != null
+        && (resource.data.founderId == request.auth.uid
+            || resource.data.investorId == request.auth.uid);
+
+      allow create: if request.auth != null
+        && request.resource.data.keys().hasOnly(['startupId', 'founderId',
+             'investorId', 'ticketId', 'startupName', 'amount', 'message',
+             'status', 'createdAt'])
+        && request.resource.data.founderId == request.auth.uid
+        && request.resource.data.status == 'pending'
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.amount is int
+        && request.resource.data.amount > 0
+        && request.resource.data.message is string
+        && request.resource.data.message.size() <= 1000
+        && request.resource.data.startupName is string
+        && request.resource.data.startupName.size() <= 60
+        && validTicketRequestToInvestor(request.resource.data, requestId);
+
+      // The investor answers a pending request, once, and nothing else changes.
+      allow update: if request.auth != null
+        && resource.data.investorId == request.auth.uid
+        && resource.data.status == 'pending'
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['status', 'respondedAt'])
+        && request.resource.data.status in ['accepted', 'declined']
+        && request.resource.data.get('respondedAt', request.time) == request.time;
+
+      // The startup withdraws a pending request; either person clears the
+      // rest when an account is deleted.
+      allow delete: if request.auth != null
+        && ((resource.data.founderId == request.auth.uid
+             && resource.data.status == 'pending')
+            || resource.data.investorId == request.auth.uid);
+    }
+
     // ------------------------------------------------------------ interests
     // A startup seeker's "Express interest". Guests have no account, so the
     // app signs them in anonymously (or goes through a Cloud Function).

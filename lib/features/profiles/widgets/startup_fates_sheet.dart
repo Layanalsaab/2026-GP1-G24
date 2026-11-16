@@ -347,7 +347,7 @@ class _FateCard extends StatelessWidget {
                 child: _Choice(
                   label: AccountStrings.fateDelete,
                   selected: delete == true,
-                  color: AppColors.error,
+                  color: AppColors.dangerFill,
                   onTap: onDelete,
                 ),
               ),

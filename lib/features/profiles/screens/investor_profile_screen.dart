@@ -18,6 +18,7 @@ import '../../../shared_ui/widgets/cards/match_justification.dart';
 import '../../../shared_ui/widgets/headers/profile_banner.dart';
 import '../view_models/investor_profile_view_model.dart';
 import '../widgets/investor_profile_body.dart';
+import '../widgets/ticket_info_sheet.dart';
 import '../widgets/profile_widgets.dart';
 
 /// Investor profile (docs/05 C2, screenshots 31 and 27e): banner with
@@ -126,6 +127,10 @@ class _InvestorProfileScreenState extends State<InvestorProfileScreen> {
                         InvestorProfileBody(
                           data: InvestorProfileData.fromInvestor(inv),
                           associations: _vm.associations,
+                          tickets: DiscoveryRepository.instance.openTicketsOf(
+                            inv.id,
+                          ),
+                          onOpenTicket: (t) => showTicketInfoSheet(context, t),
                           contact: InvestorContactData(
                             email: inv.email ?? '',
                             emailPublic: inv.emailPublic,

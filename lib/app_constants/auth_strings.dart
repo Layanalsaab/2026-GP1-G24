@@ -36,7 +36,7 @@ class AuthStrings {
   static const founder = 'Founder';
   static const founderDescription =
       'Create and manage your startups, connect with investors, and access support programs.';
-  static const investor = 'Investor';
+  static const investor = 'Angel Investor';
   static const investorDescription =
       'Discover startups aligned with your investment interests and connect with founders.';
   static const continueLabel = 'Continue';
