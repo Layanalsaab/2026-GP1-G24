@@ -253,7 +253,7 @@ class _PagedCardsState extends State<PagedCards> {
                         style: AppText.sans(
                           size: 14.5,
                           weight: FontWeight.w600,
-                          color: AppColors.moss600,
+                          color: AppColors.mossText,
                         ),
                       ),
                     ),
@@ -292,11 +292,11 @@ class BackLink extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const AppIcon.outline(
+                AppIcon.outline(
                   AppIcons.profileBack,
                   size: 20,
                   stroke: 2,
-                  color: AppColors.moss600,
+                  color: AppColors.mossText,
                 ),
                 const SizedBox(width: 2),
                 Text(
@@ -304,7 +304,7 @@ class BackLink extends StatelessWidget {
                   style: AppText.sans(
                     size: 14.5,
                     weight: FontWeight.w600,
-                    color: AppColors.moss600,
+                    color: AppColors.mossText,
                   ),
                 ),
               ],
@@ -321,7 +321,7 @@ class BackLink extends StatelessWidget {
 /// plain "nothing here yet".
 Widget homeEmptyState(HomeViewModel vm) {
   if (vm.isLoadingDirectory) {
-    return const Padding(
+    return Padding(
       padding: EdgeInsets.symmetric(vertical: 48),
       child: Center(
         child: SizedBox(
@@ -329,7 +329,7 @@ Widget homeEmptyState(HomeViewModel vm) {
           height: 28,
           child: CircularProgressIndicator(
             strokeWidth: 3,
-            color: AppColors.moss600,
+            color: AppColors.mossText,
           ),
         ),
       ),

@@ -345,7 +345,7 @@ class _CheckRowState extends State<_CheckRow> {
                     borderRadius: BorderRadius.circular(6),
                     border: Border.all(
                       color: checked
-                          ? AppColors.moss600
+                          ? AppColors.mossText
                           : AppColors.borderStrong,
                       width: 2,
                     ),
@@ -373,7 +373,7 @@ class _CheckRowState extends State<_CheckRow> {
                     widget.label,
                     style: AppText.sans(
                       size: 16,
-                      color: checked ? AppColors.green : AppColors.ink,
+                      color: checked ? AppColors.greenText : AppColors.ink,
                       weight: checked ? FontWeight.w600 : FontWeight.w400,
                     ),
                   ),

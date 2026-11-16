@@ -53,7 +53,7 @@ class InfoButton extends StatelessWidget {
             child: AppIcon.filled(
               AppIcons.info,
               size: 18,
-              color: light ? AppColors.onGreenMuted : AppColors.moss600,
+              color: light ? AppColors.onGreenMuted : AppColors.mossText,
             ),
           ),
         ),
@@ -106,7 +106,11 @@ class InfoTip extends StatelessWidget {
           container: true,
           child: Text(
             text,
-            style: AppText.sans(size: 13, color: AppColors.green, height: 19),
+            style: AppText.sans(
+              size: 13,
+              color: AppColors.greenText,
+              height: 19,
+            ),
           ),
         ),
       ),

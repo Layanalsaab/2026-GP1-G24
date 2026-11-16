@@ -82,7 +82,7 @@ class InterestTab extends StatelessWidget {
                             decoration: BoxDecoration(
                               border: i == items.length - 1
                                   ? null
-                                  : const Border(
+                                  : Border(
                                       bottom: BorderSide(
                                         color: AppColors.dividerSoft,
                                       ),
@@ -213,11 +213,11 @@ class _InterestReplyButtonState extends State<InterestReplyButton> {
           color: _hover ? AppColors.moss100 : AppColors.moss50,
           shape: BoxShape.circle,
         ),
-        child: const Center(
+        child: Center(
           child: AppIcon.filled(
             AppIcons.chat,
             size: 20,
-            color: AppColors.moss600,
+            color: AppColors.mossText,
           ),
         ),
       ),

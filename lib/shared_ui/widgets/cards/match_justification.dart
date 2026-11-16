@@ -42,7 +42,7 @@ class MatchJustification extends StatelessWidget {
                         size: 16,
                         height: 22,
                         weight: FontWeight.w700,
-                        color: AppColors.moss600,
+                        color: AppColors.mossText,
                       ),
                     ),
                     TextSpan(

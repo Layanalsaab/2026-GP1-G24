@@ -60,7 +60,7 @@ class _RuleRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = rule.met ? AppColors.moss600 : AppColors.error;
+    final color = rule.met ? AppColors.mossText : AppColors.error;
     return Padding(
       padding: const EdgeInsets.only(top: 6),
       child: Semantics(

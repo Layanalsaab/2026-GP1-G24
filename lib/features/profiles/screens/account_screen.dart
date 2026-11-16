@@ -114,7 +114,7 @@ class _OwnProfileScreenState extends State<OwnProfileScreen> {
                     style: AppText.sans(
                       size: 14.5,
                       weight: FontWeight.w600,
-                      color: AppColors.moss600,
+                      color: AppColors.mossText,
                     ),
                   ),
                 ),

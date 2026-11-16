@@ -73,9 +73,9 @@ class _RoleCardState extends State<RoleCard> {
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
                 color: selected
-                    ? AppColors.moss600
+                    ? AppColors.mossText
                     : (_hover
-                          ? const Color(0xFFD9D4C9)
+                          ? AppColors.borderHover
                           : const Color(0x00D9D4C9)),
                 width: selected ? 2 : 1.5,
               ),
@@ -163,7 +163,7 @@ class _Radio extends StatelessWidget {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               border: Border.all(
-                color: selected ? AppColors.moss600 : AppColors.borderStrong,
+                color: selected ? AppColors.mossText : AppColors.borderStrong,
                 width: 1.5,
               ),
             ),

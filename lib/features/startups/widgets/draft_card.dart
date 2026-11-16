@@ -28,7 +28,7 @@ class DraftCard extends StatelessWidget {
       onTap: onTap,
       padding: const EdgeInsets.fromLTRB(16, 14, 8, 14),
       border: Border.all(color: AppColors.gold.withValues(alpha: .55)),
-      hoverBorder: null,
+      hoverBorderOn: false,
       child: Semantics(
         button: true,
         label:
@@ -90,7 +90,7 @@ class DraftCard extends StatelessWidget {
                     style: AppText.sans(
                       size: 13.5,
                       weight: FontWeight.w600,
-                      color: AppColors.moss600,
+                      color: AppColors.mossText,
                     ),
                   ),
                 ],
@@ -103,7 +103,7 @@ class DraftCard extends StatelessWidget {
               child: GestureDetector(
                 behavior: HitTestBehavior.opaque,
                 onTap: onDiscard,
-                child: const SizedBox(
+                child: SizedBox(
                   width: 44,
                   height: 44,
                   child: Center(

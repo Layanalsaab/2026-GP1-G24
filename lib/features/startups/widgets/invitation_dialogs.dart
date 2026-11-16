@@ -132,12 +132,12 @@ class DialogIcon extends StatelessWidget {
         child: Container(
           width: 64,
           height: 64,
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             color: AppColors.moss100,
             shape: BoxShape.circle,
           ),
           alignment: Alignment.center,
-          child: AppIcon.filled(icon, size: 28, color: AppColors.moss600),
+          child: AppIcon.filled(icon, size: 28, color: AppColors.mossText),
         ),
       ),
     );

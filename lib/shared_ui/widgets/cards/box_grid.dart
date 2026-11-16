@@ -137,7 +137,7 @@ class _Box extends StatelessWidget {
     final box = Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: page ? const Color(0xFFFAF8F4) : const Color(0xFFF7F4EC),
+        color: page ? AppColors.cream : AppColors.boxFill,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -160,10 +160,10 @@ class _Box extends StatelessWidget {
                   weight: page ? FontWeight.w700 : FontWeight.w600,
                   color: empty
                       ? AppColors.hint
-                      : (accent || opens ? AppColors.moss600 : AppColors.ink),
+                      : (accent || opens ? AppColors.mossText : AppColors.ink),
                 ).copyWith(
                   decoration: opens ? TextDecoration.underline : null,
-                  decorationColor: AppColors.moss600,
+                  decorationColor: AppColors.mossText,
                 ),
           ),
         ],

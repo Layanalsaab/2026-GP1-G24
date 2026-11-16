@@ -19,8 +19,8 @@ class AppRefresh extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return RefreshIndicator(
-      color: AppColors.green,
-      backgroundColor: AppColors.white,
+      color: AppColors.mossText,
+      backgroundColor: AppColors.surface,
       onRefresh: () async {
         try {
           await onRefresh();

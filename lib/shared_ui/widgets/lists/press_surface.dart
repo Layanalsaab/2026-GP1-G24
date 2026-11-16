@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../motion/motion.dart';
+import '../../theme/app_colors.dart';
 
 /// A tappable region that tints its background while pressed (the prototype's
 /// `.tr:active`, `.di:active` and `.srow` rows). No ripple. Under reduced
@@ -10,7 +11,7 @@ class PressSurface extends StatefulWidget {
     super.key,
     required this.child,
     this.onTap,
-    this.pressedColor = const Color(0xFFF6F4EF),
+    this.pressedColor,
     this.hoverColor,
     this.borderRadius,
     this.semanticLabel,
@@ -20,8 +21,8 @@ class PressSurface extends StatefulWidget {
   final Widget child;
   final VoidCallback? onTap;
 
-  /// Background while pressed.
-  final Color pressedColor;
+  /// Background while pressed (the theme's soft fill when null).
+  final Color? pressedColor;
 
   /// Background while a mouse pointer hovers (null: no hover reaction).
   /// Never triggers on touch.
@@ -73,7 +74,7 @@ class _PressSurfaceState extends State<PressSurface> {
             curve: Curves.ease,
             decoration: BoxDecoration(
               color: _down
-                  ? widget.pressedColor
+                  ? (widget.pressedColor ?? AppColors.profileBg)
                   : (_hover && enabled && widget.hoverColor != null
                         ? widget.hoverColor
                         : Colors.transparent),

@@ -162,7 +162,7 @@ class _AdvancedSearchSheetState extends State<AdvancedSearchSheet> {
       constraints: BoxConstraints(maxHeight: mq.size.height * 0.84),
       child: Container(
         width: double.infinity,
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: AppColors.profileBg,
           borderRadius: BorderRadius.vertical(
             top: Radius.circular(AppRadius.sheet),
@@ -219,7 +219,7 @@ class _AdvancedSearchSheetState extends State<AdvancedSearchSheet> {
                       hoverColor: const Color(0x0F1F3F27),
                       hoverDuration: AppDur.fast,
                       borderRadius: BorderRadius.circular(20),
-                      child: const SizedBox(
+                      child: SizedBox(
                         width: 40,
                         height: 40,
                         child: Center(
@@ -259,7 +259,7 @@ class _AdvancedSearchSheetState extends State<AdvancedSearchSheet> {
                 16,
                 math.max(18, mq.viewPadding.bottom),
               ),
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 color: AppColors.profileBg,
                 border: Border(
                   top: BorderSide(color: AppColors.filterPanelBorder),
@@ -354,9 +354,7 @@ class _Group extends StatelessWidget {
       decoration: BoxDecoration(
         border: last
             ? null
-            : const Border(
-                bottom: BorderSide(color: AppColors.filterPanelBorder),
-              ),
+            : Border(bottom: BorderSide(color: AppColors.filterPanelBorder)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -504,7 +502,7 @@ class _OptionChip extends StatelessWidget {
             color: on ? AppColors.green : AppColors.surface,
             borderRadius: BorderRadius.circular(999),
             border: Border.all(
-              color: on ? AppColors.green : AppColors.filterOptBorder,
+              color: on ? AppColors.greenText : AppColors.filterOptBorder,
             ),
           ),
           child: Center(

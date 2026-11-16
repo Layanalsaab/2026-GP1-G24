@@ -66,7 +66,7 @@ class StartupProfilePane extends StatelessWidget {
   /// Opens an associated investor's profile.
   final ValueChanged<InvestorProfile> onOpenInvestor;
 
-  static const _divider = Color(0xFFEDEAE3);
+  static Color get _divider => AppColors.dividerSoft;
 
   @override
   Widget build(BuildContext context) {
@@ -193,7 +193,7 @@ class StartupProfilePane extends StatelessWidget {
           ),
           Text(
             'All amounts in SAR',
-            style: AppText.sans(size: 13, color: const Color(0xFF8C918D)),
+            style: AppText.sans(size: 13, color: AppColors.hint),
           ),
           const SizedBox(height: 12),
           // The same table as Manage, read only (the startup's real rounds).
@@ -369,7 +369,7 @@ class _Rows extends StatelessWidget {
       children: [
         for (var i = 0; i < rows.length; i++) ...[
           if (i > 0)
-            const Divider(
+            Divider(
               height: 1,
               thickness: 1,
               color: StartupProfilePane._divider,
@@ -447,7 +447,7 @@ class _PersonRow extends StatelessWidget {
                   style: AppText.sans(
                     size: 14,
                     height: 20,
-                    color: const Color(0xFF6B726C),
+                    color: AppColors.metaText,
                   ).copyWith(decoration: TextDecoration.none),
                 ),
               if (contribution.isNotEmpty)
@@ -466,12 +466,12 @@ class _PersonRow extends StatelessWidget {
           ),
         ),
         if (onTap != null)
-          const Padding(
+          Padding(
             padding: EdgeInsets.only(top: 12),
             child: AppIcon.filled(
               AppIcons.chevRight,
               size: 20,
-              color: Color(0xFFA3A7A2),
+              color: AppColors.dimIcon,
             ),
           ),
       ],
@@ -527,16 +527,16 @@ class _InvestorRow extends StatelessWidget {
                   style: AppText.sans(
                     size: 14,
                     height: 20,
-                    color: const Color(0xFF6B726C),
+                    color: AppColors.metaText,
                   ),
                 ),
               ],
             ),
           ),
-          const AppIcon.filled(
+          AppIcon.filled(
             AppIcons.chevRight,
             size: 20,
-            color: Color(0xFFA3A7A2),
+            color: AppColors.dimIcon,
           ),
         ],
       ),
@@ -600,7 +600,7 @@ class _CurrentRoundCard extends StatelessWidget {
                     style: AppText.sans(
                       size: 12,
                       weight: FontWeight.w600,
-                      color: AppColors.moss600,
+                      color: AppColors.mossText,
                     ),
                   ),
                 ),
@@ -614,7 +614,7 @@ class _CurrentRoundCard extends StatelessWidget {
               size: 28,
               height: 34,
               weight: FontWeight.w700,
-              color: AppColors.green,
+              color: AppColors.greenText,
             ),
           ),
           Text(
@@ -628,8 +628,8 @@ class _CurrentRoundCard extends StatelessWidget {
               height: 8,
               child: Stack(
                 children: [
-                  const Positioned.fill(
-                    child: ColoredBox(color: Color(0xFFEBE8E1)),
+                  Positioned.fill(
+                    child: ColoredBox(color: AppColors.rangeFill),
                   ),
                   Positioned.fill(
                     child: FractionallySizedBox(

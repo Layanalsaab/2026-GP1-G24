@@ -61,10 +61,10 @@ class HeaderAvatarTile extends StatelessWidget {
       clipBehavior: hasPicture ? Clip.antiAlias : Clip.none,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(radius),
-        gradient: const LinearGradient(
-          begin: Alignment(-0.57, -0.82), // 145 degrees
-          end: Alignment(0.57, 0.82),
-          colors: [Color(0xFFFAF3E3), Color(0xFFF2E6C9)],
+        gradient: LinearGradient(
+          begin: const Alignment(-0.57, -0.82), // 145 degrees
+          end: const Alignment(0.57, 0.82),
+          colors: [AppColors.tileGoldTop, AppColors.tileGoldBottom],
         ),
       ),
       // The default picture (the initials) shows while the logo loads, and

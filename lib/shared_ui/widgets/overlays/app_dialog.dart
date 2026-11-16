@@ -106,12 +106,12 @@ class VerifyEmailDialog extends StatelessWidget {
               child: Container(
                 width: 64,
                 height: 64,
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   color: AppColors.tagGoldFill,
                   shape: BoxShape.circle,
                 ),
                 alignment: Alignment.center,
-                child: const AppIcon.filled(
+                child: AppIcon.filled(
                   AppIcons.mail,
                   size: 28,
                   color: AppColors.gold700,

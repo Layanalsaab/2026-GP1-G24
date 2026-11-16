@@ -77,7 +77,7 @@ class _VisibilityPickerState extends State<VisibilityPicker> {
               AppIcon.filled(
                 pub ? AppIcons.globe : AppIcons.lock,
                 size: 14,
-                color: AppColors.moss600,
+                color: AppColors.mossText,
               ),
               const SizedBox(width: 4),
               Text(
@@ -85,14 +85,14 @@ class _VisibilityPickerState extends State<VisibilityPicker> {
                 style: AppText.sans(
                   size: 13,
                   weight: FontWeight.w600,
-                  color: AppColors.moss600,
+                  color: AppColors.mossText,
                 ),
               ),
               const SizedBox(width: 4),
-              const AppIcon.filled(
+              AppIcon.filled(
                 AppIcons.chevDown,
                 size: 16,
-                color: AppColors.moss600,
+                color: AppColors.mossText,
               ),
             ],
           ),
@@ -194,7 +194,7 @@ class _ChoiceRowState extends State<_ChoiceRow> {
                 AppIcon.filled(
                   widget.icon,
                   size: 22,
-                  color: sel ? AppColors.moss600 : AppColors.grey,
+                  color: sel ? AppColors.mossText : AppColors.grey,
                 ),
                 const SizedBox(width: 14),
                 Expanded(
@@ -206,7 +206,7 @@ class _ChoiceRowState extends State<_ChoiceRow> {
                         style: AppText.sans(
                           size: 16,
                           weight: FontWeight.w600,
-                          color: sel ? AppColors.green : AppColors.ink,
+                          color: sel ? AppColors.greenText : AppColors.ink,
                         ),
                       ),
                       const SizedBox(height: 2),
@@ -241,7 +241,7 @@ class _Radio extends StatelessWidget {
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         border: Border.all(
-          color: selected ? AppColors.moss600 : AppColors.borderStrong,
+          color: selected ? AppColors.mossText : AppColors.borderStrong,
           width: 2,
         ),
       ),

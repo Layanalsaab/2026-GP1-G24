@@ -29,7 +29,8 @@ class HoverLiftCard extends StatefulWidget {
     this.radius = AppRadius.homeCard,
     this.baseShadow = AppShadow.listCard,
     this.border,
-    this.hoverBorder = const Color(0xFFD9D4C9),
+    this.hoverBorder,
+    this.hoverBorderOn = true,
   });
 
   final Widget child;
@@ -41,8 +42,11 @@ class HoverLiftCard extends StatefulWidget {
   /// A permanent border (drawn in the layout, e.g. the draft card's gold).
   final Border? border;
 
-  /// Colour of the hover border (null: none).
+  /// Colour of the hover border (the theme's hover border when null).
   final Color? hoverBorder;
+
+  /// False: no hover border at all.
+  final bool hoverBorderOn;
 
   @override
   State<HoverLiftCard> createState() => _HoverLiftCardState();
@@ -83,13 +87,13 @@ class _HoverLiftCardState extends State<HoverLiftCard> {
             border: widget.border,
             boxShadow: hovering ? kCardHoverShadow : widget.baseShadow,
           ),
-          foregroundDecoration: widget.hoverBorder == null
+          foregroundDecoration: !widget.hoverBorderOn
               ? null
               : BoxDecoration(
                   borderRadius: radius,
                   border: Border.all(
                     color: hovering
-                        ? widget.hoverBorder!
+                        ? (widget.hoverBorder ?? AppColors.borderHover)
                         : const Color(0x00D9D4C9),
                   ),
                 ),

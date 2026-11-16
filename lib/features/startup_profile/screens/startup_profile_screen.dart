@@ -259,7 +259,11 @@ class _PreviewBar extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const AppIcon.filled(AppIcons.eye, size: 18, color: AppColors.green),
+          AppIcon.filled(
+            AppIcons.eye,
+            size: 18,
+            color: AppColors.previewBarText,
+          ),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
@@ -267,7 +271,7 @@ class _PreviewBar extends StatelessWidget {
               style: AppText.sans(
                 size: 13,
                 weight: FontWeight.w600,
-                color: AppColors.green,
+                color: AppColors.previewBarText,
               ),
             ),
           ),

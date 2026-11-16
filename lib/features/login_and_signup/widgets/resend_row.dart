@@ -41,7 +41,7 @@ class ResendRow extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (divider)
-          const Divider(height: 1, thickness: 1, color: Color(0xFFEFECE6)),
+          Divider(height: 1, thickness: 1, color: AppColors.softDivider),
         // The row's own padding counts as the button too (it looks the same,
         // but a tap just above, below or beside the words still works).
         GestureDetector(
@@ -112,7 +112,7 @@ class ResendRow extends StatelessWidget {
                                       size: 14,
                                       height: 20,
                                       weight: FontWeight.w600,
-                                      color: AppColors.moss600,
+                                      color: AppColors.mossText,
                                     ),
                                   ),
                                 ],

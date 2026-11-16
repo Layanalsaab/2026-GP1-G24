@@ -51,11 +51,7 @@ class PinCity extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        const AppIcon.filled(
-          AppIcons.pin,
-          size: pinSize,
-          color: AppColors.hint,
-        ),
+        AppIcon.filled(AppIcons.pin, size: pinSize, color: AppColors.hint),
         const SizedBox(width: gap),
         Flexible(
           child: Text(

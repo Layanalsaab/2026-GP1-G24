@@ -50,12 +50,12 @@ class EmptyState extends StatelessWidget {
             width: 64,
             height: 64,
             margin: const EdgeInsets.only(bottom: 6),
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               color: AppColors.mossChip,
               shape: BoxShape.circle,
             ),
             alignment: Alignment.center,
-            child: AppIcon.filled(icon, size: 28, color: AppColors.moss600),
+            child: AppIcon.filled(icon, size: 28, color: AppColors.mossText),
           ),
           const SizedBox(height: 6),
           Semantics(

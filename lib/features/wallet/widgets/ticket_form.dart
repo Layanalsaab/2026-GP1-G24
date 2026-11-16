@@ -124,7 +124,7 @@ class TicketForm extends StatelessWidget {
               style: AppText.sans(
                 size: 17,
                 weight: FontWeight.w700,
-                color: AppColors.green,
+                color: AppColors.greenText,
               ),
             ),
           ),

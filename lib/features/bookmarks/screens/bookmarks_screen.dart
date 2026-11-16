@@ -222,15 +222,15 @@ class _NoBookmarks extends StatelessWidget {
       illustration: Container(
         width: 96,
         height: 96,
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: AppColors.mossChip,
           shape: BoxShape.circle,
         ),
         alignment: Alignment.center,
-        child: const AppIcon.outline(
+        child: AppIcon.outline(
           AppIcons.menuBookmark,
           size: 40,
-          color: AppColors.moss600,
+          color: AppColors.mossText,
         ),
       ),
       float: false,

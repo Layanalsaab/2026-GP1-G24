@@ -189,10 +189,10 @@ class _RequestCard extends StatelessWidget {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const AppIcon.filled(
+                        AppIcon.filled(
                           AppIcons.calc,
                           size: 15,
-                          color: AppColors.moss600,
+                          color: AppColors.mossText,
                         ),
                         const SizedBox(width: 5),
                         Text(
@@ -200,7 +200,7 @@ class _RequestCard extends StatelessWidget {
                           style: AppText.sans(
                             size: 14,
                             weight: FontWeight.w600,
-                            color: AppColors.moss600,
+                            color: AppColors.mossText,
                           ),
                         ),
                       ],

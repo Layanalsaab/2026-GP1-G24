@@ -45,7 +45,7 @@ class TeamMemberRow extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: AppColors.white,
+            color: AppColors.surface,
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
               color: error == null ? AppColors.border : AppColors.error,
@@ -114,7 +114,7 @@ class TeamMemberRow extends StatelessWidget {
                 icon: AppIcons.edit,
                 iconSize: 18,
                 size: 36,
-                color: AppColors.moss600,
+                color: AppColors.mossText,
                 semanticLabel: FounderToolsStrings.editMemberOf(member.name),
                 onTap: onEdit,
               ),
@@ -151,16 +151,16 @@ class AddMemberButton extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         onTap: onTap,
         child: CustomPaint(
-          painter: DashedBorderPainter(color: AppColors.moss600, radius: 12),
+          painter: DashedBorderPainter(color: AppColors.mossText, radius: 12),
           child: SizedBox(
             height: 48,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const AppIcon.filled(
+                AppIcon.filled(
                   AppIcons.plus,
                   size: 20,
-                  color: AppColors.moss600,
+                  color: AppColors.mossText,
                 ),
                 const SizedBox(width: 6),
                 Text(
@@ -168,7 +168,7 @@ class AddMemberButton extends StatelessWidget {
                   style: AppText.sans(
                     size: 15,
                     weight: FontWeight.w600,
-                    color: AppColors.moss600,
+                    color: AppColors.mossText,
                   ),
                 ),
               ],
@@ -211,11 +211,7 @@ class _LockedValue extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 8),
-            const AppIcon.filled(
-              AppIcons.lock,
-              size: 16,
-              color: AppColors.grey,
-            ),
+            AppIcon.filled(AppIcons.lock, size: 16, color: AppColors.grey),
           ],
         ),
       ),
@@ -242,12 +238,12 @@ class _EditorButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final fill = outlined
-        ? AppColors.white
+        ? AppColors.surface
         : off
         ? AppColors.offFill
         : AppColors.moss600;
     final text = outlined
-        ? AppColors.moss600
+        ? AppColors.mossText
         : off
         ? AppColors.offText
         : AppColors.white;
@@ -266,7 +262,7 @@ class _EditorButton extends StatelessWidget {
             color: fill,
             borderRadius: BorderRadius.circular(12),
             border: outlined
-                ? Border.all(color: AppColors.moss600, width: 1.5)
+                ? Border.all(color: AppColors.mossText, width: 1.5)
                 : null,
           ),
           child: Text(
@@ -307,10 +303,10 @@ class _AccessOption extends StatelessWidget {
           duration: const Duration(milliseconds: 150),
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           decoration: BoxDecoration(
-            color: selected ? AppColors.moss50 : AppColors.white,
+            color: selected ? AppColors.moss50 : AppColors.surface,
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
-              color: selected ? AppColors.moss600 : AppColors.cardBorder,
+              color: selected ? AppColors.mossText : AppColors.cardBorder,
               width: 1.5,
             ),
           ),
@@ -323,11 +319,9 @@ class _AccessOption extends StatelessWidget {
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: AppColors.white,
+                  color: AppColors.surface,
                   border: Border.all(
-                    color: selected
-                        ? AppColors.moss600
-                        : const Color(0xFF8C918D),
+                    color: selected ? AppColors.mossText : AppColors.hint,
                     width: 2,
                   ),
                 ),
@@ -484,7 +478,7 @@ class TeamMemberEditor extends StatelessWidget {
               style: AppText.sans(
                 size: 15,
                 weight: FontWeight.w700,
-                color: AppColors.green,
+                color: AppColors.greenText,
               ),
             ),
           ),
@@ -625,15 +619,15 @@ Future<bool> showInviteDialog(BuildContext context, String email) async {
               child: Container(
                 width: 64,
                 height: 64,
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   color: AppColors.moss100,
                   shape: BoxShape.circle,
                 ),
                 alignment: Alignment.center,
-                child: const AppIcon.filled(
+                child: AppIcon.filled(
                   AppIcons.send,
                   size: 28,
-                  color: AppColors.moss600,
+                  color: AppColors.mossText,
                 ),
               ),
             ),

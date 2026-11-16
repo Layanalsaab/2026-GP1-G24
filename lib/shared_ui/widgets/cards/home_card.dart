@@ -202,7 +202,7 @@ class HomeCard extends StatelessWidget {
                                 style: AppText.sans(
                                   size: 15,
                                   weight: FontWeight.w600,
-                                  color: AppColors.moss600,
+                                  color: AppColors.mossText,
                                 ),
                               ),
                               const SizedBox(width: 2),
@@ -226,7 +226,7 @@ class HomeCard extends StatelessWidget {
                         _CardAction(
                           label: 'Share',
                           onTap: onShare,
-                          child: const AppIcon.outline(
+                          child: AppIcon.outline(
                             AppIcons.cardShare,
                             size: 19,
                             color: AppColors.grey,
@@ -240,7 +240,7 @@ class HomeCard extends StatelessWidget {
                           toggled: bookmarked,
                           onTap: onBookmark,
                           child: bookmarked
-                              ? const Pop(
+                              ? Pop(
                                   key: ValueKey('bm-on'),
                                   child: AppIcon.filled(
                                     AppIcons.bookFill,
@@ -248,7 +248,7 @@ class HomeCard extends StatelessWidget {
                                     color: AppColors.bookmarkOn,
                                   ),
                                 )
-                              : const AppIcon.filled(
+                              : AppIcon.filled(
                                   AppIcons.bookOut,
                                   size: 19,
                                   color: AppColors.grey,
@@ -379,7 +379,7 @@ class _MatchPill extends StatelessWidget {
         text,
         style: AppText.sans(
           size: 12.5,
-          color: AppColors.moss600,
+          color: AppColors.mossText,
           weight: FontWeight.w700,
         ),
       ),
@@ -402,7 +402,7 @@ class _CardChevron extends StatelessWidget {
         duration: Motion.dur(context, AppDur.base),
         curve: AppCurves.easeOut,
         transform: Matrix4.translationValues(moves ? 2 : 0, 0, 0),
-        child: const AppIcon.outline(
+        child: AppIcon.outline(
           AppIcons.cardChevron,
           size: 18,
           stroke: 2.2,
@@ -431,16 +431,16 @@ class _HoverCardState extends State<_HoverCard> {
   bool _hover = false;
 
   static final _radius = BorderRadius.circular(AppRadius.homeCard);
-  static final _hoverDecoration = BoxDecoration(
+  static BoxDecoration get _hoverDecoration => BoxDecoration(
     borderRadius: _radius,
-    boxShadow: const [
+    boxShadow: [
       BoxShadow(
         color: Color(0x8C1F3F27),
         offset: Offset(0, 18),
         blurRadius: 30,
         spreadRadius: -20,
       ),
-      BoxShadow(color: Color(0xFFCFDCD2), spreadRadius: 1.5),
+      BoxShadow(color: AppColors.hoverRing, spreadRadius: 1.5),
     ],
   );
 
@@ -495,7 +495,7 @@ class _CardAction extends StatelessWidget {
       child: Pressable(
         onTap: onTap,
         scale: PressScale.cardAction,
-        hoverColor: const Color(0xFFF3F1EC),
+        hoverColor: AppColors.hoverFill,
         hoverDuration: AppDur.base,
         borderRadius: BorderRadius.circular(10),
         child: SizedBox(width: 36, height: 38, child: Center(child: child)),
@@ -634,7 +634,7 @@ class _NewBadge extends StatelessWidget {
         'NEW',
         style: AppText.sans(
           size: 10,
-          color: AppColors.moss600,
+          color: AppColors.mossText,
           weight: FontWeight.w700,
           letterSpacing: 0.3,
         ),

@@ -43,7 +43,7 @@ class SectionHeader extends StatelessWidget {
                       seeAllLabel,
                       style: AppText.sans(
                         size: 13,
-                        color: AppColors.moss600,
+                        color: AppColors.mossText,
                         weight: FontWeight.w600,
                       ),
                     ),

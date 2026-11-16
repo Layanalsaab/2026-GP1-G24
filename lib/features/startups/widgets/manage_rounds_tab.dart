@@ -127,10 +127,7 @@ class _ManageRoundsTabState extends State<ManageRoundsTab> {
                       ),
                       Text(
                         'All amounts in SAR',
-                        style: AppText.sans(
-                          size: 13,
-                          color: const Color(0xFF8C918D),
-                        ),
+                        style: AppText.sans(size: 13, color: AppColors.hint),
                       ),
                     ],
                   ),
@@ -169,7 +166,7 @@ class _ManageRoundsTabState extends State<ManageRoundsTab> {
                 child: Text(
                   'Tap a round to see its details.',
                   textAlign: TextAlign.center,
-                  style: AppText.sans(size: 13, color: const Color(0xFF8C918D)),
+                  style: AppText.sans(size: 13, color: AppColors.hint),
                 ),
               ),
             ],
@@ -288,7 +285,7 @@ class RoundsTable extends StatelessWidget {
             ),
           ),
         for (final r in rounds) ...[
-          const Divider(height: 1, color: AppColors.dividerSoft),
+          Divider(height: 1, color: AppColors.dividerSoft),
           _RoundRow(round: r, onTap: open == null ? null : () => open(r)),
         ],
       ],
@@ -318,7 +315,7 @@ class _HeaderRow extends StatelessWidget {
       size: 11.5,
       weight: FontWeight.w700,
       letterSpacing: 0.5,
-      color: const Color(0xFF8C918D),
+      color: AppColors.hint,
     );
     Widget cell(int i, String text, {bool center = false}) => Expanded(
       flex: _flex[i],
@@ -387,7 +384,7 @@ class _RoundRowState extends State<_RoundRow> {
           child: Stack(
             children: [
               content,
-              const Positioned(
+              Positioned(
                 right: 8,
                 top: 0,
                 bottom: 0,
@@ -397,7 +394,7 @@ class _RoundRowState extends State<_RoundRow> {
                       AppIcons.rowChevron,
                       size: 20,
                       stroke: 2.2,
-                      color: Color(0xFF9AA19B),
+                      color: AppColors.chevron,
                     ),
                   ),
                 ),
@@ -452,9 +449,7 @@ class _RoundRowState extends State<_RoundRow> {
                       size: 12.5,
                       height: 17,
                       weight: FontWeight.w600,
-                      color: r.isOpen
-                          ? const Color(0xFF2F8A4A)
-                          : const Color(0xFF8C918D),
+                      color: r.isOpen ? AppColors.statusGreen : AppColors.hint,
                     ),
                   ),
                 Text(
@@ -577,7 +572,7 @@ class StatusDot extends StatelessWidget {
         height: 8,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: open ? const Color(0xFF3FAE5C) : const Color(0xFFC3C0B9),
+          color: open ? const Color(0xFF3FAE5C) : AppColors.dotOff,
           boxShadow: open
               ? const [BoxShadow(color: Color(0x333FAE5C), spreadRadius: 3)]
               : null,
@@ -606,9 +601,7 @@ class _RaisedBar extends StatelessWidget {
           width: double.infinity,
           child: Stack(
             children: [
-              const Positioned.fill(
-                child: ColoredBox(color: Color(0xFFE9E6DF)),
-              ),
+              Positioned.fill(child: ColoredBox(color: AppColors.segTrack)),
               Positioned.fill(
                 child: FractionallySizedBox(
                   alignment: Alignment.centerLeft,
@@ -660,7 +653,7 @@ class _InvestorLink extends StatelessWidget {
               size: 14,
               height: 20,
               weight: linked ? FontWeight.w600 : FontWeight.w400,
-              color: linked ? AppColors.moss600 : AppColors.grey,
+              color: linked ? AppColors.mossText : AppColors.grey,
             ).copyWith(decoration: TextDecoration.none),
             children: [
               if (investor.isLead)
@@ -738,7 +731,7 @@ class _InvestorListState extends State<_InvestorList> {
                   style: AppText.sans(
                     size: 13,
                     weight: FontWeight.w600,
-                    color: AppColors.moss600,
+                    color: AppColors.mossText,
                   ),
                 ),
               ),

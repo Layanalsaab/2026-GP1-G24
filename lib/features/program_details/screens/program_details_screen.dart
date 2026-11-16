@@ -65,7 +65,7 @@ class _ProgramDetailsScreenState extends State<ProgramDetailsScreen> {
           children: [
             ClipRect(
               child: Container(
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   gradient: RadialGradient(
                     center: Alignment.topCenter,
                     radius: 1.2,
@@ -200,7 +200,7 @@ class _ProgramDetailsScreenState extends State<ProgramDetailsScreen> {
                                   Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      const AppIcon.filled(
+                                      AppIcon.filled(
                                         AppIcons.pin,
                                         size: 15,
                                         color: AppColors.grey,
@@ -229,10 +229,10 @@ class _ProgramDetailsScreenState extends State<ProgramDetailsScreen> {
                                       child: Row(
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
-                                          const AppIcon.filled(
+                                          AppIcon.filled(
                                             AppIcons.link,
                                             size: 18,
-                                            color: AppColors.moss600,
+                                            color: AppColors.mossText,
                                           ),
                                           const SizedBox(width: 6),
                                           Flexible(
@@ -241,7 +241,7 @@ class _ProgramDetailsScreenState extends State<ProgramDetailsScreen> {
                                               style: AppText.sans(
                                                 size: 15,
                                                 weight: FontWeight.w600,
-                                                color: AppColors.moss600,
+                                                color: AppColors.mossText,
                                               ),
                                             ),
                                           ),
@@ -335,7 +335,7 @@ class _Section extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.symmetric(vertical: 18),
-    decoration: const BoxDecoration(
+    decoration: BoxDecoration(
       border: Border(bottom: BorderSide(color: AppColors.dividerSoft)),
     ),
     child: Column(

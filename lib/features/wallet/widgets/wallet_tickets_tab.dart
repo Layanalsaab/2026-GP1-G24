@@ -81,10 +81,7 @@ class _WalletTicketsTabState extends State<WalletTicketsTab> {
                       ),
                       Text(
                         WalletStrings.allAmounts,
-                        style: AppText.sans(
-                          size: 13,
-                          color: const Color(0xFF8C918D),
-                        ),
+                        style: AppText.sans(size: 13, color: AppColors.hint),
                       ),
                     ],
                   ),
@@ -113,7 +110,7 @@ class _WalletTicketsTabState extends State<WalletTicketsTab> {
                 child: Text(
                   WalletStrings.tapHint,
                   textAlign: TextAlign.center,
-                  style: AppText.sans(size: 13, color: const Color(0xFF8C918D)),
+                  style: AppText.sans(size: 13, color: AppColors.hint),
                 ),
               ),
             ],
@@ -170,7 +167,7 @@ class _TicketsTable extends StatelessWidget {
             ),
           ),
         for (final t in tickets) ...[
-          const Divider(height: 1, color: AppColors.dividerSoft),
+          Divider(height: 1, color: AppColors.dividerSoft),
           _TicketRow(vm: vm, ticket: t, onTap: () => onOpen(t)),
         ],
       ],
@@ -191,7 +188,7 @@ class _HeaderRow extends StatelessWidget {
       size: 11.5,
       weight: FontWeight.w700,
       letterSpacing: 0.5,
-      color: const Color(0xFF8C918D),
+      color: AppColors.hint,
     );
     Widget cell(int i, String text, {bool center = false}) => Expanded(
       flex: _flex[i],
@@ -255,7 +252,7 @@ class _TicketRowState extends State<_TicketRow> {
           child: Stack(
             children: [
               _content(),
-              const Positioned(
+              Positioned(
                 right: 8,
                 top: 0,
                 bottom: 0,
@@ -265,7 +262,7 @@ class _TicketRowState extends State<_TicketRow> {
                       AppIcons.rowChevron,
                       size: 20,
                       stroke: 2.2,
-                      color: Color(0xFF9AA19B),
+                      color: AppColors.chevron,
                     ),
                   ),
                 ),
@@ -318,9 +315,7 @@ class _TicketRowState extends State<_TicketRow> {
                     size: 12.5,
                     height: 17,
                     weight: FontWeight.w600,
-                    color: t.isOpen
-                        ? const Color(0xFF2F8A4A)
-                        : const Color(0xFF8C918D),
+                    color: t.isOpen ? AppColors.statusGreen : AppColors.hint,
                   ),
                 ),
                 Text(

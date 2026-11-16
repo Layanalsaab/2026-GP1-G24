@@ -81,10 +81,7 @@ class ManageTabHeader extends StatelessWidget {
         ),
       ),
       if (subtitle != null)
-        Text(
-          subtitle!,
-          style: AppText.sans(size: 13, color: const Color(0xFF8C918D)),
-        ),
+        Text(subtitle!, style: AppText.sans(size: 13, color: AppColors.hint)),
     ],
   );
 }

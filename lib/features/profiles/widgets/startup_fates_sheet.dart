@@ -59,10 +59,12 @@ class _StartupFatesSheetState extends State<StartupFatesSheet> {
   /// Continue was tapped with something missing: the missing ones are red.
   bool _tried = false;
 
-  int get _chosen => widget.owned.where((s) => _delete.containsKey(s.id)).length;
+  int get _chosen =>
+      widget.owned.where((s) => _delete.containsKey(s.id)).length;
   int get _total => widget.owned.length;
 
-  void _choose(Startup s, bool delete) => setState(() => _delete[s.id] = delete);
+  void _choose(Startup s, bool delete) =>
+      setState(() => _delete[s.id] = delete);
 
   Future<void> _pickNext(Startup s) async {
     final uids = s.memberRoles.keys.toList();
@@ -113,12 +115,12 @@ class _StartupFatesSheetState extends State<StartupFatesSheet> {
                 child: Container(
                   width: 60,
                   height: 60,
-                  decoration: const BoxDecoration(
+                  decoration: BoxDecoration(
                     color: AppColors.errorFill,
                     shape: BoxShape.circle,
                   ),
                   alignment: Alignment.center,
-                  child: const AppIcon.filled(
+                  child: AppIcon.filled(
                     AppIcons.trash,
                     size: 28,
                     color: AppColors.error,
@@ -142,11 +144,7 @@ class _StartupFatesSheetState extends State<StartupFatesSheet> {
               style: AppText.sans(size: 15, color: AppColors.grey, height: 22),
             ),
             const SizedBox(height: 16),
-            _Counter(
-              chosen: _chosen,
-              total: _total,
-              missing: missing,
-            ),
+            _Counter(chosen: _chosen, total: _total, missing: missing),
             const SizedBox(height: 10),
             for (final s in widget.owned) ...[
               _FateCard(
@@ -287,11 +285,9 @@ class _FateCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: missing ? AppColors.error : AppColors.border,
-        ),
+        border: Border.all(color: missing ? AppColors.error : AppColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -408,7 +404,7 @@ class _Choice extends StatelessWidget {
           height: 40,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: selected ? color : AppColors.white,
+            color: selected ? color : AppColors.surface,
             borderRadius: BorderRadius.circular(10),
             border: Border.all(color: selected ? color : AppColors.border),
           ),
@@ -463,7 +459,7 @@ class _NextFounderRow extends StatelessWidget {
                       style: AppText.sans(
                         size: 13,
                         weight: FontWeight.w600,
-                        color: AppColors.moss600,
+                        color: AppColors.mossText,
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -474,10 +470,10 @@ class _NextFounderRow extends StatelessWidget {
                   ],
                 ),
               ),
-              const AppIcon.filled(
+              AppIcon.filled(
                 AppIcons.chevDown,
                 size: 20,
-                color: AppColors.moss600,
+                color: AppColors.mossText,
               ),
             ],
           ),

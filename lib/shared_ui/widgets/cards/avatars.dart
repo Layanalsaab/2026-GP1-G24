@@ -120,7 +120,7 @@ class HueAvatar extends StatelessWidget {
       maxLines: 1,
       style: AppText.sans(
         size: fontSize ?? _defaultFont(size),
-        color: hue,
+        color: AppColors.avatarInk(hue),
         weight: FontWeight.w700,
         letterSpacing: 0.3,
       ),
@@ -207,7 +207,7 @@ class TileAvatar extends StatelessWidget {
       maxLines: 1,
       style: AppText.sans(
         size: fontSize ?? size * 15 / 46,
-        color: gold ? AppColors.tagGoldText : AppColors.moss600,
+        color: gold ? AppColors.tagGoldText : AppColors.mossText,
         weight: FontWeight.w700,
         letterSpacing: 0.2,
       ),
@@ -228,8 +228,8 @@ class TileAvatar extends StatelessWidget {
             begin: const Alignment(-0.574, -0.819),
             end: const Alignment(0.574, 0.819),
             colors: gold
-                ? const [Color(0xFFFAF3E3), Color(0xFFF2E6C9)]
-                : const [Color(0xFFEEF4EF), Color(0xFFDFEAE1)],
+                ? [AppColors.tileGoldTop, AppColors.tileGoldBottom]
+                : [AppColors.tileMossTop, AppColors.tileMossBottom],
           ),
         ),
         child: hasPicture

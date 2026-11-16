@@ -50,7 +50,7 @@ class AppIconButton extends StatelessWidget {
     required this.icon,
     required this.onTap,
     required this.semanticLabel,
-    this.color = AppColors.ink,
+    this.color,
     this.iconSize = 24,
     this.size = AppSize.iconButton,
     this.stroke,
@@ -62,7 +62,9 @@ class AppIconButton extends StatelessWidget {
   final String icon;
   final VoidCallback? onTap;
   final String semanticLabel;
-  final Color color;
+
+  /// The icon color (the main text color when null).
+  final Color? color;
 
   /// Pointer-hover fill; defaults to `#1F3F270F` on light backgrounds and
   /// `#FFFFFF1F` when the icon [color] is light (button on a green header).
@@ -81,6 +83,7 @@ class AppIconButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final color = this.color ?? AppColors.ink;
     final glyph =
         child ??
         (stroke == null

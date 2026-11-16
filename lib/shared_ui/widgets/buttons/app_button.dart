@@ -98,8 +98,8 @@ class AppButton extends StatelessWidget {
     AppButtonVariant.primary ||
     AppButtonVariant.dark ||
     AppButtonVariant.danger => AppColors.onDark,
-    AppButtonVariant.outline || AppButtonVariant.ghost => AppColors.moss600,
-    AppButtonVariant.done => AppColors.green,
+    AppButtonVariant.outline || AppButtonVariant.ghost => AppColors.mossText,
+    AppButtonVariant.done => AppColors.greenText,
     AppButtonVariant.off => AppColors.offText,
   };
 
@@ -112,7 +112,7 @@ class AppButton extends StatelessWidget {
 
   BoxBorder? get _border => switch (variant) {
     AppButtonVariant.outline ||
-    AppButtonVariant.done => Border.all(color: AppColors.moss600, width: 1.5),
+    AppButtonVariant.done => Border.all(color: AppColors.mossText, width: 1.5),
     _ => null,
   };
 
