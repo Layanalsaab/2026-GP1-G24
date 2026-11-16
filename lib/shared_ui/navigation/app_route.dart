@@ -74,7 +74,7 @@ class AppRoute<T> extends PageRouteBuilder<T> {
     return Stack(
       fit: StackFit.expand,
       children: [
-        const ColoredBox(color: AppColors.cream),
+        ColoredBox(color: AppColors.cream),
         _BackEnter(
           tick: _backTick,
           greenHeader: greenHeader,

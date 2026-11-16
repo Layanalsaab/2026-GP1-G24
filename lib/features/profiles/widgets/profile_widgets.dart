@@ -58,7 +58,7 @@ class ProfileCtaBar extends StatelessWidget {
     final inset = MediaQuery.paddingOf(context).bottom;
     return Container(
       padding: EdgeInsets.fromLTRB(16, 12, 16, math.max(20, inset)),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: AppColors.cream,
         border: Border(top: BorderSide(color: AppColors.dividerSoft)),
       ),
@@ -116,7 +116,7 @@ class ProfileHead extends StatelessWidget {
     style: AppText.sans(
       size: 30,
       weight: FontWeight.w700,
-      color: AppColors.moss600,
+      color: AppColors.mossText,
     ),
   );
 
@@ -205,7 +205,7 @@ class ProfileHead extends StatelessWidget {
                   Container(
                     width: 3,
                     height: 3,
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                       color: AppColors.chevron,
                       shape: BoxShape.circle,
                     ),
@@ -229,12 +229,12 @@ class ProfileHead extends StatelessWidget {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Padding(
+                Padding(
                   padding: EdgeInsets.only(top: 3),
                   child: AppIcon.filled(
                     AppIcons.target,
                     size: 15,
-                    color: Color(0xFF8C918D),
+                    color: AppColors.hint,
                   ),
                 ),
                 const SizedBox(width: 6),
@@ -245,7 +245,7 @@ class ProfileHead extends StatelessWidget {
                       style: AppText.sans(
                         size: 14,
                         height: 21,
-                        color: const Color(0xFF6B726C),
+                        color: AppColors.metaText,
                       ),
                       children: [
                         TextSpan(
@@ -301,7 +301,7 @@ class _LinkedInPill extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const AppIcon.filled(
+                AppIcon.filled(
                   AppIcons.linkedIn,
                   size: 16,
                   color: AppColors.linkedIn,

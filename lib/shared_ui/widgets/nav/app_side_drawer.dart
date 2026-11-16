@@ -13,7 +13,7 @@ import '../lists/press_surface.dart';
 import '../overlays/app_overlay_route.dart';
 
 /// Menu row hover background (`#EFECE5`).
-const Color _menuHover = Color(0xFFEFECE5);
+Color get _menuHover => AppColors.menuHover;
 
 /// One row of the side drawer: a stroke [icon] path (e.g.
 /// [AppIcons.menuRocket]), a [label] and an optional gold count [badge]
@@ -120,7 +120,7 @@ class AppSideDrawer extends StatelessWidget {
       child: Container(
         width: w,
         height: double.infinity,
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: AppColors.profileBg,
           borderRadius: BorderRadius.horizontal(right: Radius.circular(22)),
           boxShadow: AppShadow.drawer,
@@ -155,7 +155,7 @@ class AppSideDrawer extends StatelessWidget {
             ),
             Container(
               margin: EdgeInsets.fromLTRB(10, 0, 10, 14 + bottom),
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 border: Border(top: BorderSide(color: AppColors.border)),
               ),
               child: PressSurface(
@@ -169,7 +169,7 @@ class AppSideDrawer extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 12),
                     child: Row(
                       children: [
-                        const AppIcon.outline(
+                        AppIcon.outline(
                           AppIcons.menuLogout,
                           size: 22,
                           color: AppColors.logOut,
@@ -378,7 +378,7 @@ class _DrawerRow extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 12),
           child: Row(
             children: [
-              AppIcon.outline(item.icon, size: 22, color: AppColors.moss600),
+              AppIcon.outline(item.icon, size: 22, color: AppColors.mossText),
               const SizedBox(width: 14),
               Expanded(
                 child: Text(

@@ -178,7 +178,7 @@ class _MyStartupsScreenState extends State<MyStartupsScreen> {
                             onAction: _vm.load,
                           )
                         else if (_vm.isLoading && !hasList)
-                          const Padding(
+                          Padding(
                             padding: EdgeInsets.only(top: 48),
                             child: Center(
                               child: SizedBox(
@@ -186,7 +186,7 @@ class _MyStartupsScreenState extends State<MyStartupsScreen> {
                                 height: 28,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 3,
-                                  color: AppColors.moss600,
+                                  color: AppColors.mossText,
                                 ),
                               ),
                             ),
@@ -297,11 +297,11 @@ class _EmptyIllustration extends StatelessWidget {
     return Container(
       width: 140,
       height: 140,
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         shape: BoxShape.circle,
         gradient: RadialGradient(
           stops: [0.55, 0.56],
-          colors: [Color(0xFFE6EFE7), Color(0xFFF2F7F3)],
+          colors: [AppColors.moss100, AppColors.moss50],
         ),
       ),
       child: Stack(
@@ -323,7 +323,7 @@ class _EmptyIllustration extends StatelessWidget {
               width: 84,
               height: 84,
               decoration: BoxDecoration(
-                color: AppColors.white,
+                color: AppColors.surface,
                 borderRadius: BorderRadius.circular(22),
                 boxShadow: const [
                   BoxShadow(
@@ -334,11 +334,11 @@ class _EmptyIllustration extends StatelessWidget {
                   ),
                 ],
               ),
-              child: const Center(
+              child: Center(
                 child: AppIcon.filled(
                   AppIcons.rocket,
                   size: 36,
-                  color: AppColors.moss600,
+                  color: AppColors.mossText,
                 ),
               ),
             ),

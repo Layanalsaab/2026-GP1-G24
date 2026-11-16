@@ -46,7 +46,7 @@ class AppChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final fg = selected ? AppColors.onDark : AppColors.moss600;
+    final fg = selected ? AppColors.onDark : AppColors.mossText;
     return Semantics(
       button: true,
       selected: selected,
@@ -66,7 +66,7 @@ class AppChip extends StatelessWidget {
               borderRadius: BorderRadius.circular(AppRadius.pill),
               border: Border.all(
                 color: selected
-                    ? AppColors.moss600
+                    ? AppColors.mossText
                     : (hovering && onTap != null
                           ? AppColors.borderStrong
                           : const Color(0x008C918D)),
@@ -212,7 +212,7 @@ class RemovableChip extends StatelessWidget {
                   style: AppText.sans(
                     size: 12.5,
                     weight: FontWeight.w600,
-                    color: AppColors.green,
+                    color: AppColors.greenText,
                   ),
                 ),
                 const SizedBox(width: 4),
@@ -220,7 +220,7 @@ class RemovableChip extends StatelessWidget {
                   AppIcons.closeStroke,
                   size: 14,
                   stroke: 2.4,
-                  color: AppColors.green,
+                  color: AppColors.greenText,
                 ),
               ],
             ),
@@ -287,7 +287,7 @@ class RangeControl extends StatelessWidget {
                         size: 13,
                         weight: FontWeight.w600,
                         color: i == selectedIndex
-                            ? AppColors.green
+                            ? AppColors.greenText
                             : AppColors.grey,
                       ),
                       child: Text(labels[i]),

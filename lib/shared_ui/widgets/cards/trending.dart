@@ -31,7 +31,7 @@ class TrendingBox extends StatelessWidget {
         children: [
           for (var i = 0; i < children.length; i++) ...[
             if (i > 0)
-              const ColoredBox(
+              ColoredBox(
                 color: AppColors.rowSeparator,
                 child: SizedBox(height: 1),
               ),
@@ -80,7 +80,7 @@ class TrendingRow extends StatelessWidget {
     final top = rank == 1;
     return PressSurface(
       onTap: onTap,
-      hoverColor: const Color(0xFFF7F5F0),
+      hoverColor: AppColors.pressFill,
       semanticLabel: '$rank, trending in $category, $name',
       child: Padding(
         padding: const EdgeInsets.all(18),

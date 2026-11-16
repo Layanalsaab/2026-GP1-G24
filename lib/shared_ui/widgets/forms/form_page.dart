@@ -92,10 +92,10 @@ class FooterLink extends StatefulWidget {
     required this.prefix,
     required this.linkLabel,
     required this.onTap,
-    this.linkColor = AppColors.green,
+    this.linkColor,
     this.linkWeight = FontWeight.w700,
     this.padding = EdgeInsets.zero,
-  });
+  }) : _moss = false;
 
   /// 600 moss600 link (choose-role "Log in").
   const FooterLink.moss({
@@ -104,13 +104,18 @@ class FooterLink extends StatefulWidget {
     required this.linkLabel,
     required this.onTap,
     this.padding = EdgeInsets.zero,
-  }) : linkColor = AppColors.moss600,
+  }) : linkColor = null,
+       _moss = true,
        linkWeight = FontWeight.w600;
 
   final String prefix;
   final String linkLabel;
   final VoidCallback? onTap;
-  final Color linkColor;
+
+  /// Null: the green text color (moss for [FooterLink.moss]); both follow the
+  /// theme.
+  final Color? linkColor;
+  final bool _moss;
   final FontWeight linkWeight;
 
   /// Around the text: `EdgeInsets.fromLTRB(24, 18, 24, 28)` below a
@@ -154,7 +159,11 @@ class _FooterLinkState extends State<FooterLink> {
                   text: widget.linkLabel,
                   recognizer: _tap,
                   style: TextStyle(
-                    color: widget.linkColor,
+                    color:
+                        widget.linkColor ??
+                        (widget._moss
+                            ? AppColors.mossText
+                            : AppColors.greenText),
                     fontWeight: widget.linkWeight,
                   ),
                 ),

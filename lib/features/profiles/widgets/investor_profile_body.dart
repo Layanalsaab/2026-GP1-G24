@@ -324,7 +324,7 @@ class _BackgroundGrid extends StatelessWidget {
                   vertical: 12,
                 ),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF2F7F3),
+                  color: AppColors.moss50,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Column(
@@ -341,7 +341,7 @@ class _BackgroundGrid extends StatelessWidget {
                       style: AppText.sans(
                         size: 17,
                         weight: FontWeight.w600,
-                        color: AppColors.moss600,
+                        color: AppColors.mossText,
                       ),
                     ),
                   ],
@@ -443,7 +443,7 @@ class _ContactBlock extends StatelessWidget {
           ),
           if (c.linkedin.trim().isNotEmpty)
             Container(
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 border: Border(top: BorderSide(color: AppColors.rowSeparator)),
               ),
               child: InfoRow(

@@ -14,7 +14,7 @@ class RunwayLine extends StatelessWidget {
   /// "About 6 months", "Cash-flow positive" or "No money left".
   final String value;
 
-  static const _iconGrey = Color(0xFFA3A7A2);
+  static Color get _iconGrey => AppColors.dimIcon;
 
   @override
   Widget build(BuildContext context) {
@@ -22,7 +22,7 @@ class RunwayLine extends StatelessWidget {
       padding: const EdgeInsets.only(top: 4, left: 12),
       child: Container(
         padding: const EdgeInsets.only(left: 10),
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           border: Border(left: BorderSide(color: AppColors.border, width: 1.5)),
         ),
         child: Semantics(
@@ -30,7 +30,7 @@ class RunwayLine extends StatelessWidget {
           excludeSemantics: true,
           child: Row(
             children: [
-              const AppIcon.filled(AppIcons.calc, size: 12, color: _iconGrey),
+              AppIcon.filled(AppIcons.calc, size: 12, color: _iconGrey),
               const SizedBox(width: 6),
               Text(
                 'Runway:',

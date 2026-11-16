@@ -62,18 +62,14 @@ class HomeSearchBar extends StatelessWidget {
         ),
         child: Row(
           children: [
-            const AppIcon.filled(
-              AppIcons.search,
-              size: 20,
-              color: AppColors.hint,
-            ),
+            AppIcon.filled(AppIcons.search, size: 20, color: AppColors.hint),
             Expanded(
               child: TextField(
                 controller: controller,
                 onChanged: onChanged,
                 onSubmitted: onSubmitted,
                 textInputAction: TextInputAction.search,
-                cursorColor: AppColors.moss600,
+                cursorColor: AppColors.mossText,
                 style: AppText.sans(size: 15),
                 decoration: InputDecoration(
                   hintText: hint,
@@ -132,10 +128,10 @@ class _SortButton extends StatelessWidget {
             color: active ? AppColors.mossChip : Colors.transparent,
             borderRadius: BorderRadius.circular(11),
           ),
-          child: const AppIcon.outline(
+          child: AppIcon.outline(
             AppIcons.sortArrows,
             size: 20,
-            color: AppColors.moss600,
+            color: AppColors.mossText,
           ),
         ),
       ),
@@ -179,10 +175,10 @@ class _FilterButton extends StatelessWidget {
                   color: active ? AppColors.mossChip : Colors.transparent,
                   borderRadius: BorderRadius.circular(11),
                 ),
-                child: const AppIcon.filled(
+                child: AppIcon.filled(
                   AppIcons.tune,
                   size: 20,
-                  color: AppColors.moss600,
+                  color: AppColors.mossText,
                 ),
               ),
               if (active)

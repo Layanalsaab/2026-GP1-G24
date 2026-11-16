@@ -49,7 +49,7 @@ class AppSheetScaffold extends StatelessWidget {
     this.title,
     this.tall = false,
     this.onClose,
-    this.color = AppColors.cream,
+    this.color,
   });
 
   final Widget child;
@@ -58,7 +58,9 @@ class AppSheetScaffold extends StatelessWidget {
 
   /// Defaults to popping the sheet.
   final VoidCallback? onClose;
-  final Color color;
+
+  /// The sheet fill: cream on light, the surface color on dark (null).
+  final Color? color;
 
   @override
   Widget build(BuildContext context) {
@@ -80,7 +82,9 @@ class AppSheetScaffold extends StatelessWidget {
         child: Container(
           width: double.infinity,
           decoration: BoxDecoration(
-            color: color,
+            color:
+                color ??
+                (AppColors.isDark ? AppColors.surface : AppColors.cream),
             borderRadius: const BorderRadius.vertical(
               top: Radius.circular(AppRadius.sheet),
             ),
@@ -154,7 +158,7 @@ class _SheetCloseButton extends StatelessWidget {
       child: Pressable(
         onTap: onTap,
         scale: 0.92,
-        child: const SizedBox(
+        child: SizedBox(
           width: 44,
           height: 44,
           child: Center(
@@ -264,7 +268,7 @@ class ConfirmSheet extends StatelessWidget {
               child: Container(
                 width: 60,
                 height: 60,
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   color: AppColors.errorFill,
                   shape: BoxShape.circle,
                 ),

@@ -106,7 +106,7 @@ class ToggleCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(10),
             ),
             child: Center(
-              child: AppIcon.filled(icon, size: 20, color: AppColors.moss600),
+              child: AppIcon.filled(icon, size: 20, color: AppColors.mossText),
             ),
           ),
           const SizedBox(width: 12),

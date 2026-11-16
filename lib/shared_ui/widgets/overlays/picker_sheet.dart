@@ -329,17 +329,17 @@ class PickerOptionRowState extends State<PickerOptionRow> {
                     label,
                     style: AppText.sans(
                       size: 16,
-                      color: selected ? AppColors.green : AppColors.ink,
+                      color: selected ? AppColors.greenText : AppColors.ink,
                       weight: selected ? FontWeight.w600 : FontWeight.w400,
                     ),
                   ),
                 ),
                 if (selected)
-                  const Pop(
+                  Pop(
                     child: AppIcon.filled(
                       AppIcons.check,
                       size: 20,
-                      color: AppColors.moss600,
+                      color: AppColors.mossText,
                     ),
                   ),
               ],
@@ -374,7 +374,7 @@ class PickerSearchField extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Padding(
+          Padding(
             padding: EdgeInsets.only(left: 14),
             child: AppIcon.filled(
               AppIcons.search,
@@ -388,7 +388,7 @@ class PickerSearchField extends StatelessWidget {
               onChanged: onChanged,
               textInputAction: TextInputAction.search,
               style: AppText.sans(size: 15),
-              cursorColor: AppColors.moss600,
+              cursorColor: AppColors.mossText,
               decoration: InputDecoration(
                 hintText: hint,
                 hintStyle: AppText.sans(size: 15, color: AppColors.placeholder),
@@ -454,7 +454,7 @@ class PickerOtherFieldState extends State<PickerOtherField> {
     final border = err
         ? AppColors.error
         : focused
-        ? AppColors.moss600
+        ? AppColors.mossText
         : AppColors.borderStrong;
     final ring = err
         ? const Color(0x1FB3261E)
@@ -478,7 +478,7 @@ class PickerOtherFieldState extends State<PickerOtherField> {
             onChanged: widget.onChanged,
             inputFormatters: [LengthLimitingTextInputFormatter(widget.max)],
             style: AppText.input,
-            cursorColor: AppColors.moss600,
+            cursorColor: AppColors.mossText,
             decoration: InputDecoration(
               hintText: widget.placeholder,
               hintStyle: AppText.placeholder,
@@ -500,7 +500,7 @@ class PickerOtherFieldState extends State<PickerOtherField> {
               Expanded(
                 child: Row(
                   children: [
-                    const AppIcon.filled(
+                    AppIcon.filled(
                       AppIcons.error,
                       size: 14,
                       color: AppColors.error,

@@ -41,10 +41,10 @@ class CheckboxCard extends StatelessWidget {
               ? const EdgeInsets.symmetric(horizontal: 14, vertical: 12)
               : const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           decoration: BoxDecoration(
-            color: checked ? AppColors.moss50 : AppColors.white,
+            color: checked ? AppColors.moss50 : AppColors.surface,
             borderRadius: BorderRadius.circular(compact ? 14 : 16),
             border: Border.all(
-              color: checked ? AppColors.moss600 : AppColors.cardBorder,
+              color: checked ? AppColors.mossText : AppColors.cardBorder,
               width: 1.5,
             ),
           ),
@@ -58,12 +58,10 @@ class CheckboxCard extends StatelessWidget {
                 width: 22,
                 height: 22,
                 decoration: BoxDecoration(
-                  color: checked ? AppColors.moss600 : AppColors.white,
+                  color: checked ? AppColors.moss600 : AppColors.surface,
                   borderRadius: BorderRadius.circular(6),
                   border: Border.all(
-                    color: checked
-                        ? AppColors.moss600
-                        : const Color(0xFF8C918D),
+                    color: checked ? AppColors.mossText : AppColors.hint,
                     width: 2,
                   ),
                 ),

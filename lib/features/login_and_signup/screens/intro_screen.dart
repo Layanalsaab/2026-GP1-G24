@@ -259,13 +259,13 @@ class _PageTwo extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const _Kicker(AuthStrings.intro2Kicker, AppColors.gold700),
+                _Kicker(AuthStrings.intro2Kicker, AppColors.gold700),
                 const SizedBox(height: 10),
                 Semantics(
                   header: true,
                   child: Text(
                     AuthStrings.intro2Headline,
-                    style: _headline(AppColors.green),
+                    style: _headline(AppColors.greenText),
                   ),
                 ),
                 const SizedBox(height: 14),
@@ -313,13 +313,13 @@ class _PageThree extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const _Kicker(AuthStrings.intro3Kicker, AppColors.green),
+                _Kicker(AuthStrings.intro3Kicker, AppColors.greenText),
                 const SizedBox(height: 10),
                 Semantics(
                   header: true,
                   child: Text(
                     AuthStrings.intro3Headline,
-                    style: _headline(AppColors.green),
+                    style: _headline(AppColors.greenText),
                   ),
                 ),
                 const SizedBox(height: 14),

@@ -228,7 +228,7 @@ class _TicketCard extends StatelessWidget {
                         style: AppText.sans(
                           size: 14,
                           weight: FontWeight.w600,
-                          color: AppColors.moss600,
+                          color: AppColors.mossText,
                         ),
                       ),
                     ],
@@ -475,7 +475,7 @@ class _MatchCard extends StatelessWidget {
                             '${match.percent}% match',
                             style: AppText.sans(
                               size: 12.5,
-                              color: AppColors.moss600,
+                              color: AppColors.mossText,
                               weight: FontWeight.w700,
                             ),
                           ),
@@ -483,11 +483,11 @@ class _MatchCard extends StatelessWidget {
                       ],
                     ),
                   ),
-                  const AppIcon.outline(
+                  AppIcon.outline(
                     AppIcons.rowChevron,
                     size: 20,
                     stroke: 2.2,
-                    color: Color(0xFF9AA19B),
+                    color: AppColors.chevron,
                   ),
                 ],
               ),

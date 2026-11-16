@@ -108,7 +108,7 @@ class _PersonCard extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: AppColors.white,
+            color: AppColors.surface,
             borderRadius: BorderRadius.circular(14),
             border: Border.all(color: AppColors.border),
           ),
@@ -141,7 +141,7 @@ class _PersonCard extends StatelessWidget {
                   ],
                 ),
               ),
-              const AppIcon.filled(
+              AppIcon.filled(
                 AppIcons.chevRight,
                 size: 20,
                 color: AppColors.chevron,
@@ -174,7 +174,7 @@ class _InviteCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(14),
         onTap: onTap,
         child: CustomPaint(
-          painter: DashedBorderPainter(color: AppColors.moss600, radius: 14),
+          painter: DashedBorderPainter(color: AppColors.mossText, radius: 14),
           child: Padding(
             padding: const EdgeInsets.all(12),
             child: Row(
@@ -187,10 +187,10 @@ class _InviteCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   alignment: Alignment.center,
-                  child: const AppIcon.filled(
+                  child: AppIcon.filled(
                     AppIcons.mail,
                     size: 20,
-                    color: AppColors.moss600,
+                    color: AppColors.mossText,
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -204,7 +204,7 @@ class _InviteCard extends StatelessWidget {
                           size: 15,
                           height: 20,
                           weight: FontWeight.w600,
-                          color: AppColors.moss600,
+                          color: AppColors.mossText,
                         ),
                       ),
                       const SizedBox(height: 2),
@@ -215,10 +215,10 @@ class _InviteCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                const AppIcon.filled(
+                AppIcon.filled(
                   AppIcons.chevRight,
                   size: 20,
-                  color: AppColors.moss600,
+                  color: AppColors.mossText,
                 ),
               ],
             ),
@@ -309,7 +309,7 @@ class _StayCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = danger ? AppColors.error : AppColors.moss600;
+    final color = danger ? AppColors.error : AppColors.mossText;
     return Semantics(
       button: true,
       label: '$title, $text',
@@ -321,7 +321,7 @@ class _StayCard extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: AppColors.white,
+            color: AppColors.surface,
             borderRadius: BorderRadius.circular(14),
             border: Border.all(color: AppColors.border),
           ),
@@ -359,7 +359,7 @@ class _StayCard extends StatelessWidget {
                   ],
                 ),
               ),
-              const AppIcon.filled(
+              AppIcon.filled(
                 AppIcons.chevRight,
                 size: 20,
                 color: AppColors.chevron,
@@ -444,15 +444,15 @@ class _OwnerEmailSheetState extends State<_OwnerEmailSheet> {
                 child: Container(
                   width: 60,
                   height: 60,
-                  decoration: const BoxDecoration(
+                  decoration: BoxDecoration(
                     color: AppColors.moss100,
                     shape: BoxShape.circle,
                   ),
                   alignment: Alignment.center,
-                  child: const AppIcon.filled(
+                  child: AppIcon.filled(
                     AppIcons.mail,
                     size: 28,
-                    color: AppColors.moss600,
+                    color: AppColors.mossText,
                   ),
                 ),
               ),

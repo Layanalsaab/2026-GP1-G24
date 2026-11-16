@@ -412,7 +412,7 @@ class IntroCards extends StatelessWidget {
               borderRadius: BorderRadius.circular(10),
             ),
             alignment: Alignment.center,
-            child: const AppIcon.filled(
+            child: AppIcon.filled(
               _flag,
               size: 18,
               color: AppColors.tagGoldText,
@@ -499,10 +499,10 @@ class IntroCards extends StatelessWidget {
               shape: BoxShape.circle,
             ),
             alignment: Alignment.center,
-            child: const AppIcon.filled(
+            child: AppIcon.filled(
               _sparkle,
               size: 20,
-              color: AppColors.green,
+              color: AppColors.greenText,
             ),
           ),
           const SizedBox(width: 14),
@@ -513,7 +513,7 @@ class IntroCards extends StatelessWidget {
                 Container(
                   height: 7,
                   decoration: BoxDecoration(
-                    color: AppColors.white,
+                    color: AppColors.surface,
                     borderRadius: BorderRadius.circular(4),
                   ),
                 ),
@@ -555,19 +555,19 @@ class IntroCards extends StatelessWidget {
           child: Stack(
             clipBehavior: Clip.none,
             children: [
-              const Positioned(
+              Positioned(
                 left: 44,
                 top: 30,
                 child: Twinkle(
                   child: AppIcon.outline(
                     _sparkle,
                     size: 22,
-                    color: AppColors.green,
+                    color: AppColors.greenText,
                     stroke: 1.5,
                   ),
                 ),
               ),
-              const Positioned(
+              Positioned(
                 right: 50,
                 top: 16,
                 child: Twinkle(
@@ -575,7 +575,7 @@ class IntroCards extends StatelessWidget {
                   child: AppIcon.filled(
                     _sparkle,
                     size: 18,
-                    color: AppColors.green,
+                    color: AppColors.greenText,
                   ),
                 ),
               ),

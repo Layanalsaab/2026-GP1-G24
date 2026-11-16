@@ -31,7 +31,7 @@ class ProfileCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (bg, fg) = switch (tone) {
-      ProfileIconTone.moss => (AppColors.moss100, AppColors.moss600),
+      ProfileIconTone.moss => (AppColors.moss100, AppColors.mossText),
       ProfileIconTone.gold => (AppColors.tagGoldFill, AppColors.tagGoldText),
       ProfileIconTone.red => (AppColors.errorFill, AppColors.error),
     };
@@ -162,7 +162,7 @@ class ProfileSection extends StatelessWidget {
                         actionLabel!,
                         style: AppText.sans(
                           size: 13.5,
-                          color: AppColors.moss600,
+                          color: AppColors.mossText,
                           weight: FontWeight.w600,
                         ),
                       ),
@@ -213,7 +213,7 @@ class InfoRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 10),
       decoration: BoxDecoration(
         border: showDivider
-            ? const Border(top: BorderSide(color: AppColors.rowSeparator))
+            ? Border(top: BorderSide(color: AppColors.rowSeparator))
             : null,
       ),
       child: Row(
@@ -347,12 +347,8 @@ class ListRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final chevron = _card
-        ? const AppIcon.filled(
-            AppIcons.chevRight,
-            size: 22,
-            color: AppColors.hint,
-          )
-        : const AppIcon.outline(
+        ? AppIcon.filled(AppIcons.chevRight, size: 22, color: AppColors.hint)
+        : AppIcon.outline(
             AppIcons.rowChevron,
             size: 18,
             stroke: 2,
@@ -361,13 +357,13 @@ class ListRow extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         border: showDivider
-            ? const Border(top: BorderSide(color: AppColors.rowSeparator))
+            ? Border(top: BorderSide(color: AppColors.rowSeparator))
             : null,
       ),
       child: PressSurface(
         onTap: onTap,
-        pressedColor: const Color(0xFFF7F5F0),
-        hoverColor: const Color(0xFFF7F5F0),
+        pressedColor: AppColors.pressFill,
+        hoverColor: AppColors.pressFill,
         semanticLabel: subtitle == null
             ? title
             : '$title, $subtitle${(city ?? '').isEmpty ? '' : ', $city'}',
@@ -456,11 +452,7 @@ class StatDelta extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const AppIcon.filled(
-            AppIcons.trend,
-            size: 11,
-            color: AppColors.deltaText,
-          ),
+          AppIcon.filled(AppIcons.trend, size: 11, color: AppColors.deltaText),
           const SizedBox(width: 2),
           Text(
             text,

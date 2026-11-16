@@ -152,16 +152,16 @@ class ContactVisibilityPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = isPublic ? AppColors.moss600 : AppColors.grey;
+    final color = isPublic ? AppColors.mossText : AppColors.grey;
     return Container(
       height: 22,
       padding: const EdgeInsets.symmetric(horizontal: 9),
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: isPublic ? const Color(0xFFEEF4EF) : const Color(0xFFF0EDE6),
+        color: isPublic ? AppColors.mossChip : AppColors.rowSeparator,
         borderRadius: BorderRadius.circular(999),
         border: Border.all(
-          color: isPublic ? const Color(0xFFCFE0D3) : const Color(0xFFF0EDE6),
+          color: isPublic ? AppColors.mossBorder : AppColors.rowSeparator,
         ),
       ),
       child: Text(
@@ -182,13 +182,13 @@ class _PrivateTag extends StatelessWidget {
       height: 22,
       padding: const EdgeInsets.symmetric(horizontal: 9),
       decoration: BoxDecoration(
-        color: const Color(0xFFF0EDE6),
+        color: AppColors.rowSeparator,
         borderRadius: BorderRadius.circular(999),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const AppIcon.filled(AppIcons.lock, size: 12, color: AppColors.grey),
+          AppIcon.filled(AppIcons.lock, size: 12, color: AppColors.grey),
           const SizedBox(width: 4),
           Text(
             ProfileStrings.privateTag,
@@ -224,7 +224,7 @@ class _RowShell extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 10),
       decoration: BoxDecoration(
         border: showDivider
-            ? const Border(top: BorderSide(color: AppColors.rowSeparator))
+            ? Border(top: BorderSide(color: AppColors.rowSeparator))
             : null,
       ),
       child: Row(

@@ -200,10 +200,10 @@ class _AppTextFieldState extends State<AppTextField> {
       border = AppColors.error;
       ring = AppColors.errorRing;
     } else if (focused) {
-      border = AppColors.moss600;
+      border = AppColors.mossText;
       ring = AppColors.focusRing;
     } else if (showCheck) {
-      border = AppColors.moss600;
+      border = AppColors.mossText;
       ring = const Color(0x00000000);
     } else {
       border = AppColors.borderStrong;
@@ -246,7 +246,7 @@ class _AppTextFieldState extends State<AppTextField> {
         minLines: w.multiline ? w.rows : 1,
         maxLines: w.multiline ? w.rows : 1,
         style: textStyle,
-        cursorColor: AppColors.moss600,
+        cursorColor: AppColors.mossText,
         decoration: InputDecoration(
           isCollapsed: true,
           border: InputBorder.none,
@@ -289,7 +289,7 @@ class _AppTextFieldState extends State<AppTextField> {
         SizedBox(
           height: minHeight - 2,
           child: DecoratedBox(
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               border: Border(left: BorderSide(color: AppColors.border)),
             ),
             child: Padding(
@@ -336,7 +336,7 @@ class _AppTextFieldState extends State<AppTextField> {
               child: AppIcon.filled(
                 AppIcons.check,
                 size: 20,
-                color: AppColors.moss600,
+                color: AppColors.mossText,
               ),
             ),
           ),

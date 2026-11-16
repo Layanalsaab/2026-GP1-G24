@@ -15,7 +15,7 @@ class AppText {
   /// converted to Flutter's multiplier.
   static TextStyle sans({
     required double size,
-    Color color = AppColors.ink,
+    Color? color,
     FontWeight weight = FontWeight.w400,
     double? height,
     double? letterSpacing,
@@ -23,7 +23,7 @@ class AppText {
   }) => GoogleFonts.inter(
     fontSize: size,
     fontWeight: weight,
-    color: color,
+    color: color ?? AppColors.ink,
     height: height == null ? null : height / size,
     letterSpacing: letterSpacing,
     fontFeatures: tabular ? const [FontFeature.tabularFigures()] : null,
@@ -33,11 +33,11 @@ class AppText {
   static TextStyle wordmark({
     required double size,
     required double height,
-    Color color = AppColors.green,
+    Color? color,
   }) => GoogleFonts.sourceSerif4(
     fontSize: size,
     fontWeight: FontWeight.w700,
-    color: color,
+    color: color ?? AppColors.greenText,
     height: height / size,
   );
 
@@ -169,11 +169,11 @@ class AppText {
       sans(size: 14, color: AppColors.onDark, weight: FontWeight.w600);
 
   static TextStyle get toast =>
-      sans(size: 14, color: AppColors.onDark, height: 20);
+      sans(size: 14, color: AppColors.toastText, height: 20);
 
   static TextStyle get link => sans(
     size: 14,
-    color: AppColors.moss600,
+    color: AppColors.mossText,
     weight: FontWeight.w600,
     height: 20,
   );
@@ -185,5 +185,5 @@ class AppText {
 
   /// Card tag chip (12/600 moss).
   static TextStyle get tag =>
-      sans(size: 12, color: AppColors.moss600, weight: FontWeight.w600);
+      sans(size: 12, color: AppColors.mossText, weight: FontWeight.w600);
 }

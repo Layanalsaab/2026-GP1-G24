@@ -121,7 +121,9 @@ class _InviteScreenState extends State<InviteScreen> {
       if (accept) {
         AppToast.showGlobal(
           invitation.isOwner
-              ? FounderToolsStrings.noticeNewFounderTitle(invitation.startupName)
+              ? FounderToolsStrings.noticeNewFounderTitle(
+                  invitation.startupName,
+                )
               : 'You’ve been added to ${invitation.startupName}',
         );
       }
@@ -146,7 +148,7 @@ class _InviteScreenState extends State<InviteScreen> {
             child: Container(
               padding: const EdgeInsets.fromLTRB(22, 28, 22, 22),
               decoration: BoxDecoration(
-                color: AppColors.white,
+                color: AppColors.surface,
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(color: AppColors.cardBorder),
               ),

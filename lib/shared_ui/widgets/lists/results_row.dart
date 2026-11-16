@@ -84,7 +84,7 @@ class ResultsRow extends StatelessWidget {
                         'Clear all',
                         style: AppText.sans(
                           size: 13,
-                          color: AppColors.moss600,
+                          color: AppColors.mossText,
                           weight: FontWeight.w600,
                         ),
                       ),
@@ -120,7 +120,7 @@ class _RemovableChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final fg = chip.quoted ? AppColors.green : AppColors.white;
+    final fg = chip.quoted ? AppColors.greenText : AppColors.white;
     return Semantics(
       button: true,
       label: 'Remove filter ${chip.label}',

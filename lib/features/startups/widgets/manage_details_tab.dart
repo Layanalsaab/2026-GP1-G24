@@ -120,7 +120,7 @@ class ManageDetailsTab extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           for (var i = 0; i < titles.length; i++) ...[
-            if (i > 0) const Divider(height: 1, color: AppColors.dividerSoft),
+            if (i > 0) Divider(height: 1, color: AppColors.dividerSoft),
             _SectionRow(
               icon: _icons[i],
               gold: i.isOdd,
@@ -232,7 +232,9 @@ class _SectionRow extends StatelessWidget {
                       child: AppIcon.filled(
                         icon,
                         size: 20,
-                        color: gold ? AppColors.tagGoldText : AppColors.moss600,
+                        color: gold
+                            ? AppColors.tagGoldText
+                            : AppColors.mossText,
                       ),
                     ),
                   ),
@@ -279,7 +281,7 @@ class _SectionRow extends StatelessWidget {
                     turns: open ? 0.5 : 0,
                     duration: dur,
                     curve: Curves.ease,
-                    child: const AppIcon.filled(
+                    child: AppIcon.filled(
                       AppIcons.chevDown,
                       size: 24,
                       color: AppColors.grey,
@@ -334,10 +336,10 @@ class _EditPill extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const AppIcon.outline(
+              AppIcon.outline(
                 AppIcons.pencil,
                 size: 14,
-                color: AppColors.moss600,
+                color: AppColors.mossText,
               ),
               const SizedBox(width: 6),
               Text(
@@ -345,7 +347,7 @@ class _EditPill extends StatelessWidget {
                 style: AppText.sans(
                   size: 14,
                   weight: FontWeight.w600,
-                  color: AppColors.moss600,
+                  color: AppColors.mossText,
                 ),
               ),
             ],
@@ -541,7 +543,7 @@ class _MarketState extends State<_Market> {
                     size: 28,
                     height: 34,
                     weight: FontWeight.w700,
-                    color: AppColors.green,
+                    color: AppColors.greenText,
                   ),
                 ),
                 Text(
@@ -733,7 +735,7 @@ class _MemberCard extends StatelessWidget {
     final card = Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFFF7F4EC),
+        color: AppColors.boxFill,
         borderRadius: BorderRadius.circular(14),
       ),
       child: Row(

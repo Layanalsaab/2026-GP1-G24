@@ -16,6 +16,17 @@ class BrandLogo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // On a dark page the dark-green logo would vanish: use the light logo
+    // (the one of the green headers), with no blending.
+    if (AppColors.isDark) {
+      return Image.asset(
+        'assets/images/logo_small.png',
+        width: width,
+        height: height,
+        fit: BoxFit.contain,
+        semanticLabel: 'Start.sa logo',
+      );
+    }
     return Image.asset(
       'assets/images/logo_full.png',
       width: width,

@@ -44,7 +44,7 @@ class SettingsScreen extends StatelessWidget {
               12,
               0,
             ),
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               border: Border(bottom: BorderSide(color: AppColors.border)),
             ),
             child: SizedBox(
@@ -120,7 +120,7 @@ class SettingsScreen extends StatelessWidget {
                           greenHeader: true,
                         ),
                       ),
-                      const Padding(
+                      Padding(
                         padding: EdgeInsets.symmetric(horizontal: 16),
                         child: Divider(
                           height: 1,
@@ -218,7 +218,7 @@ class _SettingsRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return PressSurface(
       onTap: onTap,
-      hoverColor: const Color(0xFFF2F7F3),
+      hoverColor: AppColors.moss50,
       borderRadius: BorderRadius.circular(18),
       semanticLabel: subtitle == null ? title : '$title, $subtitle',
       child: Padding(
@@ -236,7 +236,7 @@ class _SettingsRow extends StatelessWidget {
               child: AppIcon.filled(
                 icon,
                 size: 20,
-                color: destructive ? AppColors.error : AppColors.green,
+                color: destructive ? AppColors.error : AppColors.greenText,
               ),
             ),
             const SizedBox(width: 14),
@@ -262,7 +262,7 @@ class _SettingsRow extends StatelessWidget {
             ),
             if (trailing != null) ...[const SizedBox(width: 8), trailing!],
             if (chevron)
-              const AppIcon.filled(
+              AppIcon.filled(
                 AppIcons.chevRight,
                 size: 22,
                 color: AppColors.grey,

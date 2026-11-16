@@ -99,9 +99,9 @@ class _SegmentedSwitchState extends State<SegmentedSwitch> {
                                 size: 14.5,
                                 weight: FontWeight.w600,
                                 color: i == selectedIndex
-                                    ? AppColors.green
+                                    ? AppColors.greenText
                                     : (_hover == i
-                                          ? AppColors.moss600
+                                          ? AppColors.mossText
                                           : AppColors.metaText),
                               ),
                               child: Text(labels[i]),

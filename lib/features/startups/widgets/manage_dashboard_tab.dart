@@ -171,7 +171,7 @@ class ManageDashboardTab extends StatelessWidget {
                                     ],
                                   ),
                                 ),
-                                const AppIcon.filled(
+                                AppIcon.filled(
                                   AppIcons.chevRight,
                                   size: 22,
                                   color: AppColors.hint,
@@ -220,7 +220,7 @@ class _CalculatorCard extends StatelessWidget {
                 color: AppColors.tagGoldFill,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Center(
+              child: Center(
                 child: AppIcon.filled(
                   AppIcons.calc,
                   size: 20,
@@ -235,11 +235,7 @@ class _CalculatorCard extends StatelessWidget {
                 style: AppText.sans(size: 16.5, weight: FontWeight.w600),
               ),
             ),
-            const AppIcon.filled(
-              AppIcons.chevRight,
-              size: 22,
-              color: AppColors.hint,
-            ),
+            AppIcon.filled(AppIcons.chevRight, size: 22, color: AppColors.hint),
           ],
         ),
       ),

@@ -63,9 +63,9 @@ class HeaderPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final fill = active ? const Color(0xFFF3E6C4) : AppColors.white;
-    final text = active ? AppColors.green : AppColors.ink;
-    final iconColor = active ? AppColors.green : AppColors.grey;
+    final fill = active ? AppColors.goldFillSoft : AppColors.surface;
+    final text = active ? AppColors.greenText : AppColors.ink;
+    final iconColor = active ? AppColors.greenText : AppColors.grey;
     return Semantics(
       button: true,
       label: label,

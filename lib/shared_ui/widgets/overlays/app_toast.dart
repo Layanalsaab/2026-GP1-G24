@@ -186,7 +186,7 @@ class _ToastViewState extends State<_ToastView>
                   vertical: 13,
                 ),
                 decoration: BoxDecoration(
-                  color: AppColors.green,
+                  color: AppColors.toastFill,
                   borderRadius: BorderRadius.circular(14),
                   boxShadow: AppShadow.toast,
                 ),

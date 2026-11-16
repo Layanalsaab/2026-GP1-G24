@@ -145,11 +145,11 @@ class DetailBackLink extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const AppIcon.outline(
+                AppIcon.outline(
                   AppIcons.profileBack,
                   size: 20,
                   stroke: 2.2,
-                  color: AppColors.moss600,
+                  color: AppColors.mossText,
                 ),
                 const SizedBox(width: 4),
                 Text(
@@ -157,7 +157,7 @@ class DetailBackLink extends StatelessWidget {
                   style: AppText.sans(
                     size: 15,
                     weight: FontWeight.w600,
-                    color: AppColors.moss600,
+                    color: AppColors.mossText,
                   ),
                 ),
               ],
@@ -172,11 +172,7 @@ class DetailBackLink extends StatelessWidget {
 /// A section heading (19 bold) with its grey 13 line under it; also used by
 /// the Investment Wallet.
 class SectionTitle extends StatelessWidget {
-  const SectionTitle({
-    super.key,
-    required this.title,
-    required this.subtitle,
-  });
+  const SectionTitle({super.key, required this.title, required this.subtitle});
 
   final String title;
   final String subtitle;
@@ -193,10 +189,7 @@ class SectionTitle extends StatelessWidget {
             style: AppText.sans(size: 19, height: 26, weight: FontWeight.w700),
           ),
         ),
-        Text(
-          subtitle,
-          style: AppText.sans(size: 13, color: const Color(0xFF8C918D)),
-        ),
+        Text(subtitle, style: AppText.sans(size: 13, color: AppColors.hint)),
       ],
     );
   }
@@ -252,11 +245,17 @@ class _RoundCard extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: InfoBox(label: 'Amount', value: Formatters.sar(r.amount)),
+                child: InfoBox(
+                  label: 'Amount',
+                  value: Formatters.sar(r.amount),
+                ),
               ),
               const SizedBox(width: 10),
               Expanded(
-                child: InfoBox(label: 'Raised', value: Formatters.sar(r.raised)),
+                child: InfoBox(
+                  label: 'Raised',
+                  value: Formatters.sar(r.raised),
+                ),
               ),
             ],
           ),
@@ -301,10 +300,7 @@ class InfoBox extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            label,
-            style: AppText.sans(size: 12.5, color: const Color(0xFF8C918D)),
-          ),
+          Text(label, style: AppText.sans(size: 12.5, color: AppColors.hint)),
           const SizedBox(height: 2),
           Text(
             value,
@@ -333,7 +329,7 @@ class DetailProgress extends StatelessWidget {
         height: 8,
         child: Stack(
           children: [
-            const Positioned.fill(child: ColoredBox(color: Color(0xFFE9E6DF))),
+            Positioned.fill(child: ColoredBox(color: AppColors.segTrack)),
             Positioned.fill(
               child: FractionallySizedBox(
                 alignment: Alignment.centerLeft,
@@ -351,7 +347,8 @@ class DetailProgress extends StatelessWidget {
 // ------------------------------------------------------------- investors
 
 /// The style of the "Title · [pin] City" line of an investor.
-final _subStyle = AppText.sans(size: 13.5, height: 19, color: AppColors.grey);
+TextStyle get _subStyle =>
+    AppText.sans(size: 13.5, height: 19, color: AppColors.grey);
 
 class _Investors extends StatefulWidget {
   const _Investors({required this.round});
@@ -643,7 +640,7 @@ class _PersonTile extends StatelessWidget {
                         '$match% match',
                         style: AppText.sans(
                           size: 12.5,
-                          color: AppColors.moss600,
+                          color: AppColors.mossText,
                           weight: FontWeight.w700,
                         ),
                       ),
@@ -653,11 +650,11 @@ class _PersonTile extends StatelessWidget {
               ),
             ),
             if (onTap != null)
-              const AppIcon.outline(
+              AppIcon.outline(
                 AppIcons.rowChevron,
                 size: 20,
                 stroke: 2.2,
-                color: Color(0xFF9AA19B),
+                color: AppColors.chevron,
               ),
           ],
         ),

@@ -33,7 +33,7 @@ class AppPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (fill, color) = switch (tone) {
-      AppPillTone.moss => (AppColors.moss100, AppColors.green),
+      AppPillTone.moss => (AppColors.moss100, AppColors.greenText),
       AppPillTone.gold => (AppColors.tagGoldFill, AppColors.tagGoldText),
       AppPillTone.grey => (AppColors.mutedFill, AppColors.grey),
     };

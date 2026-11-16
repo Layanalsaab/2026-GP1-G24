@@ -51,7 +51,7 @@ class ManageSettingsTab extends StatelessWidget {
         _SettingCard(
           icon: AppIcons.globe,
           fill: AppColors.moss50,
-          color: AppColors.moss600,
+          color: AppColors.mossText,
           // The title follows the switch: "Public startup" / "Private
           // startup".
           title: isPublic
@@ -237,7 +237,7 @@ class ManageLeaveSection extends StatelessWidget {
         _SettingCard(
           icon: AppIcons.mail,
           fill: AppColors.moss50,
-          color: AppColors.moss600,
+          color: AppColors.mossText,
           title: FounderToolsStrings.resendEmail,
           text: FounderToolsStrings.ownerResendText(ownerInviteDaysLeft),
           onTap: onResendOwnerInvite ?? () {},
@@ -245,7 +245,7 @@ class ManageLeaveSection extends StatelessWidget {
         _SettingCard(
           icon: AppIcons.people,
           fill: AppColors.moss50,
-          color: AppColors.moss600,
+          color: AppColors.mossText,
           title: FounderToolsStrings.cancelInvitation,
           text: FounderToolsStrings.ownerWaiting(
             pendingOwnerEmail!,

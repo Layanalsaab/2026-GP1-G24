@@ -72,7 +72,7 @@ class RoleTag extends StatelessWidget {
                   size: 11,
                   height: 18,
                   weight: FontWeight.w600,
-                  color: warn ? AppColors.error : const Color(0xFF5B625D),
+                  color: warn ? AppColors.error : AppColors.grey,
                 ),
               ),
             ),
@@ -81,12 +81,9 @@ class RoleTag extends StatelessWidget {
       );
     }
     final (fill, color) = switch (role!) {
-      StartupRole.founder => (const Color(0xFFF6EEDB), const Color(0xFF7A5A12)),
-      StartupRole.coFounder => (
-        const Color(0xFFE7EEF8),
-        const Color(0xFF2B4F80),
-      ),
-      StartupRole.member => (const Color(0xFFE6EFE7), const Color(0xFF2F5D3A)),
+      StartupRole.founder => (AppColors.tagGoldFill, AppColors.tagGoldText),
+      StartupRole.coFounder => (AppColors.tagBlueFill, AppColors.tagBlueText),
+      StartupRole.member => (AppColors.moss100, AppColors.mossText),
     };
     return Semantics(
       label: label ?? labelOf(role!),
@@ -142,7 +139,7 @@ class GreyTag extends StatelessWidget {
         height: 20,
         padding: const EdgeInsets.symmetric(horizontal: 8),
         decoration: BoxDecoration(
-          color: const Color(0xFFEDEEEB),
+          color: AppColors.invitedFill,
           borderRadius: BorderRadius.circular(999),
         ),
         child: Center(
@@ -153,7 +150,7 @@ class GreyTag extends StatelessWidget {
               size: 11,
               height: 20,
               weight: FontWeight.w600,
-              color: const Color(0xFF5B625D),
+              color: AppColors.grey,
             ),
           ),
         ),
@@ -171,7 +168,7 @@ class _DashedPillPainter extends CustomPainter {
     );
     final path = Path()..addRRect(rrect.deflate(0.5));
     final paint = Paint()
-      ..color = const Color(0xFFB9BDB8)
+      ..color = AppColors.dashGrey
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1;
     for (final m in path.computeMetrics()) {

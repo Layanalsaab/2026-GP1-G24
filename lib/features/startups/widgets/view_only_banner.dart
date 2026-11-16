@@ -44,7 +44,7 @@ class ViewOnlyBanner extends StatelessWidget {
               width: 36,
               height: 36,
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: AppColors.surface,
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Center(

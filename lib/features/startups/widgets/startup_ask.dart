@@ -81,7 +81,7 @@ class AskRow extends StatelessWidget {
               child: AppIcon.filled(
                 icon,
                 size: 18,
-                color: selected ? AppColors.moss600 : AppColors.hint,
+                color: selected ? AppColors.mossText : AppColors.hint,
               ),
             ),
           ),
@@ -115,7 +115,7 @@ class AskRow extends StatelessWidget {
               style: AppText.sans(
                 size: 13,
                 weight: FontWeight.w600,
-                color: selected ? AppColors.moss600 : AppColors.hint,
+                color: selected ? AppColors.mossText : AppColors.hint,
               ),
             ),
         ],
@@ -126,7 +126,7 @@ class AskRow extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppColors.moss50,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.moss600.withValues(alpha: 0.5)),
+          border: Border.all(color: AppColors.mossText.withValues(alpha: 0.5)),
         ),
         child: content,
       );

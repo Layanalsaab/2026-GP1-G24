@@ -604,7 +604,7 @@ class _Ask extends StatelessWidget {
                   child: Container(
                     margin: const EdgeInsets.only(left: 12),
                     padding: const EdgeInsets.only(left: 14),
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                       border: Border(
                         left: BorderSide(color: AppColors.moss100, width: 2),
                       ),

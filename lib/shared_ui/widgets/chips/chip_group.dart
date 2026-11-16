@@ -122,7 +122,7 @@ class OtherWriteIn extends StatelessWidget {
             prefixStyle: AppText.sans(
               size: 14,
               weight: FontWeight.w600,
-              color: AppColors.moss600,
+              color: AppColors.mossText,
             ),
             maxLength: max,
             hasError: hasError,

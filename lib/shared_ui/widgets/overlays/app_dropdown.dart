@@ -275,7 +275,7 @@ class _HoverableState extends State<_Hoverable> {
 }
 
 /// Row hover fill of the dropdown menus (`#F6F4EF`).
-const Color _rowHover = Color(0xFFF6F4EF);
+Color get _rowHover => AppColors.profileBg;
 
 /// The dropdown caret (`M7 10l5 5 5-5z`, filled) that rotates 180 degrees in
 /// 200 ms when [open].
@@ -283,12 +283,12 @@ class DropdownCaret extends StatelessWidget {
   const DropdownCaret({
     super.key,
     required this.open,
-    this.color = AppColors.ink,
+    this.color,
     this.size = 20,
   });
 
   final bool open;
-  final Color color;
+  final Color? color;
   final double size;
 
   @override
@@ -297,7 +297,11 @@ class DropdownCaret extends StatelessWidget {
       turns: open ? 0.5 : 0,
       duration: Motion.dur(context, const Duration(milliseconds: 200)),
       curve: Curves.ease,
-      child: AppIcon.filled('M7 10l5 5 5-5z', size: size, color: color),
+      child: AppIcon.filled(
+        'M7 10l5 5 5-5z',
+        size: size,
+        color: color ?? AppColors.ink,
+      ),
     );
   }
 }
@@ -343,7 +347,7 @@ class DropdownOption extends StatelessWidget {
               label,
               style: AppText.sans(
                 size: 14,
-                color: selected ? AppColors.moss600 : AppColors.ink,
+                color: selected ? AppColors.mossText : AppColors.ink,
                 weight: selected ? FontWeight.w700 : FontWeight.w400,
               ),
             ),
@@ -456,7 +460,7 @@ class MatchesForDropdown extends StatelessWidget {
             color: AppColors.surface,
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
-              color: hover ? const Color(0xFFB9C8BD) : AppColors.border,
+              color: hover ? AppColors.hoverBorderGreen : AppColors.border,
             ),
             boxShadow: const [
               BoxShadow(
@@ -489,7 +493,7 @@ class MatchesForDropdown extends StatelessWidget {
                   ],
                 ),
               ),
-              DropdownCaret(open: open, color: AppColors.moss600),
+              DropdownCaret(open: open, color: AppColors.mossText),
             ],
           ),
         ),
@@ -565,10 +569,10 @@ class MatchesForDropdown extends StatelessWidget {
                           ),
                         ),
                         if (i == selectedIndex)
-                          const AppIcon.filled(
+                          AppIcon.filled(
                             AppIcons.check,
                             size: 18,
-                            color: AppColors.moss600,
+                            color: AppColors.mossText,
                           ),
                       ],
                     ),

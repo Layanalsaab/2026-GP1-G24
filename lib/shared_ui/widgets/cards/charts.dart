@@ -73,7 +73,12 @@ class RevenueBars extends StatelessWidget {
                               end: Alignment.bottomCenter,
                               colors: i == n - 1
                                   ? const [Color(0xFFD8B864), AppColors.gold]
-                                  : const [AppColors.moss600, AppColors.green],
+                                  : [
+                                      AppColors.moss600,
+                                      AppColors.isDark
+                                          ? AppColors.moss400
+                                          : AppColors.green,
+                                    ],
                             ),
                           ),
                         ),
@@ -202,7 +207,7 @@ class _Dot extends StatelessWidget {
         shape: BoxShape.circle,
         color: switch (level) {
           1 => AppColors.mossChip,
-          2 => const Color(0xFFD5E6D9),
+          2 => AppColors.chartTrack,
           _ => AppColors.moss600,
         },
         border: level == 1 ? Border.all(color: AppColors.onGreenMuted) : null,
@@ -224,7 +229,7 @@ class _CirclesPainter extends CustomPainter {
     canvas.drawCircle(
       const Offset(75, 92),
       52,
-      Paint()..color = const Color(0xFFD5E6D9),
+      Paint()..color = AppColors.chartTrack,
     );
     canvas.drawCircle(
       const Offset(75, 112),

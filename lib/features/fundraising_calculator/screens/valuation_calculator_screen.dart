@@ -555,9 +555,7 @@ class _OwnershipCardState extends State<_OwnershipCard> {
               decoration: BoxDecoration(
                 border: i == 0
                     ? null
-                    : const Border(
-                        top: BorderSide(color: AppColors.rowSeparator),
-                      ),
+                    : Border(top: BorderSide(color: AppColors.rowSeparator)),
               ),
               child: Row(
                 children: [

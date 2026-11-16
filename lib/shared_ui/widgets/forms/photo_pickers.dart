@@ -51,7 +51,7 @@ class PhotoPickerPlaceholder extends StatelessWidget {
                         width: 92,
                         height: 92,
                         alignment: Alignment.center,
-                        decoration: const BoxDecoration(
+                        decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           color: AppColors.moss100,
                         ),
@@ -63,7 +63,7 @@ class PhotoPickerPlaceholder extends StatelessWidget {
                                   alignment: Alignment.center,
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
-                                    gradient: const LinearGradient(
+                                    gradient: LinearGradient(
                                       begin: Alignment(-0.57, -0.82),
                                       end: Alignment(0.57, 0.82),
                                       colors: [
@@ -93,7 +93,7 @@ class PhotoPickerPlaceholder extends StatelessWidget {
                             : AppIcon.filled(
                                 AppIcons.person,
                                 size: 40,
-                                color: AppColors.moss600,
+                                color: AppColors.mossText,
                               ),
                       ),
                       Positioned(
@@ -103,7 +103,7 @@ class PhotoPickerPlaceholder extends StatelessWidget {
                           width: 30,
                           height: 30,
                           alignment: Alignment.center,
-                          decoration: const BoxDecoration(
+                          decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             color: AppColors.moss600,
                             boxShadow: [
@@ -129,7 +129,7 @@ class PhotoPickerPlaceholder extends StatelessWidget {
                   style: AppText.sans(
                     size: 14,
                     weight: FontWeight.w600,
-                    color: AppColors.moss600,
+                    color: AppColors.mossText,
                   ),
                 ),
               ],
@@ -217,7 +217,7 @@ class LogoPickerRow extends StatelessWidget {
                     style: AppText.sans(
                       size: 14,
                       weight: FontWeight.w600,
-                      color: AppColors.moss600,
+                      color: AppColors.mossText,
                     ),
                   ),
                 ),
@@ -304,7 +304,7 @@ class ProfilePhotoRow extends StatelessWidget {
                     style: AppText.sans(
                       size: 14,
                       weight: FontWeight.w600,
-                      color: AppColors.moss600,
+                      color: AppColors.mossText,
                     ),
                   ),
                 ),

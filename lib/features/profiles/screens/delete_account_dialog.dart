@@ -127,12 +127,12 @@ class _PasswordSheetState extends State<PasswordSheet> {
                   child: Container(
                     width: 60,
                     height: 60,
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                       color: AppColors.errorFill,
                       shape: BoxShape.circle,
                     ),
                     alignment: Alignment.center,
-                    child: const AppIcon.filled(
+                    child: AppIcon.filled(
                       AppIcons.trash,
                       size: 28,
                       color: AppColors.error,
