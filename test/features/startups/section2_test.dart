@@ -55,16 +55,18 @@ void main() {
       );
     });
 
-    test('a co-founder can still save', () async {
+    test('a co-founder can not save (only the founder edits)', () async {
       final s = PrototypeSeed.rafeeq.copyWith(
         id: 'x2',
         memberRoles: {'u9': 'coFounder'},
       );
       repo.startups.add(s);
+      repo.memberOf.add(s);
       final vm = StartupStepsViewModel(initial: s);
       addTearDown(vm.dispose);
       vm.name.text = 'Rafeeq Care';
-      expect(await vm.save(), isNotNull);
+      expect(await vm.save(), isNull);
+      expect(vm.lostPermission, isTrue);
     });
 
     test('session keeps my role in each startup I belong to', () {

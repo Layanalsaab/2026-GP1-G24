@@ -289,32 +289,36 @@ class FounderToolsStrings {
       'You will no longer be a co-founder of this startup';
   static const leaveMemberText = 'You will no longer be on this startup’s team';
 
-  /// The owner: she names the next owner first.
-  static const leaveOwnerText =
-      'Choose who will take over as owner before you leave.';
+  /// The founder: he names the next founder first.
+  static const leaveFounderText = 'Choose the next founder before you leave.';
   static String leaveTitle(String name) => 'Leave $name?';
   static const leaveMessageCoFounder =
-      'You will no longer be able to edit this startup. The owner or a co-founder can add you again.';
+      'You will no longer be on this startup’s team. The founder can add you again.';
   static const leaveMessageMember =
-      'You will no longer be on this startup’s team. The owner or a co-founder can add you again.';
+      'You will no longer be on this startup’s team. The founder can add you again.';
   static const noPermissionAnymore =
       'You don’t have permission to edit this startup anymore.';
   static String leftToast(String name) => 'You left $name';
   static const leaveFailed =
       'We couldn’t remove you from the startup. Please try again.';
 
+  /// The gold note under a confirmation when the startup is the person's
+  /// only one: afterwards, "Create startup" opens.
+  static const onlyStartupTitle = 'This is your only startup';
+  static const pendingAccountText =
+      'Your account will be pending until you create a startup.';
+
   static const previewLabel = 'Preview';
 
   // ---- Closing a startup (docs: Closing a Startup, Leaving and Deleting
   // an Account) ----
-  static const roleOwner = 'Owner';
   static const closedPill = 'Closed';
   static const closeStartup = 'Close startup';
   static const closeStartupText =
       'Permanently closes the startup so it can no longer be edited, while your team keeps access.';
   static String closeTitle(String name) => 'Close $name?';
 
-  /// The confirmation. [teamCount]: the people who joined (not the owner).
+  /// The confirmation. [teamCount]: the people who joined (not the founder).
   static String closeMessage(String name, int teamCount) {
     final where = teamCount <= 0
         ? '$name will remain in your account as a closed startup.'
@@ -322,7 +326,7 @@ class FounderToolsStrings {
               'startup, and your team will be notified.';
     return 'This cannot be undone. $where It can no longer be edited or '
         'receive requests, and its open funding round will end. You can '
-        'still choose whether it appears in the Hub.';
+        'choose whether it appears in the Hub from Settings.';
   }
 
   /// People invited who haven't joined: their invitations are cancelled.
@@ -339,8 +343,8 @@ class FounderToolsStrings {
   static const closeFailed = 'We couldn’t close the startup. Please try again.';
   static const closedBannerTitle = 'Closed';
   static String closedBannerOwner(String? date) => date == null
-      ? 'You closed this startup. It cannot be edited or reopened, but you can still choose whether it appears in the Hub.'
-      : 'You closed this startup on $date. It cannot be edited or reopened, but you can still choose whether it appears in the Hub.';
+      ? 'You closed this startup. It cannot be edited or reopened. You can choose whether it appears in the Hub from Settings.'
+      : 'You closed this startup on $date. It cannot be edited or reopened. You can choose whether it appears in the Hub from Settings.';
   static String closedBannerTeam(String? date) => date == null
       ? 'This startup has been closed.'
       : 'This startup was closed on $date.';
@@ -348,7 +352,7 @@ class FounderToolsStrings {
       ? 'This startup has been closed and is no longer accepting requests.'
       : 'This startup was closed on $date and is no longer accepting requests.';
 
-  /// The Public / Private switch of a closed startup (its owner only).
+  /// The Public / Private switch of a closed startup (its founder only).
   static const closedPublicText = 'Shown in the Hub as a closed startup.';
   static const closedPrivateText = 'Visible only to its team.';
   static const statusGroup = 'STATUS';
@@ -358,43 +362,75 @@ class FounderToolsStrings {
   static const closedNoSettings =
       'This startup is closed, so there is nothing to change here.';
 
-  // ---- The owner leaving: naming the next owner ----
-  static const nextOwnerTitle = 'Choose the next owner';
-  static String nextOwnerText(String name) =>
-      'Select who will manage $name after you leave.';
-  static String nextOwnerAlone(String name) =>
+  // ---- Deleting a startup (the founder only, with his password) ----
+  static const deleteStartup = 'Delete startup';
+  static const deleteStartupText =
+      'Permanently deletes the startup and all its details for everyone.';
+  static String deleteTitle(String name) => 'Delete $name?';
+
+  /// The confirmation. [teamCount]: the people who joined (not the founder).
+  static String deleteMessage(String name, int teamCount) => teamCount <= 0
+      ? 'This cannot be undone. $name, its funding rounds and its requests will be permanently deleted.'
+      : 'This cannot be undone. $name, its funding rounds and its requests will be permanently deleted for everyone, and your team will be notified.';
+  static const deletePasswordText =
+      'Enter your password to delete this startup.';
+  static String deletedToast(String name) => '$name has been deleted.';
+  static const deleteFailed =
+      'We couldn’t delete the startup. Please try again.';
+
+  // ---- The founder leaving: naming the next founder ----
+  static const nextFounderTitle = 'Choose the next founder';
+  static String nextFounderText(String name) =>
+      'They will have full control of $name.';
+  static String nextFounderAlone(String name) =>
       'There is no one else on $name’s team.';
   static const inviteSomeoneNew = 'Invite someone new';
   static const inviteSomeoneNewText = 'Send an invitation by email';
-  static String makeOwnerTitle(String person, String name) =>
-      'Make $person the owner of $name?';
-  static String makeOwnerMessage(String person, String name) =>
-      '$person will become the owner of $name and will have full control of it, including its team, its visibility in the Hub and closing it. You will leave $name and will no longer be able to view or manage it. This cannot be undone.';
-  static String makeOwnerConfirm(String person) => 'Make $person the owner';
-  static String onlyStartupTitle(String name) => '$name is your only startup';
-  static const onlyStartupText =
-      'After leaving, you will need to add a new startup to continue using your founder account.';
-  static String newOwnerToast(String person, String name) =>
-      '$person is now the owner of $name.';
+
+  /// What the founder becomes after handing the startup over.
+  static const yourRoleTitle = 'Your role after the handover';
+  static String yourRoleText(String name) =>
+      'Choose whether you stay on $name’s team.';
+  static const stayCoFounder = 'Stay as a co-founder';
+  static const stayCoFounderText = 'You stay on the team as a co-founder.';
+  static const stayMember = 'Stay as a team member';
+  static const stayMemberText = 'You stay on the team as a team member.';
+  static const leaveForGood = 'Leave for good';
+  static String leaveForGoodText(String name) => 'You leave $name’s team.';
+
+  /// What happens to the founder, in the confirmations. [stay] is
+  /// `coFounder`, `member`, or null (leaving for good).
+  static String _after(String name, String? stay) => switch (stay) {
+    'coFounder' => 'you will stay on the team as a co-founder',
+    'member' => 'you will stay on the team as a team member',
+    _ => 'you will leave $name',
+  };
+  static String makeFounderTitle(String person, String name) =>
+      'Make $person the founder of $name?';
+  static String makeFounderMessage(String person, String name, String? stay) =>
+      '$person will have full control of $name, and ${_after(name, stay)}. This cannot be undone.';
+  static String makeFounderConfirm(String person) => 'Make $person the founder';
+  static String newFounderToast(String person, String name) =>
+      '$person is now the founder of $name.';
   static const handoverFailed =
       'We couldn’t hand over the startup. Please try again.';
-  static const ownerEmailTitle = 'Invite a new owner';
+  static const founderEmailTitle = 'Invite a new founder';
   static const ownerEmailLabel = 'Email address';
   static const ownerEmailHint = 'name@example.com';
-  static String inviteOwnerMessage(String name) =>
-      'You will remain in control until the invitation is accepted. The new owner will then have full control of $name, and you will leave it.';
+  static String inviteFounderMessage(String name, String? stay) =>
+      'You will remain the founder until the invitation is accepted. They will then have full control of $name, and ${_after(name, stay)}.';
   static const sendInvitation = 'Send invitation';
   static String ownerInviteSent(String email) => 'Invitation sent to $email.';
   static const ownerInviteFailed =
       'We couldn’t send the invitation. Please try again.';
   static const ownerEmailInvalid = 'Enter a valid email address.';
   static const ownerEmailInvestor =
-      'This email belongs to an investor account and cannot be the owner.';
+      'This email belongs to an investor account and cannot be the founder.';
   static const ownerEmailOnTeam =
       'This person is already on the team. Choose them from the list instead.';
   static const ownerEmailYou = 'This is your own email address.';
   static String ownerWaiting(String email, String name) =>
-      'Waiting for $email to accept becoming the owner of $name.';
+      'Waiting for $email to accept becoming the founder of $name.';
   static const cancelInvitation = 'Cancel invitation';
 
   // Resend, expiry and what happened to the email
@@ -409,7 +445,7 @@ class FounderToolsStrings {
       'Send the email again. ${ownerExpires(days)}';
   static const ownerInviteExpiredTitle = 'Invitation expired';
   static String ownerInviteExpiredText(String email) =>
-      '$email didn’t answer within 30 days, so the invitation ended. You are still the owner. Choose "Leave startup" in Details to invite someone again.';
+      '$email didn’t answer within 30 days, so the invitation ended. You are still the founder. Choose "Leave startup" to invite someone again.';
   static const ownerInviteSavedNoEmail =
       'The invitation is saved, but the email couldn’t be sent. The person will see it in the app when they log in. You can resend the email from Settings.';
   static String ownerEmailResent(String email) => 'Email sent again to $email.';
@@ -428,32 +464,56 @@ class FounderToolsStrings {
   static const inviteExpired = 'This invitation has expired.';
   static const cancelOwnerInviteTitle = 'Cancel the invitation?';
   static String cancelOwnerInviteMessage(String email, String name) =>
-      '$email will no longer be able to take over $name. You will remain the owner.';
+      '$email will no longer be able to take over $name. You will remain the founder.';
   static const keepInvitation = 'Keep invitation';
   static const ownerInviteCancelled = 'The invitation was cancelled.';
   static const ownerInviteCancelFailed =
       'We couldn’t cancel the invitation. Please try again.';
 
-  // ---- One-time pop-ups (shown the next time the app opens) ----
+  // ---- One-time pop-ups (the notice inbox, shown the next time the app
+  // opens) ----
   static String noticeClosedTitle(String name) => '$name has been closed';
   static const noticeClosedMessage =
       'It remains in your startups as a closed startup and can still be viewed.';
-  static String noticeNewOwnerTitle(String name) =>
-      'You are now the owner of $name';
-  static const noticeNewOwnerMessage =
-      'You can now manage its team, visibility and settings.';
-  static String noticeOwnershipTitle(String name) =>
-      'Ownership of $name has changed';
-  static String noticeOwnershipMessage(String person, String name) =>
-      '$person is now the owner of $name.';
+  static String noticeDeletedTitle(String name) => '$name has been deleted';
+  static const noticeDeletedMessage =
+      'The founder permanently deleted it and all its details.';
+  static String noticeNewFounderTitle(String name) =>
+      'You are now the founder of $name';
+  static const noticeNewFounderMessage =
+      'You have full control of its team, visibility and settings.';
+  static String noticeFounderChangedTitle(String name) =>
+      '$name has a new founder';
+  static String noticeFounderChangedMessage(String person, String name) =>
+      '$person is now the founder of $name.';
+  static String noticeHandedOverTitle(String name) =>
+      'You are no longer the founder of $name';
+  static String noticeHandedOverMessage(
+    String person,
+    String name,
+    String? stay,
+  ) =>
+      '$person accepted your invitation and is now the founder. ${switch (stay) {
+        'coFounder' => 'You are now a co-founder of $name.',
+        'member' => 'You are now a team member of $name.',
+        _ => 'You have left $name.',
+      }}';
   static const noticeDeclinedTitle = 'Invitation declined';
   static String noticeDeclinedMessage(String email, String name) =>
-      '$email declined to become the owner of $name. You remain in control.';
+      '$email declined to become the founder of $name. You remain the founder.';
+  static String noticeRemovedTitle(String name) =>
+      'You were removed from $name';
+  static const noticeRemovedMessage = 'The founder removed you from its team.';
+  static String noticeLeftTitle(String person, String name) =>
+      '$person left $name';
+  static String noticeLeftMessage(String person, String name) =>
+      '$person is no longer on $name’s team.';
   static String viewStartup(String name) => 'View $name';
   static const noticeOk = 'OK';
 
   static const lostStartupTitle = 'You no longer have a startup';
-  static const lostStartupMessage = 'Add a new startup to continue.';
+  static const lostStartupMessage = pendingAccountText;
+  static const continueAsGuest = 'Continue as guest';
 
   // ---- Valuation calculator ----
   static const calcTitle = 'Valuation Calculator';

@@ -140,9 +140,10 @@ void main() {
       );
       expect(find.text('Team member'), findsWidgets);
       expect(find.text('View'), findsWidgets);
-      // A co-founder gets the blue tag and the full "Manage" action.
+      // A co-founder gets the blue tag and, like a team member, "View"
+      // (only the founder manages).
       expect(find.text('Co-founder'), findsOneWidget);
-      expect(find.text('Manage'), findsOneWidget);
+      expect(find.text('Manage'), findsNothing);
     });
 
     testWidgets('the role filter has four options', (t) async {

@@ -95,37 +95,35 @@ void main() {
     });
   });
 
-  group('Delete account dialog', () {
-    Widget host(AccountRole role) => Scaffold(
+  group('Delete account: the password sheet', () {
+    Widget host() => Scaffold(
       body: Builder(
         builder: (context) => Center(
           child: TextButton(
-            onPressed: () => showDeleteAccountDialog(context, role: role),
+            onPressed: () => showDeleteAccountPassword(context),
             child: const Text('open'),
           ),
         ),
       ),
     );
 
-    Future<void> open(WidgetTester t, AccountRole role) async {
-      await _pump(t, host(role));
+    Future<void> open(WidgetTester t, [AccountRole _ = AccountRole.founder]) async {
+      await _pump(t, host());
       await t.tap(find.text('open'));
+      // The first frame starts the slide-up; the second ends it.
+      await t.pump();
       await t.pump(const Duration(milliseconds: 600));
     }
 
-    testWidgets('founder and investor each see their own warning', (t) async {
-      await open(t, AccountRole.founder);
-      expect(find.text(AccountStrings.deleteWarningFounder), findsOneWidget);
+    testWidgets('only asks for the password (the warning came before)', (
+      t,
+    ) async {
+      await open(t);
+      expect(find.text(AccountStrings.deletePasswordText), findsOneWidget);
+      expect(find.text(AccountStrings.deleteWarningInvestor), findsNothing);
       await t.tap(find.text(ProfileStrings.cancel));
       await t.pump(const Duration(milliseconds: 600));
-      await t.tap(find.text('open'));
-      await t.pump(const Duration(milliseconds: 600));
       expect(auth.deleteAccountCalls, 0);
-    });
-
-    testWidgets('investor warning', (t) async {
-      await open(t, AccountRole.investor);
-      expect(find.text(AccountStrings.deleteWarningInvestor), findsOneWidget);
     });
 
     testWidgets('no password: asks for it and deletes nothing', (t) async {
@@ -150,9 +148,12 @@ void main() {
       await open(t, AccountRole.founder);
       await t.enterText(find.byType(TextField), 'Rightpass1!');
       await t.tap(find.text(ProfileStrings.deleteAccount).last);
+      // Deleted: the sheet slides away.
+      await t.pump();
+      await t.pump(const Duration(milliseconds: 600));
       await t.pump(const Duration(milliseconds: 600));
       expect(auth.deleteAccountCalls, 1);
-      expect(find.text(AccountStrings.cannotBeUndone), findsNothing);
+      expect(find.text(AccountStrings.deletePasswordText), findsNothing);
     });
   });
 

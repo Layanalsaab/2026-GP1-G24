@@ -34,7 +34,7 @@ Future<bool?> showInvitationDecision(
             header: true,
             child: Text(
               owner
-                  ? 'Become the owner of ${invitation.startupName}?'
+                  ? 'Become the founder of ${invitation.startupName}?'
                   : 'Join ${invitation.startupName}?',
               textAlign: TextAlign.center,
               style: AppText.sans(size: 21, weight: FontWeight.w700),
@@ -43,7 +43,7 @@ Future<bool?> showInvitationDecision(
           const SizedBox(height: 10),
           Text(
             owner
-                ? '$who invited you to take over ${invitation.startupName} as its owner. You would have full control of it, including its team, its visibility and its settings.'
+                ? '$who invited you to take over ${invitation.startupName} as its founder. You would have full control of it, including its team, its visibility and its settings.'
                 : '$who invited you to join ${invitation.startupName} as $role.',
             textAlign: TextAlign.center,
             style: AppText.sans(size: 15, color: AppColors.grey, height: 22),

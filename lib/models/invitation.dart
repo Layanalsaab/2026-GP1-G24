@@ -45,6 +45,7 @@ class Invitation {
     this.acceptedByName = '',
     this.newUser = false,
     this.createdAt,
+    this.previousFounderRole,
   });
 
   /// `coFounder` or `member` (the same words as `Startup.memberRoles`), or
@@ -82,6 +83,11 @@ class Invitation {
 
   /// When the invitation was made (the server time).
   final DateTime? createdAt;
+
+  /// An invitation to take the startup over: what the founder who sent it
+  /// becomes once it is accepted, `coFounder` or `member`; null when he
+  /// leaves for good.
+  final String? previousFounderRole;
 
   /// An invitation to take a startup over as its owner is open for 30 days;
   /// after that nobody can accept it and the owner invites again.
@@ -129,6 +135,7 @@ class Invitation {
     'status': InvitationStatus.pending.value,
     'emailSent': false,
     'newUser': newUser,
+    'previousFounderRole': ?previousFounderRole,
   };
 
   static Invitation? fromMap(Map<String, dynamic>? data) {
@@ -161,6 +168,10 @@ class Invitation {
       createdAt: data['createdAt'] is DateTime
           ? data['createdAt'] as DateTime
           : null,
+      previousFounderRole: switch (data['previousFounderRole']) {
+        final String r when r == roleCoFounder || r == roleMember => r,
+        _ => null,
+      },
     );
   }
 }

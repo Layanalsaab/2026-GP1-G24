@@ -26,6 +26,11 @@ class FirestoreCollections {
 
   /// `users/{uid}/bookmarks/{itemKey}`
   static const bookmarks = 'bookmarks';
+
+  /// `users/{uid}/notices/{id}`: the one-time pop-ups about the person's
+  /// startups (closed, deleted, a new founder, ...), written by whoever made
+  /// the change.
+  static const notices = 'notices';
 }
 
 class UserFields {

@@ -60,12 +60,18 @@ Future<void> _openRounds(
     ),
   );
   await t.pumpAndSettle();
-  await t.tap(
-    find.descendant(
-      of: find.byType(ScrollableHeaderTabBar),
-      matching: find.text('Rounds'),
-    ),
+  // The rounds live in the Startup Ask tab, under its card (there is no
+  // Rounds tab any more). The tab bar scrolls sideways.
+  final ask = find.descendant(
+    of: find.byType(ScrollableHeaderTabBar),
+    matching: find.text('Startup Ask'),
   );
+  await t.ensureVisible(ask);
+  await t.pumpAndSettle();
+  await t.tap(ask);
+  await t.pumpAndSettle();
+  // Bring the rounds to the top of the page.
+  await t.ensureVisible(find.text('Funding rounds'));
   await t.pumpAndSettle();
 }
 
@@ -603,7 +609,10 @@ void main() {
       await t.tap(dashboard);
       await t.pumpAndSettle();
       expect(find.text('All rounds'), findsNothing);
-      final rounds = find.descendant(of: tabs, matching: find.text('Rounds'));
+      final rounds = find.descendant(
+        of: tabs,
+        matching: find.text('Startup Ask'),
+      );
       await t.ensureVisible(rounds);
       await t.pumpAndSettle();
       await t.tap(rounds);

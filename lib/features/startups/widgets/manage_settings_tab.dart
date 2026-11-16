@@ -11,13 +11,15 @@ import 'manage_card.dart';
 /// control on the right (docs: Closing a Startup, Leaving and Deleting an
 /// Account).
 ///
-/// * **Public startup / Private startup** (globe, a switch): the owner and
-///   co-founders of an active startup; on a closed startup only its owner
-///   (it is the one thing left to change).
-/// * The owner of an active startup: **Close startup** (permanent, kept for
-///   everyone).
-/// * **Leave startup** is not here: it sits at the bottom of the Details tab
-///   ([ManageLeaveSection]).
+/// Everything here is the founder's (co-founders and team members only see
+/// that there is nothing to change):
+///
+/// * **Public startup / Private startup** (globe, a switch), also on a
+///   closed startup (the one thing left to change there).
+/// * **Close startup** (an active startup; permanent, kept for everyone).
+/// * **Delete startup** (permanent, for everyone; asks for his password).
+/// * **Leave startup** is not here: it sits at the bottom of the Startup
+///   Team tab ([ManageLeaveSection]).
 ///
 /// What a role cannot do is not shown at all.
 class ManageSettingsTab extends StatelessWidget {
@@ -29,21 +31,23 @@ class ManageSettingsTab extends StatelessWidget {
     required this.onVisibilityChanged,
     this.isClosed = false,
     this.onClose,
+    this.onDelete,
   });
 
-  /// What the user may do here ([StartupRole.founder] is the owner).
+  /// What the user may do here ([StartupRole.founder]: everything).
   final StartupRole role;
   final String startupName;
   final bool isPublic;
   final ValueChanged<bool> onVisibilityChanged;
   final bool isClosed;
   final VoidCallback? onClose;
+  final VoidCallback? onDelete;
 
   @override
   Widget build(BuildContext context) {
     final owner = role == StartupRole.founder;
     final cards = <Widget>[
-      if ((role.canManage && !isClosed) || (owner && isClosed))
+      if (owner)
         _SettingCard(
           icon: AppIcons.globe,
           fill: AppColors.moss50,
@@ -78,6 +82,16 @@ class ManageSettingsTab extends StatelessWidget {
           text: FounderToolsStrings.closeStartupText,
           danger: true,
           onTap: onClose ?? () {},
+        ),
+      if (owner)
+        _SettingCard(
+          icon: AppIcons.trash,
+          fill: AppColors.errorFill,
+          color: AppColors.error,
+          title: FounderToolsStrings.deleteStartup,
+          text: FounderToolsStrings.deleteStartupText,
+          danger: true,
+          onTap: onDelete ?? () {},
         ),
     ];
     if (cards.isEmpty) {
@@ -178,12 +192,12 @@ class _SettingCard extends StatelessWidget {
   }
 }
 
-/// Manage startup -> Details, below the sections: **Leave startup** (the
-/// owner names the next owner first). While a person she invited to take over
-/// hasn't answered, a "Waiting for…" card with **Resend email** and **Cancel
-/// invitation** replaces Leave. Co-founders and team members of an active
-/// startup just see Leave startup. Nobody leaves a closed startup, so it shows
-/// nothing then.
+/// Manage startup -> Startup Team, below the team: **Leave startup** (the
+/// founder names the next founder, then whether he stays on the team). While
+/// a person he invited to take over hasn't answered, a "Waiting for…" card
+/// with **Resend email** and **Cancel invitation** replaces Leave.
+/// Co-founders and team members of an active startup just see Leave startup.
+/// Nobody leaves a closed startup, so it shows nothing then.
 class ManageLeaveSection extends StatelessWidget {
   const ManageLeaveSection({
     super.key,
@@ -253,7 +267,7 @@ class ManageLeaveSection extends StatelessWidget {
           color: AppColors.error,
           title: FounderToolsStrings.leaveStartup,
           text: owner
-              ? FounderToolsStrings.leaveOwnerText
+              ? FounderToolsStrings.leaveFounderText
               : role == StartupRole.coFounder
               ? FounderToolsStrings.leaveCoFounderText
               : FounderToolsStrings.leaveMemberText,

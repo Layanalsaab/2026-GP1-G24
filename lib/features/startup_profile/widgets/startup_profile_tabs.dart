@@ -222,7 +222,7 @@ class StartupProfilePane extends StatelessWidget {
             role: '',
             contribution: '',
             isFounder: true,
-            uid: s.originalFounderId,
+            uid: s.founderId,
           ),
         );
       }

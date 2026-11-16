@@ -644,9 +644,16 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(find.text('Rafeeq Health'), findsOneWidget);
-      // Header: role label above the name, five tabs, eye + share icons.
+      // Header: role label above the name, the tabs (Dashboard, EOI, the six
+      // steps of the form, Settings), eye + share icons.
       expect(find.text('FOUNDER'), findsOneWidget);
-      for (final tab in ['Dashboard', 'Details', 'Rounds', 'EOI', 'Settings']) {
+      for (final tab in [
+        'Dashboard',
+        'EOI',
+        'Startup Overview',
+        'Startup Ask',
+        'Settings',
+      ]) {
         expect(find.text(tab), findsWidgets, reason: tab);
       }
       expect(find.bySemanticsLabel('Preview profile'), findsOneWidget);

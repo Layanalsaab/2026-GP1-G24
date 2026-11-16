@@ -194,18 +194,13 @@ class StartupProfileViewModel extends ChangeNotifier with SafeNotifier {
   bool get hasBusiness => startup.hasBusinessDetails;
 
   // ---- Team ----
-  /// The founder's name: sample data, or the signed-in person who created
-  /// the startup (an owner it was handed to is not its founder).
+  /// The founder's name: sample data, or the signed-in person when they are
+  /// its founder (whoever holds the startup now).
   String? get founderName {
     final sample = _discovery.founderNameOf(startup);
     if (sample != null) return sample;
     final user = _session.user;
-    // Only while she is still its owner: after leaving she is not on it.
-    if (user != null &&
-        user.uid == startup.originalFounderId &&
-        user.uid == startup.founderId) {
-      return user.fullName;
-    }
+    if (user != null && user.uid == startup.founderId) return user.fullName;
     return null;
   }
 

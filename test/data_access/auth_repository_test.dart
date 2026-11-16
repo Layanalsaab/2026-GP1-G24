@@ -286,6 +286,17 @@ void main() {
       expect(startups.closedAllMine, isTrue);
     });
 
+    test('the founder\'s choice for each startup is followed', () async {
+      auth.signedIn = verified();
+      const fates = {
+        'a': StartupFate.delete(),
+        'b': StartupFate.close(nextFounder: 'u2'),
+      };
+      await repo.deleteAccount(password: 'Startup1', fates: fates);
+      expect(startups.settledFates, fates);
+      expect(auth.calls, contains('delete'));
+    });
+
     test('when closing the startups fails, nothing is deleted', () async {
       auth.signedIn = verified();
       startups.closeAllFails = AuthFailure.network;

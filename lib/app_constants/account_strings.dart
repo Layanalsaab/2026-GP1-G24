@@ -53,20 +53,16 @@ class AccountStrings {
   }
 
   /// What a startup-side account is called on its own profile and in the
-  /// menu: its highest title among its startups. "Founder" when it created a
-  /// startup it still owns, then "Owner" (a startup handed to it), then
-  /// "Co-founder", then "Team member"; "Founder" before it has any.
-  /// [owned]: the startups it owns; [joined]: its role in each startup it
-  /// joined.
+  /// menu: its highest title among its startups. "Founder" when it holds a
+  /// startup, then "Co-founder", then "Team member"; "Founder" before it has
+  /// any. [owned]: the startups it holds; [joined]: its role in each startup
+  /// it joined.
   static String startupTitle(
     String uid, {
     required Iterable<Startup> owned,
     required Iterable<StartupRole> joined,
   }) {
-    if (owned.any((s) => s.originalFounderId == uid)) {
-      return FounderToolsStrings.roleFounder;
-    }
-    if (owned.isNotEmpty) return FounderToolsStrings.roleOwner;
+    if (owned.isNotEmpty) return FounderToolsStrings.roleFounder;
     if (joined.contains(StartupRole.coFounder)) {
       return FounderToolsStrings.roleCoFounder;
     }
@@ -121,38 +117,62 @@ class AccountStrings {
   static const samePassword =
       'Choose a new password that is different from your current one.';
 
-  // Delete account dialog
+  // Delete account (docs: Closing a Startup, Leaving and Deleting an
+  // Account): a warning (for a founder, his choice for each startup he
+  // holds), then the password.
   static const deleteTitle = 'Delete your account?';
-  static const deleteWarningFounder =
-      'Your account and personal information will be permanently deleted, '
-      'and your name will be removed from every startup team. A startup with '
-      'a team is closed, and its team keeps it as a closed startup; one with '
-      'nobody else on it is permanently deleted.';
 
-  /// The first line of the founder's delete confirmation (docs: Closing a
-  /// Startup, Leaving and Deleting an Account); one line per startup follows.
-  static const deleteWarningFounderBase =
-      'Your account and personal information will be permanently deleted, '
-      'and your name will be removed from every startup team.';
-  static String deleteDeletes(String startup) =>
-      '$startup will be permanently deleted.';
-  static String deleteCloses(String startup) =>
-      '$startup will be closed, and its team will keep it as a closed '
-      'startup. To keep $startup active, choose a new owner before deleting '
-      'your account.';
-  static String deleteStaysClosed(String startup) =>
-      '$startup will remain closed for its team.';
-  static String deleteLeaves(String startup) =>
-      'You will be removed from $startup’s team.';
+  /// Someone who only joined teams (no startup of their own).
+  static const deleteWarningMember =
+      'Your account and personal information will be permanently deleted. '
+      'You will leave every startup you joined, and your details will be '
+      'removed from their teams.';
+
+  /// A founder account with no startup at all.
+  static const deleteWarningNoStartup =
+      'Your account and personal information will be permanently deleted.';
   static const deleteWarningInvestor =
       'Your account and personal information will be permanently deleted. '
       'Your requests and Investment Associations will also be removed, and '
       "you will no longer appear on any startup's profile.";
   static const cannotBeUndone = 'This cannot be undone.';
-  static const deletePasswordLabel = 'Enter your password to confirm';
-  static const deletePasswordHint = 'Password';
+
+  /// The password step: only this line (the warning came before).
+  static const deletePasswordText =
+      'Enter your password to delete your account.';
+  static const deletePasswordLabel = 'Password';
+  static const deletePasswordHint = 'Enter your password';
   static const passwordRequired = 'Please enter your password.';
   static const passwordIncorrect = 'The password is incorrect.';
+
+  // The founder's choice for each startup he holds
+  static const fatesTitle = 'Before you delete your account';
+  static String fatesText(int joined) {
+    final leave = switch (joined) {
+      0 => '',
+      1 => ' You will also leave the startup you joined.',
+      _ => ' You will also leave the $joined startups you joined.',
+    };
+    return 'Choose what happens to each startup you founded.$leave';
+  }
+
+  static String fatesChosen(int chosen, int total) =>
+      chosen >= total ? 'All $total chosen' : '$chosen of $total chosen';
+  static String fatesLeft(int left) => '$left left';
+  static String fatesStillToChoose(int left) => left == 1
+      ? 'Choose for 1 more startup'
+      : 'Choose for $left more startups';
+  static const fateClose = 'Close';
+  static const fateKeepClosed = 'Keep closed';
+  static const fateDelete = 'Delete';
+  static const fateMissing = 'Choose Close or Delete';
+  static const fateOnlyYou = 'Only you';
+  static String fateWithTeam(int n) =>
+      n == 1 ? 'You and 1 team member' : 'You and $n team members';
+  static const nextFounderLabel = 'Next founder';
+  static const nextFounderHint =
+      'They will decide whether it appears in the Hub.';
+  static const fatesContinue = 'Continue';
 
   // Log out dialog
   static const logOutTitle = 'Log out of Start.sa?';

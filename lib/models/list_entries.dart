@@ -14,17 +14,18 @@ class SavedBookmark {
 
 /// The user's role in one startup.
 enum StartupRole {
-  /// Created the startup: full access, including delete.
+  /// The startup's founder (`founderId`): the only one who edits it,
+  /// invites, changes its visibility, closes, deletes or hands it over.
   founder,
 
-  /// Full access except delete; can leave.
+  /// A title only: the same rights as a team member (view only; can leave).
   coFounder,
 
   /// View only; can leave.
   member;
 
-  /// True when the role can open Manage with full access.
-  bool get canManage => this != member;
+  /// True when the role can open Manage with full access: the founder only.
+  bool get canManage => this == founder;
 
   /// The signed-in user's role in [startup], read from the startup itself:
   /// the founder is `founderId`; co-founders and team members are in
@@ -39,26 +40,11 @@ enum StartupRole {
     };
   }
 
-  /// The TITLE of [uid] in [startup] (what the capsules say), which can
-  /// differ from [of] (what they may do) once ownership moved: whoever
-  /// created the startup is its "Founder", and an owner who didn't create it
-  /// is shown as "Owner" ([isTransferredOwner]). Null when [uid] has no role
-  /// there.
-  static StartupRole? titleOf(Startup startup, String? uid) {
-    final role = of(startup, uid);
-    if (role == null || uid == null) return role;
-    if (uid == startup.originalFounderId) return StartupRole.founder;
-    return role == StartupRole.member
-        ? StartupRole.member
-        : StartupRole.coFounder;
-  }
-
-  /// [uid] owns [startup] but didn't create it (the founder left and named
-  /// them the next owner): shown as "Owner".
-  static bool isTransferredOwner(Startup startup, String? uid) =>
-      uid != null &&
-      uid == startup.founderId &&
-      uid != startup.originalFounderId;
+  /// The TITLE of [uid] in [startup] (what the capsules say). The title
+  /// follows control: whoever holds the startup now is its "Founder" (also
+  /// after a handover), so it is the same as [of]. Null when [uid] has no
+  /// role there.
+  static StartupRole? titleOf(Startup startup, String? uid) => of(startup, uid);
 }
 
 /// One row of My Startups: a startup the user founded, co-founds or belongs
