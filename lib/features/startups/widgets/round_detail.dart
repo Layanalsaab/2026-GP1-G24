@@ -106,7 +106,7 @@ class RoundDetail extends StatelessWidget {
         if (round.isOpen) ...[
           const SizedBox(height: 22),
           const SectionTitle(
-            title: 'Matches',
+            title: 'Suggested Investors',
             subtitle: 'Investors that fit this round',
           ),
           const SizedBox(height: 10),
@@ -511,7 +511,7 @@ class _MatchesState extends State<_Matches> {
         if (snap.connectionState != ConnectionState.done) {
           return ManageCard(
             child: Text(
-              'Finding matches…',
+              'Suggesting investors…',
               style: AppText.sans(size: 14, height: 20, color: AppColors.grey),
             ),
           );
@@ -519,7 +519,7 @@ class _MatchesState extends State<_Matches> {
         if (snap.hasError) {
           return ManageCard(
             child: Text(
-              'Couldn’t load the matches. Check your connection.',
+              'Couldn’t load the suggested investors. Check your connection.',
               style: AppText.sans(size: 14, height: 20, color: AppColors.grey),
             ),
           );
@@ -528,7 +528,7 @@ class _MatchesState extends State<_Matches> {
         if (items.isEmpty) {
           return ManageCard(
             child: Text(
-              'No matching investors yet',
+              'No suggested investors right now.',
               style: AppText.sans(size: 14, height: 20, color: AppColors.grey),
             ),
           );

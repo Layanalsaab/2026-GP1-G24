@@ -84,8 +84,8 @@ class WalletStrings {
   static const matchesSub = 'Startups with an open round that matches this ticket';
   static const noMatches = 'No startups with a matching open round right now.';
   static const matchesFailed =
-      'Couldn’t load the matches. Check your connection.';
-  static const findingMatches = 'Finding matches…';
+      'Couldn’t load the suggested startups. Check your connection.';
+  static const findingMatches = 'Suggesting startups…';
   static const requestSentPill = 'Request sent';
 
   // Requests tab

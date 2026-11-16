@@ -380,7 +380,7 @@ void main() {
       expect(find.text('Investors'), findsOneWidget);
       expect(find.text('Who invested in this round'), findsOneWidget);
       expect(find.text('Ahmad Hassan'), findsOneWidget);
-      expect(find.text('Matches'), findsOneWidget);
+      expect(find.text('Suggested Investors'), findsOneWidget);
       expect(find.text('Investors that fit this round'), findsOneWidget);
       expect(find.text('Edit round'), findsOneWidget);
       // The list is gone; the back link returns to it.
@@ -399,7 +399,7 @@ void main() {
       expect(find.text('SAR 250,000'), findsNWidgets(2));
       expect(find.text('100% of the target raised'), findsOneWidget);
       expect(find.text('Layan Alsaab'), findsOneWidget);
-      expect(find.text('Matches'), findsNothing);
+      expect(find.text('Suggested Investors'), findsNothing);
       expect(find.text('Edit round'), findsNothing);
       // The investor opens their profile.
       await t.tap(find.text('Layan Alsaab'));
@@ -588,7 +588,7 @@ void main() {
       await _openRounds(t, role: StartupRole.member);
       await t.tap(find.text('Round 2'));
       await t.pumpAndSettle();
-      expect(find.text('Matches'), findsOneWidget);
+      expect(find.text('Suggested Investors'), findsOneWidget);
       expect(find.text('Edit round'), findsNothing);
     });
 
