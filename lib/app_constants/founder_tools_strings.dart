@@ -342,9 +342,11 @@ class FounderToolsStrings {
   static String closedToast(String name) => '$name is now closed.';
   static const closeFailed = 'We couldn’t close the startup. Please try again.';
   static const closedBannerTitle = 'Closed';
+  // The founder's banner. Not "You closed": a closed startup can be handed
+  // to a new founder (its founder deleted his account).
   static String closedBannerOwner(String? date) => date == null
-      ? 'You closed this startup. It cannot be edited or reopened. You can choose whether it appears in the Hub from Settings.'
-      : 'You closed this startup on $date. It cannot be edited or reopened. You can choose whether it appears in the Hub from Settings.';
+      ? 'This startup has been closed. It cannot be edited or reopened. You can choose whether it appears in the Hub from Settings.'
+      : 'This startup was closed on $date. It cannot be edited or reopened. You can choose whether it appears in the Hub from Settings.';
   static String closedBannerTeam(String? date) => date == null
       ? 'This startup has been closed.'
       : 'This startup was closed on $date.';
@@ -482,6 +484,10 @@ class FounderToolsStrings {
       'You are now the founder of $name';
   static const noticeNewFounderMessage =
       'You have full control of its team, visibility and settings.';
+  // A closed startup handed over (its founder deleted his account): only
+  // its visibility can change.
+  static const noticeNewFounderClosedMessage =
+      'It is closed and can’t be edited. You can choose whether it appears in the Hub from Settings.';
   static String noticeFounderChangedTitle(String name) =>
       '$name has a new founder';
   static String noticeFounderChangedMessage(String person, String name) =>
@@ -513,7 +519,6 @@ class FounderToolsStrings {
 
   static const lostStartupTitle = 'You no longer have a startup';
   static const lostStartupMessage = pendingAccountText;
-  static const continueAsGuest = 'Continue as guest';
 
   // ---- Valuation calculator ----
   static const calcTitle = 'Valuation Calculator';

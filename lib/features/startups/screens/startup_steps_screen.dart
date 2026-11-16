@@ -191,23 +191,6 @@ class _StartupStepsScreenState extends State<StartupStepsScreen> {
     await AppRouter.logOut(context, toLogin: true);
   }
 
-  /// "Continue as guest" under the pending-account note: the unfinished
-  /// startup is dropped (asked first when something was entered), the user
-  /// is signed out (the account stays pending) and browses as a guest.
-  Future<void> _continueAsGuest() async {
-    if (_vm.isDirty) {
-      final discard = await showDiscardDialog(
-        context,
-        title: FounderToolsStrings.discardStartupTitle,
-        message: FounderToolsStrings.discardStartupMessage,
-        discardLabel: FounderToolsStrings.discard,
-        keepLabel: FounderToolsStrings.keepEditing,
-      );
-      if (!mounted || !discard) return;
-    }
-    await AppRouter.leaveAsGuest(context);
-  }
-
   /// Leaving the first step: nothing entered or changed -> just go back;
   /// otherwise a centered dialog asks (Discard / Keep editing).
   Future<void> _leave() async {
@@ -379,20 +362,12 @@ class _StartupStepsScreenState extends State<StartupStepsScreen> {
             ),
             children: [
               // Back in "Add your startup" after losing the last one: the
-              // account is pending until a startup is created, or the person
-              // browses as a guest.
-              if (widget.lostStartup && _fromLogin && step == 0) ...[
+              // account is pending until a startup is created.
+              if (widget.lostStartup && _fromLogin && step == 0)
                 const ViewOnlyBanner.notice(
                   title: FounderToolsStrings.lostStartupTitle,
                   message: FounderToolsStrings.lostStartupMessage,
                 ),
-                AppButton(
-                  label: FounderToolsStrings.continueAsGuest,
-                  variant: AppButtonVariant.outline,
-                  onPressed: _continueAsGuest,
-                ),
-                const SizedBox(height: 12),
-              ],
               AuthCard(
                 child: TabPaneSlide(
                   index: step,
