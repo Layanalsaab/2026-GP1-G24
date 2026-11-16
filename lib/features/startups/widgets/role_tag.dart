@@ -198,8 +198,12 @@ List<Widget> teamTagsOf(
   final you = isYou ? 'You · ' : '';
   // The founder is whoever holds the startup now ([ownerId]); a card that
   // isn't linked to an account yet goes by its own flag.
+  // The sample startups' owner is a placeholder, not an account: their
+  // founder is the card flagged as founder.
   final linked = (member.uid ?? '').isNotEmpty;
-  final founder = ownerId != null && ownerId.isNotEmpty && linked
+  final hasOwner =
+      ownerId != null && ownerId.isNotEmpty && ownerId != 'crunchbase-dataset';
+  final founder = hasOwner && linked
       ? member.uid == ownerId && !member.invited
       : member.isFounder;
   final tag = founder
