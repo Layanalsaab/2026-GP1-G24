@@ -76,7 +76,7 @@ class StartupRepository {
   /// and cards not linked to an account keep what is stored. Best effort.
   Future<Startup> _withLiveNames(Startup s) async {
     try {
-      if (s.founderId == 'crunchbase-dataset') return s;
+      if (s.founderId == Startup.datasetFounderId) return s;
       final uids = {
         for (final m in s.team)
           if (m.uid != null && !m.invited) m.uid!,

@@ -100,6 +100,29 @@ void main() {
       expect(list.single.role, 'member');
     });
 
+    test(
+      'the card flagged as founder of a sample startup is its Founder',
+      () async {
+        startups.startups.add(
+          _startup(
+            'a',
+            founder: 'crunchbase-dataset',
+            team: const [
+              TeamMember(
+                name: 'Mona',
+                role: 'Founder',
+                contribution: '',
+                isFounder: true,
+                uid: 'p1',
+              ),
+            ],
+          ),
+        );
+        final list = await repo.startupsOf(_person(['a']));
+        expect(list.single.role, 'founder');
+      },
+    );
+
     test('a startup that is gone or unreadable is skipped', () async {
       startups.startups.add(_startup('a', roles: {'p1': 'member'}));
       final list = await repo.startupsOf(_person(['a', 'missing']));

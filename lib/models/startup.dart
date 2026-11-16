@@ -98,6 +98,10 @@ class Startup {
   /// Longest "Other" text, in characters (firestore.rules uses the same).
   static const otherMaxLength = 40;
 
+  /// The `founderId` of the sample (imported dataset) startups: a placeholder,
+  /// not an account. Their founder is the team card flagged as founder.
+  static const datasetFounderId = 'crunchbase-dataset';
+
   /// The sector as shown to people: the typed text for "Other".
   String get sectorLabel =>
       _otherOr(sector == Sector.other, sectorOther, sector.label);

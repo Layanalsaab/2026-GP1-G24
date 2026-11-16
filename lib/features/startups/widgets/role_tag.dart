@@ -202,7 +202,9 @@ List<Widget> teamTagsOf(
   // founder is the card flagged as founder.
   final linked = (member.uid ?? '').isNotEmpty;
   final hasOwner =
-      ownerId != null && ownerId.isNotEmpty && ownerId != 'crunchbase-dataset';
+      ownerId != null &&
+      ownerId.isNotEmpty &&
+      ownerId != Startup.datasetFounderId;
   final founder = hasOwner && linked
       ? member.uid == ownerId && !member.invited
       : member.isFounder;

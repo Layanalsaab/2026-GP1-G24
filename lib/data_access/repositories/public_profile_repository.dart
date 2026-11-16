@@ -116,7 +116,9 @@ class PublicProfileRepository {
       final String? role;
       if (onTeam &&
           (s.founderId == personId ||
-              ((card?.isFounder ?? false) && s.founderId.isEmpty))) {
+              ((card?.isFounder ?? false) &&
+                  (s.founderId.isEmpty ||
+                      s.founderId == Startup.datasetFounderId)))) {
         role = 'founder';
       } else if (s.memberRoles[personId] == 'coFounder' ||
           ((card?.coFounder ?? false) && !(card?.invited ?? false))) {
