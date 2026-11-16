@@ -121,7 +121,7 @@ class _MainScreenState extends State<MainScreen> {
       }
       if (!mounted) return;
       _session.setMemberRoles(roles);
-      // The menu's title: Founder, Owner, Co-founder or Team member.
+      // The menu's title: Founder, Co-founder or Team member.
       if (uid != null) {
         _session.setStartupTitle(
           AccountStrings.startupTitle(uid, owned: mine, joined: roles.values),

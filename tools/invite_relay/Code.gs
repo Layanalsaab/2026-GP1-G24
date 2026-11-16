@@ -101,16 +101,16 @@ function sendInvitation_(id, inv) {
   const owner = inv.role === 'owner';
   const link = INVITE_LINK_BASE + '?i=' + encodeURIComponent(id);
   const subject = owner
-    ? who + ' invited you to become the owner of ' + startup + ' on Start.sa'
+    ? who + ' invited you to become the founder of ' + startup + ' on Start.sa'
     : who + ' invited you to join ' + startup + ' on Start.sa';
   const next = owner
-    ? ", and you'll be asked whether you accept becoming the owner."
+    ? ", and you'll be asked whether you accept becoming the founder."
     : ", and you'll be added to the team automatically.";
 
   const text =
     'Hi,\n\n' +
     (owner
-      ? who + ' invited you to take over ' + startup + ' on Start.sa as its owner.\n\n'
+      ? who + ' invited you to take over ' + startup + ' on Start.sa as its founder.\n\n'
       : who + ' added you to the ' + startup + ' team on Start.sa as a ' + role + '.\n\n') +
     'If you have the Start.sa app installed, open this link:\n' + link + '\n' +
     "If you don't have the app yet, install it first, then come back to this email and open the link again.\n\n" +
@@ -134,10 +134,10 @@ function sendInvitation_(id, inv) {
     // Body
     '<tr><td bgcolor="#ffffff" style="background:#ffffff;padding:34px;color:#1a1a1a;line-height:1.6;text-align:center;">' +
     '<h2 style="margin:0 0 12px 0;color:#17502e;font-size:21px;">' +
-    (owner ? 'You&#39;re invited to become the owner of ' : 'You&#39;re invited to join ') + esc_(startup) + '</h2>' +
+    (owner ? 'You&#39;re invited to become the founder of ' : 'You&#39;re invited to join ') + esc_(startup) + '</h2>' +
     (owner
       ? '<p style="margin:0 0 6px 0;font-size:15px;color:#374151;"><strong>' + esc_(who) + '</strong> invited you to take over <strong>' + esc_(startup) +
-        '</strong> on Start.sa as its <strong>owner</strong>.</p>'
+        '</strong> on Start.sa as its <strong>founder</strong>.</p>'
       : '<p style="margin:0 0 6px 0;font-size:15px;color:#374151;"><strong>' + esc_(who) + '</strong> added you to the <strong>' + esc_(startup) +
         '</strong> team on Start.sa as a <strong>' + esc_(role) + '</strong>.</p>') +
     '<p style="margin:0 0 28px 0;font-size:15px;color:#374151;">If you have the Start.sa app installed, tap the button below. ' +

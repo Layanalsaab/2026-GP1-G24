@@ -27,11 +27,21 @@ const _sections = [
   'Startup Ask',
 ];
 
-Future<void> _openDetails(
-  WidgetTester t, {
+/// A tab of the Manage header (the bar scrolls sideways).
+Finder _tab(String label) => find.descendant(
+  of: find.byType(ScrollableHeaderTabBar),
+  matching: find.text(label),
+);
+
+/// Opens Manage startup on Rafeeq Health, then the step tab [tab] (the six
+/// steps of the form are tabs now; there is no Details tab any more).
+Future<void> _openStep(
+  WidgetTester t,
+  String tab, {
   StartupRole role = StartupRole.founder,
+  Size size = const Size(1236, 2676),
 }) async {
-  t.view.physicalSize = const Size(1236, 2676);
+  t.view.physicalSize = size;
   t.view.devicePixelRatio = 3;
   addTearDown(t.view.reset);
   await t.pumpWidget(
@@ -42,11 +52,21 @@ Future<void> _openDetails(
     ),
   );
   await t.pumpAndSettle();
-  final tab = find.descendant(
-    of: find.byType(ScrollableHeaderTabBar),
-    matching: find.text('Details'),
-  );
-  await t.tap(tab);
+  await _goTo(t, tab);
+}
+
+Future<void> _goTo(WidgetTester t, String tab) async {
+  await t.ensureVisible(_tab(tab));
+  await t.pumpAndSettle();
+  await t.tap(_tab(tab));
+  await t.pumpAndSettle();
+}
+
+/// The step's Edit link (at the right of the card's title).
+Future<void> _edit(WidgetTester t) async {
+  await t.ensureVisible(find.text('Edit'));
+  await t.pumpAndSettle();
+  await t.tap(find.text('Edit'));
   await t.pumpAndSettle();
 }
 
@@ -64,40 +84,35 @@ void main() {
     AppSession.instance = AppSession();
   });
 
-  testWidgets('six sections in order, closed, no Edit pill yet', (t) async {
-    await _openDetails(t);
-    var lastY = -1.0;
-    for (final title in _sections) {
-      final y = t.getTopLeft(find.text(title)).dy;
-      expect(y, greaterThan(lastY), reason: title);
-      lastY = y;
-    }
-    expect(find.text('Edit'), findsNothing);
-  });
-
-  testWidgets('only one section is open at a time and shows its answers', (
+  testWidgets('the six steps are tabs, in order, between EOI and Settings', (
     t,
   ) async {
-    await _openDetails(t);
-    await t.tap(find.text('Startup Description'));
-    await t.pumpAndSettle();
+    await _openStep(t, 'Dashboard');
+    var lastX = t.getTopLeft(_tab('EOI')).dx;
+    for (final title in _sections) {
+      final x = t.getTopLeft(_tab(title)).dx;
+      expect(x, greaterThan(lastX), reason: title);
+      lastX = x;
+    }
+    expect(t.getTopLeft(_tab('Settings')).dx, greaterThan(lastX));
+    // No Details tab any more.
+    expect(_tab('Details'), findsNothing);
+  });
+
+  testWidgets('each step tab shows its answers with one Edit link', (t) async {
+    await _openStep(t, 'Startup Description');
     expect(find.text('What problem does your startup solve?'), findsOneWidget);
     expect(find.text('What is your solution?'), findsOneWidget);
     expect(find.text('What makes your startup unique?'), findsOneWidget);
-    await t.ensureVisible(find.text('Target Market'));
-    await t.pumpAndSettle();
-    await t.tap(find.text('Target Market'));
-    await t.pumpAndSettle();
+    expect(find.text('Edit'), findsOneWidget);
+    await _goTo(t, 'Target Market');
     expect(find.text('What problem does your startup solve?'), findsNothing);
     expect(find.text('Who are your target customers?'), findsOneWidget);
   });
 
-  testWidgets('the Edit pill opens only that section, filled in', (t) async {
-    await _openDetails(t);
-    await t.tap(find.text('Startup Description'));
-    await t.pumpAndSettle();
-    await t.tap(find.text('Edit'));
-    await t.pumpAndSettle();
+  testWidgets('the Edit link opens only that section, filled in', (t) async {
+    await _openStep(t, 'Startup Description');
+    await _edit(t);
     expect(find.text('EDIT STARTUP'), findsOneWidget);
     expect(find.text('Startup Description'), findsOneWidget);
     expect(find.text('Save'), findsOneWidget);
@@ -110,11 +125,8 @@ void main() {
   });
 
   testWidgets('Back with no change leaves without asking', (t) async {
-    await _openDetails(t);
-    await t.tap(find.text('Startup Description'));
-    await t.pumpAndSettle();
-    await t.tap(find.text('Edit'));
-    await t.pumpAndSettle();
+    await _openStep(t, 'Startup Description');
+    await _edit(t);
     await t.tap(find.bySemanticsLabel('Back').first);
     await t.pumpAndSettle();
     expect(find.text('Discard changes?'), findsNothing);
@@ -124,11 +136,8 @@ void main() {
   testWidgets('Back after a change asks, then Discard or Keep editing', (
     t,
   ) async {
-    await _openDetails(t);
-    await t.tap(find.text('Startup Description'));
-    await t.pumpAndSettle();
-    await t.tap(find.text('Edit'));
-    await t.pumpAndSettle();
+    await _openStep(t, 'Startup Description');
+    await _edit(t);
     await t.enterText(
       find.widgetWithText(TextField, PrototypeSeed.rafeeq.problem),
       'A different problem',
@@ -148,12 +157,9 @@ void main() {
     expect(find.text('A different problem'), findsNothing);
   });
 
-  testWidgets('Save writes the change and Details shows it', (t) async {
-    await _openDetails(t);
-    await t.tap(find.text('Startup Description'));
-    await t.pumpAndSettle();
-    await t.tap(find.text('Edit'));
-    await t.pumpAndSettle();
+  testWidgets('Save writes the change and the step tab shows it', (t) async {
+    await _openStep(t, 'Startup Description');
+    await _edit(t);
     await t.enterText(
       find.widgetWithText(TextField, PrototypeSeed.rafeeq.problem),
       'Nurses are hard to book',
@@ -171,11 +177,9 @@ void main() {
     await t.pump(const Duration(seconds: 4));
   });
 
-  testWidgets('a team member sees the sections but no Edit pill', (t) async {
-    await _openDetails(t, role: StartupRole.member);
+  testWidgets('a team member sees the steps but no Edit link', (t) async {
+    await _openStep(t, 'Startup Overview', role: StartupRole.member);
     expect(find.text('Edit'), findsNothing);
-    await t.tap(find.text('Startup Overview'));
-    await t.pumpAndSettle();
     expect(find.text('Sector'), findsOneWidget);
   });
 
@@ -183,26 +187,7 @@ void main() {
     t,
   ) async {
     // A narrow phone makes "Current company valuation" wrap to two lines.
-    t.view.physicalSize = const Size(1080, 2400);
-    t.view.devicePixelRatio = 3;
-    addTearDown(t.view.reset);
-    await t.pumpWidget(
-      MaterialApp(
-        theme: AppTheme.light,
-        navigatorKey: AppToast.navigatorKey,
-        home: ManageStartupScreen(startup: PrototypeSeed.rafeeq),
-      ),
-    );
-    await t.pumpAndSettle();
-    await t.tap(
-      find.descendant(
-        of: find.byType(ScrollableHeaderTabBar),
-        matching: find.text('Details'),
-      ),
-    );
-    await t.pumpAndSettle();
-    await t.tap(find.text('Finance and Growth'));
-    await t.pumpAndSettle();
+    await _openStep(t, 'Finance and Growth', size: const Size(1080, 2400));
     Size box(String label) => t.getSize(
       find
           .ancestor(of: find.text(label), matching: find.byType(Container))
@@ -230,11 +215,8 @@ void main() {
   testWidgets('Finance and Growth edits only its half, Startup Ask the other', (
     t,
   ) async {
-    await _openDetails(t);
-    await t.tap(find.text('Finance and Growth'));
-    await t.pumpAndSettle();
-    await t.tap(find.text('Edit'));
-    await t.pumpAndSettle();
+    await _openStep(t, 'Finance and Growth');
+    await _edit(t);
     expect(find.text('EDIT STARTUP'), findsOneWidget);
     expect(find.text('Finance and Growth'), findsOneWidget);
     expect(
@@ -247,12 +229,8 @@ void main() {
     );
     await t.tap(find.bySemanticsLabel('Back').first);
     await t.pumpAndSettle();
-    await t.ensureVisible(find.text('Startup Ask'));
-    await t.pumpAndSettle();
-    await t.tap(find.text('Startup Ask'));
-    await t.pumpAndSettle();
-    await t.tap(find.text('Edit'));
-    await t.pumpAndSettle();
+    await _goTo(t, 'Startup Ask');
+    await _edit(t);
     expect(find.text('Startup Ask'), findsOneWidget);
     expect(
       find.textContaining('lead investor', findRichText: true),
@@ -265,11 +243,8 @@ void main() {
   });
 
   testWidgets('saving a section says "Changes saved"', (t) async {
-    await _openDetails(t);
-    await t.tap(find.text('Startup Description'));
-    await t.pumpAndSettle();
-    await t.tap(find.text('Edit'));
-    await t.pumpAndSettle();
+    await _openStep(t, 'Startup Description');
+    await _edit(t);
     await t.enterText(
       find.widgetWithText(TextField, PrototypeSeed.rafeeq.problem),
       'Another problem',

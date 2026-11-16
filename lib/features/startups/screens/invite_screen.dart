@@ -121,7 +121,7 @@ class _InviteScreenState extends State<InviteScreen> {
       if (accept) {
         AppToast.showGlobal(
           invitation.isOwner
-              ? FounderToolsStrings.noticeNewOwnerTitle(invitation.startupName)
+              ? FounderToolsStrings.noticeNewFounderTitle(invitation.startupName)
               : 'You’ve been added to ${invitation.startupName}',
         );
       }
@@ -219,7 +219,7 @@ class _InviteScreenState extends State<InviteScreen> {
         const SizedBox(height: 8),
         Text(
           owner
-              ? '$who invited you to become the owner of ${inv.startupName}. You would have full control of it, including its team, its visibility and its settings.'
+              ? '$who invited you to become the founder of ${inv.startupName}. You would have full control of it, including its team, its visibility and its settings.'
               : '$who invited you as $role${inv.roleText.trim().isEmpty ? '' : ' (${inv.roleText.trim()})'}.',
           textAlign: TextAlign.center,
           style: AppText.sans(size: 15, color: AppColors.grey, height: 22),
@@ -246,7 +246,7 @@ class _InviteScreenState extends State<InviteScreen> {
         if (_signedInAsInvited) ...[
           AppButton(
             label: owner
-                ? 'Become the owner'
+                ? 'Become the founder'
                 : AppConfig.autoJoinExistingAccounts
                 ? 'Join the team'
                 : 'Accept',

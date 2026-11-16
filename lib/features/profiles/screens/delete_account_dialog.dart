@@ -2,149 +2,192 @@ import 'package:flutter/material.dart';
 
 import '../../../app_constants/account_strings.dart';
 import '../../../app_constants/profile_strings.dart';
-import '../../../models/app_user.dart';
+import '../../../data_access/repositories/startup_repository.dart';
 import '../../../shared_ui/icons/app_icons.dart';
 import '../../../shared_ui/motion/motion.dart';
 import '../../../shared_ui/theme/app_colors.dart';
 import '../../../shared_ui/theme/app_text.dart';
 import '../../../shared_ui/widgets/buttons/app_button.dart';
 import '../../../shared_ui/widgets/forms/app_text_field.dart';
-import '../../../shared_ui/widgets/overlays/app_dialog.dart';
+import '../../../shared_ui/widgets/overlays/app_bottom_sheet.dart';
 import '../view_models/delete_account_view_model.dart';
 
-/// "Delete your account?": asks for the password, then deletes the account
-/// and profile. Completes with true once the account is deleted.
-Future<bool?> showDeleteAccountDialog(
+/// The password step of Delete Account: only "Enter your password to delete
+/// your account" (the warning came before), on the same bottom sheet as the
+/// warning. The founder's startups follow [fates]. Completes with true once
+/// the account is deleted.
+Future<bool> showDeleteAccountPassword(
   BuildContext context, {
-  required AccountRole role,
-}) => showAppDialog<bool>(
-  context,
-  dismissible: false,
-  builder: (_) => DeleteAccountDialog(role: role),
-);
-
-/// The dialog card: red trash circle, title, the warning for the [role],
-/// "This can't be undone.", the password field and the danger / cancel
-/// buttons.
-class DeleteAccountDialog extends StatefulWidget {
-  const DeleteAccountDialog({super.key, required this.role});
-
-  final AccountRole role;
-
-  @override
-  State<DeleteAccountDialog> createState() => _DeleteAccountDialogState();
+  Map<String, StartupFate> fates = const {},
+}) {
+  final viewModel = DeleteAccountViewModel(fates: fates);
+  return showPasswordSheet(
+    context,
+    title: ProfileStrings.deleteTitle,
+    message: AccountStrings.deletePasswordText,
+    confirmLabel: ProfileStrings.deleteAccount,
+    submit: (password) async {
+      final deleted = await viewModel.submit(password);
+      return deleted ? null : viewModel.error;
+    },
+  ).whenComplete(viewModel.dispose);
 }
 
-class _DeleteAccountDialogState extends State<DeleteAccountDialog> {
-  final _viewModel = DeleteAccountViewModel();
+/// The password step of a deletion (an account, or a startup), laid out like
+/// [ConfirmSheet]: the red trash circle, [title], one line ([message]), the
+/// password field, the red [confirmLabel] button and a white Cancel. [submit]
+/// runs with the password and returns what to show under the field (null when
+/// it worked: the sheet closes). Completes with true when it worked.
+Future<bool> showPasswordSheet(
+  BuildContext context, {
+  required String title,
+  required String message,
+  required String confirmLabel,
+  required Future<String?> Function(String password) submit,
+}) async {
+  FocusManager.instance.primaryFocus?.unfocus();
+  final done = await showAppBottomSheet<bool>(
+    context,
+    dismissible: false,
+    builder: (_) => PasswordSheet(
+      title: title,
+      message: message,
+      confirmLabel: confirmLabel,
+      submit: submit,
+    ),
+  );
+  return done == true;
+}
+
+class PasswordSheet extends StatefulWidget {
+  const PasswordSheet({
+    super.key,
+    required this.title,
+    required this.message,
+    required this.confirmLabel,
+    required this.submit,
+  });
+
+  final String title;
+  final String message;
+  final String confirmLabel;
+  final Future<String?> Function(String password) submit;
+
+  @override
+  State<PasswordSheet> createState() => _PasswordSheetState();
+}
+
+class _PasswordSheetState extends State<PasswordSheet> {
   final _password = TextEditingController();
+  String? _error;
+  bool _loading = false;
 
   @override
   void dispose() {
-    _viewModel.dispose();
     _password.dispose();
     super.dispose();
   }
 
-  Future<void> _delete() async {
+  Future<void> _go() async {
+    if (_loading) return;
     FocusScope.of(context).unfocus();
-    final deleted = await _viewModel.submit(_password.text);
-    if (!deleted || !mounted) return;
-    Navigator.of(context).pop(true);
+    final password = _password.text;
+    if (password.isEmpty) {
+      setState(() => _error = AccountStrings.passwordRequired);
+      return;
+    }
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    final problem = await widget.submit(password);
+    if (!mounted) return;
+    if (problem == null) {
+      Navigator.of(context).pop(true);
+      return;
+    }
+    setState(() {
+      _loading = false;
+      _error = problem;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    return ListenableBuilder(
-      listenable: _viewModel,
-      builder: (context, _) {
-        final loading = _viewModel.isLoading;
-        final error = _viewModel.passwordError ?? _viewModel.formError;
-        return PopScope(
-          canPop: !loading,
-          child: AppDialog(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Center(
-                  child: Pop(
-                    child: Container(
-                      width: 60,
-                      height: 60,
-                      decoration: const BoxDecoration(
-                        color: AppColors.errorFill,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Center(
-                        child: AppIcon.filled(
-                          AppIcons.trash,
-                          size: 28,
-                          color: AppColors.error,
-                        ),
-                      ),
+    return PopScope(
+      canPop: !_loading,
+      child: AppSheetScaffold(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Center(
+                child: Pop(
+                  child: Container(
+                    width: 60,
+                    height: 60,
+                    decoration: const BoxDecoration(
+                      color: AppColors.errorFill,
+                      shape: BoxShape.circle,
+                    ),
+                    alignment: Alignment.center,
+                    child: const AppIcon.filled(
+                      AppIcons.trash,
+                      size: 28,
+                      color: AppColors.error,
                     ),
                   ),
                 ),
-                const SizedBox(height: 16),
-                Text(
-                  ProfileStrings.deleteTitle,
+              ),
+              const SizedBox(height: 16),
+              Semantics(
+                header: true,
+                child: Text(
+                  widget.title,
                   textAlign: TextAlign.center,
                   style: AppText.sans(size: 21, weight: FontWeight.w700),
                 ),
-                const SizedBox(height: 10),
-                Text(
-                  widget.role == AccountRole.founder
-                      ? AccountStrings.deleteWarningFounder
-                      : AccountStrings.deleteWarningInvestor,
-                  style: AppText.sans(
-                    size: 14,
-                    height: 21,
-                    color: AppColors.grey,
-                  ),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                widget.message,
+                textAlign: TextAlign.center,
+                style: AppText.sans(
+                  size: 15,
+                  color: AppColors.grey,
+                  height: 22,
                 ),
-                const SizedBox(height: 10),
-                Text(
-                  AccountStrings.cannotBeUndone,
-                  style: AppText.sans(
-                    size: 14,
-                    weight: FontWeight.w600,
-                    color: AppColors.error,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                LabeledTextField(
-                  label: ProfileStrings.deletePasswordLabel,
-                  controller: _password,
-                  placeholder: ProfileStrings.deletePasswordHint,
-                  password: true,
-                  enabled: !loading,
-                  maxLength: 32,
-                  showCounter: false,
-                  error: error,
-                  textInputAction: TextInputAction.done,
-                  onSubmitted: (_) => _delete(),
-                ),
-                const SizedBox(height: 20),
-                AppButton(
-                  label: ProfileStrings.deleteAccount,
-                  variant: AppButtonVariant.danger,
-                  loading: loading,
-                  onPressed: _delete,
-                ),
-                const SizedBox(height: 10),
-                AppButton(
-                  label: ProfileStrings.cancel,
-                  variant: AppButtonVariant.outline,
-                  onPressed: loading
-                      ? null
-                      : () => Navigator.of(context).pop(false),
-                ),
-              ],
-            ),
+              ),
+              const SizedBox(height: 18),
+              LabeledTextField(
+                label: AccountStrings.deletePasswordLabel,
+                controller: _password,
+                placeholder: AccountStrings.deletePasswordHint,
+                password: true,
+                enabled: !_loading,
+                maxLength: 32,
+                showCounter: false,
+                error: _error,
+                textInputAction: TextInputAction.done,
+                onSubmitted: (_) => _go(),
+              ),
+              const SizedBox(height: 22),
+              AppButton(
+                label: widget.confirmLabel,
+                variant: AppButtonVariant.danger,
+                loading: _loading,
+                onPressed: _go,
+              ),
+              const SizedBox(height: 10),
+              SheetCancelButton(
+                label: ProfileStrings.cancel,
+                onTap: _loading ? null : () => Navigator.of(context).pop(false),
+              ),
+            ],
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 }

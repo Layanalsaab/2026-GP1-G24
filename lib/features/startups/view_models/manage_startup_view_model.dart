@@ -1,12 +1,16 @@
 import 'package:flutter/foundation.dart';
 
+import '../../../app_constants/account_strings.dart';
+import '../../../app_constants/app_strings.dart';
 import '../../../app_constants/founder_tools_strings.dart';
 import '../../../data_access/mock_data/prototype_seed.dart';
+import '../../../data_access/repositories/auth_repository.dart';
 import '../../../data_access/repositories/invitation_repository.dart';
 import '../../../data_access/repositories/request_repository.dart';
 import '../../../data_access/repositories/startup_repository.dart';
 import '../../../helpers/app_session.dart';
 import '../../../helpers/safe_notifier.dart';
+import '../../../models/auth_failure.dart';
 import '../../../models/connection_request.dart';
 import '../../../models/invitation.dart';
 import '../../../models/startup.dart';
@@ -122,24 +126,47 @@ class ManageStartupViewModel extends ChangeNotifier with SafeNotifier {
     }
   }
 
-  /// The owner leaves: the joined person [uid] becomes the owner. True on
+  /// The founder hands the startup to the joined person [uid] and becomes
+  /// [stay] (`coFounder` or `member`), or leaves for good (null). True on
   /// success.
-  Future<bool> transferTo(String uid) =>
+  Future<bool> transferTo(String uid, {String? stay}) =>
       _run(FounderToolsStrings.handoverFailed, () async {
-        startup = await _repository.transferOwnership(startup, uid);
-        _forget(startup.id);
+        startup = await _repository.transferOwnership(
+          startup,
+          uid,
+          stay: stay,
+        );
+        if (stay == null) {
+          _forget(startup.id);
+        } else {
+          // Still on the team: no longer one of mine, one I joined.
+          final session = AppSession.instance;
+          session.setOwnStartupIds([
+            for (final own in session.ownStartupIds)
+              if (own != startup.id) own,
+          ]);
+          session.setMemberStartupIds({
+            ...session.memberStartupIds,
+            startup.id,
+          });
+        }
       });
 
-  /// The owner invites [email] to take over (she stays in control until it is
-  /// accepted); the invitation e-mail is sent too. True on success.
-  Future<bool> inviteOwner(String email, {required bool newUser}) =>
-      _run(FounderToolsStrings.ownerInviteFailed, () async {
+  /// The founder invites [email] to take over (he stays in control until it
+  /// is accepted, then becomes [stay], or leaves for good when null); the
+  /// invitation e-mail is sent too. True on success.
+  Future<bool> inviteOwner(
+    String email, {
+    required bool newUser,
+    String? stay,
+  }) => _run(FounderToolsStrings.ownerInviteFailed, () async {
         final repo = InvitationRepository.instance;
         final invitation = await repo.inviteOwner(
           startup: startup,
           email: email,
           invitedByName: AppSession.instance.user?.fullName ?? '',
           newUser: newUser,
+          stay: stay,
         );
         pendingOwnerInvite = invitation;
         expiredOwnerEmail = null;
@@ -180,6 +207,39 @@ class ManageStartupViewModel extends ChangeNotifier with SafeNotifier {
       }
     }
   });
+
+  /// Delete startup (the founder): checks [password], then deletes it for
+  /// everyone (its team gets a notice). Returns what to show under the
+  /// password field, or null once it is deleted.
+  Future<String?> deleteStartup(String password) async {
+    if (isBusy) return AppStrings.genericError;
+    isBusy = true;
+    error = null;
+    notifyListeners();
+    try {
+      try {
+        await AuthRepository.instance.verifyPassword(password);
+      } on AuthException catch (e) {
+        return switch (e.failure) {
+          AuthFailure.invalidCredentials => AccountStrings.passwordIncorrect,
+          AuthFailure.network => AppStrings.networkError,
+          AuthFailure.tooManyRequests => AppStrings.tooManyRequests,
+          _ => AppStrings.genericError,
+        };
+      }
+      try {
+        await _repository.delete(startup);
+      } catch (e) {
+        debugPrint('${FounderToolsStrings.deleteFailed} ($e)');
+        return FounderToolsStrings.deleteFailed;
+      }
+      _forget(startup.id);
+      return null;
+    } finally {
+      isBusy = false;
+      notifyListeners();
+    }
+  }
 
   /// Leaves the startup (a co-founder or team member of an active one).
   /// Sample startups (interface only) are left by the screen that listed

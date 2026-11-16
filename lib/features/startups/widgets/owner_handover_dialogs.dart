@@ -6,8 +6,8 @@ import '../../../models/startup.dart';
 import 'founder_ui.dart';
 import 'role_tag.dart';
 
-/// What the owner picked in "Choose the next owner": a joined person ([uid])
-/// or "Invite someone new" ([invite]).
+/// What the founder picked in "Choose the next founder": a joined person
+/// ([uid]) or "Invite someone new" ([invite]).
 class NextOwnerPick {
   const NextOwnerPick.person(String this.uid);
   const NextOwnerPick.invite() : uid = null;
@@ -16,8 +16,8 @@ class NextOwnerPick {
   bool get invite => uid == null;
 }
 
-/// "Choose the next owner" when the owner leaves (docs: Closing a Startup,
-/// Leaving and Deleting an Account): a bottom sheet with a card for every
+/// "Choose the next founder" when the founder leaves (docs: Closing a
+/// Startup, Leaving and Deleting an Account): a bottom sheet with a card for every
 /// person who joined [startup] (their picture or initials, name and tag, like
 /// the team list) and, under them, the dashed "Invite someone new" card.
 /// Completes with the pick, or null when closed.
@@ -41,14 +41,14 @@ class _NextOwnerSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AppSheetScaffold(
-      title: FounderToolsStrings.nextOwnerTitle,
+      title: FounderToolsStrings.nextFounderTitle,
       child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              FounderToolsStrings.nextOwnerText(startup.name),
+              FounderToolsStrings.nextFounderText(startup.name),
               style: AppText.sans(size: 14, color: AppColors.grey, height: 20),
             ),
             const SizedBox(height: 16),
@@ -229,7 +229,150 @@ class _InviteCard extends StatelessWidget {
   }
 }
 
-/// "Invite a new owner" when the owner leaves (docs: Closing a Startup,
+/// What the founder chose to be after the handover: [stay] is `coFounder` or
+/// `member`, or null (he leaves for good).
+class StayPick {
+  const StayPick(this.stay);
+
+  final String? stay;
+  bool get leaves => stay == null;
+}
+
+/// "Your role after the handover" (docs: Closing a Startup, Leaving and
+/// Deleting an Account): after naming the next founder, the founder chooses
+/// whether he stays on [startupName]'s team as a co-founder or a team member,
+/// or leaves for good. The same cards as "Choose the next founder".
+/// Completes with the choice, or null when closed.
+Future<StayPick?> showStayChoiceSheet(
+  BuildContext context, {
+  required String startupName,
+}) {
+  return showAppBottomSheet<StayPick>(
+    context,
+    builder: (ctx) => AppSheetScaffold(
+      title: FounderToolsStrings.yourRoleTitle,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              FounderToolsStrings.yourRoleText(startupName),
+              style: AppText.sans(size: 14, color: AppColors.grey, height: 20),
+            ),
+            const SizedBox(height: 16),
+            _StayCard(
+              icon: AppIcons.people,
+              title: FounderToolsStrings.stayCoFounder,
+              text: FounderToolsStrings.stayCoFounderText,
+              onTap: () => Navigator.of(ctx).pop(const StayPick('coFounder')),
+            ),
+            const SizedBox(height: 10),
+            _StayCard(
+              icon: AppIcons.people,
+              title: FounderToolsStrings.stayMember,
+              text: FounderToolsStrings.stayMemberText,
+              onTap: () => Navigator.of(ctx).pop(const StayPick('member')),
+            ),
+            const SizedBox(height: 10),
+            _StayCard(
+              icon: AppIcons.logout,
+              title: FounderToolsStrings.leaveForGood,
+              text: FounderToolsStrings.leaveForGoodText(startupName),
+              danger: true,
+              onTap: () => Navigator.of(ctx).pop(const StayPick(null)),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
+/// One choice: a white card (1 px border, radius 14, padding 12) with a
+/// 40 px icon tile (moss, or red for leaving), the title, a line and a
+/// chevron.
+class _StayCard extends StatelessWidget {
+  const _StayCard({
+    required this.icon,
+    required this.title,
+    required this.text,
+    required this.onTap,
+    this.danger = false,
+  });
+
+  final String icon;
+  final String title;
+  final String text;
+  final VoidCallback onTap;
+  final bool danger;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = danger ? AppColors.error : AppColors.moss600;
+    return Semantics(
+      button: true,
+      label: '$title, $text',
+      excludeSemantics: true,
+      child: Pressable(
+        scale: PressScale.button,
+        borderRadius: BorderRadius.circular(14),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: AppColors.white,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: AppColors.border),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: danger ? AppColors.errorFill : AppColors.moss50,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                alignment: Alignment.center,
+                child: AppIcon.filled(icon, size: 20, color: color),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: AppText.sans(
+                        size: 15,
+                        height: 20,
+                        weight: FontWeight.w600,
+                        color: danger ? AppColors.error : AppColors.ink,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      text,
+                      style: AppText.sans(size: 12, color: AppColors.grey),
+                    ),
+                  ],
+                ),
+              ),
+              const AppIcon.filled(
+                AppIcons.chevRight,
+                size: 20,
+                color: AppColors.chevron,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// "Invite a new founder" when the founder leaves (docs: Closing a Startup,
 /// Leaving and Deleting an Account): a bottom sheet laid out like the other
 /// leave sheets ([ConfirmSheet]): a round moss envelope, the title, what
 /// happens next ([message]), the e-mail field, "Send invitation" and a white
@@ -318,7 +461,7 @@ class _OwnerEmailSheetState extends State<_OwnerEmailSheet> {
             Semantics(
               header: true,
               child: Text(
-                FounderToolsStrings.ownerEmailTitle,
+                FounderToolsStrings.founderEmailTitle,
                 textAlign: TextAlign.center,
                 style: AppText.sans(size: 21, weight: FontWeight.w700),
               ),

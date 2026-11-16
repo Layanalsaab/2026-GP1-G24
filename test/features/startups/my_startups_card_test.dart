@@ -116,8 +116,9 @@ void main() {
         addedAt: DateTime(2026, 10, 2),
       ),
     ]);
-    expect(find.text('View'), findsOneWidget);
-    expect(find.text('Manage'), findsOneWidget);
+    // Only the founder manages: a co-founder views, like a team member.
+    expect(find.text('View'), findsNWidgets(2));
+    expect(find.text('Manage'), findsNothing);
     expect(find.text('Team member'), findsOneWidget);
     expect(find.text('Co-founder'), findsOneWidget);
   });

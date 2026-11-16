@@ -2,7 +2,7 @@
 // see README.md).
 import { initializeTestEnvironment } from '@firebase/rules-unit-testing';
 import {
-  setDoc, getDoc, getDocs, updateDoc, doc, collection, query, where,
+  setDoc, getDoc, getDocs, updateDoc, deleteDoc, doc, collection, query, where,
   writeBatch, serverTimestamp, arrayUnion, deleteField,
 } from 'firebase/firestore';
 import fs from 'fs';
@@ -48,7 +48,8 @@ const inv = (extra = {}) => ({
 });
 
 await check('founder creates an invitation', true, () => setDoc(doc(founder, 'invitations', 'S1~sara@gmail.com'), inv()));
-await check('co-founder creates another', true, () => setDoc(doc(coFounder, 'invitations', 'S1~omar@gmail.com'), inv({ emailLower: 'omar@gmail.com', invitedBy: 'c1' })));
+await check('a co-founder cannot invite (only the founder does)', false, () => setDoc(doc(coFounder, 'invitations', 'S1~omar@gmail.com'), inv({ emailLower: 'omar@gmail.com', invitedBy: 'c1' })));
+await check('the founder invites another', true, () => setDoc(doc(founder, 'invitations', 'S1~omar@gmail.com'), inv({ emailLower: 'omar@gmail.com' })));
 await check('stranger cannot create', false, () => setDoc(doc(stranger, 'invitations', 'S1~zed@gmail.com'), inv({ emailLower: 'zed@gmail.com', invitedBy: 'x1' })));
 await check('wrong id is refused', false, () => setDoc(doc(founder, 'invitations', 'S1~other'), inv({ emailLower: 'q@gmail.com' })));
 await check('claiming to be someone else is refused', false, () => setDoc(doc(founder, 'invitations', 'S1~liar@gmail.com'), inv({ emailLower: 'liar@gmail.com', invitedBy: 'c1' })));
@@ -234,13 +235,36 @@ await env.withSecurityRulesDisabled((ctx) => setDoc(doc(ctx.firestore(), 'startu
 }));
 await check('a co-founder cannot change who created the startup', false, () => updateDoc(doc(coFounder, 'startups', 'S4'), touch({ foundedBy: 'c1' })));
 await check('a co-founder cannot close the startup', false, () => updateDoc(doc(coFounder, 'startups', 'S4'), touch({ status: 'closed' })));
-await check('a co-founder edits the startup', true, () => updateDoc(doc(coFounder, 'startups', 'S4'), touch({ problem: 'x' })));
-await check('ownership cannot go to someone who is not on the team', false, () => updateDoc(doc(founder, 'startups', 'S4'), touch({ founderId: 'x1' })));
-await check('the leaving owner cannot stay on the team', false, () => updateDoc(doc(founder, 'startups', 'S4'), touch({ founderId: 'c1', memberIds: ['m1', 'f1'], memberRoles: { m1: 'member', f1: 'coFounder' }, coFounderIds: ['f1'] })));
-await check('the owner leaves by naming a joined co-founder the next owner', true, () => updateDoc(doc(founder, 'startups', 'S4'), touch({ founderId: 'c1', memberIds: ['m1'], memberRoles: { m1: 'member' }, coFounderIds: [], teamMembers: [{ fullName: 'Omar', uid: 'c1' }, { fullName: 'Mona', uid: 'm1' }], ownerChangedAt: new Date() })));
-await check('the old owner can no longer edit it', false, () => updateDoc(doc(founder, 'startups', 'S4'), touch({ problem: 'y' })));
-await check('the new owner closes it, whoever is on it', true, () => updateDoc(doc(coFounder, 'startups', 'S4'), touch({ status: 'closed', closedAt: new Date() })));
-await check('a member is removed from a closed startup when their account is deleted', true, () => updateDoc(doc(mona, 'startups', 'S4'), { memberIds: [], memberRoles: {}, teamMembers: [{ fullName: 'Omar', uid: 'c1' }] }));
+await check('a co-founder cannot edit the startup (only the founder does)', false, () => updateDoc(doc(coFounder, 'startups', 'S4'), touch({ problem: 'x' })));
+await check('the founder cannot be handed to someone who is not on the team', false, () => updateDoc(doc(founder, 'startups', 'S4'), touch({ founderId: 'x1' })));
+await check('a hand-over cannot change anything else (the name)', false, () => updateDoc(doc(founder, 'startups', 'S4'), touch({ founderId: 'c1', memberIds: ['m1'], memberRoles: { m1: 'member' }, coFounderIds: [], name: 'Mine' })));
+await check('the leaving founder cannot stay with a made-up role', false, () => updateDoc(doc(founder, 'startups', 'S4'), touch({ founderId: 'c1', memberIds: ['m1', 'f1'], memberRoles: { m1: 'member', f1: 'admin' }, coFounderIds: [] })));
+await check('the founder hands over and stays as a co-founder', true, () => updateDoc(doc(founder, 'startups', 'S4'), touch({ founderId: 'c1', memberIds: ['m1', 'f1'], memberRoles: { m1: 'member', f1: 'coFounder' }, coFounderIds: ['f1'], teamMembers: [{ fullName: 'Founder', uid: 'f1', coFounder: true }, { fullName: 'Omar', uid: 'c1', isFounder: true }, { fullName: 'Mona', uid: 'm1' }], ownerChangedAt: new Date() })));
+await check('the old founder (now a co-founder) can no longer edit it', false, () => updateDoc(doc(founder, 'startups', 'S4'), touch({ problem: 'y' })));
+await check('the new founder hands it back and leaves for good', true, () => updateDoc(doc(coFounder, 'startups', 'S4'), touch({ founderId: 'f1', memberIds: ['m1'], memberRoles: { m1: 'member' }, coFounderIds: [], teamMembers: [{ fullName: 'Founder', uid: 'f1', isFounder: true }, { fullName: 'Mona', uid: 'm1' }], ownerChangedAt: new Date() })));
+await check('the founder closes it, whoever is on it', true, () => updateDoc(doc(founder, 'startups', 'S4'), touch({ status: 'closed', closedAt: new Date() })));
+await check('a closed startup can be handed over (the founder deleting his account)', true, () => updateDoc(doc(founder, 'startups', 'S4'), touch({ founderId: 'm1', memberIds: [], memberRoles: {}, coFounderIds: [], teamMembers: [{ fullName: 'Mona', uid: 'm1', isFounder: true }], ownerChangedAt: new Date() })));
+await check('the new founder of a closed startup changes whether it shows in the Hub', true, () => updateDoc(doc(mona, 'startups', 'S4'), touch({ isPublic: false })));
+await check('the founder deletes a startup that has a team', true, async () => {
+  await env.withSecurityRulesDisabled((ctx) => setDoc(doc(ctx.firestore(), 'startups', 'S6'), { founderId: 'f1', name: 'Gone', memberIds: ['c1'], memberRoles: { c1: 'coFounder' } }));
+  await deleteDoc(doc(founder, 'startups', 'S6'));
+});
+await check('a co-founder cannot delete it', false, async () => {
+  await env.withSecurityRulesDisabled((ctx) => setDoc(doc(ctx.firestore(), 'startups', 'S7'), { founderId: 'f1', name: 'Kept', memberIds: ['c1'], memberRoles: { c1: 'coFounder' } }));
+  await deleteDoc(doc(coFounder, 'startups', 'S7'));
+});
+
+// The notice inbox: written about a startup both people are on, read and
+// removed by its reader only.
+const notice = (extra = {}) => ({ type: 'closed', startupId: 'S7', startupName: 'Kept', createdAt: serverTimestamp(), ...extra });
+await check('the founder sends a notice to a co-founder of his startup', true, () => setDoc(doc(founder, 'users', 'c1', 'notices', 'n1'), notice()));
+await check('a member tells the founder they left', true, () => setDoc(doc(coFounder, 'users', 'f1', 'notices', 'n2'), notice({ type: 'left', person: 'Omar' })));
+await check('a stranger cannot send a notice about it', false, () => setDoc(doc(stranger, 'users', 'c1', 'notices', 'n3'), notice()));
+await check('nobody sends a notice to someone who is not on it', false, () => setDoc(doc(founder, 'users', 'x1', 'notices', 'n4'), notice()));
+await check('an unknown notice type is refused', false, () => setDoc(doc(founder, 'users', 'c1', 'notices', 'n5'), notice({ type: 'hacked' })));
+await check('the reader reads their notices', true, () => getDocs(collection(coFounder, 'users', 'c1', 'notices')));
+await check('somebody else cannot read them', false, () => getDocs(collection(founder, 'users', 'c1', 'notices')));
+await check('the reader removes a notice once shown', true, () => deleteDoc(doc(coFounder, 'users', 'c1', 'notices', 'n1')));
 
 // Taking over through an owner invitation (the owner stays in control until
 // it is accepted).
@@ -253,16 +277,24 @@ await env.withSecurityRulesDisabled((ctx) => setDoc(doc(ctx.firestore(), 'startu
 const nextOwner = env.authenticatedContext('n1', { email: 'next@gmail.com', email_verified: true }).firestore();
 const ownerInv = (extra = {}) => inv({ startupId: 'S5', startupName: 'Tamr', emailLower: 'next@gmail.com', role: 'owner', roleText: '', contribution: '', invitedBy: 'f1', ...extra });
 await check('a co-founder cannot invite someone to take over', false, () => setDoc(doc(coFounder, 'invitations', 'S5~other@gmail.com'), ownerInv({ emailLower: 'other@gmail.com', invitedBy: 'c1' })));
-await check('the owner invites someone to take over', true, () => setDoc(doc(founder, 'invitations', 'S5~next@gmail.com'), ownerInv()));
+await check('a made-up role for the leaving founder is refused', false, () => setDoc(doc(founder, 'invitations', 'S5~next@gmail.com'), ownerInv({ previousFounderRole: 'admin' })));
+await check('the founder invites someone to take over and will stay as a co-founder', true, () => setDoc(doc(founder, 'invitations', 'S5~next@gmail.com'), ownerInv({ previousFounderRole: 'coFounder' })));
 await check('the invited person reads the private startup first', true, () => getDoc(doc(nextOwner, 'startups', 'S5')));
 await check('a stranger still cannot read it', false, () => getDoc(doc(stranger, 'startups', 'S5')));
-await check('the invited person takes over (the old owner\'s card leaves)', true, async () => {
+await check('the invited person tells the team before taking over', true, () => setDoc(doc(nextOwner, 'users', 'c1', 'notices', 'n6'), { type: 'founderChanged', startupId: 'S5', startupName: 'Tamr', person: 'Next', createdAt: serverTimestamp() }));
+await check('taking over without the role the founder chose is refused', false, async () => {
   const b = writeBatch(nextOwner);
-  b.update(doc(nextOwner, 'startups', 'S5'), { founderId: 'n1', teamMembers: [{ fullName: 'Omar', uid: 'c1' }, { fullName: 'Next', uid: 'n1' }], ownerChangedAt: serverTimestamp(), updatedAt: serverTimestamp() });
+  b.update(doc(nextOwner, 'startups', 'S5'), { founderId: 'n1', teamMembers: [{ fullName: 'Next', uid: 'n1', isFounder: true }, { fullName: 'Omar', uid: 'c1' }], ownerChangedAt: serverTimestamp(), updatedAt: serverTimestamp() });
   b.update(doc(nextOwner, 'invitations', 'S5~next@gmail.com'), { status: 'accepted', respondedAt: serverTimestamp(), acceptedBy: 'n1', acceptedByName: 'Next' });
   await b.commit();
 });
-await check('the old owner can no longer edit it', false, () => updateDoc(doc(founder, 'startups', 'S5'), touch({ problem: 'z' })));
+await check('the invited person takes over; the old founder stays as a co-founder', true, async () => {
+  const b = writeBatch(nextOwner);
+  b.update(doc(nextOwner, 'startups', 'S5'), { founderId: 'n1', memberIds: arrayUnion('f1'), 'memberRoles.f1': 'coFounder', coFounderIds: arrayUnion('f1'), teamMembers: [{ fullName: 'Next', uid: 'n1', isFounder: true }, { fullName: 'Founder', uid: 'f1', coFounder: true }, { fullName: 'Omar', uid: 'c1' }], ownerChangedAt: serverTimestamp(), updatedAt: serverTimestamp() });
+  b.update(doc(nextOwner, 'invitations', 'S5~next@gmail.com'), { status: 'accepted', respondedAt: serverTimestamp(), acceptedBy: 'n1', acceptedByName: 'Next' });
+  await b.commit();
+});
+await check('the old founder (now a co-founder) can no longer edit it', false, () => updateDoc(doc(founder, 'startups', 'S5'), touch({ problem: 'z' })));
 
 console.log(fails === 0 ? 'ALL PASSED' : fails + ' FAILED');
 await env.cleanup();

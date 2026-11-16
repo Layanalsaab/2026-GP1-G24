@@ -7,6 +7,7 @@ import '../../models/auth_failure.dart';
 import '../firebase_services/auth_service.dart';
 import 'bookmark_repository.dart';
 import 'invitation_repository.dart';
+import 'notice_repository.dart';
 import 'startup_repository.dart';
 import 'ticket_repository.dart';
 import 'team_lookup.dart';
@@ -275,9 +276,10 @@ class AuthRepository {
   /// signed-in user delete their own document. If any step fails, the steps
   /// after it don't run, so a wrong password deletes nothing.
   ///
-  /// The founder's startups with a team are closed for it, and the ones with
-  /// nobody else on them deleted (StartupRepository.closeAllMine); the account
-  /// leaves every team it is on.
+  /// A founder's startups follow his choice for each ([fates]: closed, and
+  /// handed to a next founder when it has a team, or deleted;
+  /// StartupRepository.settleMineBeforeDeletion); the account leaves every
+  /// team it is on.
   // TODO(Sprint 2+): also delete the founder's requests and Investment
   // Associations once those collections exist (PBI 13).
   ///
@@ -285,7 +287,10 @@ class AuthRepository {
   /// signed in a moment ago; otherwise it throws
   /// [AuthFailure.requiresRecentLogin] before anything is removed, and the
   /// caller asks for the password once and calls again with it.
-  Future<void> deleteAccount({String? password}) async {
+  Future<void> deleteAccount({
+    String? password,
+    Map<String, StartupFate> fates = const {},
+  }) async {
     final account = _auth.currentAccount;
     if (account == null) throw const AuthException(AuthFailure.unknown);
     if (password != null) {
@@ -293,11 +298,11 @@ class AuthRepository {
     } else if (!_auth.signedInRecently) {
       throw const AuthException(AuthFailure.requiresRecentLogin);
     }
-    // A founder's startups with a team are closed for it (the others
+    // A founder's startups follow his choices (closed and handed over, or
     // deleted), and the account leaves the teams it is on. If any of that
     // fails, NOTHING else is deleted (the account stays and the user tries
-    // again), so a startup is never left with a deleted owner.
-    await StartupRepository.instance.closeAllMine();
+    // again), so a startup is never left half done.
+    await StartupRepository.instance.settleMineBeforeDeletion(fates);
     // Invitations still waiting for this person are declined, so an owner
     // waiting for them to take over isn't left waiting.
     try {
@@ -317,9 +322,19 @@ class AuthRepository {
     } catch (_) {
       // Carry on: the account itself must still be removed.
     }
+    // The notice inbox lives under the user document too.
+    await NoticeRepository.instance.clearMine();
     await _users.deleteProfile(account.uid);
     await _auth.deleteCurrentAccount();
     await _safeSignOut();
+  }
+
+  /// Checks the signed-in person's [password] (Delete startup asks for it):
+  /// throws [AuthFailure.invalidCredentials] when it is wrong.
+  Future<void> verifyPassword(String password) async {
+    final account = _auth.currentAccount;
+    if (account == null) throw const AuthException(AuthFailure.unknown);
+    await _auth.reauthenticate(account.email, password);
   }
 
   Future<AuthAccount> _signInOrGeneric(String email, String password) async {

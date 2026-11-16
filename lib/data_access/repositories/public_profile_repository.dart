@@ -107,19 +107,18 @@ class PublicProfileRepository {
       for (final m in s.team) {
         if (m.uid == personId) card = m;
       }
-      // The title, not the access: whoever created the startup is its
-      // founder (also after handing it over), and an owner who didn't create
-      // it is a co-founder.
+      // The title follows control: whoever holds the startup now is its
+      // founder (also after a handover).
       final onTeam =
           s.founderId == personId ||
           s.memberRoles.containsKey(personId) ||
           (card != null && !card.invited);
       final String? role;
       if (onTeam &&
-          (s.originalFounderId == personId || (card?.isFounder ?? false))) {
+          (s.founderId == personId ||
+              ((card?.isFounder ?? false) && s.founderId.isEmpty))) {
         role = 'founder';
-      } else if (s.founderId == personId ||
-          s.memberRoles[personId] == 'coFounder' ||
+      } else if (s.memberRoles[personId] == 'coFounder' ||
           ((card?.coFounder ?? false) && !(card?.invited ?? false))) {
         role = 'coFounder';
       } else if (onTeam) {
@@ -143,11 +142,10 @@ class PublicProfileRepository {
       final repo = StartupRepository.instance;
       final mine = await repo.fetchMyStartups();
       final joined = await repo.fetchMemberStartups();
-      // The title: whoever created a startup is its founder; an owner who
-      // didn't create it is listed with the co-founders.
-      String titleIn(Startup s) => s.originalFounderId == uid
+      // The title follows control: whoever holds a startup is its founder.
+      String titleIn(Startup s) => s.founderId == uid
           ? 'founder'
-          : (s.founderId == uid || s.memberRoles[uid] == 'coFounder')
+          : s.memberRoles[uid] == 'coFounder'
           ? 'coFounder'
           : 'member';
       final refs = <ProfileStartupRef>[

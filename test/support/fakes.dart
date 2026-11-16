@@ -430,11 +430,27 @@ class FakeAuthRepository implements AuthRepository {
   int deleteAccountCalls = 0;
   AuthFailure? deleteAccountFails;
 
+  /// The founder's choices passed to the last [deleteAccount].
+  Map<String, StartupFate>? deletedWithFates;
+
   @override
-  Future<void> deleteAccount({String? password}) async {
+  Future<void> deleteAccount({
+    String? password,
+    Map<String, StartupFate> fates = const {},
+  }) async {
     deleteAccountCalls++;
     await gate;
     if (deleteAccountFails != null) throw AuthException(deleteAccountFails!);
+    deletedWithFates = fates;
+  }
+
+  int verifyPasswordCalls = 0;
+  AuthFailure? verifyPasswordFails;
+
+  @override
+  Future<void> verifyPassword(String password) async {
+    verifyPasswordCalls++;
+    if (verifyPasswordFails != null) throw AuthException(verifyPasswordFails!);
   }
 }
 
@@ -523,24 +539,40 @@ class FakeStartupRepository implements StartupRepository {
   @override
   Future<void> leaveAll() async => memberOf.clear();
 
-  /// (startup id, new owner) of every hand-over.
+  /// (startup id, new founder) of every hand-over.
   final List<(String, String)> transfers = [];
 
+  /// What the previous founder chose in each hand-over (null: left).
+  final List<String?> transferStays = [];
+
   @override
-  Future<Startup> transferOwnership(Startup startup, String newOwnerId) async {
+  Future<Startup> transferOwnership(
+    Startup startup,
+    String newOwnerId, {
+    String? stay,
+  }) async {
     transfers.add((startup.id, newOwnerId));
+    transferStays.add(stay);
+    final me = startup.founderId;
     final roles = {...startup.memberRoles}..remove(newOwnerId);
+    if (stay != null) roles[me] = stay;
     final moved = startup.copyWith(
       founderId: newOwnerId,
       foundedBy: startup.originalFounderId,
       memberRoles: roles,
       team: [
         for (final m in startup.team)
-          if (m.uid != startup.founderId) m,
+          if (m.uid == newOwnerId)
+            m.copyWith(isFounder: true, coFounder: false)
+          else if (m.uid != me)
+            m
+          else if (stay != null)
+            m.copyWith(isFounder: false, coFounder: stay == 'coFounder'),
       ],
     );
-    // The previous owner is no longer on it.
+    // The previous founder no longer holds it (one he may still have joined).
     startups.removeWhere((s) => s.id == startup.id);
+    if (stay != null) memberOf.add(moved);
     return moved;
   }
 
@@ -571,14 +603,17 @@ class FakeStartupRepository implements StartupRepository {
   Future<bool> hasAnyStartup() async =>
       startups.isNotEmpty || memberOf.isNotEmpty;
 
-  /// Account deletion: each owned startup closed for its team or deleted.
-  bool closedAllMine = false;
+  /// Account deletion: what was chosen for each startup held.
+  Map<String, StartupFate>? settledFates;
   AuthFailure? closeAllFails;
 
+  /// Kept for older tests: whether the startups were settled.
+  bool get closedAllMine => settledFates != null;
+
   @override
-  Future<void> closeAllMine() async {
+  Future<void> settleMineBeforeDeletion(Map<String, StartupFate> fates) async {
     if (closeAllFails != null) throw AuthException(closeAllFails!);
-    closedAllMine = true;
+    settledFates = fates;
     startups.clear();
     memberOf.clear();
   }
@@ -722,6 +757,7 @@ class FakeInvitationRepository implements InvitationRepository {
     required String email,
     required String invitedByName,
     bool newUser = false,
+    String? stay,
   }) async {
     final invitation = Invitation(
       startupId: startup.id,
@@ -731,6 +767,7 @@ class FakeInvitationRepository implements InvitationRepository {
       invitedBy: 'uid1',
       invitedByName: invitedByName,
       newUser: newUser,
+      previousFounderRole: stay,
     );
     store[invitation.id] = invitation;
     return invitation;

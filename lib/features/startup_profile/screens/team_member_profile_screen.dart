@@ -127,9 +127,15 @@ class _TeamMemberProfileScreenState extends State<TeamMemberProfileScreen> {
     }
   }
 
+  /// The person's title in the startup this profile was opened from, the
+  /// same words as its team list (Founder, Co-founder, Team member): read
+  /// from the startup itself once loaded (the founder is whoever holds it),
+  /// otherwise from the card. The text typed on the team card (e.g. "CTO")
+  /// is not used here, so the two never disagree.
   String get _roleLine {
-    final role = widget.member.role.trim();
-    if (role.isNotEmpty) return role;
+    for (final r in _startups) {
+      if (r.id == widget.startupId) return RoleTag.labelOf(_roleOf(r.role));
+    }
     return RoleTag.labelOf(
       widget.member.isFounder
           ? StartupRole.founder
@@ -138,6 +144,12 @@ class _TeamMemberProfileScreenState extends State<TeamMemberProfileScreen> {
           : StartupRole.member,
     );
   }
+
+  static StartupRole _roleOf(String role) => switch (role) {
+    'founder' => StartupRole.founder,
+    'coFounder' => StartupRole.coFounder,
+    _ => StartupRole.member,
+  };
 
   /// The person's startups as the same cards as the Hub, each with the
   /// person's role there as a capsule at the top right.
@@ -162,15 +174,9 @@ class _TeamMemberProfileScreenState extends State<TeamMemberProfileScreen> {
   }
 
   Widget _startupCard(ProfileStartupRef ref) {
-    final role = switch (ref.role) {
-      'founder' => StartupRole.founder,
-      'coFounder' => StartupRole.coFounder,
-      _ => StartupRole.member,
-    };
+    final role = _roleOf(ref.role);
     final st = ref.startup;
     final item = st == null ? null : HomeItem.fromStartup(st);
-    final owner =
-        st != null && StartupRole.isTransferredOwner(st, widget.member.uid);
     return HomeCard(
       name: ref.name,
       tag: item?.tag ?? '',
@@ -179,7 +185,7 @@ class _TeamMemberProfileScreenState extends State<TeamMemberProfileScreen> {
       bodyMaxLines: 2,
       animate: false,
       badges: [
-        RoleTag(role, label: owner ? FounderToolsStrings.roleOwner : null),
+        RoleTag(role),
         if (st != null && st.isClosed)
           const GreyTag(FounderToolsStrings.closedPill),
       ],

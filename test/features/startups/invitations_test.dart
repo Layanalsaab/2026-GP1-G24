@@ -422,10 +422,37 @@ void main() {
       await t.pumpAndSettle();
     }
 
-    testWidgets('a pending invitation shows who, where and the e-mail', (
+    testWidgets('signed out: Log in opens with the invited e-mail', (
       t,
     ) async {
       AppSession.instance = AppSession(); // nobody signed in
+      invites.store['S1~sara@gmail.com'] = const Invitation(
+        startupId: 'S1',
+        startupName: 'Rafeeq Health',
+        emailLower: 'sara@gmail.com',
+        role: Invitation.roleCoFounder,
+        roleText: 'CTO',
+        invitedBy: 'u1',
+        invitedByName: 'Fahad Alotaibi',
+      );
+      await pump(t, 'S1~sara@gmail.com');
+      // Somebody who has an account logs in first (the e-mail filled in).
+      expect(find.byType(LoginScreen), findsOneWidget);
+      expect(find.text('sara@gmail.com'), findsOneWidget);
+    });
+
+    testWidgets('a pending invitation shows who, where and the e-mail', (
+      t,
+    ) async {
+      AppSession.instance = AppSession()
+        ..signIn(
+          const AppUser(
+            uid: 'sara1',
+            role: AccountRole.founder,
+            fullName: 'Sara',
+            email: 'sara@gmail.com',
+          ),
+        );
       invites.store['S1~sara@gmail.com'] = const Invitation(
         startupId: 'S1',
         startupName: 'Rafeeq Health',
@@ -442,8 +469,9 @@ void main() {
         findsOneWidget,
       );
       expect(find.textContaining('sara@gmail.com'), findsOneWidget);
-      expect(find.text('Create account'), findsOneWidget);
-      expect(find.text('Log in'), findsOneWidget);
+      // Signed in with that e-mail: no Create account / Log in.
+      expect(find.text('Create account'), findsNothing);
+      expect(find.text('Log in'), findsNothing);
     });
 
     testWidgets('a new person goes straight to Create your account', (t) async {
@@ -504,10 +532,12 @@ void main() {
         findsOneWidget,
       );
       expect(
-        find.textContaining('invited you to become the owner of Rafeeq Health'),
+        find.textContaining(
+          'invited you to become the founder of Rafeeq Health',
+        ),
         findsOneWidget,
       );
-      expect(find.text('Become the owner'), findsOneWidget);
+      expect(find.text('Become the founder'), findsOneWidget);
       expect(find.text('Decline'), findsOneWidget);
       expect(find.text('Join the team'), findsNothing);
     });
@@ -520,7 +550,7 @@ void main() {
   });
 
   group('who may change the team after a hand-over', () {
-    // Noura created the startup, then left and named Layan its owner; Huda
+    // Noura created the startup, then left and named Layan its founder; Huda
     // is a co-founder and Reem a member.
     Startup handedOver() => Startup.fromMap('S10', {
       'founderId': 'layan',
@@ -580,14 +610,14 @@ void main() {
       expect(vm.canChangeCoFounder(card(vm, 'reem')), isFalse);
     });
 
-    test('the owner removes a co-founder; nobody gets a Founder card', () {
+    test('the new founder removes a co-founder and has the Founder card', () {
       AppSession.instance = AppSession()..signIn(person('layan'));
       final vm = formWithTeam(initial: handedOver());
       addTearDown(vm.dispose);
       expect(vm.canRemoveMember(card(vm, 'huda')), isTrue);
       expect(vm.canChangeCoFounder(card(vm, 'huda')), isTrue);
-      // The founder left, and an owner who didn't create it isn't a Founder.
-      expect(vm.team.where((m) => m.isFounder), isEmpty);
+      // The title follows control: whoever holds the startup is its Founder.
+      expect([for (final m in vm.team) if (m.isFounder) m.uid], ['layan']);
     });
 
     test('saving keeps who created it and leaves the founder off', () {

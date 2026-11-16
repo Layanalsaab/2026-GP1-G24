@@ -133,7 +133,12 @@ void main() {
         ),
       );
       expect(find.text('TEAM MEMBER'), findsOneWidget);
-      for (final tab in ['Dashboard', 'Details', 'Rounds', 'Settings']) {
+      for (final tab in [
+        'Dashboard',
+        'Startup Overview',
+        'Startup Ask',
+        'Settings',
+      ]) {
         await _goTo(t, tab);
         expect(find.text('View only'), findsNothing, reason: tab);
         expect(

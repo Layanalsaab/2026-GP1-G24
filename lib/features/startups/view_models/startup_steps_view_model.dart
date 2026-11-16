@@ -900,9 +900,8 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
   void _ensureFounder() {
     final user = AppSession.instance.user;
     if (user == null || !user.isFounder) return;
-    // Only the person who created the startup has the Founder card (an owner
-    // it was handed to is a co-founder).
-    if (initial != null && initial!.originalFounderId != user.uid) return;
+    // Only the startup's founder (whoever holds it now) has the Founder card.
+    if (initial != null && initial!.founderId != user.uid) return;
     final list = [...team];
     var i = list.indexWhere((m) => m.isFounder);
     if (i < 0) {

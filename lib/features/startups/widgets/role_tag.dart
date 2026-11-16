@@ -29,31 +29,21 @@ class RoleTag extends StatelessWidget {
   /// The dashed tag in red ("Declined").
   final bool warn;
 
-  /// The capsule of [uid] in [startup]: their title ("Founder" for whoever
-  /// created it) and "Owner" for an owner who didn't create it. [fallback] is
-  /// used when [uid] has no role there (samples).
+  /// The capsule of [uid] in [startup]: their title (Founder, Co-founder or
+  /// Team member). [fallback] is used when [uid] has no role there
+  /// (samples).
   static RoleTag forStartup(
     Startup startup,
     String? uid, {
     required StartupRole fallback,
-  }) {
-    final title = StartupRole.titleOf(startup, uid) ?? fallback;
-    return RoleTag(
-      title,
-      label: StartupRole.isTransferredOwner(startup, uid)
-          ? FounderToolsStrings.roleOwner
-          : null,
-    );
-  }
+  }) => RoleTag(StartupRole.titleOf(startup, uid) ?? fallback);
 
   /// The words of [forStartup] (the eyebrow above the name in Manage).
   static String labelFor(
     Startup startup,
     String? uid, {
     required StartupRole fallback,
-  }) => StartupRole.isTransferredOwner(startup, uid)
-      ? FounderToolsStrings.roleOwner
-      : labelOf(StartupRole.titleOf(startup, uid) ?? fallback);
+  }) => labelOf(StartupRole.titleOf(startup, uid) ?? fallback);
 
   static String labelOf(StartupRole role) => switch (role) {
     StartupRole.founder => FounderToolsStrings.roleFounder,
@@ -209,27 +199,20 @@ List<Widget> teamTagsOf(
   String? ownerId,
 }) {
   final you = isYou ? 'You · ' : '';
-  // An owner who didn't create the startup (the founder left and named
-  // them): "Owner".
-  final owner =
-      ownerId != null &&
-      ownerId.isNotEmpty &&
-      member.uid == ownerId &&
-      !member.isFounder &&
-      !member.invited;
-  final tag = member.isFounder
+  // The founder is whoever holds the startup now ([ownerId]); a card that
+  // isn't linked to an account yet goes by its own flag.
+  final linked = (member.uid ?? '').isNotEmpty;
+  final founder = ownerId != null && ownerId.isNotEmpty && linked
+      ? member.uid == ownerId && !member.invited
+      : member.isFounder;
+  final tag = founder
       ? RoleTag(StartupRole.founder, label: '${you}Founder')
-      : owner
-      ? RoleTag(
-          StartupRole.coFounder,
-          label: '$you${FounderToolsStrings.roleOwner}',
-        )
       : member.coFounder
       ? RoleTag(StartupRole.coFounder, label: '${you}Co-founder')
       : RoleTag(StartupRole.member, label: '${you}Member');
   return [
     tag,
-    if (member.invited && !member.isFounder)
+    if (member.invited && !founder)
       declined
           ? const RoleTag.invited(label: 'Declined', warn: true)
           : const RoleTag.invited(),

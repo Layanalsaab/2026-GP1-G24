@@ -66,14 +66,14 @@
           // Invited to take a startup over as its owner: nothing happens
           // until they accept it in the app.
           if (f.role && f.role.stringValue === 'owner') {
-            document.title = 'Become the owner of a startup on Start.sa';
+            document.title = 'Become the founder of a startup on Start.sa';
             document.getElementById('title').textContent =
-              'You’re invited to become the owner of a startup on Start.sa';
+              'You’re invited to become the founder of a startup on Start.sa';
             document.getElementById('how').textContent =
               (newUser
                 ? 'Sign up with the email this invitation was sent to. '
                 : 'Log in with the email this invitation was sent to. ') +
-              'You’ll then be asked whether you accept becoming the owner. Don’t have the app yet? Install it, then come back to this email.';
+              'You’ll then be asked whether you accept becoming the founder. Don’t have the app yet? Install it, then come back to this email.';
           } else if (newUser) {
             document.getElementById('how').textContent =
               'Sign up with the email this invitation was sent to, and you’ll be added to the team automatically. Don’t have the app yet? Install it, then come back to this email.';

@@ -101,6 +101,8 @@ class AppRouter {
         context,
         lostStartup: lostStartup || user.onboardingCompleted,
       );
+      // Why the startup went (deleted, removed from the team, ...).
+      _showNoticesLater();
       return;
     }
     if (user.role == AccountRole.investor && !user.onboardingCompleted) {
@@ -115,14 +117,17 @@ class AppRouter {
     } else if (welcomeBack) {
       AppToast.showGlobal('Welcome back, ${user.firstName}');
     }
-    // What happened to my startups since last time (closed, a new owner, an
-    // owner invitation declined): one pop-up each, once.
-    if (user.role == AccountRole.founder) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        final ctx = AppToast.navigatorKey.currentContext;
-        if (ctx != null) unawaited(StartupNotices.showPending(ctx));
-      });
-    }
+    // What happened to my startups since last time (closed, deleted, a new
+    // founder, ...): one pop-up each, once.
+    if (user.role == AccountRole.founder) _showNoticesLater();
+  }
+
+  /// The notice inbox, once the next screen is up.
+  static void _showNoticesLater() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final ctx = AppToast.navigatorKey.currentContext;
+      if (ctx != null) unawaited(StartupNotices.showPending(ctx));
+    });
   }
 
   /// After the user left a startup in the app: when it was their
@@ -234,6 +239,25 @@ class AppRouter {
   static void openGuest(BuildContext context) {
     AppSession.instance.signInAsGuest();
     openHome(context);
+  }
+
+  /// A founder whose account is pending (no startup left) chooses "Continue
+  /// as guest" on "Create startup": signed out (the account stays as it is,
+  /// and the next log in asks for a startup again), then Home as a guest.
+  static Future<void> leaveAsGuest(BuildContext context) async {
+    try {
+      await AuthRepository.instance.signOut();
+    } catch (_) {
+      if (context.mounted) AppToast.error(context, AppStrings.genericError);
+      return;
+    }
+    SignupFlow.current = null;
+    BookmarkRepository.instance.clear();
+    RequestRepository.instance.clear();
+    InterestRepository.instance.clear();
+    AppSession.instance.signOut();
+    if (!context.mounted) return;
+    openGuest(context);
   }
 
   /// Signs out of Firebase, forgets the session data and returns to Welcome

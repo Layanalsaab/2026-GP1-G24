@@ -15,28 +15,34 @@ void main() {
     memberRoles: const {},
   );
 
-  group('title and owner are separate', () {
-    // Noura created it, then left and named Layan the owner.
+  group('the Founder title follows control', () {
+    // Noura created it, then left and named Layan the next founder.
     final moved = base.copyWith(
       founderId: 'layan',
       foundedBy: 'noura',
       memberRoles: const {'reem': 'member'},
     );
 
-    test('an older startup: the owner is the founder', () {
+    test('whoever holds it is its founder', () {
       expect(base.originalFounderId, 'noura');
       expect(StartupRole.titleOf(base, 'noura'), StartupRole.founder);
-      expect(StartupRole.isTransferredOwner(base, 'noura'), isFalse);
     });
 
-    test('after leaving, the founder is no longer on it', () {
+    test('after leaving, the previous founder is no longer on it', () {
       expect(moved.originalFounderId, 'noura');
       expect(StartupRole.of(moved, 'noura'), isNull);
+      expect(StartupRole.titleOf(moved, 'noura'), isNull);
     });
 
-    test('the new owner has control and is shown as Owner', () {
+    test('the new founder has control and the Founder title', () {
       expect(StartupRole.of(moved, 'layan'), StartupRole.founder);
-      expect(StartupRole.isTransferredOwner(moved, 'layan'), isTrue);
+      expect(StartupRole.titleOf(moved, 'layan'), StartupRole.founder);
+    });
+
+    test('only the founder manages; a co-founder views like a member', () {
+      expect(StartupRole.founder.canManage, isTrue);
+      expect(StartupRole.coFounder.canManage, isFalse);
+      expect(StartupRole.member.canManage, isFalse);
     });
 
     test('a member keeps their title', () {
@@ -97,14 +103,20 @@ void main() {
   });
 
   test('the profile and menu title: the highest one among my startups', () {
-    // Noura created `base` and still owns it; `handed` was handed to her.
-    final handed = base.copyWith(id: 'handed', foundedBy: 'layan');
+    // Noura created `base`; `handed` was handed to her: both make her a
+    // Founder (the title follows control).
     String title({
       List<Startup> owned = const [],
       List<StartupRole> joined = const [],
     }) => AccountStrings.startupTitle('noura', owned: owned, joined: joined);
     expect(title(owned: [base], joined: [StartupRole.member]), 'Founder');
-    expect(title(owned: [handed], joined: [StartupRole.coFounder]), 'Owner');
+    expect(
+      title(
+        owned: [base.copyWith(id: 'handed', foundedBy: 'layan')],
+        joined: [StartupRole.coFounder],
+      ),
+      'Founder',
+    );
     expect(
       title(joined: [StartupRole.member, StartupRole.coFounder]),
       'Co-founder',

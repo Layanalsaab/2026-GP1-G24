@@ -18,6 +18,7 @@ Future<T?> showAppBottomSheet<T>(
   BuildContext context, {
   required WidgetBuilder builder,
   String barrierLabel = 'Close',
+  bool dismissible = true,
 }) {
   return showAppOverlay<T>(
     context,
@@ -28,6 +29,7 @@ Future<T?> showAppBottomSheet<T>(
     duration: Motion.slow,
     entry: AppOverlayEntry.slideUp,
     label: barrierLabel,
+    dismissible: dismissible,
   );
 }
 

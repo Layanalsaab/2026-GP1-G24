@@ -335,10 +335,7 @@ void main() {
     await actor('f1', 'f1@gmail.com');
     final saved = await startups.create(biggest);
     await startups.update(saved.copyWith(description: 'Edited.'));
-    // A co-founder (m0) edits the same biggest startup.
-    await actor('m0', 'm0@gmail.com');
-    await startups.update(saved.copyWith(description: 'Edited by co-founder.'));
-    await actor('f1', 'f1@gmail.com');
+    // (Only the founder edits: a co-founder has a team member's rights.)
     // Switching Funding off closes the round in the same write.
     await startups.update(
       saved.copyWith(
@@ -347,7 +344,7 @@ void main() {
         isPublic: false,
       ),
     );
-    // The owner leaves by naming a joined co-founder the next owner (she
+    // The founder leaves by naming a joined co-founder the next founder (he
     // leaves the team).
     final current = Startup.fromMap(
       saved.id,

@@ -6,10 +6,12 @@ import '../../app_constants/firestore_collections.dart';
 import '../../models/auth_failure.dart';
 import '../../models/invitation.dart';
 import '../../models/startup.dart';
+import '../../models/startup_notice.dart';
 import '../../models/team_member.dart';
 import '../firebase_services/auth_service.dart';
 import '../firebase_services/firestore_service.dart';
 import '../firebase_services/invite_relay_service.dart';
+import 'notice_repository.dart';
 import 'public_profile_repository.dart';
 
 /// The result of sending one invitation e-mail.
@@ -201,15 +203,17 @@ class InvitationRepository {
 
   // ------------------------------------------------------ the next owner
 
-  /// The owner invites [email] to take [startup] over when she leaves. She
-  /// stays in control until it is accepted. Like the team's, there is one
-  /// invitation per startup and e-mail: a cancelled or declined one is
-  /// invited again. Returns it.
+  /// The founder invites [email] to take [startup] over when he leaves. He
+  /// stays in control until it is accepted; then he becomes [stay]
+  /// (`coFounder` or `member`), or leaves for good (null). Like the team's,
+  /// there is one invitation per startup and e-mail: a cancelled or declined
+  /// one is invited again. Returns it.
   Future<Invitation> inviteOwner({
     required Startup startup,
     required String email,
     required String invitedByName,
     bool newUser = false,
+    String? stay,
   }) async {
     final lower = email.trim().toLowerCase();
     final id = Invitation.idOf(startup.id, lower);
@@ -222,6 +226,7 @@ class InvitationRepository {
       invitedBy: _uid,
       invitedByName: invitedByName,
       newUser: newUser,
+      previousFounderRole: stay,
     );
     // Inviting again (after a cancel, a decline or an expiry) is a NEW
     // invitation: the old document goes first so it gets a new date, and with
@@ -241,6 +246,7 @@ class InvitationRepository {
       invitedByName: invitation.invitedByName,
       newUser: invitation.newUser,
       createdAt: DateTime.now(),
+      previousFounderRole: stay,
     );
   }
 
@@ -401,11 +407,14 @@ class InvitationRepository {
     unawaited(PublicProfileRepository.instance.refreshMyStartups(uid));
   }
 
-  /// I take over the startup that invited me as its next owner: I become its
-  /// owner (shown as "Owner"; the title Founder stays with whoever created
-  /// it), the previous owner leaves its team, card included, and the
-  /// invitation turns accepted, together. The rules let a person with a
-  /// pending owner invitation read the startup first.
+  /// I take over the startup that invited me as its next founder: I become
+  /// its founder (my card first, with the Founder title), the previous
+  /// founder becomes what he chose when he sent the invitation (a co-founder
+  /// or a team member, his card following) or leaves its team, card
+  /// included, and the invitation turns accepted, together. The rules let a
+  /// person with a pending owner invitation read the startup first. The
+  /// previous founder and the team get a notice (sent before the change,
+  /// while the rules can still see that it concerns them).
   Future<void> _acceptOwnership(
     Invitation invitation, {
     required String fullName,
@@ -422,17 +431,50 @@ class InvitationRepository {
       throw const AuthException(AuthFailure.permissionDenied);
     }
     final previous = startup.founderId;
-    final team = [
-      for (final m in startup.team)
-        if (m.uid != previous && m.email != invitation.emailLower) m.toMap(),
+    final stay = invitation.previousFounderRole;
+    // My card first, as the founder (it replaces my invited card, if any).
+    final team = <Map<String, Object?>>[
       TeamMember(
         name: fullName,
         email: invitation.emailLower,
         role: '',
         contribution: '',
+        isFounder: true,
         uid: uid,
       ).toMap(),
     ];
+    for (final m in startup.team) {
+      if (m.email == invitation.emailLower) continue;
+      if (previous.isNotEmpty && m.uid == previous) {
+        if (stay != null) {
+          team.add(
+            m.copyWith(isFounder: false, coFounder: stay == 'coFounder').toMap(),
+          );
+        }
+        continue;
+      }
+      team.add(m.toMap());
+    }
+    final notices = NoticeRepository.instance;
+    await notices.send(
+      [previous],
+      StartupNotice(
+        type: StartupNotice.handedOver,
+        startupId: startup.id,
+        startupName: startup.name,
+        person: fullName,
+        stay: stay,
+      ),
+    );
+    await notices.send(
+      startup.memberRoles.keys,
+      StartupNotice(
+        type: StartupNotice.founderChanged,
+        startupId: startup.id,
+        startupName: startup.name,
+        person: fullName,
+      ),
+    );
     await _firestore.commit([
       FirestoreWrite.update(
         FirestoreCollections.startups,
@@ -442,6 +484,13 @@ class InvitationRepository {
           // Older startups get who created them now (it never changes).
           StartupFields.foundedBy: startup.originalFounderId,
           StartupFields.team: team,
+          // The previous founder stays on the team, if he chose to.
+          if (stay != null) ...{
+            StartupFields.memberIds: _firestore.arrayUnion([previous]),
+            '${StartupFields.memberRoles}.$previous': stay,
+            if (stay == 'coFounder')
+              StartupFields.coFounderIds: _firestore.arrayUnion([previous]),
+          },
           StartupFields.ownerChangedAt: _firestore.serverTimestamp(),
           StartupFields.updatedAt: _firestore.serverTimestamp(),
         },
@@ -457,8 +506,20 @@ class InvitationRepository {
     unawaited(PublicProfileRepository.instance.refreshMyStartups(uid));
   }
 
-  /// "No thanks."
+  /// "No thanks." Declining to take a startup over tells its founder (a
+  /// notice, sent while the invitation is still pending).
   Future<void> decline(Invitation invitation) async {
+    if (invitation.isOwner && invitation.isPending) {
+      await NoticeRepository.instance.send(
+        [invitation.invitedBy],
+        StartupNotice(
+          type: StartupNotice.declined,
+          startupId: invitation.startupId,
+          startupName: invitation.startupName,
+          person: invitation.emailLower,
+        ),
+      );
+    }
     await _firestore.updateDocument(_col, invitation.id, {
       'status': InvitationStatus.declined.value,
       'respondedAt': _firestore.serverTimestamp(),
