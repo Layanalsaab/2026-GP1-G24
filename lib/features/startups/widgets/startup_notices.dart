@@ -35,7 +35,7 @@ class StartupNotices {
       final notices = await inbox.mine();
       for (final n in notices) {
         if (!context.mounted) return;
-        final view = await _show(context, n);
+        final view = await _show(context, n, closed: await _isClosed(n));
         await inbox.dismiss(n);
         if (view && context.mounted) {
           final startup = await StartupRepository.instance.fetchById(
@@ -51,6 +51,19 @@ class StartupNotices {
       debugPrint('Could not show the startup notices: $e');
     } finally {
       _showing = false;
+    }
+  }
+
+  /// A startup handed to me while closed (its founder deleted his account)
+  /// is read only: its "new founder" pop-up says so. Only that pop-up needs
+  /// to know.
+  static Future<bool> _isClosed(StartupNotice n) async {
+    if (n.type != StartupNotice.newFounder) return false;
+    try {
+      final s = await StartupRepository.instance.fetchById(n.startupId);
+      return s?.isClosed ?? false;
+    } catch (_) {
+      return false;
     }
   }
 
@@ -81,12 +94,15 @@ class StartupNotices {
     };
   }
 
-  static String _message(StartupNotice n) {
+  static String _message(StartupNotice n, {required bool closed}) {
     final name = n.startupName;
     return switch (n.type) {
       StartupNotice.closed => FounderToolsStrings.noticeClosedMessage,
       StartupNotice.deleted => FounderToolsStrings.noticeDeletedMessage,
-      StartupNotice.newFounder => FounderToolsStrings.noticeNewFounderMessage,
+      StartupNotice.newFounder =>
+        closed
+            ? FounderToolsStrings.noticeNewFounderClosedMessage
+            : FounderToolsStrings.noticeNewFounderMessage,
       StartupNotice.founderChanged =>
         FounderToolsStrings.noticeFounderChangedMessage(n.person, name),
       StartupNotice.handedOver => FounderToolsStrings.noticeHandedOverMessage(
@@ -104,7 +120,11 @@ class StartupNotices {
   }
 
   /// True when "View …" was tapped.
-  static Future<bool> _show(BuildContext context, StartupNotice n) async {
+  static Future<bool> _show(
+    BuildContext context,
+    StartupNotice n, {
+    required bool closed,
+  }) async {
     // A startup I left for good is not mine to open any more.
     final canView =
         n.canView &&
@@ -128,7 +148,7 @@ class StartupNotices {
             ),
             const SizedBox(height: 10),
             Text(
-              _message(n),
+              _message(n, closed: closed),
               textAlign: TextAlign.center,
               style: AppText.sans(size: 15, color: AppColors.grey, height: 22),
             ),

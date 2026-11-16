@@ -238,7 +238,7 @@ void main() {
       expect(find.text('Leave startup'), findsNothing);
       expect(
         find.text(
-          'You closed this startup. It cannot be edited or reopened. You can choose whether it appears in the Hub from Settings.',
+          'This startup has been closed. It cannot be edited or reopened. You can choose whether it appears in the Hub from Settings.',
         ),
         findsOneWidget,
       );

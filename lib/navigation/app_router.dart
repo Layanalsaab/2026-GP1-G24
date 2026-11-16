@@ -241,25 +241,6 @@ class AppRouter {
     openHome(context);
   }
 
-  /// A founder whose account is pending (no startup left) chooses "Continue
-  /// as guest" on "Create startup": signed out (the account stays as it is,
-  /// and the next log in asks for a startup again), then Home as a guest.
-  static Future<void> leaveAsGuest(BuildContext context) async {
-    try {
-      await AuthRepository.instance.signOut();
-    } catch (_) {
-      if (context.mounted) AppToast.error(context, AppStrings.genericError);
-      return;
-    }
-    SignupFlow.current = null;
-    BookmarkRepository.instance.clear();
-    RequestRepository.instance.clear();
-    InterestRepository.instance.clear();
-    AppSession.instance.signOut();
-    if (!context.mounted) return;
-    openGuest(context);
-  }
-
   /// Signs out of Firebase, forgets the session data and returns to Welcome
   /// with the back transition. A guest simply leaves.
   ///
