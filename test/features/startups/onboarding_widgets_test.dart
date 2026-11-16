@@ -261,6 +261,7 @@ void main() {
     expect(find.text('Save'), findsOneWidget);
     vm.memberRole.text = 'CEO';
     vm.memberContribution.text = 'Leads the company';
+    vm.setMemberCoFounder(false);
     await t.pump();
     await t.tap(find.text('Save'));
     await _settle(t);
@@ -271,12 +272,15 @@ void main() {
     await _settle(t);
     expect(find.text('New team member'), findsOneWidget);
     expect(find.text('Add member'), findsOneWidget);
+    expect(find.text('Team member'), findsOneWidget);
     expect(find.text('Co-founder'), findsOneWidget);
+    expect(vm.memberCoFounder, isNull);
     expect(find.text('Remove this member'), findsNothing);
     vm.memberName.text = 'Sara Alamri';
     vm.memberEmail.text = 'sara.alamri@gmail.com';
     vm.memberRole.text = 'COO';
     vm.memberContribution.text = 'Operations';
+    vm.setMemberCoFounder(false);
     await t.pump();
     await t.tap(find.text('Add member'));
     await _settle(t);

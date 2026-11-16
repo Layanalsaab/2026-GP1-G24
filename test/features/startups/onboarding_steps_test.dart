@@ -270,6 +270,7 @@ void main() {
       expect(vm.memberError(vm.memberName), isNull);
       vm.memberRole.text = 'CEO';
       vm.memberContribution.text = 'Leads the company';
+      vm.setMemberCoFounder(false);
       expect(vm.memberComplete, isTrue);
     });
 
@@ -279,6 +280,7 @@ void main() {
       vm.openMemberEditor(0);
       vm.memberRole.text = 'CEO';
       vm.memberContribution.text = 'Leads the company';
+      vm.setMemberCoFounder(false);
       expect(await vm.saveMember(), MemberSave.saved);
       expect(vm.stepComplete(StartupStepsViewModel.teamStep), isTrue);
       expect(vm.team.first.role, 'CEO');
@@ -293,6 +295,7 @@ void main() {
       vm.memberEmail.text = 'sara.alamri@gmail.com';
       vm.memberRole.text = 'COO';
       vm.memberContribution.text = 'Operations';
+      vm.setMemberCoFounder(false);
       expect(await vm.saveMember(), MemberSave.needsInvite);
       expect(vm.team, hasLength(1));
       vm.setMemberCoFounder(true);
@@ -313,6 +316,7 @@ void main() {
         vm.memberEmail.text = 'NORA.alharbi@gmail.com';
         vm.memberRole.text = 'CMO';
         vm.memberContribution.text = 'Marketing';
+        vm.setMemberCoFounder(false);
         expect(await vm.saveMember(), MemberSave.invited);
         expect(vm.team.last.name, 'Nora Alharbi');
         // An existing account gets an invitation to accept.
@@ -323,6 +327,7 @@ void main() {
         vm.memberEmail.text = 'layan.investor@gmail.com';
         vm.memberRole.text = 'Advisor';
         vm.memberContribution.text = 'Advises';
+        vm.setMemberCoFounder(false);
         expect(await vm.saveMember(), MemberSave.invalid);
         expect(
           vm.memberError(vm.memberEmail),
@@ -334,6 +339,7 @@ void main() {
         vm.memberEmail.text = 'nora.alharbi@gmail.com';
         vm.memberRole.text = 'x';
         vm.memberContribution.text = 'y';
+        vm.setMemberCoFounder(false);
         expect(
           vm.memberError(vm.memberEmail),
           'This person is already on the team.',

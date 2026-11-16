@@ -20,9 +20,9 @@ class HomeStrings {
   static const recommendedStartups = 'Recommended startups for you';
   static const recommendedInvestors = 'Recommended investors for you';
   static const forYouInfoInvestor =
-      'Based on:\n• Your sectors, stages and commerce models\n• How much you invest\n• Your open tickets\n• The startups you bookmark';
+      'Based on your sectors, stages, commerce models, how much you invest, your open tickets and what startups are raising. The more startups you bookmark, the more it follows your taste.';
   static const forYouInfoFounder =
-      'Based on:\n• Your startup’s sector, stage and commerce model\n• How much you are raising\n• Investors’ open tickets\n• The investors you bookmark';
+      'Based on your startup’s sector, stage, commerce model, what you are raising and investors’ open tickets. The more investors you bookmark, the more it follows your taste.';
   static const newestStartups = 'Newest startups';
   static const noNewStartupsTitle = 'No new startups';
   static const noNewStartupsMessage =

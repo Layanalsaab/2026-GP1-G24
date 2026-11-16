@@ -113,6 +113,7 @@ class FounderToolsStrings {
   static const marketLabel = 'Target market size';
   static const marketInfo =
       'Your SAM (serviceable available market): the total amount the customers you can realistically reach spend per year on products like yours. Enter it in SAR.';
+
   /// The same tip when somebody else looks at the startup.
   static const marketInfoOther =
       "The startup's SAM (serviceable available market): the total amount the customers it can realistically reach spend per year on products like theirs, in SAR.";
@@ -134,8 +135,7 @@ class FounderToolsStrings {
   static const memberContributionInfo =
       'What does this person bring to the startup? For example, their experience, skills or connections.';
   static const coFounderTitle = 'Co-founder';
-  static const coFounderText =
-      'Co-founders can edit this startup. Other members can only view it.';
+  static const memberJoiningAs = 'Joining as';
   static const tagMember = 'Member';
   static const addYourRole = 'Add your role';
   static const titleYourDetails = 'Your details';

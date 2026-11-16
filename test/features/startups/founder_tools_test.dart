@@ -255,6 +255,7 @@ void main() {
       vm.memberEmail.text = 'faisal.alkhaldi@gmail.com';
       vm.memberRole.text = 'CTO';
       vm.memberContribution.text = 'Built platforms';
+      vm.setMemberCoFounder(false);
       // Nobody is registered with that e-mail: invited.
       expect(await vm.saveMember(), MemberSave.needsInvite);
       expect(await vm.saveMember(inviteConfirmed: true), MemberSave.invited);

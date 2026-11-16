@@ -171,7 +171,7 @@ void main() {
         'Headquarters',
         'Status',
       ]);
-      expect(HomeFilters.groups(HomeContext.explore).length, 4);
+      expect(HomeFilters.groups(HomeContext.explore).length, 3);
       expect(HomeFilters.groups(HomeContext.support).first.title, 'Type');
       expect(HomeFilters.groups(HomeContext.investors)[1].title, 'Stages');
     });
@@ -231,7 +231,7 @@ void main() {
         expect(i.recommendedTitle, 'Recommended startups for you');
         expect(
           i.recommendedInfo,
-          'Based on:\n• Your sectors, stages and commerce models\n• How much you invest\n• Your open tickets\n• The startups you bookmark',
+          'Based on your sectors, stages, commerce models, how much you invest, your open tickets and what startups are raising. The more startups you bookmark, the more it follows your taste.',
         );
         final f = vm(SessionRole.founder);
         expect(
@@ -241,7 +241,7 @@ void main() {
         expect(f.recommendedTitle, 'Recommended investors for you');
         expect(
           f.recommendedInfo,
-          'Based on:\n• Your startup’s sector, stage and commerce model\n• How much you are raising\n• Investors’ open tickets\n• The investors you bookmark',
+          'Based on your startup’s sector, stage, commerce model, what you are raising and investors’ open tickets. The more investors you bookmark, the more it follows your taste.',
         );
         i.dispose();
         f.dispose();

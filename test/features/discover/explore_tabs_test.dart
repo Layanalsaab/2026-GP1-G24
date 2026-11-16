@@ -166,7 +166,7 @@ void main() {
     await t.pumpAndSettle();
     expect(
       find.text(
-        'Based on:\n• Your sectors, stages and commerce models\n• How much you invest\n• Your open tickets\n• The startups you bookmark',
+        'Based on your sectors, stages, commerce models, how much you invest, your open tickets and what startups are raising. The more startups you bookmark, the more it follows your taste.',
       ),
       findsOneWidget,
     );
@@ -181,7 +181,9 @@ void main() {
     await t.tap(find.bySemanticsLabel('About this list'));
     await t.pumpAndSettle();
     expect(
-      find.textContaining('Your startup’s sector, stage and commerce model'),
+      find.textContaining(
+        'Based on your startup’s sector, stage, commerce model',
+      ),
       findsOneWidget,
     );
   });

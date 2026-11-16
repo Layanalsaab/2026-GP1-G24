@@ -165,7 +165,7 @@ class _MainScreenState extends State<MainScreen> {
     if (result != null) _vm.applySelection(result);
   }
 
-  /// The Hub's sort button: Newest, Oldest, Name A–Z or Name Z–A; picking the chosen one again
+  /// The sort button (Hub, Explore, Support Channels): Newest, Oldest, Name A–Z or Name Z–A; picking the chosen one again
   /// goes back to the default order.
   Future<void> _openSort() async {
     final r = await showPickerSheet(
@@ -327,7 +327,7 @@ class _MainScreenState extends State<MainScreen> {
                               activeCount: _vm.selectionCount,
                               onChanged: _vm.setQuery,
                               onFilterTap: _openAdvanced,
-                              onSortTap: _vm.hasSortButton ? _openSort : null,
+                              onSortTap: _openSort,
                               sortActive: _vm.sortChoice != null,
                             ),
                             _page(),

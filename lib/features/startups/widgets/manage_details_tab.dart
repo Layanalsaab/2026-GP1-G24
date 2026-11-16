@@ -459,7 +459,6 @@ class _Overview extends StatelessWidget {
             ('Headquarters', s.location.label),
             ('Founded year', s.foundedYear?.toString() ?? ''),
             ('Website', s.websiteUrl ?? ''),
-            ('Visibility', s.isPublic ? 'Public' : 'Private'),
           ],
         ),
       ],

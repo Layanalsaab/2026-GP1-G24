@@ -91,7 +91,7 @@ void main() {
         final g = {
           for (final x in HomeFilters.groups(HomeContext.explore)) x.title: x,
         };
-        expect(g.keys, ['Sector', 'Stage', 'City', 'Sort by']);
+        expect(g.keys, ['Sector', 'Stage', 'City']);
         expect(g['Sector']!.drop, isTrue);
         expect(g['Sector']!.options.length, 25);
         expect(g['Sector']!.options.last, 'Other');
@@ -105,13 +105,6 @@ void main() {
           'Series A',
           'Series B',
           'Series C',
-        ]);
-        expect(g['Sort by']!.single, isTrue);
-        expect(g['Sort by']!.options, [
-          'Newest',
-          'Oldest',
-          'Name A–Z',
-          'Name Z–A',
         ]);
       },
     );

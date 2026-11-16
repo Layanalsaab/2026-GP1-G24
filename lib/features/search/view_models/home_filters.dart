@@ -81,12 +81,6 @@ class HomeFilters {
     for (final o in FounderToolsStrings.supportOptions)
       if (o != 'Other') o,
   ];
-  static const _sort = HomeFilterGroup('Sort by', [
-    'Newest',
-    'Oldest',
-    'Name A–Z',
-    'Name Z–A',
-  ], single: true);
 
   /// The groups shown in the sheet for [ctx].
   static List<HomeFilterGroup> groups(HomeContext ctx) {
@@ -118,12 +112,6 @@ class HomeFilters {
             'Thuwal',
             'Dammam',
           ], field: HomeFilterField.city),
-          HomeFilterGroup('Sort by', [
-            'Newest',
-            'Oldest',
-            'Name A–Z',
-            'Name Z–A',
-          ], single: true),
         ];
       case HomeContext.investors:
         return [
@@ -168,7 +156,6 @@ class HomeFilters {
             field: HomeFilterField.city,
             drop: true,
           ),
-          _sort,
         ];
       case HomeContext.startups:
         return [

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../../app_constants/founder_tools_strings.dart';
 import '../../../models/team_member.dart';
-import '../../../shared_ui/widgets/forms/checkbox_card.dart';
 import '../../../shared_ui/widgets/overlays/app_dialog.dart';
 import 'founder_ui.dart';
 import 'role_tag.dart';
@@ -280,6 +279,84 @@ class _EditorButton extends StatelessWidget {
   }
 }
 
+/// One of the two choices of the member editor (Team member / Co-founder): a
+/// card with a round radio mark. Nothing is picked until it is tapped.
+class _AccessOption extends StatelessWidget {
+  const _AccessOption({
+    required this.title,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String title;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      inMutuallyExclusiveGroup: true,
+      checked: selected,
+      label: title,
+      excludeSemantics: true,
+      onTap: onTap,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: BoxDecoration(
+            color: selected ? AppColors.moss50 : AppColors.white,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: selected ? AppColors.moss600 : AppColors.cardBorder,
+              width: 1.5,
+            ),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Container(
+                width: 22,
+                height: 22,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppColors.white,
+                  border: Border.all(
+                    color: selected
+                        ? AppColors.moss600
+                        : const Color(0xFF8C918D),
+                    width: 2,
+                  ),
+                ),
+                child: selected
+                    ? Container(
+                        width: 10,
+                        height: 10,
+                        decoration: const BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: AppColors.moss600,
+                        ),
+                      )
+                    : null,
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Text(
+                  title,
+                  style: AppText.sans(size: 16, weight: FontWeight.w600),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// The inline editor card: moss 50, 1 px moss 100 border, radius 16, padding
 /// 14. It REPLACES the card being edited (or sits above the Add button for a
 /// new member) and rises in over 320 ms.
@@ -331,7 +408,9 @@ class TeamMemberEditor extends StatelessWidget {
   final TextEditingController email;
   final TextEditingController role;
   final TextEditingController contribution;
-  final bool coFounder;
+
+  /// null until the person adding a member picks Team member or Co-founder.
+  final bool? coFounder;
   final ValueChanged<bool> onCoFounder;
 
   /// Every field is valid (the right button turns from grey to green).
@@ -454,12 +533,24 @@ class TeamMemberEditor extends StatelessWidget {
           ),
           if (canChangeCoFounder ?? !lockedIdentity) ...[
             const SizedBox(height: gap),
-            CheckboxCard(
-              compact: true,
-              title: FounderToolsStrings.coFounderTitle,
-              description: FounderToolsStrings.coFounderText,
-              checked: coFounder,
-              onChanged: onCoFounder,
+            AppField(
+              label: FounderToolsStrings.memberJoiningAs,
+              required: true,
+              child: Column(
+                children: [
+                  _AccessOption(
+                    title: FounderToolsStrings.roleMember,
+                    selected: coFounder == false,
+                    onTap: () => onCoFounder(false),
+                  ),
+                  const SizedBox(height: 8),
+                  _AccessOption(
+                    title: FounderToolsStrings.coFounderTitle,
+                    selected: coFounder == true,
+                    onTap: () => onCoFounder(true),
+                  ),
+                ],
+              ),
             ),
           ],
           const SizedBox(height: 12),

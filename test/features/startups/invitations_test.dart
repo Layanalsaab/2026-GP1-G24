@@ -164,6 +164,7 @@ void main() {
         vm.memberEmail.text = 'sara@gmail.com';
         vm.memberRole.text = 'COO';
         vm.memberContribution.text = 'Operations';
+        vm.setMemberCoFounder(false);
         await vm.saveMember();
         // Their account name replaces the typed one straight away.
         expect(vm.team.last.name, 'Sara Alswailem');
@@ -287,6 +288,7 @@ void main() {
         vm.memberEmail.text = 'unknown.person@gmail.com';
         vm.memberRole.text = 'r';
         vm.memberContribution.text = 'c';
+        vm.setMemberCoFounder(false);
         // Nobody registered with this e-mail: the dialog comes first.
         expect(await vm.saveMember(), MemberSave.needsInvite);
       },

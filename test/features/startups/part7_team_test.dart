@@ -47,6 +47,7 @@ void main() {
       vm.memberName.text = 'Sara Alswailem';
       vm.memberEmail.text = 'sara@gmail.com';
       vm.memberContribution.text = 'Operations';
+      vm.setMemberCoFounder(false);
       vm.memberRole.text = 'COO 1';
       expect(vm.memberComplete, isFalse);
       expect(await vm.saveMember(inviteConfirmed: true), MemberSave.invalid);
@@ -57,6 +58,24 @@ void main() {
       expect(await vm.saveMember(inviteConfirmed: true), MemberSave.invalid);
     });
 
+    test(
+      'nobody is picked by default: Team member or Co-founder is needed',
+      () async {
+        vm.memberName.text = 'Sara Alswailem';
+        vm.memberEmail.text = 'sara@gmail.com';
+        vm.memberRole.text = 'COO';
+        vm.memberContribution.text = 'Operations';
+        expect(vm.memberCoFounder, isNull);
+        expect(vm.memberComplete, isFalse);
+        expect(await vm.saveMember(inviteConfirmed: true), MemberSave.invalid);
+        expect(vm.team.length, 1);
+        vm.setMemberCoFounder(false);
+        expect(vm.memberComplete, isTrue);
+        vm.setMemberCoFounder(true);
+        expect(vm.memberComplete, isTrue);
+      },
+    );
+
     test('the founder cannot put a number in their own role either', () {
       vm.cancelMemberEditor();
       final founderIndex = vm.team.indexWhere((m) => m.isFounder);
@@ -65,6 +84,7 @@ void main() {
       expect(vm.memberComplete, isFalse);
       vm.memberRole.text = 'CEO';
       vm.memberContribution.text = 'Leads';
+      vm.setMemberCoFounder(false);
       expect(vm.memberComplete, isTrue);
     });
 

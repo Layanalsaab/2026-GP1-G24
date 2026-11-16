@@ -425,7 +425,9 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
   /// The e-mail of an investor account that was refused as a member.
   String? _blockedEmail;
   final memberContribution = TextEditingController();
-  bool memberCoFounder = false;
+
+  /// null until a new member's Team member / Co-founder choice is made.
+  bool? memberCoFounder;
 
   // ---- Step 4
   final revenueNow = TextEditingController();
@@ -1071,7 +1073,8 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
         !Validators.hasDigit(memberName.text) &&
         _emailValid &&
         !memberDuplicate &&
-        roleOk;
+        roleOk &&
+        memberCoFounder != null;
   }
 
   /// The error under an editor field: empty ones after "Add member" was
@@ -1131,7 +1134,7 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
     memberEmail.text = m?.email ?? '';
     memberRole.text = m?.role ?? '';
     memberContribution.text = m?.contribution ?? '';
-    memberCoFounder = m?.coFounder ?? false;
+    memberCoFounder = m?.coFounder;
     _memberBaseline = _memberSignature();
   });
 
@@ -1196,7 +1199,7 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
         old.copyWith(
           role: memberRole.text.trim(),
           contribution: memberContribution.text.trim(),
-          coFounder: memberCoFounder,
+          coFounder: memberCoFounder ?? old.coFounder,
         ),
       );
       return MemberSave.saved;
@@ -1205,7 +1208,8 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
     final rest =
         !_blank(memberRole) &&
         !Validators.hasDigit(memberRole.text) &&
-        !_blank(memberContribution);
+        !_blank(memberContribution) &&
+        memberCoFounder != null;
     if (!emailOk || !rest) {
       _touch(() => memberTried = true);
       return MemberSave.invalid;
@@ -1229,7 +1233,7 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
           email: email,
           role: memberRole.text.trim(),
           contribution: memberContribution.text.trim(),
-          coFounder: memberCoFounder,
+          coFounder: memberCoFounder!,
           invited: true,
         ),
       );
@@ -1247,7 +1251,7 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
         email: email,
         role: memberRole.text.trim(),
         contribution: memberContribution.text.trim(),
-        coFounder: memberCoFounder,
+        coFounder: memberCoFounder!,
         invited: true,
       ),
     );
