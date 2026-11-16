@@ -9,6 +9,7 @@
 //
 //   node rewrite_investor_text.mjs <service-account.json> <out_investors.json>          dry run
 //   node rewrite_investor_text.mjs <service-account.json> <out_investors.json> --write  applies it
+//   add --partial when the file only has some investors or fields
 //
 // Before writing, the old values are saved to backups/.
 
@@ -46,14 +47,14 @@ for (const row of JSON.parse(fs.readFileSync(file, 'utf8'))) {
     if (!(k in LIMIT)) { problems.push(`${row.id}: unexpected field ${k}`); continue; }
     const v = String(row[k] ?? '').replace(/\s+/g, ' ').trim();
     if (v.length < 40) problems.push(`${row.id}.${k}: too short`);
-    else if (v.length > 400) problems.push(`${row.id}.${k}: too long (${v.length})`);
+    else if (v.length > (k === 'bio' ? 700 : 400)) problems.push(`${row.id}.${k}: too long (${v.length})`);
     else if (/["“”]/.test(v) || /\b(n\/a|lorem|todo|tbd)\b/i.test(v)) problems.push(`${row.id}.${k}: placeholder or quotes`);
-    else if (k === 'bio' && !v.toLowerCase().includes(String(inv.fullName).split(' ')[0].toLowerCase())) problems.push(`${row.id}.bio: does not use the name`);
+    else if (k === 'bio' && !/\b(I|I'm|my|me)\b/.test(v)) problems.push(`${row.id}.bio: is not written in the first person`);
     else patch[k] = v;
   }
   if (Object.keys(patch).length) updates.set(row.id, patch);
 }
-for (const id of investors.keys()) if (!updates.get(id)?.lookingFor) problems.push(`${id}: no lookingFor text`);
+if (!process.argv.includes('--partial')) for (const id of investors.keys()) if (!updates.get(id)?.lookingFor) problems.push(`${id}: no lookingFor text`);
 const seen = new Map();
 for (const [id, u] of updates) for (const k of Object.keys(u)) {
   const key = `${k}:${u[k]}`;
