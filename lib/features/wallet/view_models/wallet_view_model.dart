@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../../../data_access/repositories/matching_repository.dart';
 import '../../../data_access/repositories/ticket_repository.dart';
+import '../../../data_access/repositories/ticket_request_repository.dart';
+import '../../../models/connection_request.dart' show RequestStatus;
+import '../../../models/received_request.dart';
 import '../../../helpers/formatters.dart';
 import '../../../helpers/safe_notifier.dart';
 import '../../../helpers/ticket_rules.dart';
@@ -32,9 +35,11 @@ class WalletViewModel extends ChangeNotifier with SafeNotifier {
     required this.investorId,
     this.commerceModels = const [],
     TicketRepository? tickets,
+    TicketRequestRepository? received,
     MatchingRepository? matching,
     DateTime Function()? now,
   }) : _ticketsOverride = tickets,
+       _receivedOverride = received,
        _matchingOverride = matching,
        _fixedNow = now {
     for (final c in [name, min, max, sendAmount]) {
@@ -51,10 +56,13 @@ class WalletViewModel extends ChangeNotifier with SafeNotifier {
   final List<String> commerceModels;
 
   final TicketRepository? _ticketsOverride;
+  final TicketRequestRepository? _receivedOverride;
   final MatchingRepository? _matchingOverride;
   final DateTime Function()? _fixedNow;
 
   TicketRepository get _repo => _ticketsOverride ?? TicketRepository.instance;
+  TicketRequestRepository get _incoming =>
+      _receivedOverride ?? TicketRequestRepository.instance;
   MatchingRepository get _pool =>
       _matchingOverride ?? MatchingRepository.instance;
 
@@ -62,6 +70,9 @@ class WalletViewModel extends ChangeNotifier with SafeNotifier {
 
   List<InvestmentTicket> tickets = const [];
   List<TicketRequest> requests = const [];
+
+  /// What startups sent to the investor's tickets ("Request received").
+  List<ReceivedRequest> received = const [];
   List<Startup> _startups = const [];
 
   bool isLoading = true;
@@ -79,6 +90,13 @@ class WalletViewModel extends ChangeNotifier with SafeNotifier {
       requests = await _repo.requestsOf(investorId);
     } catch (_) {
       loadFailed = true;
+    }
+    // The requests received load on their own: a failure here must not hide
+    // the tickets.
+    try {
+      received = await _incoming.receivedBy(investorId);
+    } catch (_) {
+      received = const [];
     }
     isLoading = false;
     notifyListeners();
@@ -520,11 +538,53 @@ class WalletViewModel extends ChangeNotifier with SafeNotifier {
   }
 
   /// How many requests a filter holds (All counts every one).
-  int countOf(RequestFilter f) => f == RequestFilter.all
-      ? requests.length
-      : requests.where((r) => r.status.value == f.name).length;
+  int countOf(RequestFilter f) =>
+      (f == RequestFilter.all
+          ? requests.length
+          : requests.where((r) => r.status.value == f.name).length) +
+      (f == RequestFilter.all
+          ? received.length
+          : received.where((r) => r.status.value == f.name).length);
 
-  int get pendingCount => requests.where((r) => r.isPending).length;
+  int get pendingCount =>
+      requests.where((r) => r.isPending).length +
+      received.where((r) => r.isPending).length;
+
+  List<ReceivedRequest> get visibleReceived => [
+    for (final r in received)
+      if (filter == RequestFilter.all || r.status.value == filter.name) r,
+  ];
+
+  List<ReceivedRequest> receivedOfTicket(InvestmentTicket t) => [
+    for (final r in received)
+      if (r.ticketId == t.id) r,
+  ];
+
+  /// The investor accepts or declines a request received (once).
+  Future<bool> answerReceived(
+    ReceivedRequest request, {
+    required bool accept,
+  }) async {
+    if (!request.isPending || isSaving) return false;
+    isSaving = true;
+    error = null;
+    notifyListeners();
+    try {
+      await _incoming.answer(request.id, accept: accept);
+      final now = accept ? RequestStatus.accepted : RequestStatus.declined;
+      received = [
+        for (final r in received)
+          if (r.id == request.id) r.withStatus(now) else r,
+      ];
+      return true;
+    } catch (_) {
+      error = WalletStrings.answerFailed;
+      return false;
+    } finally {
+      isSaving = false;
+      notifyListeners();
+    }
+  }
 
   List<TicketRequest> get visibleRequests => [
     for (final r in requests)

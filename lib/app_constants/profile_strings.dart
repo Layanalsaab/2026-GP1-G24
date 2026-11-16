@@ -62,6 +62,14 @@ class ProfileStrings {
   // Investment tickets on a profile
   static const tickets = 'Investment Tickets';
   static const ticketStatus = 'Status';
+  static const sendTicketRequest = 'Send request';
+  static const chooseStartup = 'Choose your startup';
+  static const requestAmount = 'Amount';
+  static const noRaisingStartup =
+      'You need a startup that is raising to send a request.';
+  static const requestAlreadySent =
+      'You already sent a request on this ticket with every startup that is raising.';
+  static const sendRequestFailed = 'Couldn’t send the request. Try again.';
   static const ticketMinimum = 'Minimum';
   static const ticketMaximum = 'Maximum';
   static const ticketCreated = 'Created';

@@ -8,6 +8,7 @@ import '../../../shared_ui/widgets/overlays/app_dialog.dart';
 import '../../startups/widgets/founder_ui.dart';
 import '../../startups/widgets/manage_card.dart';
 import '../view_models/wallet_view_model.dart';
+import 'received_request_card.dart';
 import '../../connection_requests/widgets/request_status_pill.dart';
 
 /// Investment Wallet -> Requests: the requests the investor sent through
@@ -43,6 +44,7 @@ class WalletRequestsTab extends StatelessWidget {
       listenable: vm,
       builder: (context, _) {
         final rows = vm.visibleRequests;
+        final received = vm.visibleReceived;
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -62,10 +64,10 @@ class WalletRequestsTab extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 12),
-            if (rows.isEmpty)
+            if (rows.isEmpty && received.isEmpty)
               ManageCard(
                 child: Text(
-                  vm.requests.isEmpty
+                  vm.requests.isEmpty && vm.received.isEmpty
                       ? WalletStrings.noRequests
                       : WalletStrings.noRequestsOf(vm.filter.label),
                   style: AppText.sans(
@@ -75,7 +77,11 @@ class WalletRequestsTab extends StatelessWidget {
                   ),
                 ),
               )
-            else
+            else ...[
+              for (final r in received) ...[
+                ReceivedRequestCard(vm: vm, request: r, showTicket: true),
+                const SizedBox(height: 12),
+              ],
               for (var i = 0; i < rows.length; i++) ...[
                 if (i > 0) const SizedBox(height: 12),
                 _RequestCard(
@@ -84,6 +90,7 @@ class WalletRequestsTab extends StatelessWidget {
                   onWithdraw: () => _withdraw(context, rows[i]),
                 ),
               ],
+            ],
           ],
         );
       },

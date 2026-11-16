@@ -10,18 +10,31 @@ import 'investor_profile_body.dart' show ProfileValueRows;
 /// One investment ticket of an investor, everything it says: its status, the
 /// sectors and stages it is for, the minimum and the maximum, and the day it
 /// was made. Opened from the "Investment Tickets" section of a profile.
-Future<void> showTicketInfoSheet(
+///
+/// With [canSendRequest] (a founder looking at somebody else's open ticket)
+/// the sheet ends with "Send request"; it returns true when that was tapped.
+Future<bool> showTicketInfoSheet(
   BuildContext context,
-  InvestmentTicket ticket,
-) => showAppBottomSheet<void>(
-  context,
-  builder: (_) => TicketInfoSheet(ticket: ticket),
-);
+  InvestmentTicket ticket, {
+  bool canSendRequest = false,
+}) async {
+  final send = await showAppBottomSheet<bool>(
+    context,
+    builder: (_) =>
+        TicketInfoSheet(ticket: ticket, canSendRequest: canSendRequest),
+  );
+  return send ?? false;
+}
 
 class TicketInfoSheet extends StatelessWidget {
-  const TicketInfoSheet({super.key, required this.ticket});
+  const TicketInfoSheet({
+    super.key,
+    required this.ticket,
+    this.canSendRequest = false,
+  });
 
   final InvestmentTicket ticket;
+  final bool canSendRequest;
 
   @override
   Widget build(BuildContext context) {
@@ -59,10 +72,15 @@ class TicketInfoSheet extends StatelessWidget {
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
-            child: AppButton(
-              label: ProfileStrings.done,
-              onPressed: () => Navigator.of(context).pop(),
-            ),
+            child: canSendRequest && t.isOpen
+                ? AppButton(
+                    label: ProfileStrings.sendTicketRequest,
+                    onPressed: () => Navigator.of(context).pop(true),
+                  )
+                : AppButton(
+                    label: ProfileStrings.done,
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
           ),
         ],
       ),

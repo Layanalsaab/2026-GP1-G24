@@ -6,6 +6,9 @@ class FirestoreCollections {
   static const startups = 'startups';
   static const requests = 'requests';
 
+  /// A startup's requests to an investor's tickets (id = `startupId~ticketId`).
+  static const ticketRequests = 'ticketRequests';
+
   /// An investor's investment tickets (id = `investorId-T1`, ...).
   static const tickets = 'tickets';
   static const interests = 'interests';

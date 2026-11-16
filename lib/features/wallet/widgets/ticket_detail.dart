@@ -13,6 +13,7 @@ import '../../startups/widgets/manage_card.dart';
 import '../../startups/widgets/round_detail.dart'
     show DetailBackLink, InfoBox, SectionTitle;
 import '../view_models/wallet_view_model.dart';
+import 'received_request_card.dart';
 import 'ticket_form.dart';
 
 /// Investment Wallet -> one ticket: back link "All tickets", the ticket card
@@ -65,6 +66,7 @@ class TicketDetail extends StatelessWidget {
     if (ticket == null) return const SizedBox.shrink();
     final editingThis = vm.editing?.id == ticket.id;
     final mine = vm.requestsOfTicket(ticket);
+    final received = vm.receivedOfTicket(ticket);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -94,6 +96,19 @@ class TicketDetail extends StatelessWidget {
           else
             for (final r in mine) ...[
               _RequestRow(vm: vm, request: r),
+              const SizedBox(height: 10),
+            ],
+          const SizedBox(height: 22),
+          const SectionTitle(
+            title: WalletStrings.receivedHeading,
+            subtitle: WalletStrings.receivedSub,
+          ),
+          const SizedBox(height: 10),
+          if (received.isEmpty)
+            const ManageCard(child: _Grey(WalletStrings.noReceived))
+          else
+            for (final r in received) ...[
+              ReceivedRequestCard(vm: vm, request: r),
               const SizedBox(height: 10),
             ],
           if (ticket.isOpen) ...[

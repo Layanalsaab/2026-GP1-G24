@@ -77,11 +77,22 @@ class WalletStrings {
   static const minimum = 'Minimum';
   static const maximum = 'Maximum';
   static const usedFor = 'Used for';
+  // Requests that startups send to a ticket
+  static const receivedHeading = 'Requests Received';
+  static const receivedSub = 'Startups that sent you a request for this ticket';
+  static const noReceived = 'No requests received for this ticket yet.';
+  static const requestReceived = 'Request received';
+  static const accept = 'Accept';
+  static const decline = 'Decline';
+  static const requestAccepted = 'Request accepted';
+  static const requestDeclined = 'Request declined';
+  static const answerFailed = 'Couldn’t answer the request. Try again.';
   static const requestsHeading = 'Investment Requests';
   static const requestsSub = 'Sent with this ticket';
   static const noTicketRequests = 'No requests sent with this ticket yet.';
   static const matchesHeading = 'Suggested Startups';
-  static const matchesSub = 'Startups with an open round that matches this ticket';
+  static const matchesSub =
+      'Startups with an open round that matches this ticket';
   static const noMatches = 'No startups with a matching open round right now.';
   static const matchesFailed =
       'Couldn’t load the suggested startups. Check your connection.';

@@ -6,6 +6,7 @@ import 'package:startsa/data_access/firebase_services/firestore_service.dart';
 import 'package:startsa/data_access/mock_data/prototype_seed.dart';
 import 'package:startsa/data_access/repositories/matching_repository.dart';
 import 'package:startsa/data_access/repositories/ticket_repository.dart';
+import 'package:startsa/data_access/repositories/ticket_request_repository.dart';
 import 'package:startsa/features/wallet/screens/wallet_screen.dart';
 import 'package:startsa/helpers/formatters.dart';
 import 'package:startsa/features/wallet/view_models/wallet_view_model.dart';
@@ -54,6 +55,7 @@ Future<WalletViewModel> open(
   final vm = WalletViewModel(
     investorId: 'inv1',
     tickets: TicketRepository(firestore: db),
+    received: TicketRequestRepository(firestore: db),
     matching: MatchingRepository(firestore: db, live: false),
   );
   vm.setOptionOrder(
@@ -603,5 +605,86 @@ void main() {
       find.text('No requests yet. Send one from a matching ticket.'),
       findsOneWidget,
     );
+  });
+
+  /// A request a startup sent to ticket inv1-T1.
+  void seedReceived({String status = 'pending'}) {
+    (db.store[FirestoreCollections.ticketRequests] ??= {})['S9~inv1-T1'] = {
+      'startupId': 'S9',
+      'founderId': 'f9',
+      'investorId': 'inv1',
+      'ticketId': 'inv1-T1',
+      'startupName': 'Nova Labs',
+      'amount': 150000,
+      'message': '',
+      'status': status,
+      'createdAt': DateTime(2026, 11, 3),
+    };
+  }
+
+  testWidgets('a request received shows on the ticket page and is accepted', (
+    t,
+  ) async {
+    seedReceived();
+    await open(
+      t,
+      tickets: [ticket(id: 'inv1-T1', name: 'Health bets')],
+    );
+    await press(t, find.text('Health bets'));
+    expect(find.text('Requests Received'), findsOneWidget);
+    expect(
+      find.text('Startups that sent you a request for this ticket'),
+      findsOneWidget,
+    );
+    expect(find.text('Nova Labs'), findsOneWidget);
+    expect(find.text('Request received'), findsOneWidget);
+    expect(find.text('SAR 150,000'), findsOneWidget);
+    expect(find.text('3 Nov 2026'), findsOneWidget);
+    expect(find.text('Pending'), findsOneWidget);
+
+    await press(t, find.text('Accept'));
+    expect(find.text('Request accepted'), findsOneWidget);
+    expect(find.text('Accepted'), findsOneWidget);
+    expect(find.text('Accept'), findsNothing);
+    expect(
+      db.store[FirestoreCollections.ticketRequests]!['S9~inv1-T1']!['status'],
+      'accepted',
+    );
+    await t.pumpAndSettle(const Duration(seconds: 5));
+  });
+
+  testWidgets('a request received can be declined', (t) async {
+    seedReceived();
+    await open(
+      t,
+      tickets: [ticket(id: 'inv1-T1', name: 'Health bets')],
+    );
+    await press(t, find.text('Health bets'));
+    await press(t, find.text('Decline'));
+    expect(find.text('Request declined'), findsOneWidget);
+    expect(
+      db.store[FirestoreCollections.ticketRequests]!['S9~inv1-T1']!['status'],
+      'declined',
+    );
+    await t.pumpAndSettle(const Duration(seconds: 5));
+  });
+
+  testWidgets('the Requests tab lists what was received, with its ticket', (
+    t,
+  ) async {
+    seedReceived();
+    final vm = await open(
+      t,
+      tickets: [ticket(id: 'inv1-T1', name: 'Health bets')],
+    );
+    // The badge counts it.
+    expect(vm.pendingCount, 1);
+    await press(t, find.text('Requests').first);
+    expect(find.text('Nova Labs'), findsOneWidget);
+    expect(find.text('Request received · Health bets'), findsOneWidget);
+    expect(find.widgetWithText(AppFilterChip, 'All · 1'), findsOneWidget);
+    expect(find.widgetWithText(AppFilterChip, 'Pending · 1'), findsOneWidget);
+    await press(t, find.widgetWithText(AppFilterChip, 'Declined · 0'));
+    expect(find.text('Nova Labs'), findsNothing);
   });
 }
