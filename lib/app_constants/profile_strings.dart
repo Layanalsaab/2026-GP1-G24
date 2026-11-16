@@ -58,6 +58,14 @@ class ProfileStrings {
   static const no = 'No';
   static const interests = 'Investment Interests';
   static const sectors = 'Sectors';
+
+  // Investment tickets on a profile
+  static const tickets = 'Investment Tickets';
+  static const ticketStatus = 'Status';
+  static const ticketMinimum = 'Minimum';
+  static const ticketMaximum = 'Maximum';
+  static const ticketCreated = 'Created';
+  static const done = 'Done';
   static const stages = 'Stages';
   static const commerceModels = 'Commerce Models';
   static const privateTag = 'Private';

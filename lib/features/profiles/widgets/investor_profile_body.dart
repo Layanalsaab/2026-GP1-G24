@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../../app_constants/profile_strings.dart';
 import '../../../models/app_user.dart';
+import '../../../helpers/formatters.dart';
+import '../../../models/investment_ticket.dart';
 import '../../../models/investor_profile.dart';
 import '../../../models/startup.dart';
 import '../../../shared_ui/icons/app_icons.dart';
@@ -138,6 +140,8 @@ class InvestorProfileBody extends StatelessWidget {
     required this.data,
     this.associations = const [],
     this.contact,
+    this.tickets = const [],
+    this.onOpenTicket,
   });
 
   final InvestorProfileData data;
@@ -145,6 +149,11 @@ class InvestorProfileBody extends StatelessWidget {
 
   /// Shown only on the investor's own profile.
   final InvestorContactData? contact;
+
+  /// The investor's open tickets, listed under the interests; tapping one
+  /// opens everything it says.
+  final List<InvestmentTicket> tickets;
+  final ValueChanged<InvestmentTicket>? onOpenTicket;
 
   @override
   Widget build(BuildContext context) {
@@ -156,8 +165,6 @@ class InvestorProfileBody extends StatelessWidget {
         (ProfileStrings.yearsOfInvesting, d.yearsInvesting),
       if (d.startupsInvested.isNotEmpty)
         (ProfileStrings.startupsInvested, d.startupsInvested),
-      if (d.startupsInvested != '0' && d.roundSize.isNotEmpty)
-        (ProfileStrings.roundSize, d.roundSize),
     ];
     final hasInterests =
         d.sectors.isNotEmpty ||
@@ -213,6 +220,40 @@ class InvestorProfileBody extends StatelessWidget {
                   ProfileStrings.commerceModels,
                   d.commerceModels,
                 ),
+              ],
+            ),
+          ),
+        if (tickets.isNotEmpty)
+          ProfileSection(
+            title: ProfileStrings.tickets,
+            delay: stagger(),
+            child: Column(
+              children: [
+                for (var i = 0; i < tickets.length; i++)
+                  ListRow(
+                    showDivider: i > 0,
+                    leading: Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: AppColors.moss100,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Center(
+                        child: AppIcon.filled(
+                          AppIcons.wallet,
+                          size: 22,
+                          color: AppColors.mossText,
+                        ),
+                      ),
+                    ),
+                    title: tickets[i].name,
+                    subtitle:
+                        '${Formatters.sarShort(tickets[i].amountMin)} – ${Formatters.shortMoney(tickets[i].amountMax)} · ${tickets[i].sectors.join(', ')}',
+                    onTap: onOpenTicket == null
+                        ? null
+                        : () => onOpenTicket!(tickets[i]),
+                  ),
               ],
             ),
           ),

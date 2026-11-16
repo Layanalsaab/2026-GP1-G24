@@ -1,3 +1,4 @@
+import '../../../data_access/repositories/discovery_repository.dart';
 import '../../../shared_ui/widgets/lists/app_refresh.dart';
 import '../../../navigation/app_router.dart';
 import '../../../helpers/open_link.dart';
@@ -27,6 +28,7 @@ import '../../startups/screens/manage_startup_screen.dart';
 import '../../startups/screens/startup_steps_screen.dart';
 import '../view_models/account_view_model.dart';
 import '../widgets/investor_profile_body.dart';
+import '../widgets/ticket_info_sheet.dart';
 import '../widgets/profile_widgets.dart';
 import 'edit_account_screen.dart';
 
@@ -211,6 +213,10 @@ class _OwnProfileScreenState extends State<OwnProfileScreen> {
                     InvestorProfileBody(
                       data: InvestorProfileData.fromUser(u),
                       associations: _vm.associations,
+                      tickets: DiscoveryRepository.instance.openTicketsOf(
+                        u.uid,
+                      ),
+                      onOpenTicket: (t) => showTicketInfoSheet(context, t),
                       contact: InvestorContactData(
                         email: u.email,
                         emailPublic: u.emailPublic,

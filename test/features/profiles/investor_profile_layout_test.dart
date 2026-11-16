@@ -11,6 +11,7 @@ import 'package:startsa/features/profiles/screens/account_screen.dart';
 import 'package:startsa/features/profiles/screens/investor_profile_screen.dart';
 import 'package:startsa/helpers/app_session.dart';
 import 'package:startsa/models/app_user.dart';
+import 'package:startsa/models/investment_ticket.dart';
 import 'package:startsa/models/investor_criteria.dart';
 import 'package:startsa/models/investor_profile.dart';
 import 'package:startsa/shared_ui/icons/app_icons.dart';
@@ -71,6 +72,64 @@ void main() {
     StartupRepository.instance = FakeStartupRepository();
   });
 
+  testWidgets('tickets sit under the interests and open with everything', (
+    t,
+  ) async {
+    DiscoveryRepository.instance = DiscoveryRepository.sample(
+      tickets: [
+        InvestmentTicket(
+          id: 'u2-T1',
+          investorId: 'u2',
+          name: 'Health bets',
+          sectors: const ['HealthTech', 'Fintech'],
+          stages: const ['Pre-seed', 'Seed'],
+          amountMin: 100000,
+          amountMax: 300000,
+          createdAt: DateTime(2026, 11, 1),
+        ),
+        InvestmentTicket(
+          id: 'u2-T2',
+          investorId: 'u2',
+          name: 'Old ticket',
+          sectors: const ['Logistics'],
+          stages: const ['Seed'],
+          amountMin: 50000,
+          amountMax: 90000,
+          status: TicketStatus.closed,
+        ),
+      ],
+    );
+    AppSession.instance.signIn(_full);
+    await _pump(t, const OwnProfileScreen(user: _full), const Size(412, 1400));
+    expect(find.text('Investment Tickets'), findsOneWidget);
+    // Under the interests.
+    expect(
+      t.getTopLeft(find.text('Investment Tickets')).dy,
+      greaterThan(t.getTopLeft(find.text('Investment Interests')).dy),
+    );
+    // Only the open one is listed.
+    expect(find.text('Health bets'), findsOneWidget);
+    expect(find.text('Old ticket'), findsNothing);
+    await t.ensureVisible(find.text('Health bets'));
+    await t.pumpAndSettle();
+    await t.tap(find.text('Health bets'));
+    await t.pumpAndSettle();
+    for (final label in [
+      'Status',
+      'Sectors',
+      'Stages',
+      'Minimum',
+      'Maximum',
+      'Created',
+    ]) {
+      expect(find.text(label), findsWidgets, reason: label);
+    }
+    expect(find.text('SAR 100,000'), findsOneWidget);
+    expect(find.text('SAR 300,000'), findsOneWidget);
+    expect(find.text('1 Nov 2026'), findsOneWidget);
+    expect(find.text('Open'), findsOneWidget);
+  });
+
   for (final size in const [Size(412, 892), Size(360, 740)]) {
     group('${size.width.toInt()} px wide', () {
       testWidgets('own profile with full data', (t) async {
@@ -83,7 +142,8 @@ void main() {
         expect(find.text('What I’m looking for in startups'), findsOneWidget);
         expect(find.text('Investment Background'), findsOneWidget);
         expect(find.text('Years of investing'), findsOneWidget);
-        expect(find.text('Round Size'), findsOneWidget);
+        // The round size is the Investment Size card above: not repeated.
+        expect(find.text('Round Size'), findsNothing);
         // "Led a round" is no longer shown, even for an old answer.
         expect(find.text('Led a round'), findsNothing);
         expect(find.text('Yes'), findsNothing);

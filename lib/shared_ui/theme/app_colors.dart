@@ -55,6 +55,11 @@ class AppColors {
   /// Unselected header tab text on green.
   static const onGreenTab = Color(0xFFA9C0AE);
 
+  /// The red of a danger button (Delete, Leave, Close): a BACKGROUND with white
+  /// text, the same red in both themes ([error] is the red TEXT and turns
+  /// light in the dark theme).
+  static const dangerFill = Color(0xFFB3261E);
+
   static const notifDot = Color(0xFFE5484D);
   static const liveDot = Color(0xFF5FD38A);
   static const liveRing = Color(0x385FD38A);
@@ -147,7 +152,7 @@ class AppColors {
   static Color get rangeFill => _p(0xFFEBE8E1, 0xFF2A332D);
   static Color get profileBg => _p(0xFFF6F4EF, 0xFF141915);
   static Color get rowSeparator => _p(0xFFF0EDE6, 0xFF252D27);
-  static Color get logOut => _p(0xFFB23B3B, 0xFFF2A8A3);
+  static Color get logOut => _p(0xFFB23B3B, 0xFFFF7B72);
   static Color get bookmarkOn => _p(0xFFA87A25, 0xFFD8B864);
   static Color get offFill => _p(0xFFD9D6CF, 0xFF2B332D);
   static Color get offText => _p(0xFF7D837E, 0xFF9AA39B);

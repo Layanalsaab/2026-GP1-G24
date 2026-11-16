@@ -50,7 +50,7 @@ void main() {
     testWidgets('choose role -> investor sign-up at $w px', (t) async {
       await _pump(t, const ChooseRoleScreen(), w: w);
       expect(find.text('Choose your role'), findsOneWidget);
-      await t.tap(find.text('Investor'));
+      await t.tap(find.text('Angel Investor'));
       await t.pump(const Duration(milliseconds: 300));
       await t.tap(find.text('Continue'));
       await t.pump();
