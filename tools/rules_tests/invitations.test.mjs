@@ -53,7 +53,8 @@ await check('the founder invites another', true, () => setDoc(doc(founder, 'invi
 await check('stranger cannot create', false, () => setDoc(doc(stranger, 'invitations', 'S1~zed@gmail.com'), inv({ emailLower: 'zed@gmail.com', invitedBy: 'x1' })));
 await check('wrong id is refused', false, () => setDoc(doc(founder, 'invitations', 'S1~other'), inv({ emailLower: 'q@gmail.com' })));
 await check('claiming to be someone else is refused', false, () => setDoc(doc(founder, 'invitations', 'S1~liar@gmail.com'), inv({ emailLower: 'liar@gmail.com', invitedBy: 'c1' })));
-await check('bad role is refused', false, () => setDoc(doc(founder, 'invitations', 'S1~bad@gmail.com'), inv({ emailLower: 'bad@gmail.com', role: 'owner' })));
+// ('owner' is a real role now: the founder inviting someone to take over.)
+await check('bad role is refused', false, () => setDoc(doc(founder, 'invitations', 'S1~bad@gmail.com'), inv({ emailLower: 'bad@gmail.com', role: 'admin' })));
 await check('invalid e-mail is refused', false, () => setDoc(doc(founder, 'invitations', 'S1~nope'), inv({ emailLower: 'nope' })));
 
 await check('anyone can get ONE invitation by id', true, () => getDoc(doc(anon, 'invitations', 'S1~sara@gmail.com')));
