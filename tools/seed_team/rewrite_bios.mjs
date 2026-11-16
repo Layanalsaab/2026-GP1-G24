@@ -125,7 +125,15 @@ const interestsLine = (p, sectors) => {
         `Follows the ${lead} market closely.`,
         `Enjoys working with early teams in ${lead}.`,
       ]);
-  return `${intro} ${more}`;
+  const drive = pick(who + 'f', [
+    'Passionate about building products people use every day.',
+    'Cares about turning ideas into reliable services.',
+    'Enjoys growing teams and customers across the Kingdom.',
+    'Believes technology should be simple for everyone.',
+    'Likes working with partners across the region.',
+    'Motivated by solving real problems with data.',
+  ]);
+  return `${intro} ${more} ${drive}`;
 };
 
 const makeBio = (p) => {
@@ -140,8 +148,8 @@ const makeBio = (p) => {
   });
   const order = { founder: 0, coFounder: 1, member: 2 };
   parts.sort((a, b) => order[a.kind] - order[b.kind] || a.name.localeCompare(b.name));
-  const named = parts.slice(0, 4);
-  const rest = parts.length - named.length;
+  // At most two startups are named; the bio is about the person.
+  const named = parts.slice(0, 2);
   // "Founder of A and co-founder of B, and CTO at C."
   // One startup: a few ways to say it. Several: grouped by role, e.g.
   // "Founder of A and B, co-founder of C and CTO at D".
@@ -161,12 +169,10 @@ const makeBio = (p) => {
       : `${g.x.text || 'Team member'} at ${names}`;
     return i === 0 ? t : t.replace(/^(Founder|Co-founder)/, (w) => w.toLowerCase());
   });
-  let head = `${list(phrases)}${rest > 0 ? `, and is involved in ${rest} other startup${rest > 1 ? 's' : ''}` : ''}.`;
-  const first = parts[0].s;
-  const what = sentence(first.description || first.problem || first.solution);
+  const head = `${list(phrases)}.`.replace(/\.\.$/, '.');
   const sectors = [...new Set(parts.map((x) => sectorLabel(x.s.sector)).filter(Boolean))].slice(0, 3);
   const city = p.city ? ` Based in ${p.city}.` : '';
-  return { bio: `${head} ${what} ${interestsLine(p, sectors)}${city}`.replace(/\s+/g, ' ').trim(), sectors };
+  return { bio: `${head} ${interestsLine(p, sectors)}${city}`.replace(/\s+/g, ' ').trim(), sectors };
 };
 
 const results = new Map();
