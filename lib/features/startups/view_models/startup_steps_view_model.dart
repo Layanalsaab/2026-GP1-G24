@@ -154,7 +154,7 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
     'solution': solution.text,
     'customers': customers.text,
     'advantage': advantage.text,
-    'tam': tam.text,
+    'marketSize': marketSize.text,
     'sam': sam.text,
     'som': som.text,
     'team': [for (final m in team) m.toMap()],
@@ -223,7 +223,7 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
     solution.text = t('solution');
     customers.text = t('customers');
     advantage.text = t('advantage');
-    tam.text = t('tam');
+    marketSize.text = t('marketSize');
     sam.text = t('sam');
     som.text = t('som');
     team = [
@@ -341,7 +341,7 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
     StartupField.solution => solution,
     StartupField.customers => customers,
     StartupField.advantage => advantage,
-    StartupField.marketSize => tam,
+    StartupField.marketSize => marketSize,
     StartupField.modelText => modelText,
     StartupField.revenueNow => revenueNow,
     StartupField.capital => capital,
@@ -409,7 +409,7 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
   final advantage = TextEditingController();
 
   // ---- Step 3
-  final tam = TextEditingController();
+  final marketSize = TextEditingController();
   final sam = TextEditingController();
   final som = TextEditingController();
   List<TeamMember> team = [];
@@ -467,7 +467,7 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
     solution,
     customers,
     advantage,
-    tam,
+    marketSize,
     sam,
     som,
     memberName,
@@ -604,7 +604,7 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
       case StartupField.customers:
         return StartupValidators.customers(customers.text);
       case StartupField.marketSize:
-        return StartupValidators.marketSize(tam.text);
+        return StartupValidators.marketSize(marketSize.text);
       case StartupField.advantage:
         return StartupValidators.advantage(advantage.text);
       case StartupField.revenueNow:
@@ -750,7 +750,7 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
       return raw;
     }
     // A typed zero says so at once (an empty field waits for Next).
-    if (f == StartupField.marketSize && tam.text.trim().isNotEmpty) {
+    if (f == StartupField.marketSize && marketSize.text.trim().isNotEmpty) {
       return raw;
     }
     // The website is checked from the first character (it is optional, so
@@ -1495,7 +1495,7 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
       solution: solution.text.trim(),
       customers: customers.text.trim(),
       advantage: advantage.text.trim(),
-      tam: StartupValidators.money(tam.text),
+      marketSize: StartupValidators.money(marketSize.text),
       sam: StartupValidators.money(sam.text),
       som: StartupValidators.money(som.text),
       team: team,
@@ -1638,7 +1638,7 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
     solution.text = s.solution;
     customers.text = s.customers;
     advantage.text = s.advantage;
-    tam.text = _money(s.tam);
+    marketSize.text = _money(s.marketSize);
     sam.text = _money(s.sam);
     som.text = _money(s.som);
     team = [...s.team];

@@ -69,7 +69,7 @@ class PrototypeSeed {
     String solution = '',
     String customers = '',
     String advantage = '',
-    int? tam,
+    int? marketSize,
     int? sam,
     int? som,
     List<TeamMember> team = const [],
@@ -99,7 +99,7 @@ class PrototypeSeed {
     solution: solution,
     customers: customers,
     advantage: advantage,
-    tam: tam,
+    marketSize: marketSize,
     sam: sam,
     som: som,
     team: team,
@@ -132,7 +132,7 @@ class PrototypeSeed {
     solution: 'An app that books a vetted, licensed nurse in minutes, shows the full price upfront, and keeps visit notes and care plans in one place.',
     customers: 'Families caring for elderly parents or recovering patients at home, starting in Riyadh.',
     advantage: 'Every nurse is licensed and background-checked, prices are fixed upfront, and we partner directly with two hospital groups for referrals.',
-    tam: 2400000000,
+    marketSize: 2400000000,
     sam: 600000000,
     som: 24000000,
     team: const [
@@ -487,7 +487,6 @@ class PrototypeSeed {
     String? gain,
     String? years,
     String? deals,
-    bool? led,
     List<String>? models,
   }) {
     // Sample ticket details so no card looks empty; varied per investor.
@@ -522,7 +521,6 @@ class PrototypeSeed {
       yearsInvesting: years ?? yearsList[seed % yearsList.length],
       startupsInvested: d,
       roundSize: d == '0' ? null : ticket,
-      ledRound: led ?? seed.isEven,
       commerceModels: m,
     );
   }

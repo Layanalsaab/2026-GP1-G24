@@ -50,7 +50,6 @@ class InvestorProfileData {
     this.yearsInvesting = '',
     this.startupsInvested = '',
     this.roundSize = '',
-    this.ledRound,
     this.sectors = const [],
     this.stages = const [],
     this.commerceModels = const [],
@@ -67,7 +66,6 @@ class InvestorProfileData {
   /// "0", "1–3", ... "10+".
   final String startupsInvested;
   final String roundSize;
-  final bool? ledRound;
   final List<String> sectors;
   final List<String> stages;
 
@@ -101,7 +99,6 @@ class InvestorProfileData {
       yearsInvesting: (c?.yearsInvesting ?? '').trim(),
       startupsInvested: deals,
       roundSize: round,
-      ledRound: c?.hasLedRound,
       sectors: _withOther(c?.sectors ?? const [], c?.sectorsOther),
       stages: _withOther(c?.stages ?? const [], c?.stagesOther),
       commerceModels: short.isEmpty
@@ -122,7 +119,6 @@ class InvestorProfileData {
       yearsInvesting: (i.yearsInvesting ?? '').trim(),
       startupsInvested: (i.startupsInvested ?? '').trim(),
       roundSize: (i.roundSize ?? '').trim(),
-      ledRound: i.ledRound,
       sectors: i.sectors,
       stages: i.stages,
       commerceModels: i.commerceModels,

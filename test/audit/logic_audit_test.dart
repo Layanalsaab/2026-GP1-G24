@@ -153,9 +153,6 @@ void main() {
     const full = InvestorCriteria(
       yearsInvesting: '4–6 years',
       dealsCount: '4–6',
-      hasLedRound: true,
-      roundsLed: '3–5',
-      coInvest: 'Possibly',
       ticketBand: 'Other',
       ticketOther: 'Up to a million',
       roundMin: 100000,
@@ -192,14 +189,12 @@ void main() {
         stages: ['Seed'],
         commerceModels: ['Business-to-Business (B2B)'],
         ticketBand: 'SAR 100K – 500K',
-        hasLedRound: false,
       );
       final f = c.toFields();
       expect(f[UserFields.sectorsOther], isNull);
       expect(f[UserFields.preferredStagesOther], isNull);
       expect(f[UserFields.preferredCommerceModelsOther], isNull);
       expect(f[UserFields.ticketSizeOther], isNull);
-      expect(f[UserFields.roundsLed], isNull);
     });
 
     test('labels on the profile', () {

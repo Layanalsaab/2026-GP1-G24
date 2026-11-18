@@ -30,7 +30,7 @@ void main() {
     test('the detailed startup has a team and market size', () {
       final r = PrototypeSeed.rafeeq;
       expect(r.team.length, 2);
-      expect(r.tam, 2400000000);
+      expect(r.marketSize, 2400000000);
       expect(r.wantsLeadInvestor, isTrue);
     });
   });

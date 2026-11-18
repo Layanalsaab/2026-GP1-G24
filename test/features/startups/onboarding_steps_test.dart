@@ -73,7 +73,7 @@ void main() {
         isNull,
         reason: 'empty waits for Next',
       );
-      vm.tam.text = '0';
+      vm.marketSize.text = '0';
       expect(
         vm.errorOf(StartupField.marketSize),
         'Target market size must be more than 0.',

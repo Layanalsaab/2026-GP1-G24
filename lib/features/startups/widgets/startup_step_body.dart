@@ -425,7 +425,7 @@ class _TargetMarket extends StatelessWidget {
           sentenceCase: true,
         ),
         // One SAR amount (no K/M/B picker, no hint under it: the explanation
-        // is in the "i"). Stored in the existing `tam` value.
+        // is in the "i"). Stored in the existing `marketSize` value.
         AppField(
           label: FounderToolsStrings.marketLabel,
           required: true,
@@ -433,7 +433,7 @@ class _TargetMarket extends StatelessWidget {
           info: FounderToolsStrings.marketInfo,
           error: vm.errorOf(StartupField.marketSize),
           child: MoneyField(
-            controller: vm.tam,
+            controller: vm.marketSize,
             focusNode: vm.focusOf(StartupField.marketSize),
             hasError: vm.hasError(StartupField.marketSize),
             semanticLabel: FounderToolsStrings.marketLabel,

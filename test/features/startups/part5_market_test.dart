@@ -52,12 +52,12 @@ void main() {
     expect(vm.errorOf(StartupField.marketSize), isNull);
 
     // Market size: a zero says so from the first keystroke.
-    vm.tam.text = '0';
+    vm.marketSize.text = '0';
     expect(
       vm.errorOf(StartupField.marketSize),
       'Target market size must be more than 0.',
     );
-    vm.tam.text = '5,000,000';
+    vm.marketSize.text = '5,000,000';
     expect(vm.errorOf(StartupField.marketSize), isNull);
 
     // Typed, emptied and left: required.
@@ -72,7 +72,7 @@ void main() {
       'Please describe your target customers.',
     );
 
-    vm.tam.clear();
+    vm.marketSize.clear();
     await t.enterText(boxes.at(1), '5');
     await t.enterText(boxes.at(1), '');
     await t.tap(boxes.at(0));

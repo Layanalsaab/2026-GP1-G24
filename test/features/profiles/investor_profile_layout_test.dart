@@ -35,7 +35,6 @@ const _full = AppUser(
     dealsCount: '4–6',
     roundMin: 500000,
     roundMax: 1000000,
-    hasLedRound: true,
     sectors: ['HealthTech', 'Other'],
     sectorsOther: 'SportsTech',
     stages: ['Seed'],

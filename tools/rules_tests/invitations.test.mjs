@@ -179,7 +179,7 @@ const maxStartup = (extra = {}) => ({
   otherSectors: sectorLabels, stage: 'other', stageOther: 'Stage text', businessModel: 'other',
   businessModelOther: 'Model text', location: 'riyadh', lookingFor: ['funding', 'partnership', 'support', 'other'],
   lookingForOther: 'Something', fundingRequirement: 500000, isPublic: true,
-  problem: 'p', solution: 's', targetCustomers: 'c', differentiation: 'd', marketSizeTam: 1000000,
+  problem: 'p', solution: 's', targetCustomers: 'c', differentiation: 'd', marketSize: 1000000,
   currentAvailableCapital: 0, revenueThisYear: 0, monthlyBurnRate: 0, valuation: 0, raisedInRound: 0,
   expectedRevenueYear1: 1, expectedRevenueYear2: 2, expectedRevenueYear3: 3,
   businessModelExplanation: 'e', partnerTypes: ['a', 'b', 'c'], supportTypes: ['a', 'b'],
@@ -188,7 +188,7 @@ const maxStartup = (extra = {}) => ({
 });
 await check('the biggest startup (25 other sectors, every Other text, 20 team cards) can be created', true, () => setDoc(doc(founder, 'startups', 'M1'), maxStartup()));
 const allMoney = {
-  marketSizeTam: 9e12, marketSizeSam: 9e12, marketSizeSom: 9e12, currentAvailableCapital: 9e12,
+  marketSize: 9e12, marketSizeSam: 9e12, marketSizeSom: 9e12, currentAvailableCapital: 9e12,
   expectedRevenueYear1: 9e12, expectedRevenueYear2: 9e12, expectedRevenueYear3: 9e12, valuation: 9e12,
   revenueThisYear: 9e12, monthlyBurnRate: 9e12, raisedInRound: 9e12, fundingRequirement: 9e12,
 };

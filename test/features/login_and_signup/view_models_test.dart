@@ -625,8 +625,6 @@ void main() {
       expect(users.onboardingSaves, 1);
       final c = users.savedInvestorCriteria!;
       expect(c.dealsCount, '1–3');
-      // "Have you ever led an investment round?" is no longer asked.
-      expect(c.hasLedRound, isNull);
       expect(c.roundMin, 1000000);
       expect(c.roundMax, 5000000);
       expect(c.yearsInvesting, '1–3 years');

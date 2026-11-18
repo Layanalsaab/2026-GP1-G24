@@ -58,7 +58,8 @@ class UserRepository {
         UserFields.sectorsOther: sectorsOther.trim(),
       if (linkedin != null && linkedin.trim().isNotEmpty)
         UserFields.linkedin: linkedin.trim(),
-      if (gain != null && gain.trim().isNotEmpty) UserFields.gain: gain.trim(),
+      if (gain != null && gain.trim().isNotEmpty)
+        UserFields.lookingFor: gain.trim(),
       if (valueOffered != null && valueOffered.trim().isNotEmpty)
         UserFields.valueOffered: valueOffered.trim(),
       // Private is the default, so only a public choice is stored.
@@ -176,9 +177,6 @@ class UserRepository {
           UserFields.email: keep(UserFields.email),
         if (d[UserFields.phonePublic] == true)
           UserFields.phone: keep(UserFields.phone),
-        UserFields.hasLedRound: keep(UserFields.hasLedRound),
-        UserFields.roundsLed: keep(UserFields.roundsLed),
-        UserFields.coInvest: keep(UserFields.coInvest),
         UserFields.roundSizeMin: keep(UserFields.roundSizeMin),
         UserFields.roundSizeMax: keep(UserFields.roundSizeMax),
         UserFields.preferredCommerceModels: keep(
@@ -237,7 +235,7 @@ class UserRepository {
         UserFields.city: ?city,
         UserFields.sectorsOther: sectorsOther,
         UserFields.linkedin: linkedin,
-        UserFields.gain: gain,
+        UserFields.lookingFor: gain,
         UserFields.valueOffered: valueOffered,
         UserFields.emailPublic: ?emailPublic,
         UserFields.phonePublic: ?phonePublic,

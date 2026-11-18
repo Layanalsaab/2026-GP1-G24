@@ -201,7 +201,7 @@ class AppUser {
       ticketSize: data['ticketSize'] as String?,
       photoUrl: data[UserFields.photoUrl] as String?,
       linkedin: data[UserFields.linkedin] as String?,
-      gain: (data[UserFields.gain] as String?) ?? '',
+      gain: (data[UserFields.lookingFor] as String?) ?? '',
       valueOffered: (data[UserFields.valueOffered] as String?) ?? '',
       sectorsOther: data[UserFields.sectorsOther] as String?,
       investorCriteria:

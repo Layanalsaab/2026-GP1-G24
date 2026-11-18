@@ -28,7 +28,6 @@ class InvestorProfile {
     this.yearsInvesting,
     this.startupsInvested,
     this.roundSize,
-    this.ledRound,
     this.commerceModels = const [],
     this.photoUrl,
     this.ticketBand,
@@ -84,7 +83,6 @@ class InvestorProfile {
 
   /// Investment size per funding round, e.g. "SAR 500K – 1M".
   final String? roundSize;
-  final bool? ledRound;
 
   /// Contact details, only set for what the investor made Public (their
   /// email / phone are never listed otherwise).
@@ -172,7 +170,6 @@ class InvestorProfile {
           : [c?.roundMin, c?.roundMax].every((v) => v == null)
           ? null
           : amountLabel(c?.roundMin, c?.roundMax),
-      ledRound: c?.hasLedRound,
       commerceModels: shortModels.isEmpty ? const [] : shortModels.split(', '),
       photoUrl: _text(d['photoUrl']),
       ticketBand: c?.ticketBand,
@@ -226,7 +223,6 @@ class InvestorProfile {
     yearsInvesting: yearsInvesting,
     startupsInvested: startupsInvested,
     roundSize: roundSize,
-    ledRound: ledRound,
     commerceModels: commerceModels,
     photoUrl: photoUrl,
     ticketBand: ticketBand,

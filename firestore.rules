@@ -22,7 +22,7 @@ service cloud.firestore {
                                                  'createdAt', 'phone', 'city',
                                                  'bio', 'sectorsOfInterest',
                                                  'sectorsOther', 'linkedinUrl',
-                                                 'gain', 'offer',
+                                                 'offer', 'lookingFor',
                                                  'photoUrl',
                                                  'emailPublic', 'phonePublic'])
         && validProfile(request.resource.data);
@@ -33,13 +33,13 @@ service cloud.firestore {
              .hasOnly(['onboardingCompleted', 'sector', 'stage',
                        'city', 'fullName', 'bio', 'phone',
                        'sectorsOfInterest', 'sectorsOther',
-                       'linkedinUrl', 'gain', 'offer',
+                       'linkedinUrl', 'offer',
                        'investorCriteria',
                        'photoUrl', 'emailPublic', 'phonePublic',
                        'preferredSectors', 'preferredStages',
                        'ticketSize', 'ticketSizeOther',
-                       'investmentsCount', 'hasLedRound', 'roundsLed',
-                       'coInvest', 'roundSizeMin', 'roundSizeMax',
+                       'investmentsCount',
+                       'roundSizeMin', 'roundSizeMax',
                        'preferredStagesOther', 'preferredCommerceModels',
                        'preferredCommerceModelsOther', 'lookingFor',
                        'yearsInvesting'])
@@ -107,20 +107,15 @@ service cloud.firestore {
               || (d.sectorsOfInterest is list && d.sectorsOfInterest.size() <= 25))
           && optionalString(d, 'sectorsOther', 40)
           && (!('linkedinUrl' in d) || d.linkedinUrl is string)
-          && optionalString(d, 'gain', 1000)
           && optionalString(d, 'offer', 1000)
           && optionalString(d, 'lookingFor', 1000)
           && optionalString(d, 'photoUrl', 2048)
           && optionalString(d, 'investmentsCount', 10)
           && optionalString(d, 'yearsInvesting', 20)
-          && optionalString(d, 'roundsLed', 10)
-          && optionalString(d, 'coInvest', 20)
           && optionalString(d, 'ticketSize', 40)
           && optionalString(d, 'ticketSizeOther', 40)
           && optionalString(d, 'preferredStagesOther', 40)
           && optionalString(d, 'preferredCommerceModelsOther', 40)
-          && (!('hasLedRound' in d) || d.hasLedRound == null
-              || d.hasLedRound is bool)
           && optionalMoney(d, 'roundSizeMin')
           && optionalMoney(d, 'roundSizeMax')
           && optionalList(d, 'preferredSectors', 25)
@@ -185,7 +180,7 @@ service cloud.firestore {
         && request.resource.data.role == 'investor'
         && request.resource.data.keys().hasOnly(['role', 'fullName', 'city',
              'bio', 'preferredSectors', 'preferredStages', 'ticketSize',
-             'investmentsCount', 'hasLedRound', 'roundsLed', 'coInvest',
+             'investmentsCount',
              'roundSizeMin', 'roundSizeMax', 'preferredCommerceModels',
              'linkedinUrl', 'offer', 'lookingFor', 'title', 'photoUrl',
              'createdAt', 'yearsInvesting', 'sectorsOther',
@@ -515,7 +510,7 @@ service cloud.firestore {
                              'fundingRequirement', 'isPublic',
                              'logoUrl', 'logoData', 'createdAt', 'updatedAt',
                              'problem', 'solution', 'targetCustomers',
-                             'differentiation', 'marketSizeTam',
+                             'differentiation', 'marketSize',
                              'marketSizeSam', 'marketSizeSom', 'teamMembers',
                              'expectedGrowth', 'currentAvailableCapital',
                              'expectedRevenueYear1', 'expectedRevenueYear2',
@@ -567,7 +562,7 @@ service cloud.firestore {
         && optionalString(d, 'solution', 1000)
         && optionalString(d, 'targetCustomers', 1000)
         && optionalString(d, 'differentiation', 1000)
-        && optionalMoney(d, 'marketSizeTam')
+        && optionalMoney(d, 'marketSize')
         && optionalMoney(d, 'marketSizeSam')
         && optionalMoney(d, 'marketSizeSom')
         && optionalMoney(d, 'currentAvailableCapital')

@@ -69,9 +69,9 @@ class ManageDetailsTab extends StatelessWidget {
       case 1:
         return s.problem.trim().isEmpty ? _notAdded : s.problem.trim();
       case 2:
-        return _money(s.tam).isEmpty
+        return _money(s.marketSize).isEmpty
             ? _notAdded
-            : 'Target market size ${_money(s.tam)}';
+            : 'Target market size ${_money(s.marketSize)}';
       case 3:
         final parts = [
           if (_amount(s.revenueThisYear).isNotEmpty)
@@ -504,7 +504,7 @@ class _MarketState extends State<_Market> {
 
   @override
   Widget build(BuildContext context) {
-    final size = ManageDetailsTab._money(s.tam);
+    final size = ManageDetailsTab._money(s.marketSize);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

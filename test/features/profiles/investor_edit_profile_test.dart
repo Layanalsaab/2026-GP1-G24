@@ -117,7 +117,6 @@ void main() {
         dealsCount: '4–6',
         roundMin: 50000,
         roundMax: 100000,
-        hasLedRound: false,
         sectors: ['HealthTech'],
         stages: ['Seed'],
         commerceModels: ['Business-to-Business (B2B)'],

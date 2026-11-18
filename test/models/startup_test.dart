@@ -28,7 +28,7 @@ void main() {
       solution: 's',
       customers: 'c',
       advantage: 'a',
-      tam: 1,
+      marketSize: 1,
       sam: 2,
       som: 3,
       growth: 'g',
@@ -56,7 +56,7 @@ void main() {
         'solution',
         'targetCustomers',
         'differentiation',
-        'marketSizeTam',
+        'marketSize',
         'marketSizeSam',
         'marketSizeSom',
         'teamMembers',
@@ -95,7 +95,7 @@ void main() {
     ]);
     final back = Startup.fromMap('s1', map)!;
     expect(back.team.single.name, 'Faisal Alkhaldi');
-    expect(back.tam, 1);
+    expect(back.marketSize, 1);
     expect(back.revenueYear3, 7);
   });
 
@@ -382,7 +382,7 @@ void main() {
         solution: 's',
         customers: 'c',
         advantage: 'a',
-        tam: 2400000000,
+        marketSize: 2400000000,
         sam: 600000000,
         som: 24000000,
         team: const [
@@ -397,7 +397,7 @@ void main() {
         wantsLeadInvestor: true,
       );
       final back = Startup.fromMap('s1', full.toMap())!;
-      expect(back.tam, 2400000000);
+      expect(back.marketSize, 2400000000);
       expect(back.team.single.meta, 'CTO');
       expect(back.team.single.initials, 'FA');
       expect(back.valuation, 0);
@@ -409,7 +409,7 @@ void main() {
     test('an old document without them still loads', () {
       final back = Startup.fromMap('s1', startup.toMap())!;
       expect(back.team, isEmpty);
-      expect(back.tam, isNull);
+      expect(back.marketSize, isNull);
       expect(back.wantsLeadInvestor, isNull);
       expect(back.problem, '');
     });

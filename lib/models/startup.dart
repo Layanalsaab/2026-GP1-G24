@@ -35,7 +35,7 @@ class Startup {
     this.solution = '',
     this.customers = '',
     this.advantage = '',
-    this.tam,
+    this.marketSize,
     this.sam,
     this.som,
     this.team = const [],
@@ -176,7 +176,7 @@ class Startup {
 
   /// Market size in SAR per year: TAM (whole market), SAM (the part you can
   /// serve) and SOM (the share you expect to win). All optional.
-  final int? tam;
+  final int? marketSize;
   final int? sam;
   final int? som;
   final List<TeamMember> team;
@@ -300,7 +300,7 @@ class Startup {
 
   bool get hasBusinessDetails =>
       customers.isNotEmpty ||
-      tam != null ||
+      marketSize != null ||
       sam != null ||
       som != null ||
       growth.isNotEmpty;
@@ -379,7 +379,7 @@ class Startup {
     StartupFields.solution: solution,
     StartupFields.customers: customers,
     StartupFields.advantage: advantage,
-    StartupFields.tam: tam,
+    StartupFields.marketSize: marketSize,
     StartupFields.sam: sam,
     StartupFields.som: som,
     StartupFields.team: [for (final m in team) m.toMap()],
@@ -466,7 +466,7 @@ class Startup {
       solution: (data[StartupFields.solution] as String?) ?? '',
       customers: (data[StartupFields.customers] as String?) ?? '',
       advantage: (data[StartupFields.advantage] as String?) ?? '',
-      tam: (data[StartupFields.tam] as num?)?.toInt(),
+      marketSize: (data[StartupFields.marketSize] as num?)?.toInt(),
       sam: (data[StartupFields.sam] as num?)?.toInt(),
       som: (data[StartupFields.som] as num?)?.toInt(),
       team: [
@@ -528,7 +528,7 @@ class Startup {
     String? solution,
     String? customers,
     String? advantage,
-    int? tam,
+    int? marketSize,
     int? sam,
     int? som,
     List<TeamMember>? team,
@@ -580,7 +580,7 @@ class Startup {
     solution: solution ?? this.solution,
     customers: customers ?? this.customers,
     advantage: advantage ?? this.advantage,
-    tam: tam ?? this.tam,
+    marketSize: marketSize ?? this.marketSize,
     sam: sam ?? this.sam,
     som: som ?? this.som,
     team: team ?? this.team,

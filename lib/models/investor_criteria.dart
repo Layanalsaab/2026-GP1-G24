@@ -8,9 +8,6 @@ class InvestorCriteria {
   const InvestorCriteria({
     this.yearsInvesting,
     this.dealsCount,
-    this.hasLedRound,
-    this.roundsLed,
-    this.coInvest,
     this.ticketBand,
     this.ticketOther,
     this.roundMin,
@@ -33,8 +30,6 @@ class InvestorCriteria {
     '10+ years',
   ];
   static const dealsOptions = ['0', '1–3', '4–6', '7–9', '10+'];
-  static const roundsLedOptions = ['1–2', '3–5', '6+'];
-  static const coInvestOptions = ['Preferably', 'Possibly', 'Never'];
   static const ticketOptions = [
     'Under SAR 100K',
     'SAR 100K – 500K',
@@ -74,14 +69,6 @@ class InvestorCriteria {
     if (roundMin == null || roundMax == null) return '';
     return 'SAR ${short(roundMin!)} – ${short(roundMax!)}';
   }
-
-  final bool? hasLedRound;
-
-  /// Only when [hasLedRound] is true. Optional.
-  final String? roundsLed;
-
-  /// "Preferably", "Possibly" or "Never".
-  final String? coInvest;
 
   /// One of [ticketOptions]. "Other" uses [ticketOther].
   final String? ticketBand;
@@ -139,16 +126,12 @@ class InvestorCriteria {
   }
 
   /// The answers as flat Firestore fields of the investor's document
-  /// (`investmentsCount`, `hasLedRound`, `roundsLed`, `coInvest`,
-  /// `ticketSize`, `roundSizeMin`, `roundSizeMax`, `preferredSectors`,
+  /// (`investmentsCount`, `ticketSize`, `roundSizeMin`, `roundSizeMax`, `preferredSectors`,
   /// `preferredStages`, `preferredCommerceModels`, `lookingFor`, and the
   /// typed "Other" texts).
   Map<String, Object?> toFields() => {
     UserFields.investmentsCount: dealsCount,
     UserFields.yearsInvesting: yearsInvesting,
-    UserFields.hasLedRound: hasLedRound,
-    UserFields.roundsLed: hasLedRound == true ? roundsLed : null,
-    UserFields.coInvest: coInvest,
     UserFields.ticketSize: ticketBand,
     UserFields.ticketSizeOther: ticketBand == 'Other' ? ticketOther : null,
     UserFields.roundSizeMin: roundMin,
@@ -172,8 +155,6 @@ class InvestorCriteria {
     final hasAny = [
       UserFields.investmentsCount,
       UserFields.yearsInvesting,
-      UserFields.hasLedRound,
-      UserFields.coInvest,
       UserFields.ticketSize,
       UserFields.preferredSectors,
       UserFields.preferredStages,
@@ -184,9 +165,6 @@ class InvestorCriteria {
     return InvestorCriteria(
       dealsCount: d[UserFields.investmentsCount] as String?,
       yearsInvesting: d[UserFields.yearsInvesting] as String?,
-      hasLedRound: d[UserFields.hasLedRound] as bool?,
-      roundsLed: d[UserFields.roundsLed] as String?,
-      coInvest: d[UserFields.coInvest] as String?,
       ticketBand: d[UserFields.ticketSize] as String?,
       ticketOther: d[UserFields.ticketSizeOther] as String?,
       roundMin: (d[UserFields.roundSizeMin] as num?)?.toInt(),
@@ -207,9 +185,6 @@ class InvestorCriteria {
   Map<String, Object?> toMap() => {
     'dealsCount': dealsCount,
     'yearsInvesting': yearsInvesting,
-    'hasLedRound': hasLedRound,
-    'roundsLed': hasLedRound == true ? roundsLed : null,
-    'coInvest': coInvest,
     'ticketBand': ticketBand,
     'ticketOther': ticketBand == 'Other' ? ticketOther : null,
     'roundMin': roundMin,
@@ -233,9 +208,6 @@ class InvestorCriteria {
     return InvestorCriteria(
       dealsCount: raw['dealsCount'] as String?,
       yearsInvesting: raw['yearsInvesting'] as String?,
-      hasLedRound: raw['hasLedRound'] as bool?,
-      roundsLed: raw['roundsLed'] as String?,
-      coInvest: raw['coInvest'] as String?,
       ticketBand: raw['ticketBand'] as String?,
       ticketOther: raw['ticketOther'] as String?,
       roundMin: (raw['roundMin'] as num?)?.toInt(),
@@ -253,9 +225,6 @@ class InvestorCriteria {
   InvestorCriteria copyWith({
     String? yearsInvesting,
     String? dealsCount,
-    bool? hasLedRound,
-    String? roundsLed,
-    String? coInvest,
     String? ticketBand,
     String? ticketOther,
     int? roundMin,
@@ -270,9 +239,6 @@ class InvestorCriteria {
   }) => InvestorCriteria(
     yearsInvesting: yearsInvesting ?? this.yearsInvesting,
     dealsCount: dealsCount ?? this.dealsCount,
-    hasLedRound: hasLedRound ?? this.hasLedRound,
-    roundsLed: roundsLed ?? this.roundsLed,
-    coInvest: coInvest ?? this.coInvest,
     ticketBand: ticketBand ?? this.ticketBand,
     ticketOther: ticketOther ?? this.ticketOther,
     roundMin: roundMin ?? this.roundMin,

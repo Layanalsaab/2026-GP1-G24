@@ -170,7 +170,6 @@ void main() {
       criteria: const InvestorCriteria(
         yearsInvesting: '1–3 years',
         dealsCount: '1–3',
-        coInvest: 'Possibly',
         ticketBand: 'SAR 100K – 500K',
         roundMin: 100000,
         roundMax: 500000,
@@ -202,9 +201,6 @@ void main() {
       criteria: InvestorCriteria(
         yearsInvesting: InvestorCriteria.yearsOptions.last,
         dealsCount: InvestorCriteria.dealsOptions.last,
-        hasLedRound: true,
-        roundsLed: InvestorCriteria.roundsLedOptions.last,
-        coInvest: InvestorCriteria.coInvestOptions.first,
         ticketBand: 'Other',
         ticketOther: _text(40),
         roundMin: 9999999999999,
@@ -292,7 +288,7 @@ void main() {
       solution: _text(Startup.solutionMax),
       customers: _text(Startup.customersMax),
       advantage: _text(Startup.longTextMax),
-      tam: 9999999999999,
+      marketSize: 9999999999999,
       sam: 9999999999999,
       som: 9999999999999,
       team: [
@@ -374,7 +370,7 @@ void main() {
         revenueYear1: 0,
         revenueYear2: 0,
         revenueYear3: 0,
-        tam: 0,
+        marketSize: 0,
         sam: 0,
         som: 0,
         foundedYear: 1900,

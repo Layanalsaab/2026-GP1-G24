@@ -315,9 +315,6 @@ class InvestorOnboardingViewModel extends ChangeNotifier with SafeNotifier {
       dealsCount: deals,
       // "Have you ever led an investment round?" is no longer asked; an
       // answer saved earlier stays as it is.
-      hasLedRound: _initial?.hasLedRound,
-      roundsLed: _initial?.roundsLed,
-      coInvest: _initial?.coInvest,
       ticketBand: _initial?.ticketBand,
       ticketOther: _initial?.ticketOther,
       roundMin: showRoundSize ? roundSize.minAmount : null,

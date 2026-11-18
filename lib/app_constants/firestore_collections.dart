@@ -74,9 +74,6 @@ class UserFields {
   // Added by the redesigned sign-up (docs/07).
   static const linkedin = 'linkedinUrl';
 
-  /// Investor: "What I hope to gain from startups".
-  static const gain = 'gain';
-
   /// Investor: "What I can bring to startups" (also the sign-up step 4
   /// "Besides funding, what can you offer startups?").
   static const valueOffered = 'offer';
@@ -89,9 +86,6 @@ class UserFields {
   // Investor questions from sign-up steps 3 and 4, stored flat on the user
   // (same names as the `investors` collection).
   static const investmentsCount = 'investmentsCount';
-  static const hasLedRound = 'hasLedRound';
-  static const roundsLed = 'roundsLed';
-  static const coInvest = 'coInvest';
   static const ticketSizeOther = 'ticketSizeOther';
   static const roundSizeMin = 'roundSizeMin';
   static const roundSizeMax = 'roundSizeMax';
@@ -148,7 +142,7 @@ class StartupFields {
   static const solution = 'solution';
   static const customers = 'targetCustomers';
   static const advantage = 'differentiation';
-  static const tam = 'marketSizeTam';
+  static const marketSize = 'marketSize';
   static const sam = 'marketSizeSam';
   static const som = 'marketSizeSom';
   static const team = 'teamMembers';

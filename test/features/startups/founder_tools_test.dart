@@ -71,7 +71,7 @@ void _fillAll(StartupStepsViewModel vm) {
   vm.solution.text = 's';
   vm.customers.text = 'c';
   vm.advantage.text = 'a';
-  vm.tam.text = '2,400,000,000';
+  vm.marketSize.text = '2,400,000,000';
   vm.revenueNow.text = '0';
   vm.capital.text = '350,000';
   vm.burn.text = '50,000';

@@ -125,16 +125,17 @@ class RevenueBars extends StatelessWidget {
 /// legend column. Pass the formatted amounts; null/empty ones are omitted from
 /// the legend. Labels are the fixed prototype copy ("TAM · whole market", ...).
 class MarketCircles extends StatelessWidget {
-  const MarketCircles({super.key, this.tam, this.sam, this.som});
+  const MarketCircles({super.key, this.marketSize, this.sam, this.som});
 
-  final String? tam;
+  final String? marketSize;
   final String? sam;
   final String? som;
 
   @override
   Widget build(BuildContext context) {
     final rows = <(String, String, int)>[
-      if (tam != null && tam!.isNotEmpty) (tam!, 'TAM · whole market', 1),
+      if (marketSize != null && marketSize!.isNotEmpty)
+        (marketSize!, 'Market size · whole market', 1),
       if (sam != null && sam!.isNotEmpty) (sam!, 'SAM · can serve', 2),
       if (som != null && som!.isNotEmpty) (som!, 'SOM · target share', 3),
     ];
