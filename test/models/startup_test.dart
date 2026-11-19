@@ -13,7 +13,7 @@ void main() {
     description: 'A description that is long enough to pass validation rules.',
     sector: Sector.fintech,
     stage: StartupStage.preSeed,
-    businessModel: BusinessModel.b2b,
+    commerceModel: CommerceModel.b2b,
     location: StartupLocation.riyadh,
     foundedYear: 2023,
     websiteUrl: 'https://nakhlapay.sa',
@@ -63,7 +63,7 @@ void main() {
         'description',
         'sector',
         'stage',
-        'businessModel',
+        'commerceModel',
         'location',
         'foundedYear',
         'websiteUrl',
@@ -127,7 +127,7 @@ void main() {
     expect(restored.name, startup.name);
     expect(restored.sector, Sector.fintech);
     expect(restored.stage, StartupStage.preSeed);
-    expect(restored.businessModel, BusinessModel.b2b);
+    expect(restored.commerceModel, CommerceModel.b2b);
     expect(restored.location, StartupLocation.riyadh);
     expect(restored.lookingFor, startup.lookingFor);
     expect(restored.fundingRequirement, 500000);
@@ -151,7 +151,7 @@ void main() {
     final map = startup.toMap();
     expect(map[StartupFields.sector], 'fintech');
     expect(map[StartupFields.stage], 'pre_seed');
-    expect(map[StartupFields.businessModel], 'b2b');
+    expect(map[StartupFields.commerceModel], 'b2b');
     expect(map[StartupFields.location], 'riyadh');
     expect(map[StartupFields.lookingFor], ['funding', 'mentorship']);
   });
@@ -164,7 +164,7 @@ void main() {
       description: 'x',
       sector: Sector.other,
       stage: StartupStage.other,
-      businessModel: BusinessModel.b2c,
+      commerceModel: CommerceModel.b2c,
       location: StartupLocation.other,
       lookingFor: {LookingFor.techDevelopment},
       fundingRequirement: 100,
@@ -228,7 +228,7 @@ void main() {
         'Series C',
         'Other',
       ]);
-      expect(BusinessModel.values.map((m) => m.label), [
+      expect(CommerceModel.values.map((m) => m.label), [
         'Business-to-Government (B2G)',
         'Business-to-Business (B2B)',
         'Business-to-Business-to-Consumer (B2B2C)',
@@ -256,9 +256,9 @@ void main() {
     });
 
     test('commerce model short label is the abbreviation', () {
-      expect(BusinessModel.b2c.shortLabel, 'B2C');
-      expect(BusinessModel.b2b2c.shortLabel, 'B2B2C');
-      expect(BusinessModel.other.shortLabel, 'Other');
+      expect(CommerceModel.b2c.shortLabel, 'B2C');
+      expect(CommerceModel.b2b2c.shortLabel, 'B2B2C');
+      expect(CommerceModel.other.shortLabel, 'Other');
     });
   });
 
@@ -281,8 +281,8 @@ void main() {
     });
 
     test('commerce model', () {
-      expect(BusinessModel.fromValue('b2b'), BusinessModel.b2b);
-      expect(BusinessModel.fromValue('marketplace'), BusinessModel.other);
+      expect(CommerceModel.fromValue('b2b'), CommerceModel.b2b);
+      expect(CommerceModel.fromValue('marketplace'), CommerceModel.other);
     });
 
     test('location', () {
@@ -311,7 +311,7 @@ void main() {
         StartupFields.description: 'An old description of a startup.',
         StartupFields.sector: 'logistics_transport',
         StartupFields.stage: 'early_revenue',
-        StartupFields.businessModel: 'marketplace',
+        StartupFields.commerceModel: 'marketplace',
         StartupFields.location: 'khobar',
         StartupFields.lookingFor: ['funding', 'team_members', 'services'],
         StartupFields.fundingRequirement: 1000,
@@ -321,7 +321,7 @@ void main() {
       final saved = loaded.toMap();
       expect(saved[StartupFields.sector], 'logistics');
       expect(saved[StartupFields.stage], 'seed');
-      expect(saved[StartupFields.businessModel], 'other');
+      expect(saved[StartupFields.commerceModel], 'other');
       expect(saved[StartupFields.location], 'al_khobar');
       expect(saved[StartupFields.lookingFor], [
         'funding',
@@ -339,7 +339,7 @@ void main() {
       description: description,
       sector: Sector.other,
       stage: StartupStage.other,
-      businessModel: BusinessModel.other,
+      commerceModel: CommerceModel.other,
       location: StartupLocation.riyadh,
       lookingFor: const {LookingFor.funding},
     );

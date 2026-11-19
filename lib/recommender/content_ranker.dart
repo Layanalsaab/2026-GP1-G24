@@ -139,7 +139,7 @@ Map<String, double?> scoreParts(MatchInvestor i, MatchStartup s) => {
     s,
   ),
   'stage': _overlap(i.stages, s.stage),
-  'model': _overlap(i.models, s.businessModel),
+  'model': _overlap(i.models, s.commerceModel),
 };
 
 /// Per-part overlaps of a ticket: sector and stage from [t], the commerce
@@ -156,7 +156,7 @@ Map<String, double?> ticketScoreParts(
     s,
   ),
   'stage': _overlap(t.stages, s.stage),
-  'model': _overlap(models, s.businessModel),
+  'model': _overlap(models, s.commerceModel),
   'fit': roundFit(t, s),
 };
 
@@ -259,9 +259,9 @@ MatchRow _stageRow(MatchStartup s, Set<String> stages, String whose) {
 
 /// Null when the investor has no commerce models (the part is skipped).
 MatchRow? _modelRow(MatchStartup s, Set<String> models, String whose) {
-  if (models.isEmpty || s.businessModel == null) return null;
-  if (models.contains(s.businessModel)) {
-    return MatchRow('Commerce model', _model(s.businessModel), fits: true);
+  if (models.isEmpty || s.commerceModel == null) return null;
+  if (models.contains(s.commerceModel)) {
+    return MatchRow('Commerce model', _model(s.commerceModel), fits: true);
   }
   final picked = [
     for (final v in modelValue.values)
@@ -269,7 +269,7 @@ MatchRow? _modelRow(MatchStartup s, Set<String> models, String whose) {
   ];
   return MatchRow(
     'Commerce model',
-    _model(s.businessModel),
+    _model(s.commerceModel),
     fits: false,
     note: '$whose ${_list(picked)}',
   );

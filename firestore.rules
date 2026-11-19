@@ -474,12 +474,12 @@ service cloud.firestore {
     // here, to stay under that limit.
     function validStartup(d) {
       // The required fields (founderId, name, description, sector, stage,
-      // businessModel, location, lookingFor, isPublic) are read below, and
+      // commerceModel, location, lookingFor, isPublic) are read below, and
       // reading a missing one refuses the write, so no separate hasAll() is
       // needed (it cost a dozen of the 1000 expressions a request may use).
       return d.keys().hasOnly(['founderId', 'name', 'description',
                              'sector', 'sectorOther', 'otherSectors', 'stage',
-                             'businessModel', 'businessModelOther',
+                             'commerceModel', 'commerceModelOther',
                              'location', 'foundedYear', 'websiteUrl',
                              'lookingFor',
                              'fundingRequirement', 'isPublic',
@@ -494,7 +494,7 @@ service cloud.firestore {
                              'coFounderIds', 'status', 'closedAt',
                              // Finance and Growth / Startup Ask answers
                              'revenueThisYear', 'monthlyBurnRate',
-                             'businessModelExplanation', 'raisedInRound',
+                             'revenueModel', 'raisedInRound',
                              'partnerTypes', 'supportTypes',
                              // Dataset startups only (admin script); always
                              // false for a startup saved in the app.
@@ -505,7 +505,7 @@ service cloud.firestore {
         && d.description is string && d.description.size() <= 1500
         && d.sector.matches('^(healthtech|fintech|edtech|ecommerce|logistics|agritech|proptech|cleantech|tourism|saas|ai|cybersecurity|gaming|media|foodtech|mobility|retail|energy|insurtech|legaltech|hr_tech|biotech|manufacturing|sports|other|hrtech|ecommerce_retail|logistics_transport|food_beverage|software_cloud)$')
         && d.stage.matches('^(pre_seed|seed|series_a|series_b|series_c|other|idea|mvp|early_revenue|growth)$')
-        && d.businessModel.matches('^(b2g|b2b|b2b2c|d2c|b2c|c2c|b2e|c2b|g2c|g2g|other|marketplace)$')
+        && d.commerceModel.matches('^(b2g|b2b|b2b2c|d2c|b2c|c2c|b2e|c2b|g2c|g2g|other|marketplace)$')
         && d.location.matches('^(abha|al_ahsa|al_baha|al_jubail|al_kharj|al_khobar|al_qatif|arar|buraydah|dammam|dhahran|hafar_al_batin|hail|jazan|jeddah|khamis_mushait|makkah|madinah|najran|riyadh|sakaka|tabuk|taif|unaizah|yanbu|khobar|mecca|medina|other)$')
         // May be empty: a startup whose only ask was Funding has none
         // after its round closes ("Not raising right now").
@@ -518,7 +518,7 @@ service cloud.firestore {
         // What the founder typed after choosing Other: optional, at most 40
         // characters, and required when the matching value is other.
         && validOther(d, 'sectorOther', d.sector)
-        && validOther(d, 'businessModelOther', d.businessModel)
+        && validOther(d, 'commerceModelOther', d.commerceModel)
         // The sectors after the main one (any number, at most all 25).
         && (!('otherSectors' in d) || (d.otherSectors is list && d.otherSectors.size() <= 30))
         && validFoundedYear(d)
@@ -539,7 +539,7 @@ service cloud.firestore {
         && optionalMoney(d, 'revenueThisYear')
         && optionalMoney(d, 'monthlyBurnRate')
         && optionalMoney(d, 'raisedInRound')
-        && optionalString(d, 'businessModelExplanation', 250)
+        && optionalString(d, 'revenueModel', 250)
         && optionalTextList(d, 'partnerTypes')
         && optionalTextList(d, 'supportTypes')
         && (!('teamMembers' in d) || (d.teamMembers is list && d.teamMembers.size() <= 20))

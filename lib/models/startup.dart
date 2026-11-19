@@ -14,7 +14,7 @@ class Startup {
     required this.description,
     required this.sector,
     required this.stage,
-    required this.businessModel,
+    required this.commerceModel,
     required this.location,
     required this.lookingFor,
     this.foundedYear,
@@ -22,7 +22,7 @@ class Startup {
     this.fundingRequirement,
     this.sectorOther,
     this.otherSectors = const [],
-    this.businessModelOther,
+    this.commerceModelOther,
     this.isPublic = false,
     this.logoData,
     this.createdAt,
@@ -40,7 +40,7 @@ class Startup {
     this.valuation,
     this.revenueThisYear,
     this.monthlyBurn,
-    this.businessModelText = '',
+    this.revenueModel = '',
     this.raisedInRound,
     this.partnerTypes = const [],
     this.supportTypes = const [],
@@ -59,7 +59,7 @@ class Startup {
   final String description;
   final Sector sector;
   final StartupStage stage;
-  final BusinessModel businessModel;
+  final CommerceModel commerceModel;
   final StartupLocation location;
   final int? foundedYear;
   final String? websiteUrl;
@@ -75,7 +75,7 @@ class Startup {
   /// The sectors picked after the main one ([sector]), as shown to people (the
   /// typed text for "Other"). Empty for a startup with one sector.
   final List<String> otherSectors;
-  final String? businessModelOther;
+  final String? commerceModelOther;
 
   /// Longest "Other" text, in characters (firestore.rules uses the same).
   static const otherMaxLength = 40;
@@ -101,10 +101,10 @@ class Startup {
 
   /// The commerce model as shown on cards and the profile ("B2C"), or the
   /// typed text for "Other".
-  String get businessModelLabel => _otherOr(
-    businessModel == BusinessModel.other,
-    businessModelOther,
-    businessModel.shortLabel,
+  String get commerceModelLabel => _otherOr(
+    commerceModel == CommerceModel.other,
+    commerceModelOther,
+    commerceModel.shortLabel,
   );
 
   /// A Looking for choice as shown to people.
@@ -172,8 +172,8 @@ class Startup {
   final int? monthlyBurn;
 
   /// "Explain your revenue model": how the startup makes money (the stored
-  /// field is still called businessModelExplanation).
-  final String businessModelText;
+  /// field is still called revenueModel).
+  final String revenueModel;
 
   /// The part of the funding round already committed (0 allowed).
   final int? raisedInRound;
@@ -293,10 +293,10 @@ class Startup {
       sectorOther,
     ),
     StartupFields.stage: stage.value,
-    StartupFields.businessModel: businessModel.value,
-    StartupFields.businessModelOther: _otherToStore(
-      businessModel == BusinessModel.other,
-      businessModelOther,
+    StartupFields.commerceModel: commerceModel.value,
+    StartupFields.commerceModelOther: _otherToStore(
+      commerceModel == CommerceModel.other,
+      commerceModelOther,
     ),
     StartupFields.location: location.value,
     StartupFields.foundedYear: foundedYear,
@@ -324,7 +324,7 @@ class Startup {
     StartupFields.valuation: valuation,
     StartupFields.revenueThisYear: revenueThisYear,
     StartupFields.monthlyBurn: monthlyBurn,
-    StartupFields.businessModelText: businessModelText,
+    StartupFields.revenueModel: revenueModel,
     StartupFields.raisedInRound: raisedInRound,
     StartupFields.partnerTypes: partnerTypes,
     StartupFields.supportTypes: supportTypes,
@@ -344,7 +344,7 @@ class Startup {
     if (data == null) return null;
     final sector = Sector.fromValue(data[StartupFields.sector]);
     final stage = StartupStage.fromValue(data[StartupFields.stage]);
-    final model = BusinessModel.fromValue(data[StartupFields.businessModel]);
+    final model = CommerceModel.fromValue(data[StartupFields.commerceModel]);
     final location = StartupLocation.fromValue(data[StartupFields.location]);
     final founderId = data[StartupFields.founderId];
     final name = data[StartupFields.name];
@@ -370,8 +370,8 @@ class Startup {
             if (v is String && v.trim().isNotEmpty) v.trim(),
       ],
       stage: stage,
-      businessModel: model,
-      businessModelOther: _otherFromMap(data[StartupFields.businessModelOther]),
+      commerceModel: model,
+      commerceModelOther: _otherFromMap(data[StartupFields.commerceModelOther]),
       location: location,
       foundedYear: (data[StartupFields.foundedYear] as num?)?.toInt(),
       websiteUrl: data[StartupFields.websiteUrl] as String?,
@@ -402,8 +402,8 @@ class Startup {
       valuation: (data[StartupFields.valuation] as num?)?.toInt(),
       revenueThisYear: (data[StartupFields.revenueThisYear] as num?)?.toInt(),
       monthlyBurn: (data[StartupFields.monthlyBurn] as num?)?.toInt(),
-      businessModelText:
-          (data[StartupFields.businessModelText] as String?) ?? '',
+      revenueModel:
+          (data[StartupFields.revenueModel] as String?) ?? '',
       raisedInRound: (data[StartupFields.raisedInRound] as num?)?.toInt(),
       partnerTypes: _strings(data[StartupFields.partnerTypes]),
       supportTypes: _strings(data[StartupFields.supportTypes]),
@@ -424,7 +424,7 @@ class Startup {
     String? description,
     Sector? sector,
     StartupStage? stage,
-    BusinessModel? businessModel,
+    CommerceModel? commerceModel,
     StartupLocation? location,
     int? foundedYear,
     String? websiteUrl,
@@ -436,7 +436,7 @@ class Startup {
     bool? isPublic,
     String? sectorOther,
     List<String>? otherSectors,
-    String? businessModelOther,
+    String? commerceModelOther,
     String? problem,
     String? solution,
     String? customers,
@@ -450,7 +450,7 @@ class Startup {
     int? valuation,
     int? revenueThisYear,
     int? monthlyBurn,
-    String? businessModelText,
+    String? revenueModel,
     int? raisedInRound,
     List<String>? partnerTypes,
     List<String>? supportTypes,
@@ -466,8 +466,8 @@ class Startup {
     sectorOther: sectorOther ?? this.sectorOther,
     otherSectors: otherSectors ?? this.otherSectors,
     stage: stage ?? this.stage,
-    businessModel: businessModel ?? this.businessModel,
-    businessModelOther: businessModelOther ?? this.businessModelOther,
+    commerceModel: commerceModel ?? this.commerceModel,
+    commerceModelOther: commerceModelOther ?? this.commerceModelOther,
     location: location ?? this.location,
     foundedYear: foundedYear ?? this.foundedYear,
     websiteUrl: websiteUrl ?? this.websiteUrl,
@@ -492,7 +492,7 @@ class Startup {
     valuation: valuation ?? this.valuation,
     revenueThisYear: revenueThisYear ?? this.revenueThisYear,
     monthlyBurn: monthlyBurn ?? this.monthlyBurn,
-    businessModelText: businessModelText ?? this.businessModelText,
+    revenueModel: revenueModel ?? this.revenueModel,
     raisedInRound: clearFunding ? null : (raisedInRound ?? this.raisedInRound),
     partnerTypes: partnerTypes ?? this.partnerTypes,
     supportTypes: supportTypes ?? this.supportTypes,

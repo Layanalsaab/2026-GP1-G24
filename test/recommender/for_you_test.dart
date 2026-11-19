@@ -30,7 +30,7 @@ void main() {
         sector: Sector.healthtech,
         otherSectors: ['Fintech', 'Other'],
         stage: StartupStage.seed,
-        businessModel: BusinessModel.b2b,
+        commerceModel: CommerceModel.b2b,
       );
       final f = startupFeatures(s);
       expect(f.groups['sector'], {'healthtech': 1.0, 'fintech': 1.0});

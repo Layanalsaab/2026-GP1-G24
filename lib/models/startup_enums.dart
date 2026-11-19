@@ -106,8 +106,8 @@ enum StartupStage {
 }
 
 /// The "Commerce model" field (called "business model" in older code and
-/// in the stored field name `businessModel`).
-enum BusinessModel {
+/// in the stored field name `commerceModel`).
+enum CommerceModel {
   b2g('b2g', 'Business-to-Government (B2G)', 'B2G'),
   b2b('b2b', 'Business-to-Business (B2B)', 'B2B'),
   b2b2c('b2b2c', 'Business-to-Business-to-Consumer (B2B2C)', 'B2B2C'),
@@ -120,7 +120,7 @@ enum BusinessModel {
   g2g('g2g', 'Government-to-Government (G2G)', 'G2G'),
   other('other', 'Other', 'Other');
 
-  const BusinessModel(this.value, this.label, this.shortLabel);
+  const CommerceModel(this.value, this.label, this.shortLabel);
 
   final String value;
 
@@ -135,9 +135,9 @@ enum BusinessModel {
   /// value; editing such a startup asks for one of these four.
   static const picks = [b2b, b2c, b2g, other];
 
-  static const _legacy = {'marketplace': BusinessModel.other};
+  static const _legacy = {'marketplace': CommerceModel.other};
 
-  static BusinessModel? fromValue(Object? raw) =>
+  static CommerceModel? fromValue(Object? raw) =>
       _fromValue(values, raw, (e) => e.value, _legacy);
 }
 

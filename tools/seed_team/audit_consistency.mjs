@@ -84,7 +84,7 @@ for (const d of startups) {
   if (!v.name?.trim?.()) add('startups without name', d.id);
   if (!v.sector) add('startups without sector', tag);
   if (!v.stage) add('startups without stage', tag);
-  if (!v.businessModel) add('startups without businessModel', tag);
+  if (!v.commerceModel) add('startups without commerceModel', tag);
   if (!v.location) add('startups without location', tag);
   if (typeof v.isPublic !== 'boolean') add('startups isPublic not boolean', tag);
   if (!dataset && !userIds.has(v.founderId)) add('startups whose founder has no account', tag + ' founder=' + v.founderId);

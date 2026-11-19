@@ -67,7 +67,7 @@ class StartupStrings {
   // Choosing from a list
   static const selectSector = 'Select a sector';
   static const selectStage = 'Select a stage';
-  static const selectBusinessModel = 'Select a commerce model';
+  static const selectCommerceModel = 'Select a commerce model';
   static const selectLocation = 'Select a city';
   static const done = 'Done';
   static const otherRequiredShort = 'Please type your choice.';
@@ -78,12 +78,12 @@ class StartupStrings {
   static const sectorOtherHint = 'e.g. Biotech';
   static const stageOtherLabel = 'Please specify your stage';
   static const stageOtherHint = 'e.g. Bridge round';
-  static const businessModelOtherLabel = 'Please specify your commerce model';
+  static const commerceModelOtherLabel = 'Please specify your commerce model';
   static const lookingForOtherLabel = 'Please specify what you are looking for';
   static const lookingForOtherHint = 'e.g. Legal advice';
   static const lookingForOtherRequired =
       'Please specify what you are looking for.';
-  static const businessModelOtherHint = 'e.g. Subscription box';
+  static const commerceModelOtherHint = 'e.g. Subscription box';
 
   // Logo
   static const logoLabel = 'Startup logo';
@@ -102,7 +102,7 @@ class StartupStrings {
   static const descriptionHint = 'Describe your startup';
   static const sectorLabel = 'Sector';
   static const stageLabel = 'Stage';
-  static const businessModelLabel = 'Commerce model';
+  static const commerceModelLabel = 'Commerce model';
   static const locationLabel = 'City';
   static const foundedYearLabel = 'Founded';
   static const foundedYearHint = 'e.g. 2024';
@@ -126,10 +126,10 @@ class StartupStrings {
       'Description must be $max characters or fewer.';
   static const sectorRequired = 'Please select a sector.';
   static const stageRequired = 'Please select a stage.';
-  static const businessModelRequired = 'Please select a commerce model.';
+  static const commerceModelRequired = 'Please select a commerce model.';
   static const sectorOtherRequired = 'Please specify your sector.';
   static const stageOtherRequired = 'Please specify your stage.';
-  static const businessModelOtherRequired =
+  static const commerceModelOtherRequired =
       'Please specify your commerce model.';
   static String otherTooLong(int max) =>
       'This must be $max characters or fewer.';

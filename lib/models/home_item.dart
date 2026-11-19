@@ -188,7 +188,7 @@ class HomeItem {
         'Other',
     ],
     lookingFor: [for (final l in s.lookingFor) s.lookingForLabelOf(l)],
-    commerceModel: s.businessModelLabel,
+    commerceModel: s.commerceModelLabel,
     partnerTypes: s.partnerTypes,
     supportTypes: s.supportTypes,
     imageData: s.logoData,

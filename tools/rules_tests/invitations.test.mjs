@@ -35,7 +35,7 @@ const anon = env.unauthenticatedContext().firestore();
 await env.withSecurityRulesDisabled(async (ctx) => {
   await setDoc(doc(ctx.firestore(), 'startups', 'S1'), {
     founderId: 'f1', name: 'Rafeeq', description: 'd', sector: 'fintech', stage: 'seed',
-    businessModel: 'b2b', location: 'riyadh', lookingFor: ['funding'], isPublic: true,
+    commerceModel: 'b2b', location: 'riyadh', lookingFor: ['funding'], isPublic: true,
     memberIds: ['c1'], memberRoles: { c1: 'coFounder' }, teamMembers: [],
   });
 });
@@ -135,7 +135,7 @@ await check('a role other than founder / investor is refused', false, () => setD
 await env.withSecurityRulesDisabled(async (ctx) => {
   await setDoc(doc(ctx.firestore(), 'startups', 'S2'), {
     founderId: 'f1', name: 'Naql', description: 'd', sector: 'fintech', stage: 'seed',
-    businessModel: 'b2b', location: 'riyadh', lookingFor: ['funding'], isPublic: true,
+    commerceModel: 'b2b', location: 'riyadh', lookingFor: ['funding'], isPublic: true,
     memberIds: ['c1', 'm1'], memberRoles: { c1: 'coFounder', m1: 'member' },
     teamMembers: [{ fullName: 'Founder', uid: 'f1' }, { fullName: 'Omar', uid: 'c1' }, { fullName: 'Mona', uid: 'm1' }],
   });
@@ -155,7 +155,7 @@ await check('photoData over 150000 chars is refused', false, () => setDoc(doc(ow
 await check('photoData that is not text is refused', false, () => setDoc(doc(owner, 'publicProfiles', 'f9'), profile({ photoData: 12345 })));
 await env.withSecurityRulesDisabled((ctx) => setDoc(doc(ctx.firestore(), 'startups', 'S3'), {
   founderId: 'f1', name: 'Rafeeq', description: 'd', sector: 'fintech', stage: 'seed',
-  businessModel: 'b2b', location: 'riyadh', lookingFor: ['funding'], isPublic: true,
+  commerceModel: 'b2b', location: 'riyadh', lookingFor: ['funding'], isPublic: true,
   createdAt: new Date(0), fundingRequirement: 500000, memberIds: [], memberRoles: {}, teamMembers: [],
 }));
 const touch = (extra) => ({ ...extra, updatedAt: serverTimestamp() });
@@ -176,13 +176,13 @@ await check('removing the logo (deleting the field) is allowed', true, () => upd
 const sectorLabels = Array.from({ length: 25 }, (_, i) => 'Sector ' + i);
 const maxStartup = (extra = {}) => ({
   founderId: 'f1', name: 'Rafeeq Health', description: 'd', sector: 'other', sectorOther: 'Beekeeping',
-  otherSectors: sectorLabels, stage: 'other', businessModel: 'other',
-  businessModelOther: 'Model text', location: 'riyadh', lookingFor: ['funding', 'partnership', 'support', 'other'],
+  otherSectors: sectorLabels, stage: 'other', commerceModel: 'other',
+  commerceModelOther: 'Model text', location: 'riyadh', lookingFor: ['funding', 'partnership', 'support', 'other'],
   fundingRequirement: 500000, isPublic: true,
   problem: 'p', solution: 's', targetCustomers: 'c', differentiation: 'd', marketSize: 1000000,
   currentAvailableCapital: 0, revenueThisYear: 0, monthlyBurnRate: 0, valuation: 0, raisedInRound: 0,
   expectedRevenueYear1: 1, expectedRevenueYear2: 2, expectedRevenueYear3: 3,
-  businessModelExplanation: 'e', partnerTypes: ['a', 'b', 'c'], supportTypes: ['a', 'b'],
+  revenueModel: 'e', partnerTypes: ['a', 'b', 'c'], supportTypes: ['a', 'b'],
   teamMembers: Array.from({ length: 20 }, (_, i) => ({ fullName: 'Member ' + i, role: 'r', uid: 'u' + i })),
   memberIds: [], memberRoles: {}, createdAt: serverTimestamp(), updatedAt: serverTimestamp(), ...extra,
 });
@@ -200,7 +200,7 @@ await check('every amount, every Other, 10 looking-for values and 20 team cards 
 })));
 await check('an amount that is not a whole number is refused', false, () => setDoc(doc(founder, 'startups', 'M8'), maxStartup({ valuation: 1.5 })));
 await check('an amount written as text is refused', false, () => setDoc(doc(founder, 'startups', 'M9'), maxStartup({ valuation: '100' })));
-for (const field of ['name', 'description', 'sector', 'stage', 'businessModel', 'location', 'lookingFor', 'isPublic']) {
+for (const field of ['name', 'description', 'sector', 'stage', 'commerceModel', 'location', 'lookingFor', 'isPublic']) {
   await check('a startup without ' + field + ' is refused', false, () => {
     const d = maxStartup(); delete d[field];
     return setDoc(doc(founder, 'startups', 'N-' + field), d);
@@ -229,7 +229,7 @@ await check('the owner of a closed startup changes whether it shows in the Hub',
 
 await env.withSecurityRulesDisabled((ctx) => setDoc(doc(ctx.firestore(), 'startups', 'S4'), {
   founderId: 'f1', status: 'active', name: 'Nova', description: 'd', sector: 'fintech', stage: 'seed',
-  businessModel: 'b2b', location: 'riyadh', lookingFor: ['funding'], isPublic: true, createdAt: new Date(0),
+  commerceModel: 'b2b', location: 'riyadh', lookingFor: ['funding'], isPublic: true, createdAt: new Date(0),
   memberIds: ['c1', 'm1'], memberRoles: { c1: 'coFounder', m1: 'member' }, coFounderIds: ['c1'],
   teamMembers: [{ fullName: 'Founder', uid: 'f1', isFounder: true }, { fullName: 'Omar', uid: 'c1' }, { fullName: 'Mona', uid: 'm1' }],
 }));
@@ -269,7 +269,7 @@ await check('the reader removes a notice once shown', true, () => deleteDoc(doc(
 // it is accepted).
 await env.withSecurityRulesDisabled((ctx) => setDoc(doc(ctx.firestore(), 'startups', 'S5'), {
   founderId: 'f1', status: 'active', name: 'Tamr', description: 'd', sector: 'fintech', stage: 'seed',
-  businessModel: 'b2b', location: 'riyadh', lookingFor: ['partnership'], isPublic: false, createdAt: new Date(0),
+  commerceModel: 'b2b', location: 'riyadh', lookingFor: ['partnership'], isPublic: false, createdAt: new Date(0),
   memberIds: ['c1'], memberRoles: { c1: 'coFounder' }, coFounderIds: ['c1'],
   teamMembers: [{ fullName: 'Founder', uid: 'f1', isFounder: true }, { fullName: 'Omar', uid: 'c1' }],
 }));

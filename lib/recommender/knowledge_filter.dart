@@ -62,7 +62,7 @@ const Map<String, String> stageValue = {
   'Other': 'other',
 };
 
-/// Investor commerce-model label -> the startups' stored `businessModel`.
+/// Investor commerce-model label -> the startups' stored `commerceModel`.
 const Map<String, String> modelValue = {
   'Business-to-Government (B2G)': 'b2g',
   'Business-to-Business (B2B)': 'b2b',
@@ -106,7 +106,7 @@ class MatchStartup {
           if (v is String && sectorValue[v] != null) sectorValue[v]!,
       },
       stage = data['stage'] as String?,
-      businessModel = data['businessModel'] as String?,
+      commerceModel = data['commerceModel'] as String?,
       lookingFor = [
         for (final v in (data['lookingFor'] as List?) ?? const [])
           if (v is String) v,
@@ -129,7 +129,7 @@ class MatchStartup {
   /// sector can't be matched). They count as a WEAKER match than [sector].
   final Set<String> otherSectors;
   final String? stage;
-  final String? businessModel;
+  final String? commerceModel;
   final List<String> lookingFor;
 
   /// The open round's amount (SAR); only set while raising.

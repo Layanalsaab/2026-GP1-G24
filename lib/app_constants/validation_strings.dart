@@ -118,7 +118,7 @@ class ValidationStrings {
       'Please enter your revenue. Enter 0 if you haven’t made any yet.';
   static const burn =
       'Please enter your monthly burn rate. Enter 0 if you earn more than you spend.';
-  static const businessModel = 'Please explain your revenue model.';
+  static const commerceModel = 'Please explain your revenue model.';
   static const raisedEmpty =
       'Please enter an amount. Enter 0 if you haven’t raised anything yet.';
   static const raisedTooMuch =

@@ -22,7 +22,7 @@ HomeItem startupItem({
   Set<LookingFor> looking = const {LookingFor.funding},
   List<String> partners = const [],
   List<String> support = const [],
-  BusinessModel model = BusinessModel.b2b,
+  CommerceModel model = CommerceModel.b2b,
 }) => HomeItem.fromStartup(
   Startup(
     id: 's',
@@ -31,7 +31,7 @@ HomeItem startupItem({
     description: 'd',
     sector: Sector.fintech,
     stage: StartupStage.seed,
-    businessModel: model,
+    commerceModel: model,
     location: StartupLocation.riyadh,
     lookingFor: looking,
     fundingRequirement: raising,
@@ -166,7 +166,7 @@ void main() {
     });
 
     test('Commerce model: B2B, B2C, B2G', () {
-      final it = startupItem(model: BusinessModel.b2g);
+      final it = startupItem(model: CommerceModel.b2g);
       expect(passes(it, c, 'Commerce model', 'B2G'), isTrue);
       expect(passes(it, c, 'Commerce model', 'B2B'), isFalse);
     });

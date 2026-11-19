@@ -14,7 +14,7 @@ void main() {
     description: 'd',
     sector: Sector.fintech,
     stage: StartupStage.seed,
-    businessModel: BusinessModel.b2b,
+    commerceModel: CommerceModel.b2b,
     location: StartupLocation.alKhobar,
     lookingFor: {LookingFor.funding, LookingFor.mentorship},
     fundingRequirement: 1500000,

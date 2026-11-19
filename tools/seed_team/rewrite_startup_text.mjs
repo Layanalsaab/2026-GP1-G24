@@ -1,5 +1,5 @@
 // Writes new texts into the DATASET startups: the revenue model
-// (businessModelExplanation), the target customers, and any of
+// (revenueModel), the target customers, and any of
 // differentiation / problem / solution / description that was empty or tiny.
 //
 // WHAT IT TOUCHES (and nothing else): those fields of startups whose founderId
@@ -27,7 +27,7 @@ initializeApp({ credential: cert(JSON.parse(fs.readFileSync(keyPath, 'utf8'))) }
 const db = getFirestore();
 
 // The limits of the app's own forms.
-const LIMIT = { businessModelExplanation: 250, targetCustomers: 250, differentiation: 1000, problem: 350, solution: 350, description: 150 };
+const LIMIT = { revenueModel: 250, targetCustomers: 250, differentiation: 1000, problem: 350, solution: 350, description: 150 };
 const FIELDS = Object.keys(LIMIT);
 
 const startups = new Map();
@@ -64,12 +64,12 @@ for (const f of files) {
 // Every startup must have both main fields, and the revenue texts must differ.
 for (const id of startups.keys()) {
   const u = updates.get(id) || {};
-  if (!u.businessModelExplanation) problems.push(`${id}: no revenue model text`);
+  if (!u.revenueModel) problems.push(`${id}: no revenue model text`);
   if (!u.targetCustomers) problems.push(`${id}: no target customers text`);
 }
 const seen = new Map();
 for (const [id, u] of updates) {
-  for (const k of ['businessModelExplanation', 'targetCustomers']) {
+  for (const k of ['revenueModel', 'targetCustomers']) {
     const key = `${k}:${u[k]}`;
     if (seen.has(key)) problems.push(`${id}.${k}: same text as ${seen.get(key)}`);
     else seen.set(key, id);

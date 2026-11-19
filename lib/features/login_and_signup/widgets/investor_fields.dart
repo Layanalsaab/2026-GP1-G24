@@ -17,7 +17,7 @@ class InvestorFields {
   const InvestorFields._();
 
   static String _short(String model) {
-    for (final m in BusinessModel.values) {
+    for (final m in CommerceModel.values) {
       if (m.label == model) return m.shortLabel;
     }
     return model;

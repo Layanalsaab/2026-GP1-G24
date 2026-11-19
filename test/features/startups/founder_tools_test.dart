@@ -54,7 +54,7 @@ void _bigScreen(WidgetTester tester) {
 Startup _withNewAnswers(Startup s) => s.copyWith(
   revenueThisYear: 0,
   monthlyBurn: 0,
-  businessModelText: 'Monthly subscriptions',
+  revenueModel: 'Monthly subscriptions',
   raisedInRound: 0,
 );
 
@@ -829,7 +829,7 @@ void main() {
               onPressed: () => showPickerSheet(
                 context,
                 title: 'Commerce model',
-                options: [for (final m in BusinessModel.values) m.label],
+                options: [for (final m in CommerceModel.values) m.label],
                 otherNoun: 'commerce model',
               ),
               child: const Text('open'),

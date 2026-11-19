@@ -23,7 +23,7 @@ const _investor = AppUser(
 
 Startup _startup({bool isPublic = true}) => PrototypeSeed.rafeeq.copyWith(
   isPublic: isPublic,
-  businessModelText: 'Families pay per visit',
+  revenueModel: 'Families pay per visit',
   fundingRequirement: 500000,
   raisedInRound: 200000,
   partnerTypes: ['Technology', 'Distribution'],

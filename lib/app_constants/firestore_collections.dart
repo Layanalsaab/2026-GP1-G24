@@ -113,8 +113,8 @@ class StartupFields {
   /// typed text for "Other". Older startups don't have it.
   static const otherSectors = 'otherSectors';
   static const stage = 'stage';
-  static const businessModel = 'businessModel';
-  static const businessModelOther = 'businessModelOther';
+  static const commerceModel = 'commerceModel';
+  static const commerceModelOther = 'commerceModelOther';
   static const location = 'location';
   static const foundedYear = 'foundedYear';
   static const websiteUrl = 'websiteUrl';
@@ -144,7 +144,7 @@ class StartupFields {
   // Finance and Growth / Startup Ask answers.
   static const revenueThisYear = 'revenueThisYear';
   static const monthlyBurn = 'monthlyBurnRate';
-  static const businessModelText = 'businessModelExplanation';
+  static const revenueModel = 'revenueModel';
   static const raisedInRound = 'raisedInRound';
   static const partnerTypes = 'partnerTypes';
   static const supportTypes = 'supportTypes';

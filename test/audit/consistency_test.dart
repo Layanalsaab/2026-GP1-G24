@@ -41,7 +41,7 @@ void main() {
 
   test('investor commerce models are the ones a startup can pick', () {
     expect(InvestorOnboardingViewModel.modelOptions, [
-      for (final m in BusinessModel.picks) m.label,
+      for (final m in CommerceModel.picks) m.label,
     ]);
   });
 
@@ -92,7 +92,7 @@ void main() {
     ]);
     // The same commerce models a startup can pick.
     for (final m in ['B2B', 'B2C', 'B2G']) {
-      expect(BusinessModel.picks.map((b) => b.shortLabel), contains(m));
+      expect(CommerceModel.picks.map((b) => b.shortLabel), contains(m));
     }
   });
 
@@ -114,8 +114,8 @@ void main() {
     });
 
     test('commerce model', () {
-      final allowed = _ruleValues(rules, 'businessModel');
-      for (final m in BusinessModel.values) {
+      final allowed = _ruleValues(rules, 'commerceModel');
+      for (final m in CommerceModel.values) {
         expect(allowed, contains(m.value), reason: 'model ${m.value}');
       }
     });
@@ -155,7 +155,7 @@ void main() {
     for (final values in [
       [for (final s in Sector.values) s.value],
       [for (final s in StartupStage.values) s.value],
-      [for (final m in BusinessModel.values) m.value],
+      [for (final m in CommerceModel.values) m.value],
       [for (final l in LookingFor.values) l.value],
     ]) {
       expect(values.toSet().length, values.length);

@@ -457,7 +457,7 @@ class _Overview extends StatelessWidget {
               s.sectorLabels.join(', '),
             ),
             ('Stage', s.stageLabel),
-            ('Commerce model', s.businessModelLabel),
+            ('Commerce model', s.commerceModelLabel),
             ('Headquarters', s.location.label),
             ('Founded year', s.foundedYear?.toString() ?? ''),
             ('Website', s.websiteUrl ?? ''),
@@ -611,7 +611,7 @@ class _Finance extends StatelessWidget {
               ],
             ),
           ),
-        _QA(FounderToolsStrings.revenueModelTitle, s.businessModelText),
+        _QA(FounderToolsStrings.revenueModelTitle, s.revenueModel),
       ],
     );
   }

@@ -70,7 +70,7 @@ void main() {
   Startup base({
     Sector sector = Sector.fintech,
     StartupStage stage = StartupStage.seed,
-    BusinessModel model = BusinessModel.b2b,
+    CommerceModel model = CommerceModel.b2b,
     StartupLocation? location,
     Set<LookingFor>? looking,
     String? sectorOther,
@@ -83,8 +83,8 @@ void main() {
     sector: sector,
     sectorOther: sectorOther,
     stage: stage,
-    businessModel: model,
-    businessModelOther: modelOther,
+    commerceModel: model,
+    commerceModelOther: modelOther,
     location: location ?? StartupLocation.riyadh,
     lookingFor: looking ?? {LookingFor.talent},
     team: const [
@@ -204,7 +204,7 @@ void main() {
         sectors: [for (final s in Sector.values) s.label],
         sectorsOther: _text(40),
         stages: [...InvestorCriteria.stageOptions],
-        commerceModels: [for (final m in BusinessModel.values) m.label],
+        commerceModels: [for (final m in CommerceModel.values) m.label],
         commerceModelsOther: _text(40),
         lookFor: _text(InvestorCriteria.lookForMax),
       ),
@@ -230,10 +230,10 @@ void main() {
     for (final v in StartupStage.values) {
       await createAndEdit('stage ${v.value}', base(stage: v));
     }
-    for (final v in BusinessModel.values) {
+    for (final v in CommerceModel.values) {
       await createAndEdit(
         'model ${v.value}',
-        base(model: v, modelOther: v == BusinessModel.other ? _text(40) : null),
+        base(model: v, modelOther: v == CommerceModel.other ? _text(40) : null),
       );
     }
     for (final v in StartupLocation.values) {
@@ -254,8 +254,8 @@ void main() {
       sectorOther: _text(40),
       otherSectors: [for (var i = 0; i < 24; i++) _text(40, 'b')],
       stage: StartupStage.other,
-      businessModel: BusinessModel.other,
-      businessModelOther: _text(40),
+      commerceModel: CommerceModel.other,
+      commerceModelOther: _text(40),
       location: StartupLocation.values.last,
       foundedYear: year,
       websiteUrl: _site(Startup.websiteMax),
@@ -291,7 +291,7 @@ void main() {
       valuation: 9999999999999,
       revenueThisYear: 9999999999999,
       monthlyBurn: 9999999999999,
-      businessModelText: _text(250),
+      revenueModel: _text(250),
       raisedInRound: 9999999999999,
       partnerTypes: [for (var i = 0; i < 10; i++) _text(40, 'p')],
       supportTypes: [for (var i = 0; i < 10; i++) _text(40, 's')],
@@ -333,7 +333,7 @@ void main() {
         description: '',
         sector: Sector.ai,
         stage: StartupStage.preSeed,
-        businessModel: BusinessModel.b2c,
+        commerceModel: CommerceModel.b2c,
         location: StartupLocation.riyadh,
         lookingFor: const {},
         capital: 0,

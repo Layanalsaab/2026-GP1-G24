@@ -92,7 +92,7 @@ Features startupFeatures(Startup s) {
   return Features({
     'sector': _clean(sectors),
     'stage': _clean({s.stage.value: 1}),
-    'model': _clean({s.businessModel.value: 1}),
+    'model': _clean({s.commerceModel.value: 1}),
   });
 }
 

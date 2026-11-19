@@ -174,8 +174,8 @@ class StartupValidators {
   static String? burn(String v) =>
       money(v) == null ? ValidationStrings.burn : null;
 
-  static String? businessModelText(String v) =>
-      v.trim().isEmpty ? ValidationStrings.businessModel : null;
+  static String? revenueModel(String v) =>
+      v.trim().isEmpty ? ValidationStrings.commerceModel : null;
 
   /// "How much are you raising?": required, and inside the limits of the
   /// round type ([stage]).

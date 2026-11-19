@@ -17,7 +17,7 @@ void main() {
         'name': 'Acme',
         'sector': 'fintech',
         'stage': 'seed',
-        'businessModel': 'b2b',
+        'commerceModel': 'b2b',
         'lookingFor': ['funding'],
         'fundingRequirement': 2000000,
         'raisedInRound': 0,

@@ -213,8 +213,8 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
     sectorOther.text = t('sectorOther');
     final draftStage = StartupStage.fromValue(d['stage']);
     stage = StartupStage.picks.contains(draftStage) ? draftStage : null;
-    final draftModel = BusinessModel.fromValue(d['model']);
-    model = BusinessModel.picks.contains(draftModel) ? draftModel : null;
+    final draftModel = CommerceModel.fromValue(d['model']);
+    model = CommerceModel.picks.contains(draftModel) ? draftModel : null;
     modelOther.text = t('modelOther');
     city = StartupLocation.fromValue(d['city']);
     problem.text = t('problem');
@@ -392,7 +392,7 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
   Sector? get sector =>
       sectorPicks.isEmpty ? null : Sector.fromLabel(sectorPicks.first);
   StartupStage? stage;
-  BusinessModel? model;
+  CommerceModel? model;
   StartupLocation? city;
   File? newLogo;
   bool removeLogo = false;
@@ -486,13 +486,13 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
     for (final s in Sector.values) s.label,
   ];
   static final List<String> _modelLabels = [
-    for (final m in BusinessModel.picks) ...[m.label, m.shortLabel],
+    for (final m in CommerceModel.picks) ...[m.label, m.shortLabel],
   ];
 
   /// What else counts as a listed commerce model: its abbreviation ("B2B")
   /// and its name without the brackets ("Business-to-Business").
   static final Map<String, String> modelAlsoCountsAs = {
-    for (final m in BusinessModel.picks) ...{
+    for (final m in CommerceModel.picks) ...{
       m.shortLabel: m.label,
       m.label.replaceAll(RegExp(r'\s*\(.*\)'), ''): m.label,
     },
@@ -511,7 +511,7 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
   bool get isSectorOther => sectorPicks.contains(_other);
 
   static const _other = 'Other';
-  bool get isModelOther => model == BusinessModel.other;
+  bool get isModelOther => model == CommerceModel.other;
   bool get wantsFunding => lookingFor.contains(LookingFor.funding);
   bool get wantsPartner => lookingFor.contains(LookingFor.partnership);
   bool get wantsSupport => lookingFor.contains(LookingFor.support);
@@ -603,7 +603,7 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
       case StartupField.burn:
         return StartupValidators.burn(burn.text);
       case StartupField.modelText:
-        return StartupValidators.businessModelText(modelText.text);
+        return StartupValidators.revenueModel(modelText.text);
       case StartupField.revenue:
         return StartupValidators.revenue(rev1.text, rev2.text, rev3.text);
       case StartupField.valuation:
@@ -802,7 +802,7 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
   });
 
   void selectModel(String label, String? other) => _touch(() {
-    model = BusinessModel.picks.firstWhere((m) => m.label == label);
+    model = CommerceModel.picks.firstWhere((m) => m.label == label);
     modelOther.text = other ?? '';
   });
 
@@ -1464,8 +1464,8 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
             sectorOther.text.trim(),
       ],
       stage: stage ?? initial!.stage,
-      businessModel: model ?? initial!.businessModel,
-      businessModelOther: isModelOther ? modelOther.text.trim() : null,
+      commerceModel: model ?? initial!.commerceModel,
+      commerceModelOther: isModelOther ? modelOther.text.trim() : null,
       location: city ?? initial!.location,
       foundedYear: int.tryParse(founded.text.trim()),
       websiteUrl: websiteText.isEmpty
@@ -1487,7 +1487,7 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
       team: team,
       revenueThisYear: StartupValidators.money(revenueNow.text),
       monthlyBurn: StartupValidators.money(burn.text),
-      businessModelText: modelText.text.trim(),
+      revenueModel: modelText.text.trim(),
       raisedInRound: wantsFunding ? StartupValidators.money(raised.text) : null,
       partnerTypes: wantsPartner
           ? _typesToSave(
@@ -1610,10 +1610,10 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
     // A stage or commerce model that is no longer offered stays empty, so
     // the founder picks a real one the next time.
     stage = StartupStage.picks.contains(s.stage) ? s.stage : null;
-    model = BusinessModel.picks.contains(s.businessModel)
-        ? s.businessModel
+    model = CommerceModel.picks.contains(s.commerceModel)
+        ? s.commerceModel
         : null;
-    modelOther.text = s.businessModelOther ?? '';
+    modelOther.text = s.commerceModelOther ?? '';
     city = s.location;
     problem.text = s.problem;
     solution.text = s.solution;
@@ -1624,7 +1624,7 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
     revenueNow.text = _money(s.revenueThisYear);
     capital.text = _money(s.capital);
     burn.text = _money(s.monthlyBurn);
-    modelText.text = s.businessModelText;
+    modelText.text = s.revenueModel;
     raised.text = _money(s.raisedInRound);
     final (partners, partnerText) = _typesFromSaved(
       s.partnerTypes,

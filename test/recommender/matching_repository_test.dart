@@ -36,7 +36,7 @@ Map<String, dynamic> _startup(Map<String, dynamic> over) => {
   'description': 'Acme builds payments for shops. It is based in Riyadh.',
   'sector': 'fintech',
   'stage': 'seed',
-  'businessModel': 'b2b',
+  'commerceModel': 'b2b',
   'location': 'riyadh',
   'lookingFor': ['funding'],
   'fundingRequirement': 2000000,

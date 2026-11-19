@@ -39,7 +39,7 @@ const ticketBase = {
 };
 const startupBase = {
   founderId: 'f1', name: 'Rafeeq', description: 'd', sector: 'healthtech', stage: 'seed',
-  businessModel: 'b2b', location: 'riyadh', lookingFor: ['funding'], isPublic: true,
+  commerceModel: 'b2b', location: 'riyadh', lookingFor: ['funding'], isPublic: true,
   fundingRequirement: 500000, raisedInRound: 100000, memberIds: [], memberRoles: {},
 };
 

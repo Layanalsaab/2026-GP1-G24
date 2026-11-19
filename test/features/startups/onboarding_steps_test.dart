@@ -247,7 +247,7 @@ void main() {
       expect(saved.fundingRequirement, 1000000);
       expect(saved.revenueThisYear, 10);
       expect(saved.monthlyBurn, 5);
-      expect(saved.businessModelText, 'Fees per payment');
+      expect(saved.revenueModel, 'Fees per payment');
       expect(saved.partnerTypes, ['Technology developer', 'Banks']);
       expect(saved.supportTypes, isEmpty);
       expect(saved.lookingFor, {LookingFor.funding, LookingFor.partnership});

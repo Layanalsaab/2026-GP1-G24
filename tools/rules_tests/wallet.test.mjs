@@ -41,12 +41,12 @@ await env.withSecurityRulesDisabled(async (ctx) => {
   const db = ctx.firestore();
   await setDoc(doc(db, 'startups', 'S1'), {
     founderId: 'f1', name: 'Rafeeq', description: 'd', sector: 'healthtech', stage: 'seed',
-    businessModel: 'b2b', location: 'riyadh', lookingFor: ['funding'], isPublic: true,
+    commerceModel: 'b2b', location: 'riyadh', lookingFor: ['funding'], isPublic: true,
     fundingRequirement: 500000, raisedInRound: 100000, memberIds: [], memberRoles: {},
   });
   await setDoc(doc(db, 'startups', 'S3'), {
     founderId: 'f1', name: 'Idle', description: 'd', sector: 'healthtech', stage: 'seed',
-    businessModel: 'b2b', location: 'riyadh', lookingFor: ['talent'], isPublic: true,
+    commerceModel: 'b2b', location: 'riyadh', lookingFor: ['talent'], isPublic: true,
     memberIds: [], memberRoles: {},
   });
   await setDoc(doc(db, 'tickets', 'i1-T1'), ticketBase);

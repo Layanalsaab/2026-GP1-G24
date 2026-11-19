@@ -36,11 +36,11 @@ class PrototypeSeed {
     return StartupStage.preSeed;
   }
 
-  static BusinessModel _model(String short) {
-    for (final m in BusinessModel.values) {
+  static CommerceModel _model(String short) {
+    for (final m in CommerceModel.values) {
       if (m.shortLabel == short) return m;
     }
-    return BusinessModel.other;
+    return CommerceModel.other;
   }
 
   static LookingFor _look(String label) {
@@ -82,7 +82,7 @@ class PrototypeSeed {
     description: about,
     sector: _sector(sector),
     stage: _stage(stage),
-    businessModel: _model(model),
+    commerceModel: _model(model),
     location: _loc(city),
     foundedYear: founded,
     websiteUrl: website.isEmpty ? null : website,

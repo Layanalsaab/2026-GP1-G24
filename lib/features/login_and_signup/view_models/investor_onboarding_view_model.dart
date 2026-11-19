@@ -135,13 +135,13 @@ class InvestorOnboardingViewModel extends ChangeNotifier with SafeNotifier {
     for (final s in Sector.values) s.label,
   ];
   static final List<String> modelOptions = [
-    for (final m in BusinessModel.picks) m.label,
+    for (final m in CommerceModel.picks) m.label,
   ];
 
   /// What else counts as a listed commerce model: its abbreviation ("B2B")
   /// and its name without the brackets ("Business-to-Business").
   static final Map<String, String> modelAlsoCountsAs = {
-    for (final m in BusinessModel.picks) ...{
+    for (final m in CommerceModel.picks) ...{
       m.shortLabel: m.label,
       m.label.replaceAll(RegExp(r'\s*\(.*\)'), ''): m.label,
     },

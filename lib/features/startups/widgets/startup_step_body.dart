@@ -176,7 +176,7 @@ class _Basics extends StatelessWidget {
     final r = await showPickerSheet(
       context,
       title: FounderToolsStrings.modelTitle,
-      options: [for (final m in BusinessModel.picks) m.label],
+      options: [for (final m in CommerceModel.picks) m.label],
       selected: vm.model?.label,
       otherText: vm.modelOther.text,
       otherNoun: FounderToolsStrings.modelNoun,

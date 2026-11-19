@@ -44,7 +44,7 @@ class Recommender {
     final stage =
         criteria.stages.contains(startup.stageLabel) ||
         criteria.stages.contains(startup.stage.label);
-    final model = criteria.commerceModels.contains(startup.businessModel.label);
+    final model = criteria.commerceModels.contains(startup.commerceModel.label);
     final region =
         investorCity != null && investorCity == startup.location.label;
     return _result(
