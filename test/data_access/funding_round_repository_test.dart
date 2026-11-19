@@ -182,7 +182,6 @@ void main() {
           RoundInvestor(name: 'Fund Two', investorId: 'inv-2', isLead: true),
           RoundInvestor(name: 'Angel One'),
         ],
-        wantsLeadInvestor: true,
       ).toMap('s1');
       expect(map['startupId'], 's1');
       expect(map['status'], 'active');
@@ -256,7 +255,7 @@ void main() {
     test('Funding ticked, no round yet: Round 1 opens', () async {
       final writes = await repo.writesFor(
         's1',
-        raising().copyWith(raisedInRound: 100000, wantsLeadInvestor: true),
+        raising().copyWith(raisedInRound: 100000),
         isNew: true,
         now: now,
       );

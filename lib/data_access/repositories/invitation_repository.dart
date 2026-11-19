@@ -133,7 +133,6 @@ class InvitationRepository {
       emailSent: existing.status == InvitationStatus.pending
           ? existing.emailSent
           : false,
-      lastSentAt: existing.lastSentAt,
     );
   }
 
@@ -289,10 +288,7 @@ class InvitationRepository {
         if (why.contains('sent recently')) return InviteSendResult.tooSoon;
         return InviteSendResult.failed;
       }
-      await _firestore.updateDocument(_col, invitation.id, {
-        'emailSent': true,
-        'lastSentAt': _firestore.serverTimestamp(),
-      });
+      await _firestore.updateDocument(_col, invitation.id, {'emailSent': true});
       return InviteSendResult.sent;
     } on StateError {
       return InviteSendResult.notConfigured;
@@ -399,7 +395,6 @@ class InvitationRepository {
         'status': InvitationStatus.accepted.value,
         'acceptedBy': uid,
         'acceptedByName': fullName,
-        'respondedAt': _firestore.serverTimestamp(),
       }),
     ]);
     await _removeFromInviteIndex(invitation.emailLower, invitation.startupName);
@@ -448,7 +443,9 @@ class InvitationRepository {
       if (previous.isNotEmpty && m.uid == previous) {
         if (stay != null) {
           team.add(
-            m.copyWith(isFounder: false, coFounder: stay == 'coFounder').toMap(),
+            m
+                .copyWith(isFounder: false, coFounder: stay == 'coFounder')
+                .toMap(),
           );
         }
         continue;
@@ -481,8 +478,6 @@ class InvitationRepository {
         invitation.startupId,
         {
           StartupFields.founderId: uid,
-          // Older startups get who created them now (it never changes).
-          StartupFields.foundedBy: startup.originalFounderId,
           StartupFields.team: team,
           // The previous founder stays on the team, if he chose to.
           if (stay != null) ...{
@@ -491,7 +486,6 @@ class InvitationRepository {
             if (stay == 'coFounder')
               StartupFields.coFounderIds: _firestore.arrayUnion([previous]),
           },
-          StartupFields.ownerChangedAt: _firestore.serverTimestamp(),
           StartupFields.updatedAt: _firestore.serverTimestamp(),
         },
       ),
@@ -499,7 +493,6 @@ class InvitationRepository {
         'status': InvitationStatus.accepted.value,
         'acceptedBy': uid,
         'acceptedByName': fullName,
-        'respondedAt': _firestore.serverTimestamp(),
       }),
     ]);
     await _removeFromInviteIndex(invitation.emailLower, invitation.startupName);
@@ -522,7 +515,6 @@ class InvitationRepository {
     }
     await _firestore.updateDocument(_col, invitation.id, {
       'status': InvitationStatus.declined.value,
-      'respondedAt': _firestore.serverTimestamp(),
     });
     await _removeFromInviteIndex(invitation.emailLower, invitation.startupName);
   }

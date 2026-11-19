@@ -58,7 +58,6 @@ class FundingRound {
     this.raised = 0,
     this.end,
     this.investors = const [],
-    this.wantsLeadInvestor,
   });
 
   /// The document id ('' for a round that is not saved yet).
@@ -89,9 +88,6 @@ class FundingRound {
   /// The investors who invested in this round, the lead first.
   final List<RoundInvestor> investors;
 
-  /// "Are you looking for a lead investor?" answer given when it was added.
-  final bool? wantsLeadInvestor;
-
   bool get isOpen => end == null;
 
   /// "Seed", or the written type of an Other round.
@@ -113,7 +109,6 @@ class FundingRound {
     DateTime? start,
     DateTime? end,
     List<RoundInvestor>? investors,
-    bool? wantsLeadInvestor,
   }) => FundingRound(
     id: id ?? this.id,
     number: number ?? this.number,
@@ -124,7 +119,6 @@ class FundingRound {
     start: start ?? this.start,
     end: end ?? this.end,
     investors: investors ?? this.investors,
-    wantsLeadInvestor: wantsLeadInvestor ?? this.wantsLeadInvestor,
   );
 
   FundingRound withRaised(int value) => copyWith(raised: value);
@@ -157,7 +151,6 @@ class FundingRound {
         if (i.hasProfile) i.investorId,
     ],
     FundingRoundFields.investorCount: investors.length,
-    FundingRoundFields.wantsLeadInvestor: wantsLeadInvestor,
     FundingRoundFields.isArchived: false,
   };
 
@@ -187,7 +180,6 @@ class FundingRound {
     ];
     final number = d[FundingRoundFields.number];
     final other = d[FundingRoundFields.stageOther];
-    final lead = d[FundingRoundFields.wantsLeadInvestor];
     return FundingRound(
       id: id,
       number: number is num ? number.toInt() : 0,
@@ -201,7 +193,6 @@ class FundingRound {
           ? null
           : (end is DateTime ? end : start),
       investors: investors,
-      wantsLeadInvestor: lead is bool ? lead : null,
     );
   }
 

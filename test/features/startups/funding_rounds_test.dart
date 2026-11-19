@@ -63,7 +63,6 @@ void main() {
       expect(s.seeksFunding, isFalse);
       expect(s.lookingFor, {LookingFor.talent});
       expect(s.fundingRequirement, isNull);
-      expect(s.wantsLeadInvestor, isNull);
       expect(s.raisedInRound, isNull);
       expect(saved.single.seeksFunding, isFalse);
     },
@@ -88,7 +87,6 @@ void main() {
       expect(s.fundingRequirement, 10000000);
       expect(s.raisedInRound, 0);
       // The lead-investor question is gone: nothing is written for it.
-      expect(s.wantsLeadInvestor, isNull);
       expect(s.stage, StartupStage.seriesA);
     },
   );

@@ -178,7 +178,6 @@ class PublicProfileRepository {
         if ((user.sectorsOther ?? '').trim().isNotEmpty)
           'sectorsOther': user.sectorsOther,
         'linkedinUrl': user.linkedin ?? '',
-        'photoUrl': user.photoUrl ?? '',
         'emailPublic': user.emailPublic,
         'phonePublic': user.phonePublic,
         'email': user.emailPublic ? user.email : _firestore.deleteField(),

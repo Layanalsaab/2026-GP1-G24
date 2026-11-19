@@ -507,7 +507,6 @@ class _InvestorRow extends StatelessWidget {
         children: [
           TileAvatar(
             initials: investor.initials,
-            imageUrl: investor.photoUrl,
             tone: TileTone.gold,
             size: 46,
             fontSize: 15,

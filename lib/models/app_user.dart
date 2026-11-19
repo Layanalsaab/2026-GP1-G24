@@ -35,7 +35,6 @@ class AppUser {
     this.preferredSectors = const [],
     this.preferredStages = const [],
     this.ticketSize,
-    this.photoUrl,
     this.photoData,
     this.linkedin,
     this.gain = '',
@@ -77,9 +76,6 @@ class AppUser {
   final List<String> preferredSectors;
   final List<String> preferredStages;
   final String? ticketSize;
-
-  /// Download URL of the profile photo; null when the user has none.
-  final String? photoUrl;
 
   /// The photo itself, a small compressed square as base64 text. It lives on
   /// `publicProfiles/{uid}` (not in `users`) and is read when the profile
@@ -142,7 +138,6 @@ class AppUser {
     List<String>? preferredSectors,
     List<String>? preferredStages,
     String? ticketSize,
-    String? photoUrl,
     String? photoData,
     bool clearPhoto = false,
     String? linkedin,
@@ -166,7 +161,6 @@ class AppUser {
     preferredSectors: preferredSectors ?? this.preferredSectors,
     preferredStages: preferredStages ?? this.preferredStages,
     ticketSize: ticketSize ?? this.ticketSize,
-    photoUrl: clearPhoto ? null : (photoUrl ?? this.photoUrl),
     photoData: clearPhoto ? null : (photoData ?? this.photoData),
     linkedin: linkedin ?? this.linkedin,
     gain: gain ?? this.gain,
@@ -199,7 +193,6 @@ class AppUser {
       preferredSectors: _strings(data['preferredSectors']),
       preferredStages: _strings(data['preferredStages']),
       ticketSize: data['ticketSize'] as String?,
-      photoUrl: data[UserFields.photoUrl] as String?,
       linkedin: data[UserFields.linkedin] as String?,
       gain: (data[UserFields.lookingFor] as String?) ?? '',
       valueOffered: (data[UserFields.valueOffered] as String?) ?? '',

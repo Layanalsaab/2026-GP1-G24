@@ -84,17 +84,15 @@ void main() {
       expect(Invitation.idOf('S1', ' Sara@Gmail.com '), 'S1~sara@gmail.com');
     });
 
-    test('canResend: any pending invitation, however recently sent', () {
-      Invitation inv({DateTime? sent}) => Invitation(
+    test('canResend: any pending invitation', () {
+      const inv = Invitation(
         startupId: 's',
         startupName: 'S',
         emailLower: 'a@b.co',
         role: Invitation.roleMember,
         invitedBy: 'u',
-        lastSentAt: sent,
       );
-      expect(inv().canResend, isTrue);
-      expect(inv(sent: DateTime.now()).canResend, isTrue);
+      expect(inv.canResend, isTrue);
     });
 
     test('fromMap reads what toCreateMap writes', () {
@@ -424,9 +422,7 @@ void main() {
       await t.pumpAndSettle();
     }
 
-    testWidgets('signed out: Log in opens with the invited e-mail', (
-      t,
-    ) async {
+    testWidgets('signed out: Log in opens with the invited e-mail', (t) async {
       AppSession.instance = AppSession(); // nobody signed in
       invites.store['S1~sara@gmail.com'] = const Invitation(
         startupId: 'S1',
@@ -619,7 +615,13 @@ void main() {
       expect(vm.canRemoveMember(card(vm, 'huda')), isTrue);
       expect(vm.canChangeCoFounder(card(vm, 'huda')), isTrue);
       // The title follows control: whoever holds the startup is its Founder.
-      expect([for (final m in vm.team) if (m.isFounder) m.uid], ['layan']);
+      expect(
+        [
+          for (final m in vm.team)
+            if (m.isFounder) m.uid,
+        ],
+        ['layan'],
+      );
     });
 
     test('saving keeps who created it and leaves the founder off', () {
@@ -628,7 +630,6 @@ void main() {
       addTearDown(vm.dispose);
       final saved = vm.startupToSave();
       expect(saved.founderId, 'layan');
-      expect(saved.foundedBy, 'noura');
       expect(saved.memberRoles.containsKey('noura'), isFalse);
     });
   });

@@ -101,7 +101,6 @@ class InvestorOnboardingViewModel extends ChangeNotifier with SafeNotifier {
     sectors.addAll(c.sectors.where(sectorOptions.contains));
     sectorsOther.text = c.sectorsOther ?? '';
     stages.addAll(c.stages.where(stageOptions.contains));
-    stagesOther.text = c.stagesOther ?? '';
     models.addAll(c.commerceModels.where(modelOptions.contains));
     modelsOther.text = c.commerceModelsOther ?? '';
   }
@@ -164,7 +163,6 @@ class InvestorOnboardingViewModel extends ChangeNotifier with SafeNotifier {
   final Set<String> sectors = {};
   final sectorsOther = TextEditingController();
   final Set<String> stages = {};
-  final stagesOther = TextEditingController();
   final Set<String> models = {};
   final modelsOther = TextEditingController();
   bool step4Tried = false;
@@ -175,7 +173,6 @@ class InvestorOnboardingViewModel extends ChangeNotifier with SafeNotifier {
   late final List<TextEditingController> _controllers = [
     ...roundSize.controllers,
     sectorsOther,
-    stagesOther,
     modelsOther,
   ];
 
@@ -235,9 +232,6 @@ class InvestorOnboardingViewModel extends ChangeNotifier with SafeNotifier {
   bool get sectorsOtherRepeats =>
       sectors.contains(otherLabel) &&
       OtherCheck.repeats(sectorsOther.text, sectorOptions);
-  bool get stagesOtherRepeats =>
-      stages.contains(otherLabel) &&
-      OtherCheck.repeats(stagesOther.text, stageOptions);
   bool get modelsOtherRepeats =>
       models.contains(otherLabel) &&
       OtherCheck.repeats(modelsOther.text, [
@@ -252,14 +246,6 @@ class InvestorOnboardingViewModel extends ChangeNotifier with SafeNotifier {
           sectors.contains(otherLabel),
           sectorsOther,
           'sector',
-        );
-  String? get stagesOtherError => stagesOtherRepeats
-      ? ValidationStrings.otherRepeats
-      : _otherError(
-          step4Tried,
-          stages.contains(otherLabel),
-          stagesOther,
-          'stage',
         );
   String? get modelsOtherError => modelsOtherRepeats
       ? ValidationStrings.otherRepeats
@@ -277,8 +263,7 @@ class InvestorOnboardingViewModel extends ChangeNotifier with SafeNotifier {
   bool get step4Complete =>
       _groupOk(sectors, sectorsOther) &&
       !sectorsOtherRepeats &&
-      _groupOk(stages, stagesOther) &&
-      !stagesOtherRepeats &&
+      stages.isNotEmpty &&
       _groupOk(models, modelsOther) &&
       !modelsOtherRepeats;
 
@@ -316,7 +301,6 @@ class InvestorOnboardingViewModel extends ChangeNotifier with SafeNotifier {
       // "Have you ever led an investment round?" is no longer asked; an
       // answer saved earlier stays as it is.
       ticketBand: _initial?.ticketBand,
-      ticketOther: _initial?.ticketOther,
       roundMin: showRoundSize ? roundSize.minAmount : null,
       roundMax: showRoundSize ? roundSize.maxAmount : null,
       sectors: ordered(sectors, sectorOptions),
@@ -324,7 +308,6 @@ class InvestorOnboardingViewModel extends ChangeNotifier with SafeNotifier {
           ? sectorsOther.text.trim()
           : null,
       stages: ordered(stages, stageOptions),
-      stagesOther: stages.contains(otherLabel) ? stagesOther.text.trim() : null,
       commerceModels: ordered(models, modelOptions),
       commerceModelsOther: models.contains(otherLabel)
           ? modelsOther.text.trim()

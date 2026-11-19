@@ -211,9 +211,7 @@ class _Basics extends StatelessWidget {
               ? FileImage(vm.newLogo!)
               : (PictureData.bytes(vm.existingLogoData) != null
                     ? MemoryImage(PictureData.bytes(vm.existingLogoData)!)
-                    : (vm.existingLogoUrl != null
-                          ? NetworkImage(vm.existingLogoUrl!)
-                          : null)),
+                    : null),
         ),
         if (vm.logoError != null)
           Padding(

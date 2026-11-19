@@ -38,7 +38,6 @@ class HomeItem {
     this.isNew = false,
     this.highlight,
     this.highlightReason,
-    this.imageUrl,
     this.imageData,
     this.createdAt,
     this.closed = false,
@@ -103,10 +102,7 @@ class HomeItem {
   final String? highlight;
   final String? highlightReason;
 
-  /// The startup's logo or the person's photo (null: the default picture).
-  final String? imageUrl;
-
-  /// The saved logo (base64), shown before [imageUrl].
+  /// The saved logo or photo (base64); null: the default picture.
   final String? imageData;
 
   /// When the startup / investor joined Start.sa (for "Newest"). Null when
@@ -167,7 +163,6 @@ class HomeItem {
     isNew: isNew ?? this.isNew,
     highlight: highlight ?? this.highlight,
     highlightReason: highlightReason ?? this.highlightReason,
-    imageUrl: imageUrl,
     imageData: imageData,
     createdAt: createdAt,
     closed: closed,
@@ -196,7 +191,6 @@ class HomeItem {
     commerceModel: s.businessModelLabel,
     partnerTypes: s.partnerTypes,
     supportTypes: s.supportTypes,
-    imageUrl: s.logoUrl,
     imageData: s.logoData,
     createdAt: s.createdAt,
     closed: s.isClosed,
@@ -222,7 +216,6 @@ class HomeItem {
       matchPercent: i.matchPercent,
       matchReason: i.matchReason,
       joinedLabel: i.joinedLabel,
-      imageUrl: i.photoUrl,
       createdAt: i.createdAt,
     );
   }

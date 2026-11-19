@@ -276,7 +276,6 @@ void main() {
       final saved = await vm.save();
       expect(saved, isNotNull);
       // The one-line pitch is gone: the brief description is the only text.
-      expect(repo.startups.single.tagline, isNull);
       expect(
         repo.startups.single.description,
         'We help small shops accept card payments.',

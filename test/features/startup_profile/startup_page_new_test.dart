@@ -26,7 +26,6 @@ Startup _startup({bool isPublic = true}) => PrototypeSeed.rafeeq.copyWith(
   businessModelText: 'Families pay per visit',
   fundingRequirement: 500000,
   raisedInRound: 200000,
-  wantsLeadInvestor: true,
   partnerTypes: ['Technology', 'Distribution'],
   supportTypes: ['Mentorship', 'Hiring'],
   revenueThisYear: 0,

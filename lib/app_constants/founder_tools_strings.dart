@@ -168,7 +168,6 @@ class FounderToolsStrings {
   static const editMemberLabel = 'Edit team member';
 
   // Step 4
-  static const growthLabel = 'Expected growth';
   static const revenueNowLabel = 'Current financial year revenue';
   static const revenueNowInfo =
       'The money your startup has earned so far this financial year. Enter 0 if you haven’t made any sales yet.';

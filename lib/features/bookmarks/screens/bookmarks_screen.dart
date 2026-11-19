@@ -198,7 +198,6 @@ class _BookmarkCard extends StatelessWidget {
       body: item.line,
       bodyMaxLines: item.kind == HomeItemKind.startup ? 2 : 3,
       kind: avatarKindOf(item.kind),
-      imageUrl: item.imageUrl,
       imageData: item.imageData,
       index: index,
       bookmarked: true,

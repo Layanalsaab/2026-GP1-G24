@@ -23,15 +23,11 @@ void main() {
 
   test('stores the field names the database uses', () {
     final full = startup.copyWith(
-      tagline: 'Card payments on a phone',
       problem: 'p',
       solution: 's',
       customers: 'c',
       advantage: 'a',
       marketSize: 1,
-      sam: 2,
-      som: 3,
-      growth: 'g',
       capital: 4,
       revenueYear1: 5,
       revenueYear2: 6,
@@ -51,16 +47,12 @@ void main() {
     expect(
       map.keys,
       containsAll([
-        'oneLinePitch',
         'problem',
         'solution',
         'targetCustomers',
         'differentiation',
         'marketSize',
-        'marketSizeSam',
-        'marketSizeSom',
         'teamMembers',
-        'expectedGrowth',
         'currentAvailableCapital',
         'expectedRevenueYear1',
         'expectedRevenueYear2',
@@ -78,7 +70,6 @@ void main() {
         'lookingFor',
         'fundingRequirement',
         'isPublic',
-        'logoUrl',
       ]),
     );
     expect(map.keys, isNot(contains('tagline')));
@@ -317,7 +308,6 @@ void main() {
       final old = {
         StartupFields.founderId: 'u1',
         StartupFields.name: 'Old Co',
-        StartupFields.tagline: 'Old one-liner',
         StartupFields.description: 'An old description of a startup.',
         StartupFields.sector: 'logistics_transport',
         StartupFields.stage: 'early_revenue',
@@ -328,7 +318,6 @@ void main() {
         StartupFields.isPublic: true,
       };
       final loaded = Startup.fromMap('old', old)!;
-      expect(loaded.tagline, 'Old one-liner');
       final saved = loaded.toMap();
       expect(saved[StartupFields.sector], 'logistics');
       expect(saved[StartupFields.stage], 'seed');
@@ -339,17 +328,14 @@ void main() {
         'talent',
         'tech_development',
       ]);
-      // The tagline is carried over untouched.
-      expect(saved[StartupFields.tagline], 'Old one-liner');
     });
   });
 
   group('summary (the short line on cards)', () {
-    Startup withText({String? tagline, String description = ''}) => Startup(
+    Startup withText({String description = ''}) => Startup(
       id: 's',
       founderId: 'u',
       name: 'N',
-      tagline: tagline,
       description: description,
       sector: Sector.other,
       stage: StartupStage.other,
@@ -369,8 +355,7 @@ void main() {
       );
     });
 
-    test('an older startup with only a pitch falls back to it', () {
-      expect(withText(tagline: ' Old pitch ').briefDescription, 'Old pitch');
+    test('an empty description gives an empty summary', () {
       expect(withText().summary, '');
     });
   });
@@ -383,25 +368,20 @@ void main() {
         customers: 'c',
         advantage: 'a',
         marketSize: 2400000000,
-        sam: 600000000,
-        som: 24000000,
         team: const [
           TeamMember(name: 'Faisal Alkhaldi', role: 'CTO', contribution: 'b'),
         ],
-        growth: 'g',
         capital: 350000,
         revenueYear1: 1,
         revenueYear2: 2,
         revenueYear3: 3,
         valuation: 0,
-        wantsLeadInvestor: true,
       );
       final back = Startup.fromMap('s1', full.toMap())!;
       expect(back.marketSize, 2400000000);
       expect(back.team.single.meta, 'CTO');
       expect(back.team.single.initials, 'FA');
       expect(back.valuation, 0);
-      expect(back.wantsLeadInvestor, isTrue);
       expect(back.expectedRevenue, [1, 2, 3]);
       expect(back.hasBusinessDetails, isTrue);
     });
@@ -410,7 +390,6 @@ void main() {
       final back = Startup.fromMap('s1', startup.toMap())!;
       expect(back.team, isEmpty);
       expect(back.marketSize, isNull);
-      expect(back.wantsLeadInvestor, isNull);
       expect(back.problem, '');
     });
   });

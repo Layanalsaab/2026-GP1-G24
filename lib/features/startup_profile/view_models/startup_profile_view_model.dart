@@ -185,8 +185,6 @@ class StartupProfileViewModel extends ChangeNotifier with SafeNotifier {
 
   // ---- Business ----
   String? get marketSize => _money(startup.marketSize);
-  String? get sam => _money(startup.sam);
-  String? get som => _money(startup.som);
   bool get hasMarket => marketSize != null;
 
   /// The target market size in short form: "SAR 2.4B".

@@ -426,7 +426,6 @@ class _InvestorsState extends State<_Investors> {
             name: i.name,
             title: i.hasProfile ? _profiles[i.investorId]?.title ?? '' : '',
             city: i.hasProfile ? _profiles[i.investorId]?.city ?? '' : '',
-            imageUrl: _profiles[i.investorId]?.photoUrl,
             onTap: i.hasProfile ? () => _open(i) : null,
           ),
           const SizedBox(height: 10),
@@ -537,7 +536,6 @@ class _MatchesState extends State<_Matches> {
                 name: widget.vm.matchedInvestor(item.id)?.name ?? item.name,
                 title: widget.vm.matchedInvestor(item.id)?.title ?? 'Investor',
                 city: widget.vm.matchedInvestor(item.id)?.city ?? '',
-                imageUrl: widget.vm.matchedInvestor(item.id)?.photoUrl,
                 // The % only: why they matched is on their profile.
                 matchPercent: item.percent,
                 onTap: () => _open(item),
@@ -561,7 +559,6 @@ class _PersonTile extends StatelessWidget {
     required this.name,
     required this.title,
     required this.city,
-    this.imageUrl,
     this.matchPercent,
     this.onTap,
   });
@@ -571,7 +568,6 @@ class _PersonTile extends StatelessWidget {
   /// The investor's title ("Angel investor"), then the [city] with its pin.
   final String title;
   final String city;
-  final String? imageUrl;
   final int? matchPercent;
   final VoidCallback? onTap;
 
@@ -587,12 +583,7 @@ class _PersonTile extends StatelessWidget {
         padding: const EdgeInsets.all(14),
         child: Row(
           children: [
-            HueAvatar(
-              name: name,
-              kind: HueAvatarKind.investor,
-              size: 44,
-              imageUrl: imageUrl,
-            ),
+            HueAvatar(name: name, kind: HueAvatarKind.investor, size: 44),
             const SizedBox(width: 12),
             Expanded(
               child: Column(

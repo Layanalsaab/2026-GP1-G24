@@ -132,8 +132,6 @@ class StartupValidators {
   }
 
   // ---- Step 4 ----
-  static String? growth(String v) =>
-      v.trim().isEmpty ? ValidationStrings.growth : null;
 
   /// A money field's digits, or null when empty. "1,200,000" -> 1200000.
   static int? money(String v) {

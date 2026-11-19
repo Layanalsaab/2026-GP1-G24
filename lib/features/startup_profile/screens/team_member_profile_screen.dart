@@ -189,7 +189,6 @@ class _TeamMemberProfileScreenState extends State<TeamMemberProfileScreen> {
         if (st != null && st.isClosed)
           const GreyTag(FounderToolsStrings.closedPill),
       ],
-      imageUrl: item?.imageUrl,
       imageData: item?.imageData,
       onTap: () => _openStartup(ref),
     );
@@ -218,7 +217,6 @@ class _TeamMemberProfileScreenState extends State<TeamMemberProfileScreen> {
               tagsLabel: ProfileStrings.interestedIn,
               // The sectors are listed under Interests below.
               tags: const [],
-              photoUrl: p?.photoUrl,
               photoData: p?.photoData,
               linkedin: p?.linkedin,
               onLinkedin: () => openExternalLink(p?.linkedin ?? ''),

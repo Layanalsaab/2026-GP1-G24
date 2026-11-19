@@ -63,9 +63,6 @@ class UserFields {
   static const isArchived = 'isArchived';
   static const sectorsOfInterest = 'sectorsOfInterest';
 
-  // Profile photo: download URL of `users/{uid}/profile.jpg` in Storage.
-  static const photoUrl = 'photoUrl';
-
   // Added when an investor finishes onboarding (their investment criteria).
   static const preferredSectors = 'preferredSectors';
   static const preferredStages = 'preferredStages';
@@ -86,10 +83,8 @@ class UserFields {
   // Investor questions from sign-up steps 3 and 4, stored flat on the user
   // (same names as the `investors` collection).
   static const investmentsCount = 'investmentsCount';
-  static const ticketSizeOther = 'ticketSizeOther';
   static const roundSizeMin = 'roundSizeMin';
   static const roundSizeMax = 'roundSizeMax';
-  static const preferredStagesOther = 'preferredStagesOther';
   static const preferredCommerceModels = 'preferredCommerceModels';
   static const preferredCommerceModelsOther = 'preferredCommerceModelsOther';
 
@@ -110,7 +105,6 @@ class StartupFields {
 
   static const founderId = 'founderId';
   static const name = 'name';
-  static const tagline = 'oneLinePitch';
   static const description = 'description';
   static const sector = 'sector';
   static const sectorOther = 'sectorOther';
@@ -119,17 +113,14 @@ class StartupFields {
   /// typed text for "Other". Older startups don't have it.
   static const otherSectors = 'otherSectors';
   static const stage = 'stage';
-  static const stageOther = 'stageOther';
   static const businessModel = 'businessModel';
   static const businessModelOther = 'businessModelOther';
-  static const lookingForOther = 'lookingForOther';
   static const location = 'location';
   static const foundedYear = 'foundedYear';
   static const websiteUrl = 'websiteUrl';
   static const lookingFor = 'lookingFor';
   static const fundingRequirement = 'fundingRequirement';
   static const isPublic = 'isPublic';
-  static const logoUrl = 'logoUrl';
 
   /// The logo itself, a small compressed picture saved as base64 text inside
   /// the startup (no Firebase Storage).
@@ -143,16 +134,12 @@ class StartupFields {
   static const customers = 'targetCustomers';
   static const advantage = 'differentiation';
   static const marketSize = 'marketSize';
-  static const sam = 'marketSizeSam';
-  static const som = 'marketSizeSom';
   static const team = 'teamMembers';
-  static const growth = 'expectedGrowth';
   static const capital = 'currentAvailableCapital';
   static const revenueYear1 = 'expectedRevenueYear1';
   static const revenueYear2 = 'expectedRevenueYear2';
   static const revenueYear3 = 'expectedRevenueYear3';
   static const valuation = 'valuation';
-  static const wantsLeadInvestor = 'wantsLeadInvestor';
 
   // Finance and Growth / Startup Ask answers.
   static const revenueThisYear = 'revenueThisYear';
@@ -174,11 +161,6 @@ class StartupFields {
   /// what stops a co-founder from removing or demoting another co-founder.
   static const coFounderIds = 'coFounderIds';
 
-  /// Who created the startup. [founderId] is the OWNER (control), which moves
-  /// when the founder leaves and names the next owner; this never changes.
-  /// Older startups don't have it: the owner then is the founder.
-  static const foundedBy = 'foundedBy';
-
   /// `active` or `closed`. Older startups don't have it (active).
   static const status = 'status';
   static const statusActive = 'active';
@@ -186,9 +168,6 @@ class StartupFields {
 
   /// When the startup was closed (a timestamp).
   static const closedAt = 'closedAt';
-
-  /// When the startup last got a new owner (a timestamp).
-  static const ownerChangedAt = 'ownerChangedAt';
 
   /// True only on the startups imported from the dataset (Crunchbase).
   /// Startups made in the app are saved with false, and nobody can change it
@@ -217,7 +196,6 @@ class FundingRoundFields {
   static const investors = 'investors';
   static const investorIds = 'investorIds';
   static const investorCount = 'investorCount';
-  static const wantsLeadInvestor = 'wantsLeadInvestor';
 
   /// True only on rounds imported from the dataset (Crunchbase). Rounds added
   /// in the app are saved with false.

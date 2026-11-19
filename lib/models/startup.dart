@@ -17,17 +17,13 @@ class Startup {
     required this.businessModel,
     required this.location,
     required this.lookingFor,
-    this.tagline,
     this.foundedYear,
     this.websiteUrl,
     this.fundingRequirement,
     this.sectorOther,
     this.otherSectors = const [],
-    this.stageOther,
     this.businessModelOther,
-    this.lookingForOther,
     this.isPublic = false,
-    this.logoUrl,
     this.logoData,
     this.createdAt,
     this.updatedAt,
@@ -36,16 +32,12 @@ class Startup {
     this.customers = '',
     this.advantage = '',
     this.marketSize,
-    this.sam,
-    this.som,
     this.team = const [],
-    this.growth = '',
     this.capital,
     this.revenueYear1,
     this.revenueYear2,
     this.revenueYear3,
     this.valuation,
-    this.wantsLeadInvestor,
     this.revenueThisYear,
     this.monthlyBurn,
     this.businessModelText = '',
@@ -53,20 +45,14 @@ class Startup {
     this.partnerTypes = const [],
     this.supportTypes = const [],
     this.memberRoles = const {},
-    this.foundedBy,
     this.isClosed = false,
     this.closedAt,
-    this.ownerChangedAt,
     this.isArchived = false,
   });
 
   final String id;
   final String founderId;
   final String name;
-
-  /// Legacy, optional. The form no longer asks for it (it was merged into the
-  /// brief description), but older documents may still have one.
-  final String? tagline;
 
   /// The brief description, stored in the `description` field. Required,
   /// at most [descriptionMax] characters.
@@ -89,11 +75,7 @@ class Startup {
   /// The sectors picked after the main one ([sector]), as shown to people (the
   /// typed text for "Other"). Empty for a startup with one sector.
   final List<String> otherSectors;
-  final String? stageOther;
   final String? businessModelOther;
-
-  /// What the founder typed when they ticked "Other" in Looking for.
-  final String? lookingForOther;
 
   /// Longest "Other" text, in characters (firestore.rules uses the same).
   static const otherMaxLength = 40;
@@ -114,9 +96,8 @@ class Startup {
       if (o != sectorLabel) o,
   ];
 
-  /// The stage as shown to people: the typed text for "Other".
-  String get stageLabel =>
-      _otherOr(stage == StartupStage.other, stageOther, stage.label);
+  /// The stage as shown to people.
+  String get stageLabel => stage.label;
 
   /// The commerce model as shown on cards and the profile ("B2C"), or the
   /// typed text for "Other".
@@ -126,10 +107,8 @@ class Startup {
     businessModel.shortLabel,
   );
 
-  /// A Looking for choice as shown to people: the typed text for "Other".
-  String lookingForLabelOf(LookingFor item) => item == LookingFor.other
-      ? _otherOr(true, lookingForOther, item.label)
-      : item.label;
+  /// A Looking for choice as shown to people.
+  String lookingForLabelOf(LookingFor item) => item.label;
 
   static String _otherOr(bool isOther, String? typed, String fallback) {
     final text = (typed ?? '').trim();
@@ -158,7 +137,6 @@ class Startup {
 
   /// False by default, so an unfinished profile is never exposed.
   final bool isPublic;
-  final String? logoUrl;
 
   /// The logo as base64 text (a compressed square, under ~100 KB); null
   /// when the startup has none (the initials show as the default picture).
@@ -174,15 +152,11 @@ class Startup {
 
   // ---- Step 3: Market & team ----
 
-  /// Market size in SAR per year: TAM (whole market), SAM (the part you can
-  /// serve) and SOM (the share you expect to win). All optional.
+  /// Target market size in SAR per year. Optional.
   final int? marketSize;
-  final int? sam;
-  final int? som;
   final List<TeamMember> team;
 
   // ---- Step 4: Funding & goals (SAR) ----
-  final String growth;
   final int? capital;
   final int? revenueYear1;
   final int? revenueYear2;
@@ -190,9 +164,6 @@ class Startup {
 
   /// Current company valuation. Required, 0 is allowed.
   final int? valuation;
-
-  /// "Are you looking for a lead investor?" (Yes / No). Null until answered.
-  final bool? wantsLeadInvestor;
 
   /// Revenue earned so far this financial year (0 allowed).
   final int? revenueThisYear;
@@ -227,16 +198,10 @@ class Startup {
 
   // ---- Ownership (docs: Closing a Startup, Leaving and Deleting an Account)
   //
-  // [founderId] is the OWNER: the one account with control (close, the
-  // visibility of a closed startup, the team, leaving by naming the next
-  // owner). The title "Founder" belongs to whoever created the startup
-  // ([originalFounderId]) and never moves. They are the same person until
-  // the founder leaves and hands the startup to someone else, who is then
-  // shown as its "Owner".
-
-  /// Who created the startup. Null on startups saved before ownership could
-  /// move: the owner is then the founder.
-  final String? foundedBy;
+  // [founderId] is the OWNER and the "Founder": the one account with control
+  // (close, the visibility of a closed startup, the team, leaving by naming
+  // the next owner). When the founder hands the startup over, the new owner
+  // is its founder.
 
   /// A closed startup: permanent, read only, kept in everyone's account. Only
   /// its owner can still change whether it shows in the Hub.
@@ -246,18 +211,9 @@ class Startup {
   /// pop-up). Null on an active startup or one closed before it was stored.
   final DateTime? closedAt;
 
-  /// When the startup last got a new owner (the team's one-time pop-up).
-  final DateTime? ownerChangedAt;
-
   /// A startup imported from the dataset (Crunchbase), not made in the app.
   /// New startups are always false.
   final bool isArchived;
-
-  /// The person with the title "Founder".
-  String get originalFounderId {
-    final by = (foundedBy ?? '').trim();
-    return by.isNotEmpty ? by : founderId;
-  }
 
   /// False once the owner deleted her account (her startups with a team are
   /// closed, and nobody owns them any more).
@@ -298,22 +254,12 @@ class Startup {
   /// The three years of expected revenue, oldest first (null when unset).
   List<int?> get expectedRevenue => [revenueYear1, revenueYear2, revenueYear3];
 
-  bool get hasBusinessDetails =>
-      customers.isNotEmpty ||
-      marketSize != null ||
-      sam != null ||
-      som != null ||
-      growth.isNotEmpty;
+  bool get hasBusinessDetails => customers.isNotEmpty || marketSize != null;
 
   bool get seeksFunding => lookingFor.contains(LookingFor.funding);
 
-  /// The brief description. Startups saved before the form had a single
-  /// brief description may have only the old one-line pitch: it stands in
-  /// when the description is empty.
-  String get briefDescription {
-    final text = description.trim();
-    return text.isNotEmpty ? text : (tagline ?? '').trim();
-  }
+  /// The brief description.
+  String get briefDescription => description.trim();
 
   /// The text for cards and lists: the brief description on one flowing
   /// text (line breaks collapsed). The widgets clamp it to 2 lines.
@@ -339,7 +285,6 @@ class Startup {
   Map<String, Object?> toMap() => {
     StartupFields.founderId: founderId,
     StartupFields.name: name,
-    StartupFields.tagline: tagline,
     StartupFields.description: description,
     StartupFields.sector: sector.value,
     StartupFields.otherSectors: otherSectors,
@@ -348,10 +293,6 @@ class Startup {
       sectorOther,
     ),
     StartupFields.stage: stage.value,
-    StartupFields.stageOther: _otherToStore(
-      stage == StartupStage.other,
-      stageOther,
-    ),
     StartupFields.businessModel: businessModel.value,
     StartupFields.businessModelOther: _otherToStore(
       businessModel == BusinessModel.other,
@@ -365,14 +306,9 @@ class Startup {
       for (final item in LookingFor.values)
         if (lookingFor.contains(item)) item.value,
     ],
-    StartupFields.lookingForOther: _otherToStore(
-      lookingFor.contains(LookingFor.other),
-      lookingForOther,
-    ),
     // Required (> 0) by the Funding & goals step, whatever is ticked.
     StartupFields.fundingRequirement: fundingRequirement,
     StartupFields.isPublic: isPublic,
-    StartupFields.logoUrl: logoUrl,
     // Only stored when there is one (removing the logo deletes the field).
     if (logoData != null) StartupFields.logoData: logoData,
     StartupFields.problem: problem,
@@ -380,16 +316,12 @@ class Startup {
     StartupFields.customers: customers,
     StartupFields.advantage: advantage,
     StartupFields.marketSize: marketSize,
-    StartupFields.sam: sam,
-    StartupFields.som: som,
     StartupFields.team: [for (final m in team) m.toMap()],
-    StartupFields.growth: growth,
     StartupFields.capital: capital,
     StartupFields.revenueYear1: revenueYear1,
     StartupFields.revenueYear2: revenueYear2,
     StartupFields.revenueYear3: revenueYear3,
     StartupFields.valuation: valuation,
-    StartupFields.wantsLeadInvestor: wantsLeadInvestor,
     StartupFields.revenueThisYear: revenueThisYear,
     StartupFields.monthlyBurn: monthlyBurn,
     StartupFields.businessModelText: businessModelText,
@@ -399,15 +331,10 @@ class Startup {
     StartupFields.memberIds: memberIds,
     StartupFields.memberRoles: memberRoles,
     StartupFields.coFounderIds: coFounderIds,
-    // Written on every save (an older startup gets it then); the rules make
-    // sure it never changes.
-    if (originalFounderId.isNotEmpty)
-      StartupFields.foundedBy: originalFounderId,
     StartupFields.status: isClosed
         ? StartupFields.statusClosed
         : StartupFields.statusActive,
     if (closedAt != null) StartupFields.closedAt: closedAt,
-    if (ownerChangedAt != null) StartupFields.ownerChangedAt: ownerChangedAt,
     StartupFields.isArchived: isArchived,
   };
 
@@ -434,7 +361,6 @@ class Startup {
       id: id,
       founderId: founderId,
       name: name,
-      tagline: data[StartupFields.tagline] as String?,
       description: (data[StartupFields.description] as String?) ?? '',
       sector: sector,
       sectorOther: _otherFromMap(data[StartupFields.sectorOther]),
@@ -444,7 +370,6 @@ class Startup {
             if (v is String && v.trim().isNotEmpty) v.trim(),
       ],
       stage: stage,
-      stageOther: _otherFromMap(data[StartupFields.stageOther]),
       businessModel: model,
       businessModelOther: _otherFromMap(data[StartupFields.businessModelOther]),
       location: location,
@@ -454,11 +379,9 @@ class Startup {
         if (rawLookingFor is List)
           for (final raw in rawLookingFor) ?LookingFor.fromValue(raw),
       },
-      lookingForOther: _otherFromMap(data[StartupFields.lookingForOther]),
       fundingRequirement: (data[StartupFields.fundingRequirement] as num?)
           ?.toInt(),
       isPublic: data[StartupFields.isPublic] == true,
-      logoUrl: data[StartupFields.logoUrl] as String?,
       logoData: data[StartupFields.logoData] as String?,
       createdAt: data[StartupFields.createdAt] as DateTime?,
       updatedAt: data[StartupFields.updatedAt] as DateTime?,
@@ -467,20 +390,16 @@ class Startup {
       customers: (data[StartupFields.customers] as String?) ?? '',
       advantage: (data[StartupFields.advantage] as String?) ?? '',
       marketSize: (data[StartupFields.marketSize] as num?)?.toInt(),
-      sam: (data[StartupFields.sam] as num?)?.toInt(),
-      som: (data[StartupFields.som] as num?)?.toInt(),
       team: [
         if (data[StartupFields.team] is List)
           for (final raw in data[StartupFields.team] as List)
             ?TeamMember.fromMap(raw),
       ],
-      growth: (data[StartupFields.growth] as String?) ?? '',
       capital: (data[StartupFields.capital] as num?)?.toInt(),
       revenueYear1: (data[StartupFields.revenueYear1] as num?)?.toInt(),
       revenueYear2: (data[StartupFields.revenueYear2] as num?)?.toInt(),
       revenueYear3: (data[StartupFields.revenueYear3] as num?)?.toInt(),
       valuation: (data[StartupFields.valuation] as num?)?.toInt(),
-      wantsLeadInvestor: data[StartupFields.wantsLeadInvestor] as bool?,
       revenueThisYear: (data[StartupFields.revenueThisYear] as num?)?.toInt(),
       monthlyBurn: (data[StartupFields.monthlyBurn] as num?)?.toInt(),
       businessModelText:
@@ -489,22 +408,19 @@ class Startup {
       partnerTypes: _strings(data[StartupFields.partnerTypes]),
       supportTypes: _strings(data[StartupFields.supportTypes]),
       memberRoles: _roles(data[StartupFields.memberRoles]),
-      foundedBy: _otherFromMap(data[StartupFields.foundedBy]),
       isClosed: data[StartupFields.status] == StartupFields.statusClosed,
       closedAt: data[StartupFields.closedAt] as DateTime?,
-      ownerChangedAt: data[StartupFields.ownerChangedAt] as DateTime?,
       isArchived: data[StartupFields.isArchived] == true,
     );
   }
 
-  /// A copy with the given fields replaced. [clearLogo] sets [logoUrl] to
-  /// null (copyWith can't express that otherwise). [clearFunding] empties the
-  /// funding answers (amount, lead investor, already raised): a closed round.
+  /// A copy with the given fields replaced. [clearLogo] removes the logo
+  /// (copyWith can't express that otherwise). [clearFunding] empties the
+  /// funding answers (amount, already raised): a closed round.
   Startup copyWith({
     String? id,
     String? founderId,
     String? name,
-    String? tagline,
     String? description,
     Sector? sector,
     StartupStage? stage,
@@ -514,31 +430,24 @@ class Startup {
     String? websiteUrl,
     Set<LookingFor>? lookingFor,
     int? fundingRequirement,
-    String? logoUrl,
     String? logoData,
     bool clearLogo = false,
     bool clearFunding = false,
     bool? isPublic,
     String? sectorOther,
     List<String>? otherSectors,
-    String? stageOther,
     String? businessModelOther,
-    String? lookingForOther,
     String? problem,
     String? solution,
     String? customers,
     String? advantage,
     int? marketSize,
-    int? sam,
-    int? som,
     List<TeamMember>? team,
-    String? growth,
     int? capital,
     int? revenueYear1,
     int? revenueYear2,
     int? revenueYear3,
     int? valuation,
-    bool? wantsLeadInvestor,
     int? revenueThisYear,
     int? monthlyBurn,
     String? businessModelText,
@@ -546,33 +455,27 @@ class Startup {
     List<String>? partnerTypes,
     List<String>? supportTypes,
     Map<String, String>? memberRoles,
-    String? foundedBy,
     bool? isClosed,
     DateTime? closedAt,
-    DateTime? ownerChangedAt,
   }) => Startup(
     id: id ?? this.id,
     founderId: founderId ?? this.founderId,
     name: name ?? this.name,
-    tagline: tagline ?? this.tagline,
     description: description ?? this.description,
     sector: sector ?? this.sector,
     sectorOther: sectorOther ?? this.sectorOther,
     otherSectors: otherSectors ?? this.otherSectors,
     stage: stage ?? this.stage,
-    stageOther: stageOther ?? this.stageOther,
     businessModel: businessModel ?? this.businessModel,
     businessModelOther: businessModelOther ?? this.businessModelOther,
     location: location ?? this.location,
     foundedYear: foundedYear ?? this.foundedYear,
     websiteUrl: websiteUrl ?? this.websiteUrl,
     lookingFor: lookingFor ?? this.lookingFor,
-    lookingForOther: lookingForOther ?? this.lookingForOther,
     fundingRequirement: clearFunding
         ? null
         : (fundingRequirement ?? this.fundingRequirement),
     isPublic: isPublic ?? this.isPublic,
-    logoUrl: clearLogo ? null : (logoUrl ?? this.logoUrl),
     logoData: clearLogo ? null : (logoData ?? this.logoData),
     createdAt: createdAt,
     updatedAt: updatedAt,
@@ -581,18 +484,12 @@ class Startup {
     customers: customers ?? this.customers,
     advantage: advantage ?? this.advantage,
     marketSize: marketSize ?? this.marketSize,
-    sam: sam ?? this.sam,
-    som: som ?? this.som,
     team: team ?? this.team,
-    growth: growth ?? this.growth,
     capital: capital ?? this.capital,
     revenueYear1: revenueYear1 ?? this.revenueYear1,
     revenueYear2: revenueYear2 ?? this.revenueYear2,
     revenueYear3: revenueYear3 ?? this.revenueYear3,
     valuation: valuation ?? this.valuation,
-    wantsLeadInvestor: clearFunding
-        ? null
-        : (wantsLeadInvestor ?? this.wantsLeadInvestor),
     revenueThisYear: revenueThisYear ?? this.revenueThisYear,
     monthlyBurn: monthlyBurn ?? this.monthlyBurn,
     businessModelText: businessModelText ?? this.businessModelText,
@@ -600,10 +497,8 @@ class Startup {
     partnerTypes: partnerTypes ?? this.partnerTypes,
     supportTypes: supportTypes ?? this.supportTypes,
     memberRoles: memberRoles ?? this.memberRoles,
-    foundedBy: foundedBy ?? this.foundedBy,
     isClosed: isClosed ?? this.isClosed,
     closedAt: closedAt ?? this.closedAt,
-    ownerChangedAt: ownerChangedAt ?? this.ownerChangedAt,
     isArchived: isArchived,
   );
 

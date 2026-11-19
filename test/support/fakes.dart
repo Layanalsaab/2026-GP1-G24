@@ -558,7 +558,6 @@ class FakeStartupRepository implements StartupRepository {
     if (stay != null) roles[me] = stay;
     final moved = startup.copyWith(
       founderId: newOwnerId,
-      foundedBy: startup.originalFounderId,
       memberRoles: roles,
       team: [
         for (final m in startup.team)
@@ -774,8 +773,7 @@ class FakeInvitationRepository implements InvitationRepository {
   }
 
   @override
-  Future<Invitation?> pendingOwnerInvite(String startupId) async => store
-      .values
+  Future<Invitation?> pendingOwnerInvite(String startupId) async => store.values
       .where((i) => i.startupId == startupId && i.isOwner && i.isPending)
       .firstOrNull;
 

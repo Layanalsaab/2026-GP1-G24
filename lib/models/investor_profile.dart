@@ -29,7 +29,6 @@ class InvestorProfile {
     this.startupsInvested,
     this.roundSize,
     this.commerceModels = const [],
-    this.photoUrl,
     this.ticketBand,
     this.roundMin,
     this.roundMax,
@@ -95,7 +94,6 @@ class InvestorProfile {
   final List<String> commerceModels;
 
   /// Profile photo (null: the default picture).
-  final String? photoUrl;
 
   /// "How much do you usually invest" band and the round size (SAR) the
   /// investor takes: the ticket and round-size checks of the matching.
@@ -171,7 +169,6 @@ class InvestorProfile {
           ? null
           : amountLabel(c?.roundMin, c?.roundMax),
       commerceModels: shortModels.isEmpty ? const [] : shortModels.split(', '),
-      photoUrl: _text(d['photoUrl']),
       ticketBand: c?.ticketBand,
       roundMin: c?.roundMin,
       roundMax: c?.roundMax,
@@ -224,7 +221,6 @@ class InvestorProfile {
     startupsInvested: startupsInvested,
     roundSize: roundSize,
     commerceModels: commerceModels,
-    photoUrl: photoUrl,
     ticketBand: ticketBand,
     roundMin: roundMin,
     roundMax: roundMax,

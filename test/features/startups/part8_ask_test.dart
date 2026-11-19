@@ -107,12 +107,5 @@ void main() {
       expect(vm.partnerSel, {'Other'});
       expect(vm.partnerOther.text, 'Marketing, Corporate');
     });
-
-    test('an old lead-investor answer stays as it was saved', () {
-      final old = PrototypeSeed.rafeeq.copyWith(wantsLeadInvestor: true);
-      final vm = StartupStepsViewModel(initial: old);
-      addTearDown(vm.dispose);
-      expect(vm.errorOf(StartupField.funding), isNull);
-    });
   });
 }

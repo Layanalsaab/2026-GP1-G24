@@ -19,17 +19,14 @@ void main() {
     // Noura created it, then left and named Layan the next founder.
     final moved = base.copyWith(
       founderId: 'layan',
-      foundedBy: 'noura',
       memberRoles: const {'reem': 'member'},
     );
 
     test('whoever holds it is its founder', () {
-      expect(base.originalFounderId, 'noura');
       expect(StartupRole.titleOf(base, 'noura'), StartupRole.founder);
     });
 
     test('after leaving, the previous founder is no longer on it', () {
-      expect(moved.originalFounderId, 'noura');
       expect(StartupRole.of(moved, 'noura'), isNull);
       expect(StartupRole.titleOf(moved, 'noura'), isNull);
     });
@@ -73,25 +70,18 @@ void main() {
 
   test('the ownership fields go to Firestore and back', () {
     final closedAt = DateTime(2026, 11, 8);
-    final changed = DateTime(2026, 11, 1);
     final s = base.copyWith(
-      foundedBy: 'noura',
       isClosed: true,
       closedAt: closedAt,
-      ownerChangedAt: changed,
       memberRoles: const {'reem': 'member', 'huda': 'coFounder'},
     );
     final map = s.toMap();
     expect(map[StartupFields.status], StartupFields.statusClosed);
     expect(map[StartupFields.coFounderIds], ['huda']);
-    expect(map[StartupFields.foundedBy], 'noura');
     expect(map[StartupFields.closedAt], closedAt);
-    expect(map[StartupFields.ownerChangedAt], changed);
     final back = Startup.fromMap('x', map)!;
     expect(back.isClosed, isTrue);
     expect(back.closedAt, closedAt);
-    expect(back.ownerChangedAt, changed);
-    expect(back.originalFounderId, 'noura');
   });
 
   test('an older document (no status) is active, with no dates', () {
@@ -99,7 +89,6 @@ void main() {
     final back = Startup.fromMap('x', map)!;
     expect(back.isClosed, isFalse);
     expect(back.closedAt, isNull);
-    expect(back.ownerChangedAt, isNull);
   });
 
   test('the profile and menu title: the highest one among my startups', () {
@@ -112,7 +101,7 @@ void main() {
     expect(title(owned: [base], joined: [StartupRole.member]), 'Founder');
     expect(
       title(
-        owned: [base.copyWith(id: 'handed', foundedBy: 'layan')],
+        owned: [base.copyWith(id: 'handed')],
         joined: [StartupRole.coFounder],
       ),
       'Founder',

@@ -260,10 +260,8 @@ class StartupRepository {
     }
     final moved = stored.copyWith(
       founderId: newOwnerId,
-      foundedBy: stored.originalFounderId,
       memberRoles: roles,
       team: team,
-      ownerChangedAt: DateTime.now(),
     );
     final newName = stored.nameOf(newOwnerId);
     final notices = NoticeRepository.instance;
@@ -292,12 +290,10 @@ class StartupRepository {
     await _firestore.updateDocument(_collection, startup.id, {
       for (final key in const [
         StartupFields.founderId,
-        StartupFields.foundedBy,
         StartupFields.memberIds,
         StartupFields.memberRoles,
         StartupFields.coFounderIds,
         StartupFields.team,
-        StartupFields.ownerChangedAt,
       ])
         key: data[key],
       StartupFields.updatedAt: _firestore.serverTimestamp(),

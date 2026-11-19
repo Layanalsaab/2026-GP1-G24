@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:startsa/data_access/mock_data/prototype_seed.dart';
-import 'package:startsa/models/home_item.dart';
 import 'package:startsa/models/team_member.dart';
 import 'package:startsa/shared_ui/widgets/cards/avatars.dart';
 import 'package:startsa/shared_ui/widgets/headers/tabbed_header.dart';
@@ -72,15 +70,6 @@ void main() {
   });
 
   group('pictures reach the cards', () {
-    test('a startup card item carries the logo', () {
-      final s = PrototypeSeed.rafeeq.copyWith(logoUrl: 'https://x.test/l.png');
-      expect(HomeItem.fromStartup(s).imageUrl, 'https://x.test/l.png');
-      expect(
-        HomeItem.fromStartup(s).withJoined('Joined today').imageUrl,
-        'https://x.test/l.png',
-      );
-    });
-
     test('a team member keeps the photo through copyWith, not in the map', () {
       const m = TeamMember(name: 'Sara', role: 'COO', contribution: 'x');
       final withPhoto = m.copyWith(photoData: 'QUJD');

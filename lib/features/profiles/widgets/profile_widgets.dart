@@ -74,7 +74,7 @@ class ProfileCtaBar extends StatelessWidget {
 }
 
 /// The head block of the own and investor profiles (prototype `.ptop`):
-/// avatar 96 (4 px `#F6F4EF` ring, [photoUrl] when set), [name] 24/30, [role]
+/// avatar 96 (4 px `#F6F4EF` ring), [name] 24/30, [role]
 /// line, meta row ([city] + dot + [metaTail]), the caps label [tagsLabel]
 /// with [tags] chips and the optional LinkedIn pill. Sits directly under a
 /// `ProfileBanner` (which reports its 48 px overlap).
@@ -88,7 +88,6 @@ class ProfileHead extends StatelessWidget {
     required this.tagsLabel,
     required this.tags,
     this.city,
-    this.photoUrl,
     this.photoData,
     this.linkedin,
     this.onLinkedin,
@@ -101,7 +100,6 @@ class ProfileHead extends StatelessWidget {
   final String metaTail;
   final String tagsLabel;
   final List<String> tags;
-  final String? photoUrl;
 
   /// The saved copy of the photo (base64): shown first when there is one.
   final String? photoData;
@@ -123,7 +121,6 @@ class ProfileHead extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bytes = PictureData.bytes(photoData);
-    final hasPhoto = bytes != null || (photoUrl ?? '').isNotEmpty;
     final hasCity = (city ?? '').trim().isNotEmpty;
     return Padding(
       padding: const EdgeInsets.fromLTRB(18, 0, 18, 18),
@@ -157,17 +154,6 @@ class ProfileHead extends StatelessWidget {
                       fit: BoxFit.cover,
                       gaplessPlayback: true,
                       errorBuilder: (_, _, _) => _initialsText(),
-                    )
-                  : hasPhoto
-                  ? Image.network(
-                      photoUrl!,
-                      width: 96,
-                      height: 96,
-                      fit: BoxFit.cover,
-                      gaplessPlayback: true,
-                      errorBuilder: (_, _, _) => _initialsText(),
-                      loadingBuilder: (_, child, progress) =>
-                          progress == null ? child : _initialsText(),
                     )
                   : _initialsText(),
             ),

@@ -46,7 +46,6 @@ class PublicProfile {
     this.bio = '',
     this.sectors = const [],
     this.linkedin = '',
-    this.photoUrl,
     this.photoData,
     this.email,
     this.phone,
@@ -63,7 +62,6 @@ class PublicProfile {
   final String bio;
   final List<String> sectors;
   final String linkedin;
-  final String? photoUrl;
 
   /// The photo as base64 text (null: the initials show).
   final String? photoData;
@@ -117,7 +115,6 @@ class PublicProfile {
             if (s is String && s.trim().isNotEmpty) s,
       ],
       linkedin: ((data['linkedinUrl'] ?? data['linkedin']) as String?) ?? '',
-      photoUrl: data['photoUrl'] as String?,
       photoData: (data['photoData'] as String?)?.trim().isEmpty ?? true
           ? null
           : data['photoData'] as String?,

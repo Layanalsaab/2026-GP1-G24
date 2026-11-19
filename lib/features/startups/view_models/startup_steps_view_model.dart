@@ -155,8 +155,6 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
     'customers': customers.text,
     'advantage': advantage.text,
     'marketSize': marketSize.text,
-    'sam': sam.text,
-    'som': som.text,
     'team': [for (final m in team) m.toMap()],
     'revenueNow': revenueNow.text,
     'capital': capital.text,
@@ -224,8 +222,6 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
     customers.text = t('customers');
     advantage.text = t('advantage');
     marketSize.text = t('marketSize');
-    sam.text = t('sam');
-    som.text = t('som');
     team = [
       if (d['team'] is List)
         for (final raw in d['team'] as List) ?TeamMember.fromMap(raw),
@@ -410,8 +406,6 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
 
   // ---- Step 3
   final marketSize = TextEditingController();
-  final sam = TextEditingController();
-  final som = TextEditingController();
   List<TeamMember> team = [];
 
   /// The member editor: null index with [editorOpen] = adding.
@@ -468,8 +462,6 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
     customers,
     advantage,
     marketSize,
-    sam,
-    som,
     memberName,
     memberRole,
     memberEmail,
@@ -550,13 +542,10 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
       if (picked.contains(o)) o,
   ];
 
-  String? get existingLogoUrl => removeLogo ? null : initial?.logoUrl;
-
   /// The saved logo (base64) of the startup being edited, until removed.
   String? get existingLogoData => removeLogo ? null : initial?.logoData;
 
-  bool get hasLogo =>
-      newLogo != null || existingLogoUrl != null || existingLogoData != null;
+  bool get hasLogo => newLogo != null || existingLogoData != null;
 
   // ------------------------------------------------------------ validation
 
@@ -1487,7 +1476,6 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
           ? StartupValidators.money(funding.text)
           : null,
       isPublic: isPublic,
-      logoUrl: initial?.logoUrl,
       logoData: initial?.logoData,
       createdAt: initial?.createdAt,
       updatedAt: initial?.updatedAt,
@@ -1496,10 +1484,7 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
       customers: customers.text.trim(),
       advantage: advantage.text.trim(),
       marketSize: StartupValidators.money(marketSize.text),
-      sam: StartupValidators.money(sam.text),
-      som: StartupValidators.money(som.text),
       team: team,
-      growth: initial?.growth ?? '',
       revenueThisYear: StartupValidators.money(revenueNow.text),
       monthlyBurn: StartupValidators.money(burn.text),
       businessModelText: modelText.text.trim(),
@@ -1523,13 +1508,9 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
       revenueYear2: StartupValidators.money(rev2.text),
       revenueYear3: StartupValidators.money(rev3.text),
       valuation: StartupValidators.money(valuation.text),
-      // The old lead-investor answer is no longer asked; what an existing
-      // startup already saved stays as it is.
-      wantsLeadInvestor: initial?.wantsLeadInvestor,
       // Editing a startup keeps its co-founders and team members.
       memberRoles: _roles(),
-      // Who created it and whether it is closed never change here.
-      foundedBy: initial?.originalFounderId,
+      // Whether it is closed never changes here.
       isClosed: initial?.isClosed ?? false,
     );
   }
@@ -1639,8 +1620,6 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
     customers.text = s.customers;
     advantage.text = s.advantage;
     marketSize.text = _money(s.marketSize);
-    sam.text = _money(s.sam);
-    som.text = _money(s.som);
     team = [...s.team];
     revenueNow.text = _money(s.revenueThisYear);
     capital.text = _money(s.capital);

@@ -147,10 +147,7 @@ class EditAccountViewModel extends ChangeNotifier with SafeNotifier {
   bool removePhoto = false;
 
   bool get hasPhoto =>
-      newPhoto != null ||
-      (!removePhoto &&
-          ((user.photoData ?? '').isNotEmpty ||
-              (user.photoUrl ?? '').isNotEmpty));
+      newPhoto != null || (!removePhoto && (user.photoData ?? '').isNotEmpty);
 
   /// True after the first Save attempt: errors then update as the user types.
   bool attempted = false;
@@ -319,8 +316,7 @@ class EditAccountViewModel extends ChangeNotifier with SafeNotifier {
           formError = AccountStrings.photoSaveFailed;
           return null;
         }
-      } else if (removePhoto &&
-          (photoData != null || (user.photoUrl ?? '').isNotEmpty)) {
+      } else if (removePhoto && photoData != null) {
         try {
           await _users.removeProfilePhoto(user.uid);
           photoData = null;

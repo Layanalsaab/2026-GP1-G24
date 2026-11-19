@@ -33,7 +33,7 @@ All paths are under `lib/shared_ui/widgets/`. Import with relative paths. Everyt
 
 ## cards/charts.dart
 - `RevenueBars({required List<double> values, required List<String> labels, required List<String> valueLabels})` : 3 bars, last gold.
-- `MarketCircles({String? tam, String? sam, String? som})` : nested circles + legend.
+
 - `AreaChart({required List<double> values, List<String> axisLabels = const [], double height = 80})` : animates between data sets (400 ms).
 - `OwnershipBar({required List<OwnershipSegment> segments})`, `OwnershipSegment(double percent, Color color)` : keep the segment count constant (use 0 for hidden).
 

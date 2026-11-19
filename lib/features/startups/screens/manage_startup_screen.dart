@@ -650,7 +650,6 @@ class _ManageStartupScreenState extends State<ManageStartupScreen> {
                 eyebrow: RoleTag.labelFor(s, _uid, fallback: _role),
                 avatar: HeaderAvatarTile(
                   initials: s.initials,
-                  imageUrl: s.logoUrl,
                   imageData: s.logoData,
                 ),
                 subline: Row(

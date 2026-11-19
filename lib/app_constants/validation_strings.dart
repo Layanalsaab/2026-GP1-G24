@@ -107,7 +107,6 @@ class ValidationStrings {
   static const marketSize = 'Please enter your target market size.';
   static const marketSizeZero = 'Target market size must be more than 0.';
   static const different = 'Please explain what makes your startup unique.';
-  static const growth = 'Please describe your expected growth.';
   static const capital = 'Please enter your current capital.';
   static const revenue =
       'Please enter the expected revenue for all three years.';

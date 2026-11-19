@@ -132,7 +132,6 @@ class _InvestorProfileScreenState extends State<InvestorProfileScreen> {
                           // second "Invests in" line under the name.
                           tagsLabel: '',
                           tags: const [],
-                          photoUrl: inv.photoUrl,
                           linkedin: _vm.linkedin,
                           onLinkedin: () => openExternalLink(_vm.linkedin),
                         ),

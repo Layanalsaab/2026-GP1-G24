@@ -31,7 +31,6 @@ void main() {
       final r = PrototypeSeed.rafeeq;
       expect(r.team.length, 2);
       expect(r.marketSize, 2400000000);
-      expect(r.wantsLeadInvestor, isTrue);
     });
   });
 

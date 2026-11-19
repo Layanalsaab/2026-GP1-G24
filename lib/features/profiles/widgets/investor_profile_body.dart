@@ -100,7 +100,7 @@ class InvestorProfileData {
       startupsInvested: deals,
       roundSize: round,
       sectors: _withOther(c?.sectors ?? const [], c?.sectorsOther),
-      stages: _withOther(c?.stages ?? const [], c?.stagesOther),
+      stages: c?.stages ?? const [],
       commerceModels: short.isEmpty
           ? const []
           : short.split(', ').where((s) => s.isNotEmpty).toList(),
@@ -265,7 +265,6 @@ class InvestorProfileBody extends StatelessWidget {
                     leading: HueAvatar(
                       name: associations[i].name,
                       size: 44,
-                      imageUrl: associations[i].logoUrl,
                       imageData: associations[i].logoData,
                     ),
                     title: associations[i].name,

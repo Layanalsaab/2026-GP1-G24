@@ -154,13 +154,11 @@ void main() {
       yearsInvesting: '4–6 years',
       dealsCount: '4–6',
       ticketBand: 'Other',
-      ticketOther: 'Up to a million',
       roundMin: 100000,
       roundMax: 900000,
       sectors: ['Fintech', 'Other'],
       sectorsOther: 'Beekeeping',
-      stages: ['Pre-seed', 'Other'],
-      stagesOther: 'Bridge',
+      stages: ['Pre-seed', 'Seed'],
       commerceModels: [
         'Business-to-Business (B2B)',
         'Business-to-Consumer (B2C)',
@@ -173,7 +171,6 @@ void main() {
     test('flat fields round-trip', () {
       final back = InvestorCriteria.fromFields(full.toFields())!;
       expect(back.toFields(), full.toFields());
-      expect(back.ticketOther, 'Up to a million');
       expect(back.sectorsOther, 'Beekeeping');
       expect(back.commerceModels.length, 3);
     });
@@ -192,24 +189,18 @@ void main() {
       );
       final f = c.toFields();
       expect(f[UserFields.sectorsOther], isNull);
-      expect(f[UserFields.preferredStagesOther], isNull);
       expect(f[UserFields.preferredCommerceModelsOther], isNull);
-      expect(f[UserFields.ticketSizeOther], isNull);
     });
 
     test('labels on the profile', () {
-      expect(full.ticketLabel, 'Up to a million');
-      expect(full.stageRange, 'Pre-seed – Bridge');
+      expect(full.ticketLabel, 'Other');
+      expect(full.stageRange, 'Pre-seed – Seed');
       expect(full.commerceModelsShort, 'B2B, B2C, Marketplace');
       expect(const InvestorCriteria().ticketLabel, isNull);
       expect(const InvestorCriteria().stageRange, '');
       expect(
-        const InvestorCriteria(
-          ticketBand: 'Other',
-          commerceModels: ['Other'],
-          stages: ['Other'],
-        ).ticketLabel,
-        'Other',
+        const InvestorCriteria(ticketBand: 'SAR 100K – 500K').ticketLabel,
+        'SAR 100K – 500K',
       );
       expect(
         const InvestorCriteria(commerceModels: ['Other']).commerceModelsShort,
@@ -456,7 +447,6 @@ void main() {
         emailLower: 'a@b.co',
         role: 'member',
         invitedBy: 'f1',
-        lastSentAt: DateTime(2026, 1, 1, 12),
       );
       expect(inv.canResend, isTrue);
       expect(

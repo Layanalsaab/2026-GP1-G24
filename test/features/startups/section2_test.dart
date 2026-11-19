@@ -100,13 +100,11 @@ void main() {
     final s = PrototypeSeed.rafeeq.copyWith(
       fundingRequirement: 500000,
       raisedInRound: 200000,
-      wantsLeadInvestor: true,
       partnerTypes: ['Technology', 'Distribution'],
       supportTypes: ['Mentorship'],
     );
 
     test('funding line and partner / support rows', () {
-      // No lead-investor part any more, even when an old answer is saved.
       expect(
         StartupAsk.fundingDetail(s),
         'Raising SAR 500,000 · SAR 200,000 raised so far',
@@ -115,10 +113,6 @@ void main() {
       expect(StartupAsk.support(s), ['Mentorship']);
       expect(StartupAsk.partnership(s), isTrue);
       expect(StartupAsk.supportSelected(s), isTrue);
-      expect(
-        StartupAsk.fundingDetail(s.copyWith(wantsLeadInvestor: false)),
-        isNot(contains('lead investor')),
-      );
     });
   });
 }

@@ -13,7 +13,6 @@ void main() {
       ValidationStrings.startupDescription,
     );
     expect(StartupValidators.problem(''), ValidationStrings.problem);
-    expect(StartupValidators.growth(''), ValidationStrings.growth);
     expect(StartupValidators.name('Rafeeq Health'), isNull);
   });
 

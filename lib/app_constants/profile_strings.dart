@@ -21,7 +21,6 @@ class ProfileStrings {
   static const different = 'What makes us unique';
   static const marketSize = 'Target market size';
   static const yearlyRevenue = 'Total yearly revenue in the target market';
-  static const expectedGrowth = 'Expected growth';
   static const noBusinessDetails =
       'This startup hasn’t added business details yet.';
   static const team = 'Team';

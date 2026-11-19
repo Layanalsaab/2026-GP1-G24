@@ -74,9 +74,7 @@ void main() {
     StartupLocation? location,
     Set<LookingFor>? looking,
     String? sectorOther,
-    String? stageOther,
     String? modelOther,
-    String? lookingOther,
   }) => Startup(
     id: 'x',
     founderId: 'x',
@@ -85,12 +83,10 @@ void main() {
     sector: sector,
     sectorOther: sectorOther,
     stage: stage,
-    stageOther: stageOther,
     businessModel: model,
     businessModelOther: modelOther,
     location: location ?? StartupLocation.riyadh,
     lookingFor: looking ?? {LookingFor.talent},
-    lookingForOther: lookingOther,
     team: const [
       TeamMember(
         name: 'Founder One',
@@ -138,7 +134,8 @@ void main() {
     await founderAccount(uid: 'f2', email: 'f2@gmail.com', max: true);
 
     for (final private in [false, true]) {
-      db.scenario = 'founder signup (${private ? 'private' : 'public'} contact)';
+      db.scenario =
+          'founder signup (${private ? 'private' : 'public'} contact)';
       final uid = private ? 'f3' : 'f4';
       await actor(uid, '$uid@gmail.com');
       await users.createProfile(
@@ -202,13 +199,11 @@ void main() {
         yearsInvesting: InvestorCriteria.yearsOptions.last,
         dealsCount: InvestorCriteria.dealsOptions.last,
         ticketBand: 'Other',
-        ticketOther: _text(40),
         roundMin: 9999999999999,
         roundMax: 9999999999999,
         sectors: [for (final s in Sector.values) s.label],
         sectorsOther: _text(40),
         stages: [...InvestorCriteria.stageOptions],
-        stagesOther: _text(40),
         commerceModels: [for (final m in BusinessModel.values) m.label],
         commerceModelsOther: _text(40),
         lookFor: _text(InvestorCriteria.lookForMax),
@@ -233,34 +228,19 @@ void main() {
       );
     }
     for (final v in StartupStage.values) {
-      await createAndEdit(
-        'stage ${v.value}',
-        base(
-          stage: v,
-          stageOther: v == StartupStage.other ? _text(40) : null,
-        ),
-      );
+      await createAndEdit('stage ${v.value}', base(stage: v));
     }
     for (final v in BusinessModel.values) {
       await createAndEdit(
         'model ${v.value}',
-        base(
-          model: v,
-          modelOther: v == BusinessModel.other ? _text(40) : null,
-        ),
+        base(model: v, modelOther: v == BusinessModel.other ? _text(40) : null),
       );
     }
     for (final v in StartupLocation.values) {
       await createAndEdit('city ${v.value}', base(location: v));
     }
     for (final v in LookingFor.values) {
-      await createAndEdit(
-        'looking for ${v.value}',
-        base(
-          looking: {v},
-          lookingOther: v == LookingFor.other ? _text(40) : null,
-        ),
-      );
+      await createAndEdit('looking for ${v.value}', base(looking: {v}));
     }
 
     // ----------------------------------------------------- biggest startup
@@ -274,14 +254,12 @@ void main() {
       sectorOther: _text(40),
       otherSectors: [for (var i = 0; i < 24; i++) _text(40, 'b')],
       stage: StartupStage.other,
-      stageOther: _text(40),
       businessModel: BusinessModel.other,
       businessModelOther: _text(40),
       location: StartupLocation.values.last,
       foundedYear: year,
       websiteUrl: _site(Startup.websiteMax),
       lookingFor: LookingFor.values.toSet(),
-      lookingForOther: _text(40),
       fundingRequirement: 9999999999999,
       isPublic: true,
       problem: _text(Startup.problemMax),
@@ -289,8 +267,6 @@ void main() {
       customers: _text(Startup.customersMax),
       advantage: _text(Startup.longTextMax),
       marketSize: 9999999999999,
-      sam: 9999999999999,
-      som: 9999999999999,
       team: [
         const TeamMember(
           name: 'Founder One',
@@ -308,13 +284,11 @@ void main() {
             invited: true,
           ),
       ],
-      growth: _text(Startup.longTextMax),
       capital: 9999999999999,
       revenueYear1: 9999999999999,
       revenueYear2: 9999999999999,
       revenueYear3: 9999999999999,
       valuation: 9999999999999,
-      wantsLeadInvestor: true,
       revenueThisYear: 9999999999999,
       monthlyBurn: 9999999999999,
       businessModelText: _text(250),
@@ -371,8 +345,6 @@ void main() {
         revenueYear2: 0,
         revenueYear3: 0,
         marketSize: 0,
-        sam: 0,
-        som: 0,
         foundedYear: 1900,
       ),
     );

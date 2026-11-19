@@ -23,7 +23,6 @@ service cloud.firestore {
                                                  'bio', 'sectorsOfInterest',
                                                  'sectorsOther', 'linkedinUrl',
                                                  'offer', 'lookingFor',
-                                                 'photoUrl',
                                                  'emailPublic', 'phonePublic'])
         && validProfile(request.resource.data);
 
@@ -35,12 +34,12 @@ service cloud.firestore {
                        'sectorsOfInterest', 'sectorsOther',
                        'linkedinUrl', 'offer',
                        'investorCriteria',
-                       'photoUrl', 'emailPublic', 'phonePublic',
+                       'emailPublic', 'phonePublic',
                        'preferredSectors', 'preferredStages',
-                       'ticketSize', 'ticketSizeOther',
+                       'ticketSize',
                        'investmentsCount',
                        'roundSizeMin', 'roundSizeMax',
-                       'preferredStagesOther', 'preferredCommerceModels',
+                       'preferredCommerceModels',
                        'preferredCommerceModelsOther', 'lookingFor',
                        'yearsInvesting'])
         && validProfile(request.resource.data);
@@ -109,12 +108,9 @@ service cloud.firestore {
           && (!('linkedinUrl' in d) || d.linkedinUrl is string)
           && optionalString(d, 'offer', 1000)
           && optionalString(d, 'lookingFor', 1000)
-          && optionalString(d, 'photoUrl', 2048)
           && optionalString(d, 'investmentsCount', 10)
           && optionalString(d, 'yearsInvesting', 20)
           && optionalString(d, 'ticketSize', 40)
-          && optionalString(d, 'ticketSizeOther', 40)
-          && optionalString(d, 'preferredStagesOther', 40)
           && optionalString(d, 'preferredCommerceModelsOther', 40)
           && optionalMoney(d, 'roundSizeMin')
           && optionalMoney(d, 'roundSizeMax')
@@ -135,7 +131,7 @@ service cloud.firestore {
                                                  'sectors', 'stages',
                                                  'ticketRange', 'about', 'bio',
                                                  'valueOffered', 'hopeToGain',
-                                                 'linkedin', 'photoUrl',
+                                                 'linkedin',
                                                  'createdAt', 'role',
                                                  'sectorsOfInterest',
                                                  'sectorsOther', 'linkedinUrl',
@@ -182,9 +178,9 @@ service cloud.firestore {
              'bio', 'preferredSectors', 'preferredStages', 'ticketSize',
              'investmentsCount',
              'roundSizeMin', 'roundSizeMax', 'preferredCommerceModels',
-             'linkedinUrl', 'offer', 'lookingFor', 'title', 'photoUrl',
+             'linkedinUrl', 'offer', 'lookingFor', 'title',
              'createdAt', 'yearsInvesting', 'sectorsOther',
-             'preferredStagesOther', 'preferredCommerceModelsOther',
+             'preferredCommerceModelsOther',
              'emailPublic', 'phonePublic', 'email', 'phone', 'isArchived'])
         // Only the dataset investors are archived (written by the admin
         // script), never an investor who signed up in the app.
@@ -196,7 +192,6 @@ service cloud.firestore {
             || request.resource.data.get('phonePublic', false) == true)
         && optionalString(request.resource.data, 'yearsInvesting', 20)
         && optionalString(request.resource.data, 'sectorsOther', 40)
-        && optionalString(request.resource.data, 'preferredStagesOther', 40)
         && optionalString(request.resource.data, 'preferredCommerceModelsOther', 40)
         && optionalString(request.resource.data, 'email', 100)
         && optionalString(request.resource.data, 'phone', 20)
@@ -216,8 +211,8 @@ service cloud.firestore {
     //   (co-founders and team members, listed in `memberIds`).
     // - `founderId` is the FOUNDER: the only one who edits the startup,
     //   invites, changes its visibility, closes, deletes or hands it over
-    //   (to someone who joined, or by an invitation). `foundedBy`, who
-    //   created it, is kept as history and never changes.
+    //   (to someone who joined, or by an invitation). Whoever holds it is
+    //   its founder.
     // - A co-founder has the same rights as a team member (a title only).
     // - A closed startup (`status` == 'closed') is read only: its founder can
     //   only change its visibility, hand it over or delete it.
@@ -239,12 +234,9 @@ service cloud.firestore {
 
       allow create: if request.auth != null
                     && request.resource.data.founderId == request.auth.uid
-                    // New: created by its owner, active, and no "Founder
-                    // (former)" yet.
-                    && request.resource.data.get('foundedBy', request.auth.uid) == request.auth.uid
+                    // New: created by its owner, and active.
                     && request.resource.data.get('status', 'active') == 'active'
                     && request.resource.data.get('coFounderIds', []) is list
-                    && !('formerFounderId' in request.resource.data)
                     && request.resource.data.createdAt == request.time
                     && request.resource.data.updatedAt == request.time
                     && validStartup(request.resource.data);
@@ -260,7 +252,6 @@ service cloud.firestore {
                     && request.resource.data.founderId == resource.data.founderId
                     && request.resource.data.createdAt == resource.data.createdAt
                     && request.resource.data.updatedAt == request.time
-                    && keepsFoundedBy()
                     && ownerStatusOk()
                     && request.resource.data.get('coFounderIds', []) is list
                     && validStartup(request.resource.data);
@@ -275,9 +266,9 @@ service cloud.firestore {
                     && resource.data.founderId == request.auth.uid
                     && request.resource.data.founderId != request.auth.uid
                     && request.resource.data.diff(resource.data).affectedKeys()
-                         .hasOnly(['founderId', 'foundedBy', 'memberIds',
+                         .hasOnly(['founderId', 'memberIds',
                                    'memberRoles', 'coFounderIds', 'teamMembers',
-                                   'ownerChangedAt', 'updatedAt'])
+                                   'updatedAt'])
                     && resource.data.get('memberRoles', {})
                          .get(request.resource.data.founderId, '') in ['coFounder', 'member']
                     && !(request.resource.data.founderId
@@ -288,7 +279,6 @@ service cloud.firestore {
                         ? request.resource.data.get('memberRoles', {})
                             .get(request.auth.uid, '') in ['coFounder', 'member']
                         : !(request.auth.uid in request.resource.data.get('memberRoles', {})))
-                    && request.resource.data.get('foundedBy', '') == foundedByOf(resource.data)
                     && request.resource.data.updatedAt == request.time
                     && request.resource.data.get('teamMembers', []).size() <= 20;
 
@@ -305,11 +295,10 @@ service cloud.firestore {
                     && invitationFor(startupId).role == 'owner'
                     && invitationFor(startupId).invitedBy == resource.data.founderId
                     && request.resource.data.diff(resource.data).affectedKeys()
-                         .hasOnly(['founderId', 'foundedBy', 'teamMembers',
+                         .hasOnly(['founderId', 'teamMembers',
                                    'memberIds', 'memberRoles', 'coFounderIds',
-                                   'ownerChangedAt', 'updatedAt'])
+                                   'updatedAt'])
                     && previousFounderStays(startupId)
-                    && request.resource.data.get('foundedBy', '') == foundedByOf(resource.data)
                     && request.resource.data.get('teamMembers', []).size() <= 20;
 
       // Accepting an invitation: a person with a VERIFIED email that has a
@@ -403,21 +392,10 @@ service cloud.firestore {
     }
 
     // ----------------------------------------------- startup ownership
-    // Who created the startup (older startups: the owner).
-    function foundedByOf(d) {
-      return d.get('foundedBy', d.founderId);
-    }
-
     function statusOf(d) {
       return d.get('status', 'active');
     }
 
-    // `foundedBy` never changes (an older startup may get it written once,
-    // with the right value).
-    function keepsFoundedBy() {
-      return request.resource.data.get('foundedBy', foundedByOf(resource.data))
-          == foundedByOf(resource.data);
-    }
 
     // The owner's status changes: an active startup may be closed (its team
     // keeps it); a closed one stays closed, and only whether it shows in the
@@ -464,7 +442,7 @@ service cloud.firestore {
       return d.keys().hasOnly(['startupId', 'number', 'status', 'stage',
                                'stageOther', 'amount', 'raised', 'startDate',
                                'endDate', 'investors', 'investorIds',
-                               'investorCount', 'wantsLeadInvestor',
+                               'investorCount',
                                'amountEstimated', 'raisedEstimated',
                                'isArchived', 'createdAt', 'updatedAt'])
           && d.startupId == id
@@ -476,8 +454,6 @@ service cloud.firestore {
           && d.startDate is timestamp
           && d.investors is list && d.investors.size() <= 50
           && d.updatedAt == request.time
-          && (!('wantsLeadInvestor' in d) || d.wantsLeadInvestor == null
-              || d.wantsLeadInvestor is bool)
           && ((d.status == 'active'
                  && d.get('endDate', null) == null
                  // The open round IS the startup's Funding ask.
@@ -493,33 +469,29 @@ service cloud.firestore {
     // The four enum fields use ONE regular-expression check each (a long
     // `in [...]` list costs one expression per value, and a request may
     // evaluate at most 1000 expressions: over it, Firestore refuses the
-    // write). The ownership fields (coFounderIds, foundedBy, status,
-    // closedAt, ownerChangedAt) are checked by the create / update rules, not
+    // write). The ownership fields (coFounderIds, status, closedAt) are
+    // checked by the create / update rules, not
     // here, to stay under that limit.
     function validStartup(d) {
       // The required fields (founderId, name, description, sector, stage,
       // businessModel, location, lookingFor, isPublic) are read below, and
       // reading a missing one refuses the write, so no separate hasAll() is
       // needed (it cost a dozen of the 1000 expressions a request may use).
-      return d.keys().hasOnly(['founderId', 'name', 'oneLinePitch', 'description',
+      return d.keys().hasOnly(['founderId', 'name', 'description',
                              'sector', 'sectorOther', 'otherSectors', 'stage',
-                             'stageOther',
                              'businessModel', 'businessModelOther',
                              'location', 'foundedYear', 'websiteUrl',
-                             'lookingFor', 'lookingForOther',
+                             'lookingFor',
                              'fundingRequirement', 'isPublic',
-                             'logoUrl', 'logoData', 'createdAt', 'updatedAt',
+                             'logoData', 'createdAt', 'updatedAt',
                              'problem', 'solution', 'targetCustomers',
-                             'differentiation', 'marketSize',
-                             'marketSizeSam', 'marketSizeSom', 'teamMembers',
-                             'expectedGrowth', 'currentAvailableCapital',
+                             'differentiation', 'marketSize', 'teamMembers',
+                             'currentAvailableCapital',
                              'expectedRevenueYear1', 'expectedRevenueYear2',
                              'expectedRevenueYear3', 'valuation',
-                             'wantsLeadInvestor', 'memberIds', 'memberRoles',
-                             // Ownership and closing ('formerFounderId' is
-                             // legacy: older test startups still have it)
-                             'coFounderIds', 'foundedBy', 'formerFounderId',
-                             'status', 'closedAt', 'ownerChangedAt',
+                             'memberIds', 'memberRoles',
+                             // Ownership and closing
+                             'coFounderIds', 'status', 'closedAt',
                              // Finance and Growth / Startup Ask answers
                              'revenueThisYear', 'monthlyBurnRate',
                              'businessModelExplanation', 'raisedInRound',
@@ -546,14 +518,9 @@ service cloud.firestore {
         // What the founder typed after choosing Other: optional, at most 40
         // characters, and required when the matching value is other.
         && validOther(d, 'sectorOther', d.sector)
-        && validOther(d, 'stageOther', d.stage)
         && validOther(d, 'businessModelOther', d.businessModel)
-        && optionalString(d, 'lookingForOther', 40)
         // The sectors after the main one (any number, at most all 25).
         && (!('otherSectors' in d) || (d.otherSectors is list && d.otherSectors.size() <= 30))
-        && (!('other' in d.lookingFor)
-            || ('lookingForOther' in d && d.lookingForOther is string
-                && d.lookingForOther.size() >= 1))
         && validFoundedYear(d)
         && optionalString(d, 'websiteUrl', 2048)
         // The logo: a small compressed picture saved as base64 text.
@@ -563,8 +530,6 @@ service cloud.firestore {
         && optionalString(d, 'targetCustomers', 1000)
         && optionalString(d, 'differentiation', 1000)
         && optionalMoney(d, 'marketSize')
-        && optionalMoney(d, 'marketSizeSam')
-        && optionalMoney(d, 'marketSizeSom')
         && optionalMoney(d, 'currentAvailableCapital')
         && optionalMoney(d, 'expectedRevenueYear1')
         && optionalMoney(d, 'expectedRevenueYear2')
@@ -578,8 +543,6 @@ service cloud.firestore {
         && optionalTextList(d, 'partnerTypes')
         && optionalTextList(d, 'supportTypes')
         && (!('teamMembers' in d) || (d.teamMembers is list && d.teamMembers.size() <= 20))
-        && (!('wantsLeadInvestor' in d) || d.wantsLeadInvestor == null
-            || d.wantsLeadInvestor is bool)
         && validFunding(d)
         && (!('memberIds' in d)
             || (d.memberIds is list && d.memberIds.size() <= 50))
@@ -681,8 +644,8 @@ service cloud.firestore {
       allow create: if request.auth != null
         && request.resource.data.keys().hasOnly(['startupId', 'startupName',
              'emailLower', 'role', 'roleText', 'contribution', 'invitedBy',
-             'invitedByName', 'status', 'emailSent', 'createdAt', 'lastSentAt',
-             'respondedAt', 'newUser', 'previousFounderRole'])
+             'invitedByName', 'status', 'emailSent', 'createdAt',
+             'newUser', 'previousFounderRole'])
         && request.resource.data.get('newUser', false) is bool
         && request.resource.data.get('previousFounderRole', 'coFounder')
              in ['coFounder', 'member']
@@ -707,7 +670,7 @@ service cloud.firestore {
           // owner makes it an invitation to take the startup over.
           (canInvite(resource.data.startupId)
            && request.resource.data.diff(resource.data).affectedKeys()
-                .hasOnly(['status', 'emailSent', 'lastSentAt', 'role',
+                .hasOnly(['status', 'emailSent', 'role',
                           'roleText', 'contribution', 'newUser'])
            && request.resource.data.status in ['pending', 'cancelled']
            && (request.resource.data.role != 'owner'
@@ -717,8 +680,7 @@ service cloud.firestore {
           (myVerifiedEmail(resource.data)
            && resource.data.status == 'pending'
            && request.resource.data.diff(resource.data).affectedKeys()
-                .hasOnly(['status', 'respondedAt', 'acceptedBy',
-                          'acceptedByName'])
+                .hasOnly(['status', 'acceptedBy', 'acceptedByName'])
            && request.resource.data.get('acceptedByName', '') is string
            && request.resource.data.get('acceptedByName', '').size() <= 50
            && request.resource.data.get('acceptedBy', request.auth.uid)

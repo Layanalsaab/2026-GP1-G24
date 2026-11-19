@@ -150,7 +150,6 @@ class _OwnProfileScreenState extends State<OwnProfileScreen> {
                       if (entry.startup.isClosed)
                         const GreyTag(FounderToolsStrings.closedPill),
                     ],
-                    imageUrl: item.imageUrl,
                     imageData: item.imageData,
                     onTap: () => _openStartup(entry),
                   );
@@ -204,7 +203,6 @@ class _OwnProfileScreenState extends State<OwnProfileScreen> {
                     // The sectors are listed under Interests (investor and
                     // founder alike): no line under the name.
                     tags: const [],
-                    photoUrl: u.photoUrl,
                     photoData: u.photoData,
                     linkedin: _vm.linkedin,
                     onLinkedin: () => openExternalLink(_vm.linkedin),
@@ -291,7 +289,6 @@ class _OwnProfileScreenState extends State<OwnProfileScreen> {
                                     leading: HueAvatar(
                                       name: _vm.associations[i].name,
                                       size: 44,
-                                      imageUrl: _vm.associations[i].logoUrl,
                                       imageData: _vm.associations[i].logoData,
                                     ),
                                     title: _vm.associations[i].name,

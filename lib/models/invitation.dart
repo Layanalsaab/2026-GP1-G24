@@ -40,7 +40,6 @@ class Invitation {
     this.invitedByName = '',
     this.status = InvitationStatus.pending,
     this.emailSent = false,
-    this.lastSentAt,
     this.acceptedBy,
     this.acceptedByName = '',
     this.newUser = false,
@@ -67,7 +66,6 @@ class Invitation {
 
   /// True once the e-mail really left (the relay said so).
   final bool emailSent;
-  final DateTime? lastSentAt;
 
   /// The account that accepted (set when [status] is accepted).
   final String? acceptedBy;
@@ -161,7 +159,6 @@ class Invitation {
       invitedByName: (data['invitedByName'] as String?) ?? '',
       status: InvitationStatus.fromValue(data['status']),
       emailSent: data['emailSent'] == true,
-      lastSentAt: data['lastSentAt'] as DateTime?,
       acceptedBy: data['acceptedBy'] as String?,
       acceptedByName: (data['acceptedByName'] as String?) ?? '',
       newUser: data['newUser'] == true,

@@ -94,8 +94,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         image = FileImage(_vm.newPhoto!);
       } else if (PictureData.bytes(u.photoData) != null) {
         image = MemoryImage(PictureData.bytes(u.photoData)!);
-      } else if ((u.photoUrl ?? '').isNotEmpty) {
-        image = NetworkImage(u.photoUrl!);
       }
     }
     const noEmoji = [NoEmojiFormatter()];
@@ -330,8 +328,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         image = FileImage(_vm.newPhoto!);
       } else if (PictureData.bytes(u.photoData) != null) {
         image = MemoryImage(PictureData.bytes(u.photoData)!);
-      } else if ((u.photoUrl ?? '').isNotEmpty) {
-        image = NetworkImage(u.photoUrl!);
       }
     }
     return Padding(

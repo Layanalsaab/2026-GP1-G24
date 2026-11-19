@@ -167,7 +167,6 @@ class UserRepository {
         UserFields.investmentsCount: keep(UserFields.investmentsCount),
         UserFields.yearsInvesting: keep(UserFields.yearsInvesting),
         UserFields.sectorsOther: keep(UserFields.sectorsOther),
-        UserFields.preferredStagesOther: keep(UserFields.preferredStagesOther),
         UserFields.preferredCommerceModelsOther: keep(
           UserFields.preferredCommerceModelsOther,
         ),
@@ -186,7 +185,6 @@ class UserRepository {
         UserFields.valueOffered: keep(UserFields.valueOffered),
         UserFields.lookingFor: keep(UserFields.lookingFor),
         UserFields.title: 'Angel Investor',
-        UserFields.photoUrl: keep(UserFields.photoUrl),
         // Investors who sign up in the app are never dataset investors.
         UserFields.isArchived: false,
         UserFields.createdAt:

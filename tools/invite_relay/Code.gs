@@ -81,9 +81,6 @@ function readInvitation_(id, idToken) {
     invitedByName: str('invitedByName'),
     status: str('status'),
     newUser: !!(f.newUser && f.newUser.booleanValue),
-    lastSentAt: f.lastSentAt && f.lastSentAt.timestampValue
-      ? new Date(f.lastSentAt.timestampValue).getTime()
-      : 0,
   };
 }
 

@@ -437,12 +437,7 @@ class _MatchCard extends StatelessWidget {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  HueAvatar(
-                    name: s.name,
-                    size: 44,
-                    imageUrl: s.logoUrl,
-                    imageData: s.logoData,
-                  ),
+                  HueAvatar(name: s.name, size: 44, imageData: s.logoData),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(

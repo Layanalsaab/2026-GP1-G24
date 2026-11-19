@@ -9,13 +9,11 @@ class InvestorCriteria {
     this.yearsInvesting,
     this.dealsCount,
     this.ticketBand,
-    this.ticketOther,
     this.roundMin,
     this.roundMax,
     this.sectors = const [],
     this.sectorsOther,
     this.stages = const [],
-    this.stagesOther,
     this.commerceModels = const [],
     this.commerceModelsOther,
     this.lookFor = '',
@@ -70,9 +68,8 @@ class InvestorCriteria {
     return 'SAR ${short(roundMin!)} – ${short(roundMax!)}';
   }
 
-  /// One of [ticketOptions]. "Other" uses [ticketOther].
+  /// One of [ticketOptions].
   final String? ticketBand;
-  final String? ticketOther;
 
   /// Round sizes they like to join, in SAR. Both optional.
   final int? roundMin;
@@ -81,7 +78,6 @@ class InvestorCriteria {
   final List<String> sectors;
   final String? sectorsOther;
   final List<String> stages;
-  final String? stagesOther;
 
   /// Full commerce-model labels, e.g. "Business-to-Business (B2B)".
   final List<String> commerceModels;
@@ -102,27 +98,15 @@ class InvestorCriteria {
     return shown.join(', ');
   }
 
-  /// "SAR 100K – 500K", or the typed text for "Other".
-  String? get ticketLabel {
-    if (ticketBand == null) return null;
-    if (ticketBand == 'Other') {
-      final t = (ticketOther ?? '').trim();
-      return t.isEmpty ? 'Other' : t;
-    }
-    return ticketBand;
-  }
+  /// "SAR 100K – 500K".
+  String? get ticketLabel => ticketBand;
 
-  /// "Pre-seed – Seed" or one stage; the typed text replaces "Other".
+  /// "Pre-seed – Seed" or one stage.
   String get stageRange {
-    final shown = [
-      for (final s in stages)
-        if (s == 'Other' && (stagesOther ?? '').trim().isNotEmpty)
-          stagesOther!.trim()
-        else
-          s,
-    ];
-    if (shown.isEmpty) return '';
-    return shown.length > 1 ? '${shown.first} – ${shown.last}' : shown.first;
+    if (stages.isEmpty) return '';
+    return stages.length > 1
+        ? '${stages.first} – ${stages.last}'
+        : stages.first;
   }
 
   /// The answers as flat Firestore fields of the investor's document
@@ -133,15 +117,11 @@ class InvestorCriteria {
     UserFields.investmentsCount: dealsCount,
     UserFields.yearsInvesting: yearsInvesting,
     UserFields.ticketSize: ticketBand,
-    UserFields.ticketSizeOther: ticketBand == 'Other' ? ticketOther : null,
     UserFields.roundSizeMin: roundMin,
     UserFields.roundSizeMax: roundMax,
     UserFields.preferredSectors: sectors,
     UserFields.sectorsOther: sectors.contains('Other') ? sectorsOther : null,
     UserFields.preferredStages: stages,
-    UserFields.preferredStagesOther: stages.contains('Other')
-        ? stagesOther
-        : null,
     UserFields.preferredCommerceModels: commerceModels,
     UserFields.preferredCommerceModelsOther: commerceModels.contains('Other')
         ? commerceModelsOther
@@ -166,13 +146,11 @@ class InvestorCriteria {
       dealsCount: d[UserFields.investmentsCount] as String?,
       yearsInvesting: d[UserFields.yearsInvesting] as String?,
       ticketBand: d[UserFields.ticketSize] as String?,
-      ticketOther: d[UserFields.ticketSizeOther] as String?,
       roundMin: (d[UserFields.roundSizeMin] as num?)?.toInt(),
       roundMax: (d[UserFields.roundSizeMax] as num?)?.toInt(),
       sectors: _strings(d[UserFields.preferredSectors]),
       sectorsOther: d[UserFields.sectorsOther] as String?,
       stages: _strings(d[UserFields.preferredStages]),
-      stagesOther: d[UserFields.preferredStagesOther] as String?,
       commerceModels: _strings(d[UserFields.preferredCommerceModels]),
       commerceModelsOther:
           d[UserFields.preferredCommerceModelsOther] as String?,
@@ -186,13 +164,11 @@ class InvestorCriteria {
     'dealsCount': dealsCount,
     'yearsInvesting': yearsInvesting,
     'ticketBand': ticketBand,
-    'ticketOther': ticketBand == 'Other' ? ticketOther : null,
     'roundMin': roundMin,
     'roundMax': roundMax,
     'sectors': sectors,
     'sectorsOther': sectors.contains('Other') ? sectorsOther : null,
     'stages': stages,
-    'stagesOther': stages.contains('Other') ? stagesOther : null,
     'commerceModels': commerceModels,
     'commerceModelsOther': commerceModels.contains('Other')
         ? commerceModelsOther
@@ -209,13 +185,11 @@ class InvestorCriteria {
       dealsCount: raw['dealsCount'] as String?,
       yearsInvesting: raw['yearsInvesting'] as String?,
       ticketBand: raw['ticketBand'] as String?,
-      ticketOther: raw['ticketOther'] as String?,
       roundMin: (raw['roundMin'] as num?)?.toInt(),
       roundMax: (raw['roundMax'] as num?)?.toInt(),
       sectors: _strings(raw['sectors']),
       sectorsOther: raw['sectorsOther'] as String?,
       stages: _strings(raw['stages']),
-      stagesOther: raw['stagesOther'] as String?,
       commerceModels: _strings(raw['commerceModels']),
       commerceModelsOther: raw['commerceModelsOther'] as String?,
       lookFor: (raw['lookFor'] as String?) ?? '',
@@ -226,13 +200,11 @@ class InvestorCriteria {
     String? yearsInvesting,
     String? dealsCount,
     String? ticketBand,
-    String? ticketOther,
     int? roundMin,
     int? roundMax,
     List<String>? sectors,
     String? sectorsOther,
     List<String>? stages,
-    String? stagesOther,
     List<String>? commerceModels,
     String? commerceModelsOther,
     String? lookFor,
@@ -240,13 +212,11 @@ class InvestorCriteria {
     yearsInvesting: yearsInvesting ?? this.yearsInvesting,
     dealsCount: dealsCount ?? this.dealsCount,
     ticketBand: ticketBand ?? this.ticketBand,
-    ticketOther: ticketOther ?? this.ticketOther,
     roundMin: roundMin ?? this.roundMin,
     roundMax: roundMax ?? this.roundMax,
     sectors: sectors ?? this.sectors,
     sectorsOther: sectorsOther ?? this.sectorsOther,
     stages: stages ?? this.stages,
-    stagesOther: stagesOther ?? this.stagesOther,
     commerceModels: commerceModels ?? this.commerceModels,
     commerceModelsOther: commerceModelsOther ?? this.commerceModelsOther,
     lookFor: lookFor ?? this.lookFor,
