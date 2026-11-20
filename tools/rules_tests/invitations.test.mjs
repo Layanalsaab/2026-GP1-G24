@@ -187,6 +187,7 @@ const maxStartup = (extra = {}) => ({
   memberIds: [], memberRoles: {}, createdAt: serverTimestamp(), updatedAt: serverTimestamp(), ...extra,
 });
 await check('the biggest startup (25 other sectors, every Other text, 20 team cards) can be created', true, () => setDoc(doc(founder, 'startups', 'M1'), maxStartup()));
+await check('a startup with 60 team cards and 60 linked members can be created (no team limit)', true, () => setDoc(doc(founder, 'startups', 'M7'), maxStartup({ teamMembers: Array.from({ length: 60 }, (_, i) => ({ fullName: 'Member ' + i, role: 'r', uid: 'u' + i })), memberIds: Array.from({ length: 60 }, (_, i) => 'm' + i) })));
 const allMoney = {
   marketSize: 9e12, currentAvailableCapital: 9e12,
   expectedRevenueYear1: 9e12, expectedRevenueYear2: 9e12, expectedRevenueYear3: 9e12, valuation: 9e12,

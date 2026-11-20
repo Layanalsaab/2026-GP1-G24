@@ -24,32 +24,27 @@ List<TeamMember> _people(int n) => [
     ),
 ];
 
-/// firestore.rules refuses a startup with more than 20 team cards, so the
-/// app must stop at 20 instead of failing on save.
+/// A team has no size limit: the founder can always add another person.
 void main() {
   setUpAll(() => GoogleFonts.config.allowRuntimeFetching = false);
   setUp(() => AppSession.instance = AppSession()..signIn(_founder));
 
-  test('the limit is the one the security rules use', () {
-    expect(TeamMember.teamMax, 20);
-  });
-
-  test('a team of 19 can still get a 20th person', () {
-    final vm = StartupStepsViewModel()..team = _people(19);
+  test('a team of 20 can still get a 21st person', () {
+    final vm = StartupStepsViewModel()..team = _people(20);
     addTearDown(vm.dispose);
     vm.openMemberEditor();
     expect(vm.editorOpen, isTrue);
   });
 
-  test('a full team (20) does not open the editor for a new person', () {
-    final vm = StartupStepsViewModel()..team = _people(20);
+  test('a big team (60) can still get another person', () {
+    final vm = StartupStepsViewModel()..team = _people(60);
     addTearDown(vm.dispose);
     vm.openMemberEditor();
-    expect(vm.editorOpen, isFalse);
+    expect(vm.editorOpen, isTrue);
   });
 
-  test('a full team can still edit one of its people', () {
-    final vm = StartupStepsViewModel()..team = _people(20);
+  test('a big team can still edit one of its people', () {
+    final vm = StartupStepsViewModel()..team = _people(60);
     addTearDown(vm.dispose);
     vm.openMemberEditor(3);
     expect(vm.editorOpen, isTrue);
@@ -57,7 +52,7 @@ void main() {
   });
 
   Future<void> show(WidgetTester t, StartupStepsViewModel vm) async {
-    await t.binding.setSurfaceSize(const Size(412, 6000));
+    await t.binding.setSurfaceSize(const Size(412, 20000));
     addTearDown(() => t.binding.setSurfaceSize(null));
     await t.pumpWidget(
       MaterialApp(
@@ -74,19 +69,13 @@ void main() {
     await t.pump(const Duration(milliseconds: 300));
   }
 
-  testWidgets('with 19 people the Add button shows', (t) async {
-    final vm = StartupStepsViewModel()..team = _people(19);
-    addTearDown(vm.dispose);
-    await show(t, vm);
-    expect(find.text('Add team member'), findsOneWidget);
-    expect(find.text('A team can have up to 20 people.'), findsNothing);
-  });
-
-  testWidgets('with 20 people the Add button is replaced by a note', (t) async {
-    final vm = StartupStepsViewModel()..team = _people(20);
-    addTearDown(vm.dispose);
-    await show(t, vm);
-    expect(find.text('Add team member'), findsNothing);
-    expect(find.text('A team can have up to 20 people.'), findsOneWidget);
-  });
+  for (final n in [19, 20, 21, 40]) {
+    testWidgets('with $n people the Add button still shows', (t) async {
+      final vm = StartupStepsViewModel()..team = _people(n);
+      addTearDown(vm.dispose);
+      await show(t, vm);
+      expect(find.text('Add team member'), findsOneWidget);
+      expect(find.textContaining('up to 20'), findsNothing);
+    });
+  }
 }

@@ -14,7 +14,6 @@ class TeamMember {
   });
 
   /// Most people on one startup's team (firestore.rules uses the same).
-  static const teamMax = 20;
   static const nameMax = 50;
   static const roleMax = 40;
   static const emailMax = 100;

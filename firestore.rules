@@ -279,8 +279,7 @@ service cloud.firestore {
                         ? request.resource.data.get('memberRoles', {})
                             .get(request.auth.uid, '') in ['coFounder', 'member']
                         : !(request.auth.uid in request.resource.data.get('memberRoles', {})))
-                    && request.resource.data.updatedAt == request.time
-                    && request.resource.data.get('teamMembers', []).size() <= 20;
+                    && request.resource.data.updatedAt == request.time;
 
       // Taking over: a person with a VERIFIED e-mail and a pending OWNER
       // invitation sent by the current founder becomes the founder of this
@@ -298,8 +297,7 @@ service cloud.firestore {
                          .hasOnly(['founderId', 'teamMembers',
                                    'memberIds', 'memberRoles', 'coFounderIds',
                                    'updatedAt'])
-                    && previousFounderStays(startupId)
-                    && request.resource.data.get('teamMembers', []).size() <= 20;
+                    && previousFounderStays(startupId);
 
       // Accepting an invitation: a person with a VERIFIED email that has a
       // pending invitation to this ACTIVE startup adds ONLY themselves, with
@@ -318,7 +316,6 @@ service cloud.firestore {
                     && request.resource.data.memberRoles
                          .diff(resource.data.get('memberRoles', {}))
                          .affectedKeys().hasOnly([request.auth.uid])
-                    && request.resource.data.get('teamMembers', []).size() <= 20
                     && invitationFor(startupId).status == 'pending'
                     && request.resource.data.memberRoles[request.auth.uid]
                          == invitationFor(startupId).role
@@ -542,10 +539,9 @@ service cloud.firestore {
         && optionalString(d, 'revenueModel', 250)
         && optionalTextList(d, 'partnerTypes')
         && optionalTextList(d, 'supportTypes')
-        && (!('teamMembers' in d) || (d.teamMembers is list && d.teamMembers.size() <= 20))
+        && (!('teamMembers' in d) || d.teamMembers is list)
         && validFunding(d)
-        && (!('memberIds' in d)
-            || (d.memberIds is list && d.memberIds.size() <= 50))
+        && (!('memberIds' in d) || d.memberIds is list)
         && (!('memberRoles' in d) || d.memberRoles is map)
         && d.isPublic is bool;
     }

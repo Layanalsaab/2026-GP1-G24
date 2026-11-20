@@ -806,18 +806,7 @@ class _Team extends StatelessWidget {
                 _editor(context, null),
               ] else if (!vm.editorOpen) ...[
                 if (vm.team.isNotEmpty) const SizedBox(height: 10),
-                if (vm.team.length >= TeamMember.teamMax)
-                  Text(
-                    FounderToolsStrings.teamFull,
-                    textAlign: TextAlign.center,
-                    style: AppText.sans(
-                      size: 13.5,
-                      color: AppColors.grey,
-                      height: 20,
-                    ),
-                  )
-                else
-                  AddMemberButton(onTap: () => vm.openMemberEditor()),
+                AddMemberButton(onTap: () => vm.openMemberEditor()),
               ],
             ],
           ),
