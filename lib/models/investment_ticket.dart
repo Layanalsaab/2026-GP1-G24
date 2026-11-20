@@ -152,12 +152,6 @@ class TicketRequest {
 
   bool get isPending => status == RequestStatus.pending;
 
-  String get statusLabel => switch (status) {
-    RequestStatus.pending => 'Pending',
-    RequestStatus.accepted => 'Accepted',
-    RequestStatus.declined => 'Declined',
-  };
-
   /// Null for a request that was not sent through a ticket.
   static TicketRequest? fromMap(String id, Map<String, dynamic>? data) {
     if (data == null) return null;

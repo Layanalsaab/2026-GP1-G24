@@ -228,9 +228,6 @@ class EditAccountViewModel extends ChangeNotifier with SafeNotifier {
     }
   });
 
-  bool isSectorSelected(String label) =>
-      label == otherLabel ? otherSelected : sectors.contains(label);
-
   void pickPhoto(File file) => _set(() {
     newPhoto = file;
     removePhoto = false;

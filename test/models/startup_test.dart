@@ -287,11 +287,9 @@ void main() {
 
     test('location', () {
       expect(StartupLocation.fromValue('riyadh'), StartupLocation.riyadh);
-      expect(StartupLocation.fromValue('khobar'), StartupLocation.alKhobar);
       expect(StartupLocation.fromValue('mecca'), StartupLocation.makkah);
       expect(StartupLocation.fromValue('medina'), StartupLocation.madinah);
       expect(StartupLocation.fromValue('other'), StartupLocation.other);
-      expect(StartupLocation.fromValue('al_khobar'), StartupLocation.alKhobar);
       // An imported city outside the picker list stays readable.
       expect(StartupLocation.fromValue('al_ula')!.label, 'Al Ula');
       expect(StartupLocation.fromValue('not a city'), isNull);
@@ -383,7 +381,6 @@ void main() {
       expect(back.team.single.initials, 'FA');
       expect(back.valuation, 0);
       expect(back.expectedRevenue, [1, 2, 3]);
-      expect(back.hasBusinessDetails, isTrue);
     });
 
     test('an old document without them still loads', () {

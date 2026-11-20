@@ -38,12 +38,6 @@ void main() {
       expect(Validators.email('nope'), ValidationStrings.emailInvalid);
       expect(Validators.email('a@b.co'), isNull);
     });
-
-    test('live message only once something is typed', () {
-      expect(Validators.emailLive(''), isNull);
-      expect(Validators.emailLive('a@b'), ValidationStrings.emailLive);
-      expect(Validators.emailLive('a@b.co'), isNull);
-    });
   });
 
   group('phone', () {
@@ -176,15 +170,6 @@ void main() {
     test('the example shown in the password field follows every rule', () {
       final example = AuthStrings.passwordPlaceholder.replaceFirst('e.g. ', '');
       expect(Validators.isPassword(example), isTrue, reason: example);
-    });
-
-    test('confirm mismatch only shows once typed', () {
-      expect(Validators.confirmPassword('a', ''), isNull);
-      expect(
-        Validators.confirmPassword('a', 'b'),
-        ValidationStrings.confirmMismatch,
-      );
-      expect(Validators.confirmPassword('a', 'a'), isNull);
     });
   });
 

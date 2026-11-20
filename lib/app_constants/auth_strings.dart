@@ -10,7 +10,6 @@ class AuthStrings {
 
   // Intro
   static const skip = 'Skip';
-  static const nextPage = 'Next';
   static const getStarted = 'Get started';
   static const intro1Headline = 'Where Saudi startups meet opportunity.';
   static const intro1Body =
@@ -85,28 +84,16 @@ class AuthStrings {
       'For example: a strong team, early traction, a growing market, long-term partnerships.';
   static const bio = 'Bio';
   static const bioPlaceholder = 'Tell others a little about yourself';
-  static const addPhoto = 'Add profile photo';
-  static const profilePhoto = 'Profile photo';
-  static const uploadPhoto = 'Upload photo';
-  static const changePhoto = 'Change photo';
   static const sectorsPlaceholder = 'Select sectors';
   static const sectorsSheetTitle = 'Select sectors';
   static const sectorsSearch = 'Search sectors';
   static const sectorsNone = 'No sectors found';
   static const sectorsOtherEmpty =
       'Tell us your other sector — it can’t be blank.';
-  static const bioRequiredLabel = 'Bio';
-  static const photoAdded = 'Photo added';
-  static const photoRemoved = 'Photo removed';
 
-  // Verify
-  static const verifyEmailSent = 'Verification email sent';
-  static String verifyEmailSentTo(String email) =>
-      'Verification email sent to $email';
   static const verifyDidntGet = 'Didn’t get the email?';
   static const resendEmail = 'Resend email';
   static const resendSent = 'Verification email sent. Check your inbox.';
-  static const emailVerified = 'Email verified';
   static const alreadyVerifiedLogin =
       'Your email is already verified. You can log in.';
   static const alreadyVerified =
@@ -122,13 +109,8 @@ class AuthStrings {
   static const roundSizeQuestion =
       'How much do you usually invest in one startup?';
   static const fillRequiredFields = 'Please fill in the required fields';
-  static const ticketQuestion =
-      'How much do you usually invest in one startup?';
-  static const ticketOtherHint = 'Type an amount, e.g. SAR 50K';
-  static const roundSizesQuestion = 'What round sizes do you like to join?';
   static const minimum = 'Minimum';
   static const maximum = 'Maximum';
-  static const amountsInSar = 'Amounts in SAR';
   static const next = 'Next';
   static const finish = 'Finish';
 
@@ -139,17 +121,13 @@ class AuthStrings {
   static const stagesSheetTitle = 'Select stages';
   static const modelsPlaceholder = 'Select commerce models';
   static const modelsSheetTitle = 'Select commerce models';
-  static const stageOtherHint = 'Type your stage';
   static const investModels = 'Which commerce models do you invest in?';
   static const modelOtherHint = 'Type your commerce model';
 
   // Log in
   static const loginTitle = 'Welcome back';
-  static const loginNoAccount = 'Don’t have an account?';
-  static const signUp = 'Sign up';
   static const forgotLink = 'Forgot password?';
   static const incorrectCredentials = 'Incorrect email or password.';
-  static String welcomeBack(String firstName) => 'Welcome back, $firstName';
 
   // Forgot password
   static const forgotTitle = 'Forgot password?';
@@ -161,7 +139,5 @@ class AuthStrings {
 
   // Nouns for "Other" write-in errors
   static const nounSector = 'sector';
-  static const nounStage = 'stage';
   static const nounModel = 'commerce model';
-  static const nounAmount = 'amount';
 }

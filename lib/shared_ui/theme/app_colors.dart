@@ -63,7 +63,6 @@ class AppColors {
   static const notifDot = Color(0xFFE5484D);
   static const liveDot = Color(0xFF5FD38A);
   static const liveRing = Color(0x385FD38A);
-  static const linkedInBrand = Color(0xFF0A66C2);
 
   /// Intro illustrations: the sage line on green.
   static const introSage = Color(0xFF8CA691);
@@ -225,14 +224,8 @@ class AppColors {
   /// The pale gold of an active filter pill.
   static Color get goldFillSoft => _p(0xFFF3E6C4, 0xFF3A3219);
 
-  /// The pale mint track of a chart.
-  static Color get chartTrack => _p(0xFFD5E6D9, 0xFF2F4636);
-
   /// Text and icon on the gold "preview" bar (green on light).
   static Color get previewBarText => _p(0xFF1F3F27, 0xFFECD08A);
-
-  /// The soft shadow under a card (nothing to see on a dark page).
-  static Color get shadowTint => _p(0xFF1F3F27, 0xFF000000);
 
   // ----------------------------------------------------------------- avatar
 

@@ -14,9 +14,6 @@ class HomeStrings {
   static const investors = 'Investors';
   static const switchLabels = [startups, investors];
 
-  // Sections
-  static const newOnStartSa = 'New on Start.sa';
-  static const recommended = 'Recommended for you';
   static const recommendedStartups = 'Recommended startups for you';
   static const recommendedInvestors = 'Recommended investors for you';
   static const forYouInfoInvestor =
@@ -29,13 +26,7 @@ class HomeStrings {
       'No startups joined in this time range. Try a longer one.';
   static const top30 = 'Top 30 trending';
   static const results = 'Results';
-  static const forYouBack = 'For You';
-  static const seeAll = 'See all';
-  static const matchesFor = 'Matches for';
 
-  // Toasts
-  static const linkCopied = 'Link copied';
-  static const bookmarkAdded = 'Added to bookmarks';
   static const bookmarkRemoved = 'Removed from bookmarks';
 
   // Long lists are shown a page at a time
@@ -73,7 +64,6 @@ class HomeStrings {
   static const wallet = 'Investment Wallet';
   static const founderRole = 'Founder';
   static const investorRole = 'Angel Investor';
-  static const notificationCount = 4;
 
   // Bookmarks screen
   static const bookmarksTitle = 'Bookmarks';
@@ -93,7 +83,4 @@ class HomeStrings {
   // Counts
   static String resultCount(int n) => '$n ${n == 1 ? 'result' : 'results'}';
   static String matchCount(int n) => '$n ${n == 1 ? 'match' : 'matches'}';
-
-  // Trending ranges (label, note tail) come from TrendingRange.
-  static String kicker(int rank, String tag) => '$rank · Trending in $tag';
 }

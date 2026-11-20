@@ -19,8 +19,6 @@ void main() {
     expect(AppCurves.easeOut, const Cubic(0.23, 1, 0.32, 1));
     expect(AppCurves.drawer, const Cubic(0.32, 0.72, 0, 1));
     expect(AppDur.press, const Duration(milliseconds: 140));
-    expect(AppDur.advSheet, const Duration(milliseconds: 420));
-    expect(AppDur.toastHold, const Duration(milliseconds: 2400));
     expect(PressScale.button, 0.97);
     expect(PressScale.icon, 0.92);
     expect(PressScale.chip, 0.96);

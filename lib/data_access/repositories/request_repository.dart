@@ -71,16 +71,6 @@ class RequestRepository {
 
   bool hasSent(String key) => _outgoing.value.contains(key);
 
-  /// Sends the request, or withdraws it when it was already sent. Returns
-  /// true when it is now sent.
-  bool toggleOutgoing(String key) {
-    final next = {..._outgoing.value};
-    final added = next.add(key);
-    if (!added) next.remove(key);
-    _outgoing.value = next;
-    return added;
-  }
-
   /// Forgets everything of the session (log out).
   void clear() {
     _inbox = sample ? List.of(PrototypeSeed.requests) : [];

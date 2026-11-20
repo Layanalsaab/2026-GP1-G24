@@ -111,7 +111,6 @@ void main() {
         isNot(contains('Founded')),
         reason: 'founded is in the header',
       );
-      expect(vm.revenueLabels, ['Year 1', 'Year 2', 'Year 3']);
     });
   });
 
@@ -263,7 +262,6 @@ void main() {
       final vm = EditAccountViewModel(user: _investor, userRepository: users);
       expect(vm.fullName, 'Layan Alsaab');
       expect(vm.phone, '509876543');
-      expect(vm.isSectorSelected('HealthTech'), isTrue);
 
       vm.setFullName('Layan');
       vm.setGain('  ');

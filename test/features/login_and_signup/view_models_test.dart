@@ -1,11 +1,7 @@
-import 'dart:io';
-
 import 'package:flutter_test/flutter_test.dart';
-import 'package:startsa/app_constants/account_strings.dart';
 import 'package:startsa/app_constants/app_strings.dart';
 import 'package:startsa/app_constants/auth_strings.dart';
 import 'package:startsa/app_constants/validation_strings.dart';
-import 'package:startsa/data_access/device_services/profile_photo_picker_service.dart';
 import 'package:startsa/data_access/repositories/auth_repository.dart';
 import 'package:startsa/features/login_and_signup/view_models/forgot_password_view_model.dart';
 import 'package:startsa/features/login_and_signup/view_models/investor_onboarding_view_model.dart';
@@ -237,24 +233,6 @@ void main() {
       expect(await vm.submit(), isFalse);
       expect(vm.formError, isNotNull);
       expect(vm.emailError, isNull);
-    });
-
-    test('photo toggles: pick, then remove', () async {
-      final vm = make(AccountRole.founder);
-      addTearDown(vm.dispose);
-      picker.result = File('photo.jpg');
-      expect(await vm.togglePhoto(), 'Photo added');
-      expect(vm.photo, isNotNull);
-      expect(await vm.togglePhoto(), 'Photo removed');
-      expect(vm.photo, isNull);
-    });
-
-    test('cancelling the picker changes nothing; a failure explains', () async {
-      final vm = make(AccountRole.founder);
-      addTearDown(vm.dispose);
-      expect(await vm.togglePhoto(), isNull);
-      picker.failure = ProfilePhotoFailure.tooLarge;
-      expect(await vm.togglePhoto(), AccountStrings.photoTooLarge);
     });
   });
 
@@ -597,7 +575,6 @@ void main() {
 
     test('step 4 needs a sector, a stage and a model', () async {
       final vm = make();
-      expect(vm.tryStep4(), isFalse);
       expect(await vm.finish(), isNull);
       expect(vm.sectorsError, ValidationStrings.sectors);
       expect(vm.stagesError, ValidationStrings.selectAtLeastOneStage);

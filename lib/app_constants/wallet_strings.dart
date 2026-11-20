@@ -37,11 +37,6 @@ class WalletStrings {
   static const cancel = 'Cancel';
   static const saveChanges = 'Save changes';
 
-  // Confirms
-  static const addTitle = 'Add ticket?';
-  static const addMessage = 'This ticket will be added to your wallet.';
-  static const saveTitle = 'Save changes?';
-  static const saveMessage = 'Your changes will be saved to this ticket.';
   static const discardTitle = 'Discard changes?';
   static const discardMessage =
       'If you go back now, your changes will be lost.';
@@ -96,7 +91,6 @@ class WalletStrings {
   static const noMatches = 'No startups with a matching open round right now.';
   static const matchesFailed =
       'Couldn’t load the suggested startups. Check your connection.';
-  static const findingMatches = 'Suggesting startups…';
   static const requestSentPill = 'Request sent';
 
   // Requests tab

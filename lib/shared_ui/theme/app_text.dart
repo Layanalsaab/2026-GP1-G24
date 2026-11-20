@@ -111,10 +111,6 @@ class AppText {
 
   // ---- Page-level text on cream ----
 
-  /// Own / investor profile name.
-  static TextStyle get profileName =>
-      sans(size: 24, weight: FontWeight.w700, height: 30, letterSpacing: -0.3);
-
   /// Intro headline.
   static TextStyle get introHeadline =>
       sans(size: 31, weight: FontWeight.w700, height: 38, letterSpacing: -0.3);
@@ -126,9 +122,6 @@ class AppText {
   /// Card name on home cards and trending rows.
   static TextStyle get cardName =>
       sans(size: 18, weight: FontWeight.w700, height: 23);
-
-  static TextStyle get trendingName =>
-      sans(size: 18, weight: FontWeight.w700, height: 24);
 
   /// Card body line.
   static TextStyle get cardBody =>
@@ -177,11 +170,6 @@ class AppText {
     weight: FontWeight.w600,
     height: 20,
   );
-
-  static TextStyle get caption => sans(size: 12, color: AppColors.grey);
-
-  /// Pill text (13/500).
-  static TextStyle get pill => sans(size: 13, weight: FontWeight.w500);
 
   /// Card tag chip (12/600 moss).
   static TextStyle get tag =>

@@ -166,31 +166,6 @@ class DiscoveryRepository {
   /// showing made-up programs.
   List<HomeItem> programs() => const [];
 
-  /// "New on Start.sa" rail, Startups side (newest first).
-  List<HomeItem> newStartups({Set<String> excludeIds = const {}}) {
-    if (sample) {
-      return [
-        for (final id in const [
-          'mock-sanabil',
-          'mock-mizan',
-          'mock-naql',
-          'mock-daftar',
-        ])
-          if (!excludeIds.contains(id))
-            HomeItem.fromStartup(_startups.firstWhere((s) => s.id == id))
-                .withJoined(PrototypeSeed.joined[id] ?? 'Joined this week'),
-      ];
-    }
-    final dated = [
-      for (final s in _startups)
-        if (s.isListed && s.createdAt != null && !excludeIds.contains(s.id)) s,
-    ]..sort((a, b) => b.createdAt!.compareTo(a.createdAt!));
-    return [
-      for (final s in dated.take(4))
-        HomeItem.fromStartup(s).withJoined(joinedLabel(s.createdAt!)),
-    ];
-  }
-
   /// Explore -> Latest: the public startups that joined at most [days] days
   /// ago, newest first, each with its "Joined 2 days ago" line. The founder's
   /// own startups ([excludeIds]) and private or closed ones are left out.

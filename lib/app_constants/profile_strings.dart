@@ -4,40 +4,18 @@
 class ProfileStrings {
   ProfileStrings._();
 
-  // ---- Startup profile ----
-  static const tabOverview = 'Overview';
-  static const tabBusiness = 'Business';
-  static const tabTeam = 'Team';
-  static const tabFinancials = 'Funding';
   static const previewBar = 'Preview · This is how others see your startup';
   static const previewBarPrivate =
       'Preview · Private, only your team can see it';
-  static const closePreview = 'Close preview';
   static const about = 'About';
-  static const lookingFor = 'Looking for';
-  static const theProblem = 'The problem';
-  static const ourSolution = 'Our solution';
-  static const targetCustomers = 'Target customers';
-  static const different = 'What makes us unique';
-  static const marketSize = 'Target market size';
-  static const yearlyRevenue = 'Total yearly revenue in the target market';
-  static const noBusinessDetails =
-      'This startup hasn’t added business details yet.';
   static const team = 'Team';
-  static const foundedBy = 'Founded by';
   static const noTeamDetails = 'This startup hasn’t added team details yet.';
   static const associatedInvestors = 'Associated investors';
-  static const fundingAndFinancials = 'Funding and financials';
-  static const expectedRevenue = 'Expected revenue';
-  static const sarPerYear = 'SAR per year';
   static const raising = 'Raising';
   static const kvRaising = 'Raising';
   static const kvValuation = 'Valuation';
   static const kvCapital = 'Current capital';
-  static const kvFounded = 'Founded year';
-  static const kvRunway = 'Runway';
   static const kvModel = 'Commerce model';
-  static const kvCity = 'City';
   static const sendRequest = 'Send investment request';
   static const requestSent = 'Request sent';
   static const expressInterest = 'Express interest';
@@ -52,8 +30,6 @@ class ProfileStrings {
   static const background = 'Investment Background';
   static const yearsOfInvesting = 'Years of investing';
   static const startupsInvested = 'Startups Invested';
-  static const roundSize = 'Round Size';
-  static const yes = 'Yes';
   static const no = 'No';
   static const interests = 'Investment Interests';
   static const sectors = 'Sectors';
@@ -76,7 +52,6 @@ class ProfileStrings {
   static const stages = 'Stages';
   static const commerceModels = 'Commerce Models';
   static const privateTag = 'Private';
-  static const publicTag = 'Public';
   static const notAdded = 'Not added';
   static const associations = 'Investment Associations';
   static const linkedin = 'LinkedIn';
@@ -116,24 +91,9 @@ class ProfileStrings {
   // ---- Edit profile ----
   static const save = 'Save';
   static const changePhoto = 'Change photo';
-  static const fullName = 'Full name';
   static const bio = 'Bio';
   static const city = 'City';
-  static const cityPlaceholder = 'Select your city';
-  static const sectorsOfInterest = 'Sectors of interest';
-  static const valueLabel = 'Besides funding, what can you offer startups?';
-  static const valuePlaceholder = 'Describe what you can offer';
-  static const valueTip =
-      'For example: mentoring, industry connections, introductions to partners, etc.';
-  static const gainLabel = 'What are you looking for in startups?';
-  static const gainHint = 'Describe what you are looking for';
-  static const gainTip =
-      'For example: a strong team, early traction, a growing market, long-term partnerships.';
-  static const emailLabel = 'Email address';
-  static const phoneLabel = 'Phone number';
   static const linkedinLabel = 'LinkedIn profile';
-  static const linkedinHint = 'linkedin.com/in/your-name';
-  static const otherSectorHint = 'Type your sector, e.g. SportsTech';
   static const selectCityTitle = 'Select your city';
   static const searchCities = 'Search cities';
   static const noCities = 'No cities found';
@@ -217,16 +177,12 @@ class ProfileStrings {
 
   // ---- Toasts ----
   static const linkCopied = 'Link copied';
-  static const addedToBookmarks = 'Added to bookmarks';
-  static const removedFromBookmarks = 'Removed from bookmarks';
   static const profileSaved = 'Profile saved';
   static const changesSaved = 'Changes saved';
   static const fixFields = 'Please fix the highlighted fields';
   static const darkOn = 'Dark mode on';
   static const darkOff = 'Dark mode off';
   static String requestSentTo(String name) => 'Request sent to $name';
-  static String interestSentTo(String name) => 'Interest sent to $name';
-  static String withdrawnFrom(String name) => 'Withdrawn from $name';
 
   // ---- Change password (not designed; the existing flow, restyled) ----
   static const changePasswordTitle = 'Change password';
@@ -242,7 +198,5 @@ class ProfileStrings {
   // ---- Delete account ----
   static const deleteTitle = 'Delete your account?';
   static const deleteConfirm = 'Yes, delete my account';
-  static const deletePasswordLabel = 'Enter your password to confirm';
-  static const deletePasswordHint = 'Password';
   static const cancel = 'Cancel';
 }

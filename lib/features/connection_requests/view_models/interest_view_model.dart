@@ -32,10 +32,6 @@ class InterestViewModel extends ChangeNotifier with SafeNotifier {
       if (!onlyNew || i.isNew) i,
   ];
 
-  /// The founder replied: the person is no longer new.
-  void markReplied(ExpressedInterest interest) =>
-      _interests.markSeen(interest.id);
-
   @override
   void dispose() {
     _interests.inboxChanges.removeListener(notifyListeners);

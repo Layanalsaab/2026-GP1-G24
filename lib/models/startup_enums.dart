@@ -174,7 +174,6 @@ class StartupLocation {
   static const riyadh = StartupLocation._('riyadh', 'Riyadh');
   static const jeddah = StartupLocation._('jeddah', 'Jeddah');
   static const dammam = StartupLocation._('dammam', 'Dammam');
-  static const alKhobar = StartupLocation._('al_khobar', 'Al Khobar');
   static const makkah = StartupLocation._('makkah', 'Makkah');
   static const madinah = StartupLocation._('madinah', 'Madinah');
 

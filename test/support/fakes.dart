@@ -782,10 +782,4 @@ class FakeInvitationRepository implements InvitationRepository {
     final pending = await pendingOwnerInvite(startup.id);
     if (pending != null) await cancel(startup.id, pending.emailLower);
   }
-
-  @override
-  Future<List<Invitation>> declinedOwnerInvitesOfMine() async => [
-    for (final i in store.values)
-      if (i.isOwner && i.status == InvitationStatus.declined) i,
-  ];
 }

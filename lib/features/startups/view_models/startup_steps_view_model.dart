@@ -524,13 +524,6 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
       supportSel.contains('Other') &&
       OtherCheck.repeats(supportOther.text, FounderToolsStrings.supportOptions);
 
-  bool get isPartnerOther => partnerSel.contains('Other');
-  bool get isSupportOther => supportSel.contains('Other');
-
-  /// The round type the funding amount is checked against: the Stage picked
-  /// on the Overview step (or the saved one when only this step is edited).
-  StartupStage? get roundStage => stage ?? initial?.stage;
-
   /// The live value under the burn rate ("About 6 months").
   String? get runwayLine => Runway.line(
     StartupValidators.money(capital.text),
@@ -787,14 +780,6 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
     } else if (label == _other) {
       sectorOther.clear();
     }
-  });
-
-  /// Sets ONE sector (and the typed text for "Other").
-  void selectSector(String label, String? other) => _touch(() {
-    sectorPicks
-      ..clear()
-      ..add(label);
-    sectorOther.text = other ?? '';
   });
 
   void selectStage(String label) => _touch(() {
@@ -1439,9 +1424,6 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
       debugPrint('Could not mark onboarding as completed: $e');
     }
   }
-
-  /// What [save] would write (used by the tests).
-  Startup startupToSave() => _build();
 
   Startup _build() {
     final websiteText = website.text.trim();

@@ -7,8 +7,6 @@ import 'formatters.dart';
 class TicketErrors {
   TicketErrors._();
 
-  static const maxName = 40;
-
   static String? name(String value) =>
       value.trim().isEmpty ? 'Enter a name for this ticket.' : null;
 

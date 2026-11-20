@@ -185,11 +185,6 @@ class StartupProfileViewModel extends ChangeNotifier with SafeNotifier {
 
   // ---- Business ----
   String? get marketSize => _money(startup.marketSize);
-  bool get hasMarket => marketSize != null;
-
-  /// The target market size in short form: "SAR 2.4B".
-  String get targetMarketShort => Formatters.sarShort(startup.marketSize ?? 0);
-  bool get hasBusiness => startup.hasBusinessDetails;
 
   // ---- Team ----
   /// The founder's name: sample data, or the signed-in person when they are
@@ -204,8 +199,6 @@ class StartupProfileViewModel extends ChangeNotifier with SafeNotifier {
 
   List<InvestorProfile> get associated =>
       _discovery.associatedInvestors(startup.id);
-
-  bool get hasTeamContent => founderName != null || startup.team.isNotEmpty;
 
   // ---- Financials ----
   /// The non-empty cells of "Funding and financials", in prototype order.
@@ -223,13 +216,6 @@ class StartupProfileViewModel extends ChangeNotifier with SafeNotifier {
   ];
 
   bool get hasRevenue => revenueValues.any((v) => v > 0);
-
-  List<String> get revenueLabels => ['Year 1', 'Year 2', 'Year 3'];
-
-  List<String> get revenueValueLabels => [
-    for (final v in startup.expectedRevenue)
-      (v ?? 0) > 0 ? Formatters.shortMoney(v!) : '—',
-  ];
 
   static String? _money(int? v) =>
       v == null || v <= 0 ? null : Formatters.sarShort(v);

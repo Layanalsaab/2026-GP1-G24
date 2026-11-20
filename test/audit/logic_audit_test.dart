@@ -32,16 +32,6 @@ void main() {
       expect(Formatters.shortMoney(2400000000), '2.4B');
     });
 
-    test('card tags: SAR 999,999 reads 1M, never 1000K', () {
-      expect(Formatters.compactSar(0), 'SAR 0');
-      expect(Formatters.compactSar(999), 'SAR 999');
-      expect(Formatters.compactSar(1000), 'SAR 1K');
-      expect(Formatters.compactSar(500000), 'SAR 500K');
-      expect(Formatters.compactSar(999999), 'SAR 1M');
-      expect(Formatters.compactSar(1200000), 'SAR 1.2M');
-      expect(Formatters.compactSar(5000000), 'SAR 5M');
-    });
-
     test('thousands separators and parsing', () {
       expect(Formatters.thousands(0), '0');
       expect(Formatters.thousands(999), '999');
@@ -52,12 +42,6 @@ void main() {
       expect(Formatters.parseMoney('1,200,000'), 1200000);
       expect(Formatters.parseMoney(''), isNull);
       expect(Formatters.parseMoney('SAR'), isNull);
-    });
-
-    test('short web addresses', () {
-      expect(Formatters.shortUrl('https://www.example.com/'), 'example.com');
-      expect(Formatters.shortUrl('https://a.sa/x/y'), 'a.sa/x/y');
-      expect(Formatters.shortUrl('not a url'), 'not a url');
     });
   });
 
@@ -193,15 +177,9 @@ void main() {
     });
 
     test('labels on the profile', () {
-      expect(full.ticketLabel, 'Other');
       expect(full.stageRange, 'Pre-seed – Seed');
       expect(full.commerceModelsShort, 'B2B, B2C, Marketplace');
-      expect(const InvestorCriteria().ticketLabel, isNull);
       expect(const InvestorCriteria().stageRange, '');
-      expect(
-        const InvestorCriteria(ticketBand: 'SAR 100K – 500K').ticketLabel,
-        'SAR 100K – 500K',
-      );
       expect(
         const InvestorCriteria(commerceModels: ['Other']).commerceModelsShort,
         'Other',
@@ -438,28 +416,6 @@ void main() {
       who('f1', 'f1@gmail.com');
       await repo.ensure(startup: startup, member: layan, invitedByName: 'F');
       expect(await repo.reconcileTeam(startup), isNull);
-    });
-
-    test('resending is allowed any time while pending', () {
-      final inv = Invitation(
-        startupId: 's1',
-        startupName: 'Rafeeq',
-        emailLower: 'a@b.co',
-        role: 'member',
-        invitedBy: 'f1',
-      );
-      expect(inv.canResend, isTrue);
-      expect(
-        Invitation(
-          startupId: 's',
-          startupName: 'n',
-          emailLower: 'a@b.co',
-          role: 'member',
-          invitedBy: 'f',
-          status: InvitationStatus.accepted,
-        ).canResend,
-        isFalse,
-      );
     });
   });
 }

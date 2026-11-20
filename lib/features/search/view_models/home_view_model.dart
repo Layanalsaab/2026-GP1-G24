@@ -219,10 +219,6 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
 
   // ---- Sort (the sort button of Hub, Explore and Support Channels) ----
 
-  /// Every page has the sort button, so no filter sheet has a "Sort by"
-  /// group; the chosen sort is kept when the filters change.
-  bool get hasSortButton => true;
-
   Map<String, Set<String>> _keptSort() {
     final sort = _adv[context]?['Sort by'];
     return sort == null || sort.isEmpty ? const {} : {'Sort by': sort};

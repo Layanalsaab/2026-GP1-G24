@@ -5,8 +5,18 @@ class Formatters {
   Formatters._();
 
   static const _monthsShort = [
-    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
   ];
 
   /// A date as "8 Nov 2026" (the Closed banner).
@@ -26,22 +36,6 @@ class Formatters {
 
   /// 1500000 -> "SAR 1,500,000".
   static String sar(int value) => '${StartupStrings.sar} ${thousands(value)}';
-
-  /// 500000 -> "SAR 500K", 1200000 -> "SAR 1.2M" (card tags).
-  static String compactSar(int value) {
-    if (value >= 1000000000) {
-      // Billions stay in millions here ("SAR 2400M"), as before.
-      final millions = value / 1000000;
-      final text = millions == millions.roundToDouble()
-          ? millions.toStringAsFixed(0)
-          : millions.toStringAsFixed(1);
-      return '${StartupStrings.sar} ${text}M';
-    }
-    // Below a billion this is [shortMoney], so 999,999 reads "SAR 1M" (not
-    // "SAR 1000K").
-    if (value >= 1000) return '${StartupStrings.sar} ${shortMoney(value)}';
-    return sar(value);
-  }
 
   /// 2400000000 -> "2.4B", 600000000 -> "600M", 24000 -> "24K". One decimal
   /// for B and M (a trailing ".0" is dropped), whole numbers for K. The
@@ -68,14 +62,5 @@ class Formatters {
   static int? parseMoney(String text) {
     final digits = text.replaceAll(RegExp(r'[^0-9]'), '');
     return digits.isEmpty ? null : int.tryParse(digits);
-  }
-
-  /// "https://www.example.com/" -> "example.com", for display.
-  static String shortUrl(String url) {
-    final uri = Uri.tryParse(url);
-    if (uri == null || uri.host.isEmpty) return url;
-    final host = uri.host.startsWith('www.') ? uri.host.substring(4) : uri.host;
-    final path = uri.path == '/' ? '' : uri.path;
-    return '$host$path';
   }
 }

@@ -64,9 +64,6 @@ class HomeHeader extends StatelessWidget {
   /// How far the search bar overlaps the header (`.below3` margin-top -24).
   static const double searchOverlap = 24;
 
-  /// Height of the search bar that sits on the overlap.
-  static const double searchBarHeight = 46;
-
   final String title;
 
   /// Initials in the avatar (founder / investor).

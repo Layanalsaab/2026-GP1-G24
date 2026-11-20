@@ -62,7 +62,7 @@ Startup _withNewAnswers(Startup s) => s.copyWith(
 void _fillAll(StartupStepsViewModel vm) {
   vm.name.text = 'Nakhla Pay';
   vm.description.text = 'We help small shops accept card payments.';
-  vm.selectSector('Fintech', null);
+  vm.toggleSector('Fintech');
   vm.selectStage('Seed');
   vm.selectModel('Business-to-Business (B2B)', null);
   vm.selectCity('Jeddah');
@@ -206,7 +206,8 @@ void main() {
       final vm = StartupStepsViewModel();
       addTearDown(vm.dispose);
       const msg = 'This option is already in the list. Select it instead.';
-      vm.selectSector('Other', 'fintechs');
+      vm.toggleSector('Other');
+      vm.sectorOther.text = 'fintechs';
       expect(vm.errorOf(StartupField.sectorOther), msg);
       expect(vm.stepComplete(0), isFalse);
       vm.sectorOther.text = 'Fin Tech';
@@ -303,14 +304,6 @@ void main() {
 
   group('ValuationCalculatorViewModel', () {
     test('starts from the round and the current valuation', () {
-      // 2M at an 8M valuation = 20%
-      expect(
-        ValuationCalculatorViewModel.equityAt(
-          funding: 2000000,
-          valuation: 8000000,
-        ),
-        20,
-      );
       final vm = ValuationCalculatorViewModel(
         funding: 2000000,
         valuation: 8000000,
@@ -322,11 +315,6 @@ void main() {
       expect(vm.ownershipHint, isNull);
       expect(vm.postText, 'SAR 10,000,000');
       expect(vm.preText, 'SAR 8,000,000');
-      // no valuation, nothing to work out
-      expect(
-        ValuationCalculatorViewModel.equityAt(funding: 1, valuation: 0),
-        isNull,
-      );
     });
 
     test('more funding costs more equity; the valuation stays', () {
@@ -588,14 +576,12 @@ void main() {
       expect(vm.count(RequestStatus.accepted), 2);
     });
 
-    test('interest new / all and mark replied', () {
+    test('interest new / all', () {
       final vm = InterestViewModel(startupId: 'mock-rafeeq');
       addTearDown(vm.dispose);
       expect(vm.newCount, 2);
       expect(vm.allCount, 3);
       expect(vm.visible, hasLength(2));
-      vm.markReplied(vm.visible.first);
-      expect(vm.newCount, 1);
       vm.select(onlyNew: false);
       expect(vm.visible, hasLength(3));
     });
@@ -608,7 +594,6 @@ void main() {
       await tester.pump(const Duration(seconds: 1));
       expect(find.text('Add your first startup'), findsOneWidget);
       expect(find.text(FounderToolsStrings.emptyButton), findsOneWidget);
-      expect(find.text(FounderToolsStrings.addAction), findsNothing);
     });
 
     testWidgets('My Startups lists the Hub card with a role capsule', (
@@ -971,7 +956,7 @@ void main() {
       final vm = StartupStepsViewModel();
       expect(vm.isDirty, isFalse);
       vm.name.text = 'Nakhla Pay';
-      vm.selectSector('Fintech', null);
+      vm.toggleSector('Fintech');
       expect(vm.isDirty, isTrue);
       final draft = vm.toDraft();
       final other = StartupStepsViewModel()..loadDraft(draft);

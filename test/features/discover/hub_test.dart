@@ -255,15 +255,6 @@ void main() {
 
     tearDown(() => vm.dispose());
 
-    test('Hub, Explore and Support Channels all have the sort button', () {
-      vm.selectTab(HomeTab.hub);
-      expect(vm.hasSortButton, isTrue);
-      vm.selectTab(HomeTab.explore);
-      expect(vm.hasSortButton, isTrue);
-      vm.selectTab(HomeTab.support);
-      expect(vm.hasSortButton, isTrue);
-    });
-
     test('no filter sheet has a "Sort by" group any more', () {
       for (final c in HomeContext.values) {
         expect(

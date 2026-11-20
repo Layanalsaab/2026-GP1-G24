@@ -62,12 +62,6 @@ class ValuationCalculatorViewModel extends ChangeNotifier with SafeNotifier {
   final bool _follow;
   final bool _ownershipUnknown;
 
-  // equity % = funding / (valuation + funding)
-  static double? equityAt({int? funding, int? valuation}) {
-    if (funding == null || valuation == null || valuation <= 0) return null;
-    return _equityFor(funding.toDouble(), valuation);
-  }
-
   static double? _equityFor(double funding, int valuation) =>
       funding.isNaN || funding <= 0
       ? null

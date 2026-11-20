@@ -29,7 +29,4 @@ class PictureData {
       return null;
     }
   }
-
-  /// Forget everything (tests).
-  static void clear() => _cache.clear();
 }

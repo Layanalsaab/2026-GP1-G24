@@ -5,18 +5,13 @@
 class FounderToolsStrings {
   FounderToolsStrings._();
 
-  static const sar = 'SAR';
-
   // ---- My Startups ----
   static const myStartupsTitle = 'My Startups';
-  static const addAction = 'Add';
-  static String startupCount(int n) => n == 1 ? '1 startup' : '$n startups';
   static const manage = 'Manage';
   static const view = 'View';
   static const roleFounder = 'Founder';
   static const roleCoFounder = 'Co-founder';
   static const roleMember = 'Team member';
-  static const notRaising = 'Not raising right now';
   static const allStartups = 'All startups';
   static const filterStartupsTitle = 'Filter startups';
   static const sortStartupsTitle = 'Sort by';
@@ -36,8 +31,6 @@ class FounderToolsStrings {
   static const publicPill = 'Public';
   static const privatePill = 'Private';
   static String raising(String amount) => 'Raising $amount';
-  static String lookingForLine(String what) =>
-      'Looking for ${what.toLowerCase()}';
   static const loadFailed = 'We couldn’t load your startups.';
   static const retry = 'Retry';
 
@@ -65,10 +58,6 @@ class FounderToolsStrings {
   static const logoTooLarge = 'This logo is too large. Try another one.';
   static const logoFailed = 'We couldn’t use that image. Try another one.';
 
-  // Step 1
-  static const logoLabel = 'Startup logo';
-  static const uploadLogo = 'Upload logo';
-  static const changeLogo = 'Change logo';
   static const nameLabel = 'Startup name';
   static const nameHint = 'e.g. Rafeeq Health';
   static const descriptionLabel = 'Brief description';
@@ -82,7 +71,6 @@ class FounderToolsStrings {
   static const stageLabel = 'Stage';
   static const stageHint = 'Select a stage';
   static const stageTitle = 'Select stage';
-  static const stageNoun = 'stage';
   static const modelLabel = 'Commerce model';
   static const modelHint = 'Select a commerce model';
   static const modelTitle = 'Select commerce model';
@@ -135,7 +123,6 @@ class FounderToolsStrings {
       'What does this person bring to the startup? For example, their experience, skills or connections.';
   static const coFounderTitle = 'Co-founder';
   static const memberJoiningAs = 'Joining as';
-  static const tagMember = 'Member';
   static const addYourRole = 'Add your role';
   static const titleYourDetails = 'Your details';
   static const titleEditFounder = 'Edit founder';
@@ -143,10 +130,7 @@ class FounderToolsStrings {
       'Experience, skills or connections they bring';
   static String editMemberOf(String name) => 'Edit $name';
   static const inviteTitle = 'This person isn’t on Start.sa yet';
-  static String inviteMessage(String email) =>
-      'We’ll email $email an invitation to join and see this startup. Do you want to continue?';
   static const sendInvite = 'Send invite';
-  static const invitationSent = 'Invitation sent';
   static const invitationQueued = 'Invitation will be sent when you save';
   static String invitationsSent(int n) =>
       n == 1 ? 'Invitation sent' : '$n invitations sent';
@@ -159,12 +143,10 @@ class FounderToolsStrings {
       'We’ve reached today’s invitation limit. Save again tomorrow to send it.';
   static const inviteJoinFailed =
       'We couldn’t join the team. Please try again.';
-  static const tagDeclined = 'Declined';
   static const cancel = 'Cancel';
   static const addMemberButton = 'Add member';
   static const saveMemberButton = 'Save';
   static const removeMember = 'Remove this member';
-  static const editMemberLabel = 'Edit team member';
 
   // Step 4
   static const revenueNowLabel = 'Current financial year revenue';
@@ -193,7 +175,6 @@ class FounderToolsStrings {
   static const raisedInfo =
       'The amount investors have already committed to this round. Enter 0 if you haven’t raised anything yet.';
   static const lookingForLabel = 'What are you looking for?';
-  static const lookingForOtherHint = 'What else are you looking for?';
   static const partnerLabel = 'What type of partner do you need?';
   static const supportLabel = 'What type of support do you need?';
   static const partnerPlaceholder = 'Select partner types';
@@ -224,22 +205,15 @@ class FounderToolsStrings {
   static const visibilityPrivateTitle = 'Private startup';
   static const visibilityPrivateText =
       'Only your team can see this startup. It won’t appear in the Hub or Explore.';
-  static const yes = 'Yes';
   static const no = 'No';
   static const required = 'Required';
 
   // ---- Manage startup ----
   static const tabDashboard = 'Dashboard';
-  static const tabDetails = 'Details';
-  static const tabRounds = 'Rounds';
-  static const tabOverview = 'Overview';
-  static const tabRequests = 'Requests';
   static const tabInterest = 'EOI';
   static const interestTitle = 'Expressions of interest';
   static const interestSubtitle = 'Guests who are interested in your startup';
   static const tabSettings = 'Settings';
-  static const editStartup = 'Edit startup';
-  static const preview = 'Preview';
   static const activity = 'Activity';
   static const activityEmpty =
       'Views, bookmarks and requests will show here once people discover your startup.';
@@ -255,10 +229,7 @@ class FounderToolsStrings {
   static const associatedEmptyMember = 'No associated investors yet.';
   static const associatedEmpty =
       'Investors whose requests you accept appear here and on your profile.';
-  static const shownOnProfile = 'Shown on profile';
   static const calcCardTitle = 'Valuation Calculator';
-  static const calcCardText =
-      'See what your funding ask says your startup is worth';
   static const pending = 'Pending';
   static const accepted = 'Accepted';
   static const declined = 'Declined';
@@ -305,8 +276,6 @@ class FounderToolsStrings {
   static const onlyStartupTitle = 'This is your only startup';
   static const pendingAccountText =
       'Your account will be pending until you create a startup.';
-
-  static const previewLabel = 'Preview';
 
   // ---- Closing a startup (docs: Closing a Startup, Leaving and Deleting
   // an Account) ----
@@ -527,7 +496,6 @@ class FounderToolsStrings {
   static const postMoney = 'Post-money valuation';
   static const preMoney = 'Pre-money valuation';
   static const valueOfShare = 'Value of your share';
-  static const fillAbove = 'Fill in the fields above';
   static const ownershipAfter = 'Ownership after this round';
   static const youFounder = 'You (founder)';
   static const otherOwners = 'Other existing owners';

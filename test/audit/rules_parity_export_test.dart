@@ -206,7 +206,7 @@ void main() {
         stages: [...InvestorCriteria.stageOptions],
         commerceModels: [for (final m in CommerceModel.values) m.label],
         commerceModelsOther: _text(40),
-        lookFor: _text(InvestorCriteria.lookForMax),
+        lookFor: _text(1000),
       ),
       valueOffered: _text(1000),
     );

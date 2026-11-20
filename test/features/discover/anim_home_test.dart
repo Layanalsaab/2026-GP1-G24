@@ -10,7 +10,6 @@ import 'package:startsa/models/home_item.dart';
 import 'package:startsa/navigation/main_screen.dart';
 import 'package:startsa/shared_ui/theme/app_theme.dart';
 import 'package:startsa/shared_ui/widgets/cards/home_card.dart';
-import 'package:startsa/shared_ui/widgets/cards/trending.dart';
 import 'package:startsa/shared_ui/widgets/lists/segmented_switch.dart';
 
 import '../../support/fakes.dart';
@@ -182,7 +181,6 @@ void main() {
       await t.pump();
       await t.pump(const Duration(milliseconds: 600));
       // Standard cards (no ranked box): the rank and the growth in the pill.
-      expect(find.byType(TrendingBox), findsNothing);
       expect(find.byType(HomeCard), findsWidgets);
       expect(find.text('#1'), findsOneWidget);
       // No analytics on the cards.

@@ -54,7 +54,7 @@ void main() {
     if (initial == null) {
       vm.name.text = 'Rafeeq Health';
       vm.description.text = 'Home nursing.';
-      vm.selectSector('HealthTech', null);
+      vm.toggleSector('HealthTech');
       vm.selectStage('Pre-seed');
       vm.selectModel('Business-to-Consumer (B2C)', null);
       vm.selectCity('Riyadh');
@@ -82,17 +82,6 @@ void main() {
   group('Invitation model', () {
     test('the id is startupId~e-mail in lower case', () {
       expect(Invitation.idOf('S1', ' Sara@Gmail.com '), 'S1~sara@gmail.com');
-    });
-
-    test('canResend: any pending invitation', () {
-      const inv = Invitation(
-        startupId: 's',
-        startupName: 'S',
-        emailLower: 'a@b.co',
-        role: Invitation.roleMember,
-        invitedBy: 'u',
-      );
-      expect(inv.canResend, isTrue);
     });
 
     test('fromMap reads what toCreateMap writes', () {
@@ -622,15 +611,6 @@ void main() {
         ],
         ['layan'],
       );
-    });
-
-    test('saving keeps who created it and leaves the founder off', () {
-      AppSession.instance = AppSession()..signIn(person('layan'));
-      final vm = formWithTeam(initial: handedOver());
-      addTearDown(vm.dispose);
-      final saved = vm.startupToSave();
-      expect(saved.founderId, 'layan');
-      expect(saved.memberRoles.containsKey('noura'), isFalse);
     });
   });
 

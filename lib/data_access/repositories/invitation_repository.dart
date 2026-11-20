@@ -265,17 +265,6 @@ class InvitationRepository {
     if (pending != null) await cancel(startup.id, pending.emailLower);
   }
 
-  /// The owner invitations I sent that were declined (the one-time "Invitation
-  /// declined" pop-up).
-  Future<List<Invitation>> declinedOwnerInvitesOfMine() async {
-    final docs = await _firestore.queryWhereEqual(_col, 'invitedBy', _uid);
-    return [
-      for (final d in docs)
-        if (Invitation.fromMap(d.data) case final i?)
-          if (i.isOwner && i.status == InvitationStatus.declined) i,
-    ];
-  }
-
   /// Sends the e-mail of [invitation] through the relay and records it.
   Future<InviteSendResult> sendEmail(Invitation invitation) async {
     try {

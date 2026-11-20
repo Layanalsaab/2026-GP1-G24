@@ -428,13 +428,6 @@ class PrototypeSeed {
     'mock-founder-5': 'Khalid Alharbi',
   };
 
-  /// Match shown on the Matches tab for an investor: percent and reason.
-  static const startupMatches = <String, (int, String)>{
-    'mock-rafeeq': (94, 'Same sector, stage and region'),
-    'mock-daftar': (86, 'Same sector and stage'),
-    'mock-naql': (71, 'Same stage and region'),
-  };
-
   /// "Joined ..." lines on the "New on Start.sa" rail.
   static const joined = <String, String>{
     'mock-sanabil': 'Joined today',

@@ -61,15 +61,6 @@ class InterestRepository {
 
   bool hasSent(String key) => _sent.value.contains(key);
 
-  /// Sends the interest, or withdraws it. Returns true when it is now sent.
-  bool toggleSent(String key) {
-    final next = {..._sent.value};
-    final added = next.add(key);
-    if (!added) next.remove(key);
-    _sent.value = next;
-    return added;
-  }
-
   void clear() {
     _inbox = sample ? List.of(PrototypeSeed.interests) : [];
     _sent.value = {};

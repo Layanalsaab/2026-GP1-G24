@@ -12,8 +12,6 @@ import 'founder_ui.dart';
 class StartupAsk {
   StartupAsk._();
 
-  static bool funding(Startup s) => s.seeksFunding;
-
   /// Partnership is selected when its box was ticked or partner types exist.
   static bool partnership(Startup s) =>
       s.lookingFor.contains(LookingFor.partnership) ||

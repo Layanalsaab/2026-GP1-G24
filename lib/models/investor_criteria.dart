@@ -44,9 +44,6 @@ class InvestorCriteria {
     'Series C',
   ];
 
-  /// Longest "What do you look for in a startup?" text.
-  static const lookForMax = 1000;
-
   /// "0", "1–5", "6–15" or "16+": how many startups they invested in.
   final String? dealsCount;
 
@@ -97,9 +94,6 @@ class InvestorCriteria {
     ];
     return shown.join(', ');
   }
-
-  /// "SAR 100K – 500K".
-  String? get ticketLabel => ticketBand;
 
   /// "Pre-seed – Seed" or one stage.
   String get stageRange {

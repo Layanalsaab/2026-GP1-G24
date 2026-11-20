@@ -7,12 +7,6 @@ import 'round_limits.dart';
 class StartupValidators {
   StartupValidators._();
 
-  static const nameMax = 40;
-  static const descriptionMax = 150;
-  static const longTextMax = 1000;
-  static const websiteMax = 100;
-  static const maxMoneyDigits = 13;
-
   static String? name(String v) =>
       v.trim().isEmpty ? ValidationStrings.startupName : null;
 
@@ -37,10 +31,6 @@ class StartupValidators {
         ? null
         : ValidationStrings.foundedRange(minFoundedYear, max);
   }
-
-  /// True when [value] is a complete, valid year (for the green check).
-  static bool isFoundedYear(String value, {DateTime? now}) =>
-      foundedYear(value, now: now) == null;
 
   /// A real web address: optional http:// or https:// (no other scheme),
   /// optional www., one or more domain parts (letters, numbers, inner

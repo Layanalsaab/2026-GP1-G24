@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:startsa/data_access/mock_data/prototype_seed.dart';
@@ -13,27 +12,6 @@ import 'package:startsa/shared_ui/widgets/overlays/app_toast.dart';
 
 import '../support/fakes.dart';
 
-/// Records what is copied to the clipboard.
-List<String> _watchClipboard(WidgetTester t) {
-  final copied = <String>[];
-  t.binding.defaultBinaryMessenger.setMockMethodCallHandler(
-    SystemChannels.platform,
-    (call) async {
-      if (call.method == 'Clipboard.setData') {
-        copied.add((call.arguments as Map)['text'] as String);
-      }
-      return null;
-    },
-  );
-  addTearDown(
-    () => t.binding.defaultBinaryMessenger.setMockMethodCallHandler(
-      SystemChannels.platform,
-      null,
-    ),
-  );
-  return copied;
-}
-
 void main() {
   setUpAll(() => GoogleFonts.config.allowRuntimeFetching = false);
   setUp(() => StartupRepository.instance = FakeStartupRepository());
@@ -43,32 +21,14 @@ void main() {
       ShareLink.forKey('s-mock-rafeeq'),
       'https://startsa-ea49e.web.app/startup/mock-rafeeq',
     );
-    expect(ShareLink.forKey('i-ahmad'), 'https://startsa-ea49e.web.app/investor/ahmad');
-    expect(ShareLink.forKey('p-taqadam'), 'https://startsa-ea49e.web.app/program/taqadam');
-  });
-
-  testWidgets('copy puts the link on the clipboard and says Link copied', (
-    t,
-  ) async {
-    final copied = _watchClipboard(t);
-    await t.pumpWidget(
-      MaterialApp(
-        theme: AppTheme.light,
-        navigatorKey: AppToast.navigatorKey,
-        home: Builder(
-          builder: (context) => TextButton(
-            onPressed: () => ShareLink.copyKey(context, 's-abc'),
-            child: const Text('share'),
-          ),
-        ),
-      ),
+    expect(
+      ShareLink.forKey('i-ahmad'),
+      'https://startsa-ea49e.web.app/investor/ahmad',
     );
-    await t.tap(find.text('share'));
-    await t.pump();
-    await t.pump(const Duration(milliseconds: 400));
-    expect(copied, ['https://startsa-ea49e.web.app/startup/abc']);
-    expect(find.text('Link copied'), findsOneWidget);
-    await t.pump(const Duration(seconds: 4));
+    expect(
+      ShareLink.forKey('p-taqadam'),
+      'https://startsa-ea49e.web.app/program/taqadam',
+    );
   });
 
   testWidgets('the share icon on a card opens the share sheet', (t) async {

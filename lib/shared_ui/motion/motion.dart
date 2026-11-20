@@ -26,7 +26,6 @@ class Motion {
   static const drawer = AppCurves.drawer;
 
   static const press = AppDur.press;
-  static const fast = AppDur.fast;
   static const color = AppDur.chip;
   static const medium = AppDur.screen;
   static const slow = AppDur.sheet;
@@ -738,6 +737,3 @@ class _ChipInState extends _OneShotState<ChipIn> {
     );
   }
 }
-
-/// `fade-in`: opacity 0 -> 1 over 500 ms after an optional delay (§0.3).
-typedef FadeIn = FadeInOnce;

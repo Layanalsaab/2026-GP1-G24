@@ -59,11 +59,6 @@ class ProfilePhotoPickerService {
             initAspectRatio: CropAspectRatioPreset.square,
             aspectRatioPresets: const [CropAspectRatioPreset.square],
           ),
-          IOSUiSettings(
-            title: AccountStrings.cropPhotoTitle,
-            aspectRatioLockEnabled: true,
-            resetAspectRatioEnabled: false,
-          ),
         ],
       );
       if (cropped == null) return null;

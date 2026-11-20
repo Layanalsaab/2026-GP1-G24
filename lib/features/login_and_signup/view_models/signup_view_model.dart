@@ -321,30 +321,6 @@ class SignupViewModel extends ChangeNotifier with SafeNotifier {
     notifyListeners();
   }
 
-  /// Investor sign-up (unchanged): taps on the round photo picker remove the
-  /// photo when there is one, else pick and crop a square photo. Returns the
-  /// toast to show, or null.
-  Future<String?> togglePhoto() async {
-    if (photo != null) {
-      photo = null;
-      notifyListeners();
-      return AuthStrings.photoRemoved;
-    }
-    try {
-      final file = await _picker.pickSquarePhoto();
-      if (file == null) return null;
-      photo = file;
-      notifyListeners();
-      return AuthStrings.photoAdded;
-    } on ProfilePhotoException catch (e) {
-      return e.failure == ProfilePhotoFailure.tooLarge
-          ? AccountStrings.photoTooLarge
-          : AccountStrings.photoFailed;
-    } catch (_) {
-      return AccountStrings.photoFailed;
-    }
-  }
-
   /// Picks and crops a square photo (the same button changes it later).
   /// Returns an error message to show in a toast, or null: picking a photo
   /// shows no toast, the square simply shows the photo.

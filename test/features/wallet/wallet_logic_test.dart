@@ -169,7 +169,11 @@ void main() {
     }) {
       final byId = {for (final s in startups) s.id: s};
       return [
-        for (final r in MatchingRepository.matchesForTicket(t, models, startups))
+        for (final r in MatchingRepository.matchesForTicket(
+          t,
+          models,
+          startups,
+        ))
           TicketMatch(startup: byId[r.id]!, result: r),
       ];
     }
@@ -199,7 +203,10 @@ void main() {
     });
 
     test('close: only the sector or only the stage differs', () {
-      expect(matches(ticket(sectors: ['Fintech']), [rafeeq]).single.close, isTrue);
+      expect(
+        matches(ticket(sectors: ['Fintech']), [rafeeq]).single.close,
+        isTrue,
+      );
       expect(matches(ticket(stages: ['Seed']), [rafeeq]).single.close, isTrue);
       expect(
         matches(ticket(sectors: ['Fintech'], stages: ['Seed']), [rafeeq]),
@@ -237,7 +244,10 @@ void main() {
       expect(exact(['Fashion']), isFalse);
       // A ticket with the plain "Other" matches any Other sector.
       expect(exact(['Other']), isTrue);
-      expect(matches(ticket(sectors: ['Other']), [rafeeq]).single.close, isTrue);
+      expect(
+        matches(ticket(sectors: ['Other']), [rafeeq]).single.close,
+        isTrue,
+      );
     });
 
     test('best first: exact before close, then by name', () {
@@ -248,7 +258,10 @@ void main() {
         stage: StartupStage.seed,
       );
       expect(
-        [for (final m in matches(ticket(), [seed, rafeeq, alpha])) m.startup.name],
+        [
+          for (final m in matches(ticket(), [seed, rafeeq, alpha]))
+            m.startup.name,
+        ],
         ['Alpha', 'Rafeeq Health', 'Aardvark'],
       );
     });
@@ -681,7 +694,6 @@ void main() {
     test('a request status is read from the stored value', () {
       final r = TicketRequest.fromMap('r', _requestDoc('r', 'accepted', 1));
       expect(r!.status, RequestStatus.accepted);
-      expect(r.statusLabel, 'Accepted');
       // A request that was not sent through a ticket is not a wallet request.
       expect(
         TicketRequest.fromMap('x', {'startupId': 's', 'amount': 1}),

@@ -30,12 +30,9 @@ class ValidationStrings {
   static const city = 'Please select your city.';
   static const sectors = 'Select at least one sector.';
   static const bioRequired = 'Please write a short bio.';
-  static const chooseOne = 'Please choose one.';
-  static const required = 'Required';
   static const selectAtLeastOneStage = 'Select at least one stage.';
   static const selectAtLeastOneModel = 'Select at least one commerce model.';
   static const selectAtLeastOne = 'Select at least one.';
-  static const selectAtLeastOneOption = 'Select at least one option.';
 
   // Investor
   static const gainRequired =
@@ -50,12 +47,9 @@ class ValidationStrings {
 
   // Verify email step
   static const verifyWrongEmail = 'This isn’t the email you signed up with.';
-  static const verifyNotVerified =
-      'Your email isn’t verified yet. Open the link we sent you, then try again.';
 
   // Toasts used by forms
   static const fixFields = 'Please fix the highlighted fields';
-  static const fillRequired = 'Please fix the highlighted fields';
   static const memberNameRequired = 'Please enter their full name.';
   static const memberEmailRequired = 'Please enter their email.';
   static const memberEmailInvalid =
@@ -68,12 +62,6 @@ class ValidationStrings {
   static const memberDuplicate = 'This person is already on the team.';
   static const founderRowIncomplete =
       'Add your role and contribution: tap the pencil.';
-  static const saveMemberFirst = 'Save or cancel the team member first';
-
-  // "Other" write-ins (noun: "sector", "stage", "commerce model", ...)
-  /// Under a chip group.
-  static String otherChips(String noun) =>
-      'Please type your other $noun — it can’t be blank.';
 
   /// The "Other" write-in repeats an option that is already in the list.
   static const otherRepeats =
@@ -82,13 +70,6 @@ class ValidationStrings {
   /// Under a select field.
   static String otherSelect(String noun) =>
       'Tell us your other $noun — it can’t be blank.';
-
-  /// Inside the picker sheet after tapping Done with a blank write-in.
-  static String otherSheet(String noun) =>
-      'Please type your $noun — it can’t be blank.';
-
-  /// The write-in placeholder inside the picker sheet.
-  static String otherSheetHint(String noun) => 'Describe your other $noun';
 
   // ---- Add / Edit startup (docs/06 section 8) ----
   static const startupName = 'Please enter a startup name.';

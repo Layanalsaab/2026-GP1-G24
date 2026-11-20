@@ -17,7 +17,6 @@ class Validators {
   static const maxFullName = 50;
   static const maxEmail = 100;
   static const maxPassword = 32;
-  static const maxBio = 1000;
 
   /// Founder sign-up bio (required).
   static const maxFounderBio = 2000;
@@ -137,13 +136,6 @@ class Validators {
   static String? linkedinLive(String? value) =>
       isLinkedin(value) ? null : ValidationStrings.linkedin;
 
-  /// Sign-up: shown live once something is typed.
-  static String? emailLive(String? value) {
-    final v = (value ?? '').trim();
-    if (v.isEmpty || _wellFormed(v)) return null;
-    return ValidationStrings.emailLive;
-  }
-
   // ---------------------------------------------------------------- phone
 
   /// The digits of [value] (spaces and symbols removed), at most 9.
@@ -230,13 +222,6 @@ class Validators {
   static bool isPassword(String? value) =>
       !RegExp(r'\s').hasMatch(value ?? '') &&
       passwordRules(value).every((r) => r.met);
-
-  /// "Passwords don’t match" once something is typed in the confirm field.
-  static String? confirmPassword(String? password, String? confirmation) {
-    final c = confirmation ?? '';
-    if (c.isEmpty || c == password) return null;
-    return ValidationStrings.confirmMismatch;
-  }
 
   static bool confirmMatches(String? password, String? confirmation) =>
       (confirmation ?? '').isNotEmpty && confirmation == password;

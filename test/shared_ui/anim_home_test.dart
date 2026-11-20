@@ -6,7 +6,6 @@ import 'package:startsa/shared_ui/motion/motion.dart';
 import 'package:startsa/shared_ui/theme/app_colors.dart';
 import 'package:startsa/shared_ui/theme/app_theme.dart';
 import 'package:startsa/shared_ui/widgets/cards/home_card.dart';
-import 'package:startsa/shared_ui/widgets/cards/trending.dart';
 import 'package:startsa/shared_ui/widgets/headers/home_header.dart';
 import 'package:startsa/shared_ui/widgets/lists/results_row.dart';
 import 'package:startsa/shared_ui/widgets/lists/segmented_switch.dart';
@@ -268,57 +267,6 @@ void main() {
     );
     expect((c.decoration as BoxDecoration).boxShadow, hasLength(2));
     expect(c.transform!.getTranslation().y, -2);
-  });
-
-  group('Trending (4.9)', () {
-    testWidgets('row hover #F7F5F0, pressed #F6F4EF, no scale', (t) async {
-      await t.pumpWidget(
-        _app(
-          TrendingBox(
-            children: [
-              TrendingRow(
-                rank: 1,
-                category: 'Fintech',
-                name: 'Zed',
-                onTap: () {},
-              ),
-            ],
-          ),
-        ),
-      );
-      await t.pump(const Duration(seconds: 1));
-      Color? bg() =>
-          (t
-                      .widget<AnimatedContainer>(
-                        find
-                            .descendant(
-                              of: find.byType(TrendingRow),
-                              matching: find.byType(AnimatedContainer),
-                            )
-                            .first,
-                      )
-                      .decoration
-                  as BoxDecoration)
-              .color;
-      expect(bg(), Colors.transparent);
-      final g = await _mouse(t);
-      await _hover(t, g, find.text('Zed'));
-      expect(bg(), const Color(0xFFF7F5F0));
-      await g.down(t.getCenter(find.text('Zed')));
-      await t.pump(const Duration(milliseconds: 200));
-      expect(bg(), const Color(0xFFF6F4EF));
-      expect(find.byType(AnimatedScale), findsNothing);
-      await g.up();
-    });
-
-    testWidgets('the box enters with a 300 ms rise', (t) async {
-      await t.pumpWidget(_app(const TrendingBox(children: [Text('x')])));
-      expect(
-        t.widget<Rise>(find.byType(Rise)).duration,
-        const Duration(milliseconds: 300),
-      );
-      await t.pump(const Duration(seconds: 1));
-    });
   });
 
   group('SegmentedSwitch (4.4)', () {

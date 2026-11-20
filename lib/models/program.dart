@@ -49,7 +49,6 @@ class Program {
   final String? websiteUrl;
 
   String get cardSummary => summary ?? about;
-  String get cardFocus => focus ?? focusSectors.join(', ');
 
   /// The letters shown in the logo square.
   String get initial {

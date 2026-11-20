@@ -118,9 +118,6 @@ class Invitation {
   static String idOf(String startupId, String email) =>
       '$startupId~${email.trim().toLowerCase()}';
 
-  /// A founder can send the e-mail again whenever the invitation is pending.
-  bool get canResend => isPending;
-
   Map<String, Object?> toCreateMap() => {
     'startupId': startupId,
     'startupName': startupName,

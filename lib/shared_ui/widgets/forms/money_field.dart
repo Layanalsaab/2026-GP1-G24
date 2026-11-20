@@ -13,12 +13,6 @@ class ThousandsFormatter extends TextInputFormatter {
 
   final int maxDigits;
 
-  /// "1,200,000" -> 1200000 (null when empty).
-  static int? parse(String text) {
-    final d = text.replaceAll(RegExp('[^0-9]'), '');
-    return d.isEmpty ? null : int.parse(d);
-  }
-
   /// 1200000 -> "1,200,000".
   static String format(int n) => _group(n.toString());
 

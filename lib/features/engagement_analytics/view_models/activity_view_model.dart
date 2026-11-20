@@ -18,10 +18,6 @@ class ActivityViewModel extends ChangeNotifier with SafeNotifier {
 
   StartupActivity? get activity => _repository.activityFor(startupId, range);
 
-  /// True when the startup has any analytics at all.
-  bool get hasActivity =>
-      _repository.activityFor(startupId, ActivityRange.week) != null;
-
   void select(ActivityRange value) {
     if (value == range) return;
     range = value;

@@ -4,21 +4,11 @@ import 'package:flutter/material.dart';
 /// All values are logical pixels at the 412 x 892 design frame.
 class AppSpace {
   AppSpace._();
-
-  /// Screen side padding.
-  static const double page = 16;
-
-  /// Gap between stacked form fields.
-  static const double field = 20;
-
-  /// Gap between home cards and sections.
-  static const double list = 16;
 }
 
 class AppRadius {
   AppRadius._();
 
-  static const double input = 12;
   static const double button = 14;
   static const double buttonSmall = 12;
   static const double card = 18;
@@ -26,7 +16,6 @@ class AppRadius {
   static const double authCard = 22;
   static const double sheet = 24;
   static const double dialog = 24;
-  static const double headerAuth = 28;
   static const double headerHome = 30;
   static const double pill = 999;
 }
@@ -37,14 +26,10 @@ class AppSize {
   static const double buttonHeight = 48;
   static const double buttonSmallHeight = 40;
   static const double ctaButtonHeight = 52;
-  static const double inputMinHeight = 50;
   static const double iconButton = 44;
   static const double glassIconButton = 40;
   static const double headerLogoAuth = 42;
   static const double headerLogoHome = 36;
-  static const double avatarHome = 58;
-  static const double avatarTrending = 50;
-  static const double avatarSmall = 44;
   static const double avatarDropdown = 36;
 }
 

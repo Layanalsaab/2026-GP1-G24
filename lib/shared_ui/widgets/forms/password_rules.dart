@@ -28,10 +28,6 @@ List<PasswordRule> evaluatePasswordRules(String password) => [
   ),
 ];
 
-/// True when every rule is met.
-bool passwordRulesMet(String password) =>
-    evaluatePasswordRules(password).every((r) => r.met);
-
 /// The password rule checklist under the sign-up password field: four rows
 /// (12/16, 16 px icon, 6 px apart), unmet = red with an x, met = moss600 with a
 /// check; the color animates over 200 ms. Pass the current [password].

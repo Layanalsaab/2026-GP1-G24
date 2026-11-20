@@ -60,11 +60,6 @@ class LogoPickerService {
             initAspectRatio: CropAspectRatioPreset.square,
             aspectRatioPresets: const [CropAspectRatioPreset.square],
           ),
-          IOSUiSettings(
-            title: StartupStrings.cropLogoTitle,
-            aspectRatioLockEnabled: true,
-            resetAspectRatioEnabled: false,
-          ),
         ],
       );
       if (cropped == null) return null;

@@ -15,7 +15,7 @@ void main() {
     sector: Sector.fintech,
     stage: StartupStage.seed,
     commerceModel: CommerceModel.b2b,
-    location: StartupLocation.alKhobar,
+    location: StartupLocation.dammam,
     lookingFor: {LookingFor.funding, LookingFor.mentorship},
     fundingRequirement: 1500000,
   );
@@ -48,7 +48,7 @@ void main() {
     expect(passes(startupItem, c, 'Sector', 'HealthTech'), isFalse);
     expect(passes(startupItem, c, 'Stage', 'Seed'), isTrue);
     expect(passes(startupItem, c, 'Stage', 'Series A'), isFalse);
-    expect(passes(startupItem, c, 'Headquarters', 'Al Khobar'), isTrue);
+    expect(passes(startupItem, c, 'Headquarters', 'Dammam'), isTrue);
     expect(passes(startupItem, c, 'Looking for', 'Mentorship'), isTrue);
     expect(passes(startupItem, c, 'Looking for', 'Talent'), isFalse);
     expect(passes(startupItem, c, 'Commerce model', 'B2B'), isTrue);

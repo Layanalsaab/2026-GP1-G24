@@ -5,7 +5,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:startsa/shared_ui/widgets/chips/app_chip.dart';
 import 'package:startsa/shared_ui/widgets/forms/app_text_field.dart';
 import 'package:startsa/shared_ui/widgets/forms/money_field.dart';
-import 'package:startsa/shared_ui/widgets/forms/password_rules.dart';
 import 'package:startsa/shared_ui/widgets/headers/auth_headers.dart';
 import 'package:startsa/shared_ui/widgets/headers/overlap_layout.dart';
 
@@ -41,7 +40,6 @@ void main() {
       ),
     );
     expect(v.text, '1,200,000');
-    expect(passwordRulesMet('Abcdef1!'), isTrue);
   });
 
   testWidgets('text field with controller and chip tap', (t) async {

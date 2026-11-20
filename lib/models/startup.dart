@@ -77,9 +77,6 @@ class Startup {
   final List<String> otherSectors;
   final String? commerceModelOther;
 
-  /// Longest "Other" text, in characters (firestore.rules uses the same).
-  static const otherMaxLength = 40;
-
   /// The `founderId` of the sample (imported dataset) startups: a placeholder,
   /// not an account. Their founder is the team card flagged as founder.
   static const datasetFounderId = 'crunchbase-dataset';
@@ -254,8 +251,6 @@ class Startup {
   /// The three years of expected revenue, oldest first (null when unset).
   List<int?> get expectedRevenue => [revenueYear1, revenueYear2, revenueYear3];
 
-  bool get hasBusinessDetails => customers.isNotEmpty || marketSize != null;
-
   bool get seeksFunding => lookingFor.contains(LookingFor.funding);
 
   /// The brief description.
@@ -402,8 +397,7 @@ class Startup {
       valuation: (data[StartupFields.valuation] as num?)?.toInt(),
       revenueThisYear: (data[StartupFields.revenueThisYear] as num?)?.toInt(),
       monthlyBurn: (data[StartupFields.monthlyBurn] as num?)?.toInt(),
-      revenueModel:
-          (data[StartupFields.revenueModel] as String?) ?? '',
+      revenueModel: (data[StartupFields.revenueModel] as String?) ?? '',
       raisedInRound: (data[StartupFields.raisedInRound] as num?)?.toInt(),
       partnerTypes: _strings(data[StartupFields.partnerTypes]),
       supportTypes: _strings(data[StartupFields.supportTypes]),

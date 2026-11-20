@@ -237,16 +237,6 @@ class InterestFields {
 /// Firebase Storage folders. storage.rules uses the same paths.
 class StoragePaths {
   StoragePaths._();
-
-  /// `startup_logos/{founderId}/{startupId}/{fileName}`
-  static String startupLogo(
-    String founderId,
-    String startupId,
-    String fileName,
-  ) => 'startup_logos/$founderId/$startupId/$fileName';
-
-  /// `users/{uid}/profile.jpg`
-  static String userProfilePhoto(String uid) => 'users/$uid/profile.jpg';
 }
 
 /// Fields of a `tickets/{investorId}-T{n}` document (an investor's investment

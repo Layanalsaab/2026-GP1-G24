@@ -173,9 +173,6 @@ class ManageDetailsTab extends StatelessWidget {
         return _Ask(s);
     }
   }
-
-  /// The icon of section [i] (the tile of its heading).
-  static String iconOf(int i) => _icons[i];
 }
 
 /// One accordion row: header (tile, title, summary, Edit pill, chevron) and,

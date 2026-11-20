@@ -229,7 +229,7 @@ void main() {
       addTearDown(vm.dispose);
       vm.name.text = 'Nakhla Pay';
       vm.description.text = 'We help shops.';
-      vm.selectSector('Fintech', null);
+      vm.toggleSector('Fintech');
       vm.selectModel('Business-to-Business (B2B)', null);
       vm.selectCity('Jeddah');
       vm.toggleLookingFor('Funding');

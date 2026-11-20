@@ -144,8 +144,4 @@ class ShareLink {
     unawaited(Clipboard.setData(ClipboardData(text: url)));
     AppToast.confirm(context, ProfileStrings.linkCopied);
   }
-
-  /// Copies the link of the item behind a bookmark key.
-  static void copyKey(BuildContext context, String key) =>
-      copy(context, forKey(key));
 }

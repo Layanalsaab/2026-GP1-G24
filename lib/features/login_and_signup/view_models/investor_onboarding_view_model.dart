@@ -274,14 +274,6 @@ class InvestorOnboardingViewModel extends ChangeNotifier with SafeNotifier {
   void _toggle(Set<String> set, String v) =>
       _set(() => set.contains(v) ? set.remove(v) : set.add(v));
 
-  /// Tapping Next on step 4: true when the user may continue.
-  bool tryStep4() {
-    if (step4Complete) return true;
-    step4Tried = true;
-    notifyListeners();
-    return false;
-  }
-
   void _set(VoidCallback change) {
     change();
     notifyListeners();

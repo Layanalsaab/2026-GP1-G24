@@ -23,14 +23,7 @@ abstract final class AppDur {
   static const base = Duration(milliseconds: 200);
   static const card = Duration(milliseconds: 220);
   static const screen = Duration(milliseconds: 260);
-  static const thumb = Duration(milliseconds: 300);
-  static const pop = Duration(milliseconds: 320);
   static const sheet = Duration(milliseconds: 340);
-  static const rise = Duration(milliseconds: 360);
-  static const tabInd = Duration(milliseconds: 380);
-  static const advSheet = Duration(milliseconds: 420);
-  static const toastOn = Duration(milliseconds: 300);
-  static const toastHold = Duration(milliseconds: 2400);
 
   /// Replaces every movement when the user asked for reduced motion.
   static const reducedFade = Duration(milliseconds: 200);
@@ -63,7 +56,4 @@ abstract final class PressScale {
 
   /// Menu "View profile" pill and the LinkedIn pill.
   static const smallPill = 0.96;
-
-  /// Segmented halves, Trending rows, menu rows, startup rows.
-  static const none = 1.0;
 }

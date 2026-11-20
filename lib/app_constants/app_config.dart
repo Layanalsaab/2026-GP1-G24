@@ -24,8 +24,4 @@ class AppConfig {
   /// page: `<base>/startup/<id>`, `<base>/investor/<id>`). Same Firebase
   /// Hosting site as the invitation page; the app opens these links itself.
   static const shareLinkBase = 'https://startsa-ea49e.web.app';
-
-  /// The link of one invitation.
-  static String inviteLink(String invitationId) =>
-      '$inviteLinkBase?i=${Uri.encodeQueryComponent(invitationId)}';
 }
