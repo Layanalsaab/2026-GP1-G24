@@ -9,7 +9,7 @@ import '../../theme/app_metrics.dart';
 import '../../theme/app_text.dart';
 import '../cards/avatars.dart';
 
-/// Where an [AppDropdown] menu hangs and grows from.
+/// Where an AppDropdown menu hangs and grows from.
 enum AppDropdownOrigin {
   /// Right edges aligned, grows from the top-right (Trending range).
   topRight,
@@ -18,14 +18,7 @@ enum AppDropdownOrigin {
   topCenter,
 }
 
-/// Anchored popover menu (prototype `.rddm` / `.mfm`). Tapping the anchor
-/// opens a white menu (radius 14, padding 6, dropdown shadow) 6 px under it
-/// with opacity 150 ms + scale 0.96 (0.97 for [AppDropdownOrigin.topCenter])
-/// + translateY -4 -> 0 over 180 ms easeOut. It closes on an outside tap, on
-/// Android back, or via the `close` callback given to [menuBuilder].
-///
-/// [anchorBuilder] receives `open` so the caret can rotate (use
-/// [DropdownCaret]). The menu is a real route, so back closes it.
+/// Anchored popover menu (prototype .rddm / .mfm).
 class AppDropdown extends StatefulWidget {
   const AppDropdown({
     super.key,
@@ -245,8 +238,7 @@ class _MenuCard extends StatelessWidget {
   }
 }
 
-/// Tracks a mouse pointer over its child (never touch) and rebuilds with the
-/// hover flag. Used for the dropdown rows and the "Matches for" button.
+/// Tracks a mouse pointer over its child (never touch) and rebuilds with the hover flag.
 class _Hoverable extends StatefulWidget {
   const _Hoverable({required this.builder});
 
@@ -274,11 +266,10 @@ class _HoverableState extends State<_Hoverable> {
   }
 }
 
-/// Row hover fill of the dropdown menus (`#F6F4EF`).
+/// Row hover fill of the dropdown menus (#F6F4EF).
 Color get _rowHover => AppColors.profileBg;
 
-/// The dropdown caret (`M7 10l5 5 5-5z`, filled) that rotates 180 degrees in
-/// 200 ms when [open].
+/// The dropdown caret (M7 10l5 5 5-5z, filled) that rotates 180 degrees in 200 ms when open.
 class DropdownCaret extends StatelessWidget {
   const DropdownCaret({
     super.key,
@@ -306,8 +297,6 @@ class DropdownCaret extends StatelessWidget {
   }
 }
 
-/// A selectable menu row (prototype `.rddo`): padding 10, radius 9, 14 px;
-/// selected = `#EEF4EF` fill with moss600 700 text.
 class DropdownOption extends StatelessWidget {
   const DropdownOption({
     super.key,
@@ -358,9 +347,6 @@ class DropdownOption extends StatelessWidget {
   }
 }
 
-/// The Trending range dropdown (prototype `.rdd`): a 32 high `#EBE8E1` pill
-/// ("Last 7 days" + caret) opening a menu of [options] (Today / Last 7 days /
-/// Last 30 days / This year) from its top-right.
 class RangeDropdown extends StatelessWidget {
   const RangeDropdown({
     super.key,
@@ -415,21 +401,17 @@ class RangeDropdown extends StatelessWidget {
   }
 }
 
-/// One row of [MatchesForDropdown].
+/// One row of MatchesForDropdown.
 class MatchesForOption {
   const MatchesForOption({required this.name, required this.subtitle});
 
   /// Startup name.
   final String name;
 
-  /// e.g. "HealthTech · Pre-seed".
+  /// e.g.
   final String subtitle;
 }
 
-/// The "Matches for" card (prototype `.mfor` + `.mfm`): white card radius 14
-/// with the kicker "Matches for" (11.5 grey), the current name (15/700) and a
-/// moss caret; opens a full-width menu of [options] (avatar 36, name 14.5/700,
-/// subtitle 12, check on the current one) from the top-center.
 class MatchesForDropdown extends StatelessWidget {
   const MatchesForDropdown({
     super.key,

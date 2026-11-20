@@ -1,8 +1,5 @@
 import 'connection_request.dart';
 
-/// A startup's request to an investor, sent from one of the investor's open
-/// tickets (`ticketRequests/{startupId}~{ticketId}`). The investor sees it as
-/// "Request received" and accepts or declines it.
 class ReceivedRequest {
   const ReceivedRequest({
     required this.id,

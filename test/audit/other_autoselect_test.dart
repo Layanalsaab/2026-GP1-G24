@@ -1,5 +1,3 @@
-// An "Other" write-in that names a listed option picks that option by itself,
-// silently, once the typing pauses (0.5 s): no message, "Other" is dropped.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -74,7 +72,6 @@ void main() {
     await t.pump(const Duration(milliseconds: 300));
     expect(toggled, isEmpty, reason: 'still waiting for the typing to pause');
     await t.pump(pause);
-    // The option is ticked, Other is unticked, its text is cleared.
     expect(toggled, ['Fintech', 'Other']);
     expect(others.last, '');
     expect(find.byType(EditableText), findsNothing);

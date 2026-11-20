@@ -5,18 +5,6 @@ import 'arch_background.dart';
 import 'auth_headers.dart';
 import 'header_buttons.dart';
 
-/// The banner of the Bookmarks and My Startups screens (one layout, so the
-/// two are exactly the same height):
-///
-/// * row 1: back arrow on the left, [topTrailing] (My Startups: the "+ Add"
-///   pill) on the right;
-/// * row 2: the big [title] on the left, the 42 px Start.sa logo on the right,
-///   centered on the title line. No count line under the title;
-/// * row 3: [pills] (the filter and sort pills), left-aligned under the
-///   title. The row keeps its 28 px even when [pills] is null, so the height
-///   never changes.
-///
-/// The list below starts at the same y on both screens (see [height]).
 class ListScreenHeader extends StatelessWidget {
   const ListScreenHeader({
     super.key,
@@ -72,8 +60,6 @@ class ListScreenHeader extends StatelessWidget {
               height: 28,
               child: Align(
                 alignment: Alignment.centerLeft,
-                // Never wider than the banner, even on a narrow phone or
-                // with large text: the pills shrink a little instead.
                 child: pills == null
                     ? null
                     : FittedBox(

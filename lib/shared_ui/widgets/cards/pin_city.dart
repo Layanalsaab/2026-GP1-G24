@@ -5,24 +5,18 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_text.dart';
 
 /// A city on a card line: the small location pin, a 4 px gap, then the city.
-/// The pin is 14 px and grey (`#8C918D`), centred on the text. A card with no
-/// city shows nothing at all (no lone pin). One style for every card and
-/// profile line that shows a city.
 class PinCity extends StatelessWidget {
   const PinCity(this.city, {super.key, this.style});
 
   final String? city;
 
-  /// The city text style; 13 px [AppColors.metaText] by default.
+  /// The city text style; 13 px AppColors.metaText by default.
   final TextStyle? style;
 
   static const double pinSize = 14;
   static const double gap = 4;
 
-  /// The pin and the city inside a line of text (for a `Text.rich`). A widget
-  /// inside a line does not inherit the line's style, so pass the SAME [style]
-  /// as the line: the city then has its font, size and colour. The pin is
-  /// [pinColor], or the text colour.
+  /// The pin and the city inside a line of text (for a Text.rich).
   static InlineSpan span(
     String city, {
     required TextStyle style,

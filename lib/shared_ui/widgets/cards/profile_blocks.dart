@@ -8,12 +8,10 @@ import '../../theme/app_text.dart';
 import '../lists/press_surface.dart';
 import 'pin_city.dart';
 
-/// Colour of the 34 px icon box of a [ProfileCard].
+/// Colour of the 34 px icon box of a ProfileCard.
 enum ProfileIconTone { moss, gold, red }
 
-/// Startup-profile card (prototype `.card.pcard`): white, border `#EBE7DF`,
-/// radius 20, padding 16, gap 10. Header = 34 px icon box (radius 10) with a
-/// filled 18 px [icon] path + title 16/700; [child] below.
+/// Startup-profile card (prototype .card.pcard): white, border #EBE7DF, radius 20, padding 16, gap 10.
 class ProfileCard extends StatelessWidget {
   const ProfileCard({
     super.key,
@@ -80,7 +78,7 @@ class ProfileCard extends StatelessWidget {
   }
 }
 
-/// Paragraph text used inside profile cards (14.5/22 `#3E4A41`).
+/// Paragraph text used inside profile cards (14.5/22 #3E4A41).
 class ProfileText extends StatelessWidget {
   const ProfileText(this.text, {super.key, this.muted = false});
 
@@ -98,10 +96,6 @@ class ProfileText extends StatelessWidget {
   );
 }
 
-/// White section of the own / investor profile (prototype `.ps`): radius 18,
-/// padding 16, home-card shadow. Header = title 16/700 (ls -0.1) and an
-/// optional right action link ([actionLabel], e.g. "+ Add", 13.5/600 moss).
-/// Rises in unless [rise] is false; use [delay] to stagger.
 class ProfileSection extends StatelessWidget {
   const ProfileSection({
     super.key,
@@ -120,8 +114,7 @@ class ProfileSection extends StatelessWidget {
   final bool rise;
   final Duration delay;
 
-  /// How far the content is indented under the (bold) heading. The startup
-  /// page's section cards use the same value.
+  /// How far the content is indented under the (bold) heading.
   static const double contentIndent = 12;
 
   @override
@@ -184,9 +177,6 @@ class ProfileSection extends StatelessWidget {
   }
 }
 
-/// A label/value row (prototype `.crow`): optional 20 px [icon] (grey),
-/// label 12 `#8C918D` above value 15/600; padding 10 0 with a `#F0EDE6`
-/// divider above when [showDivider].
 class InfoRow extends StatelessWidget {
   const InfoRow({
     super.key,
@@ -203,7 +193,7 @@ class InfoRow extends StatelessWidget {
   final String label;
   final String value;
 
-  /// Filled [AppIcons] path.
+  /// Filled AppIcons path.
   final String? icon;
   final bool showDivider;
 
@@ -245,8 +235,6 @@ class InfoRow extends StatelessWidget {
   }
 }
 
-/// Two-column grid of cream cells (prototype `.pkv`): radius 12, padding
-/// 10 12, label 12 grey over value 16/700 tabular; gap 8.
 class KeyValueGrid extends StatelessWidget {
   const KeyValueGrid({super.key, required this.items});
 
@@ -299,12 +287,7 @@ class KeyValueGrid extends StatelessWidget {
   }
 }
 
-/// A tappable list row (prototype `.srow` / `.prow`): [leading] avatar,
-/// title + subtitle and a chevron. Default style is the own-profile row
-/// (title 15/700, subtitle 13 grey, 18 px stroke chevron, padding 6 0,
-/// `#F0EDE6` divider above when [showDivider]). [ListRow.card] is the
-/// startup-profile "Associated investors" row (title 15/600, subtitle 12.5,
-/// 22 px filled chevron, padding 8 0).
+/// A tappable list row (prototype .srow / .prow): leading avatar, title + subtitle and a chevron.
 class ListRow extends StatelessWidget {
   const ListRow({
     super.key,
@@ -339,7 +322,7 @@ class ListRow extends StatelessWidget {
   final VoidCallback? onTap;
   final bool showDivider;
 
-  /// Replaces the chevron (e.g. a pill).
+  /// Replaces the chevron (e.g.
   final Widget? trailing;
   final bool showChevron;
   final bool _card;
@@ -434,8 +417,6 @@ class ListRow extends StatelessWidget {
   }
 }
 
-/// The delta pill (prototype `.dl`): `#E3F3E8` fill, `#1F7A42` 11/700 text,
-/// padding 2 7, a trend icon 11 px before the text, e.g. "+18%".
 class StatDelta extends StatelessWidget {
   const StatDelta(this.text, {super.key});
 

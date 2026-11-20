@@ -153,7 +153,6 @@ void main() {
       's-gone': {'createdAt': DateTime(2026, 1, 1)},
       's-hidden': {'createdAt': DateTime(2026, 2, 1)},
     };
-    // s-hidden still exists but is private; s-gone doesn't exist at all.
     db.store['startups'] = {
       'hidden': {'name': 'Hidden', 'isPublic': false},
     };

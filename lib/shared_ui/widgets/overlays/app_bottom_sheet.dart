@@ -10,10 +10,6 @@ import '../../theme/app_text.dart';
 import '../buttons/app_button.dart';
 import 'app_overlay_route.dart';
 
-/// Shows a picker-style bottom sheet (docs/02 §8.12): the scrim `#1C1F1D66`
-/// fades in over 260 ms and the sheet slides up over 340 ms with
-/// [Motion.drawer]. [builder] should return an [AppSheetScaffold] (or a widget
-/// built on it). Tapping the scrim or Android back pops with a null result.
 Future<T?> showAppBottomSheet<T>(
   BuildContext context, {
   required WidgetBuilder builder,
@@ -33,15 +29,6 @@ Future<T?> showAppBottomSheet<T>(
   );
 }
 
-/// The frame of every bottom sheet: cream, top radius 24, sheet shadow, handle
-/// (40 x 4, `#D6D3CC`, margin 10 auto 4), optional title row (20/700, padding
-/// 8 12 8 20, close button) and [child].
-///
-/// * Max height is 84 % of the screen; [tall] pins the top at 64 px instead
-///   (city list, "Other" write-in). Both shrink for the keyboard.
-/// * [title] null hides the title row (info sheet, delete sheet).
-/// * [child] is placed in a flexible area: give it a scrollable for long
-///   content.
 class AppSheetScaffold extends StatelessWidget {
   const AppSheetScaffold({
     super.key,
@@ -174,8 +161,6 @@ class _SheetCloseButton extends StatelessWidget {
   }
 }
 
-/// "Got it" info sheet (calculator "i" buttons): title 18/700, text 15/22
-/// `#3E4A41` and a primary "Got it" button. Show with [showInfoSheet].
 class InfoSheet extends StatelessWidget {
   const InfoSheet({
     super.key,
@@ -224,7 +209,7 @@ class InfoSheet extends StatelessWidget {
   }
 }
 
-/// Opens an [InfoSheet].
+/// Opens an InfoSheet.
 Future<void> showInfoSheet(
   BuildContext context, {
   required String title,
@@ -234,11 +219,6 @@ Future<void> showInfoSheet(
   builder: (_) => InfoSheet(title: title, text: text),
 );
 
-/// Delete / confirm sheet content (prototype `sheet.isDelete`): a 60 px red
-/// circle with a [icon] (default trash, Pop), title 21/700, message 15/22 grey,
-/// an optional [note] under it (e.g. a notice box), a danger button
-/// ([confirmLabel]) and a white "Cancel" button. Pops with `true` on confirm
-/// and `false` on cancel; see [showConfirmSheet].
 class ConfirmSheet extends StatelessWidget {
   const ConfirmSheet({
     super.key,
@@ -310,8 +290,6 @@ class ConfirmSheet extends StatelessWidget {
   }
 }
 
-/// The white "Cancel" button under a sheet's main button ([ConfirmSheet] and
-/// the sheets built like it): 48 high, white, 1 px border, 16/600 ink.
 class SheetCancelButton extends StatelessWidget {
   const SheetCancelButton({
     super.key,
@@ -348,7 +326,7 @@ class SheetCancelButton extends StatelessWidget {
   }
 }
 
-/// Opens a [ConfirmSheet]; completes with true only when confirmed.
+/// Opens a ConfirmSheet; completes with true only when confirmed.
 Future<bool> showConfirmSheet(
   BuildContext context, {
   required String title,

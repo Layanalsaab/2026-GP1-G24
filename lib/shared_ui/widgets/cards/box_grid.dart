@@ -4,15 +4,7 @@ import '../../../helpers/open_link.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text.dart';
 
-/// A 2-column grid of small cream boxes (label over value). Boxes in the same
-/// row are ALWAYS the same height: each row is
-/// `IntrinsicHeight > Row(crossAxisAlignment: stretch)` with each box in an
-/// `Expanded`, so when one label wraps to two lines the other box stretches to
-/// match. The label stays at the top and the value right under it (never
-/// vertically centred), so the values line up when neither label wraps.
-///
-/// Use it for every 2-column box grid (Manage Details, startup page facts and
-/// funding tiles). An odd last item leaves an empty half.
+/// A 2-column grid of small cream boxes (label over value).
 class BoxGrid extends StatelessWidget {
   const BoxGrid({
     super.key,
@@ -25,8 +17,6 @@ class BoxGrid extends StatelessWidget {
     this.links = const {},
   });
 
-  /// The startup page's bigger boxes: cream #FAF8F4, label 13 grey, value 17
-  /// bold. (Manage keeps its own smaller boxes.)
   final bool page;
 
   /// The last box spans the whole width (Key numbers: Runway).
@@ -35,15 +25,11 @@ class BoxGrid extends StatelessWidget {
   /// Labels whose value is shown in moss green (the Website).
   final Set<String> accent;
 
-  /// Labels whose value is a web address: tapping it opens the real website
-  /// (shown in green and underlined).
   final Set<String> links;
 
-  /// Labels whose value may use as many lines as it needs (a long list of
-  /// sectors); every other value stops at two lines.
   final Set<String> wrap;
 
-  /// (label, value) pairs. An empty value shows [emptyText] in grey.
+  /// (label, value) pairs.
   final List<(String, String)> items;
   final String emptyText;
 

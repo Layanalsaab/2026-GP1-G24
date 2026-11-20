@@ -5,21 +5,13 @@ import '../../models/startup_notice.dart';
 import '../firebase_services/auth_service.dart';
 import '../firebase_services/firestore_service.dart';
 
-/// The notice inbox (docs: Closing a Startup, Leaving and Deleting an
-/// Account): `users/{uid}/notices`. Whoever changes a startup writes one
-/// notice for every person it affects ([send]); each person reads theirs the
-/// next time the app opens ([mine]) and each is deleted once shown
-/// ([dismiss]), so it is shown once, on any phone.
-///
-/// The rules let a person write a notice only about a startup they are on
-/// (or were invited to take over), and only to someone on it, so a notice is
-/// always sent BEFORE the change that would take either of them off it.
+/// The notice inbox (docs: Closing a Startup, Leaving and Deleting an Account): users/{uid}/notices.
 class NoticeRepository {
   NoticeRepository({AuthService? auth, FirestoreService? firestore})
     : _auth = auth ?? AuthService(),
       _firestore = firestore ?? FirestoreService();
 
-  /// The app-wide instance. Tests replace it with a fake.
+  /// The app-wide instance.
   static NoticeRepository instance = NoticeRepository();
 
   final AuthService _auth;
@@ -32,13 +24,11 @@ class NoticeRepository {
     try {
       return _auth.currentAccount?.uid;
     } catch (_) {
-      // Not signed in to Firebase at all (tests): nothing to send or read.
       return null;
     }
   }
 
-  /// Sends [notice] to every person in [to] (not to me, not twice). Best
-  /// effort: a notice that can't be written never stops the change itself.
+  /// Sends notice to every person in to (not to me, not twice).
   Future<void> send(Iterable<String> to, StartupNotice notice) async {
     final me = _uid;
     if (me == null) return;
@@ -72,7 +62,7 @@ class NoticeRepository {
     return out;
   }
 
-  /// [notice] was shown: it goes.
+  /// notice was shown: it goes.
   Future<void> dismiss(StartupNotice notice) async {
     final me = _uid;
     if (me == null || notice.id.isEmpty) return;

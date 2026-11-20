@@ -19,8 +19,7 @@ import 'package:startsa/shared_ui/widgets/overlays/app_toast.dart';
 
 import 'wallet_logic_test.dart' hide main;
 
-/// The public startups for the matches (Rafeeq Health: HealthTech, Pre-seed,
-/// raising SAR 500,000).
+/// The public startups for the matches (Rafeeq Health: HealthTech, Pre-seed, raising SAR 500,000).
 class StartupsFirestore extends MemoryFirestore {
   @override
   Future<List<FirestoreDocument>> queryWhereEqual(
@@ -74,7 +73,7 @@ Future<WalletViewModel> open(
   return vm;
 }
 
-/// Scrolls [finder] into view and taps it, like a person would.
+/// Scrolls finder into view and taps it, like a person would.
 Future<void> press(WidgetTester t, Finder finder) async {
   // A dialog is always on screen; only the page scrolls.
   if (find.byType(AppDialog).evaluate().isEmpty) {
@@ -103,7 +102,6 @@ void main() {
       ),
       findsOneWidget,
     );
-    // The table header and the "tap" hint only appear with tickets.
     expect(find.text('TICKET'), findsOneWidget);
     expect(find.text('Tap a ticket to see its details.'), findsNothing);
   });
@@ -145,7 +143,6 @@ void main() {
     expect(find.text('New ticket'), findsOneWidget);
     // The default name.
     expect(find.text('Ticket 1'), findsOneWidget);
-    // No limit from what the investor usually invests: no such hint.
     expect(find.textContaining('usual ticket size'), findsNothing);
 
     // Gray until valid: tapping shows the errors, no confirm.
@@ -162,8 +159,6 @@ void main() {
     vm.min.text = '100,000';
     vm.max.text = '300,000';
     await t.pumpAndSettle();
-    // Valid: the ticket is added straight away, nothing to confirm (it can
-    // be edited later).
     await press(t, find.text('Add ticket').last);
     expect(find.text('Add ticket?'), findsNothing);
     expect(find.text('Ticket added'), findsOneWidget);
@@ -264,8 +259,6 @@ void main() {
     ) async {
       final vm = await open(t);
       await openSectors(t);
-      // Capitals, spaces and a plural do not make it different. After a short
-      // pause the listed sector is ticked and Other goes, with its text.
       await t.enterText(box(), 'health techs');
       await t.pump(const Duration(milliseconds: 700));
       await t.pumpAndSettle();
@@ -340,7 +333,6 @@ void main() {
     expect(find.text('Rafeeq Health'), findsOneWidget);
     expect(find.text('HealthTech · Pre-seed'), findsWidgets);
     expect(find.text('Raising · SAR 500,000 left'), findsOneWidget);
-    // The card shows the % only; why it matched is on the startup's page.
     expect(find.text('94% match'), findsOneWidget);
     expect(find.text('Same sector and stage'), findsNothing);
 
@@ -550,7 +542,6 @@ void main() {
     // The badge counts the pending requests.
     expect(find.text('1'), findsOneWidget);
     await press(t, find.text('Requests').first);
-    // The same chips as the founder's requests, each with its count.
     for (final f in [
       'All · 2',
       'Pending · 1',

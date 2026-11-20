@@ -10,9 +10,6 @@ import '../../../shared_ui/widgets/overlays/multi_picker_sheet.dart';
 import '../../../shared_ui/widgets/overlays/picker_sheet.dart';
 import '../view_models/investor_onboarding_view_model.dart';
 
-/// The investor questions, built once and used by the sign-up steps 3 and 4
-/// and by Edit profile, so the labels, limits, errors and spacing can never
-/// drift apart. Each method returns the fields to put in a `FormFieldColumn`.
 class InvestorFields {
   const InvestorFields._();
 
@@ -28,8 +25,6 @@ class InvestorFields {
       label == InvestorOnboardingViewModel.otherLabel && typed.trim().isNotEmpty
       ? typed.trim()
       : label;
-
-  // ------------------------------------------------------- investment background
 
   /// Years investing, startups invested in and round size (hidden for "0").
   static List<Widget> background(
@@ -107,8 +102,6 @@ class InvestorFields {
     ];
   }
 
-  // --------------------------------------------------------- investment interests
-
   /// Sectors, stages and commerce models: three required multi-selects.
   static List<Widget> interests(
     BuildContext context,
@@ -163,9 +156,6 @@ class InvestorFields {
             vm.toggleModel(InvestorOnboardingViewModel.otherLabel),
       );
     }
-
-    // The same dropdown as the founder sign-up: the choices as text, with
-    // the "Select all that apply" line.
 
     return [
       AppField(

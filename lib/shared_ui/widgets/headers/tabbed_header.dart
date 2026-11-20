@@ -8,8 +8,6 @@ import '../../theme/app_text.dart';
 import 'arch_background.dart';
 import 'auth_headers.dart';
 
-/// One tab of a [HeaderTabBar]: [label] and an optional count [badge]
-/// (Requests "1", Interest "2"; hidden when null or 0).
 class HeaderTab {
   const HeaderTab(this.label, {this.badge});
 
@@ -17,8 +15,6 @@ class HeaderTab {
   final int? badge;
 }
 
-/// Gold gradient tile avatar of the startup headers (`avatar-tile t-gold`):
-/// 60 px, radius 17, initials 20/700 `#7A5A12`.
 class HeaderAvatarTile extends StatelessWidget {
   const HeaderAvatarTile({
     super.key,
@@ -67,8 +63,6 @@ class HeaderAvatarTile extends StatelessWidget {
           colors: [AppColors.tileGoldTop, AppColors.tileGoldBottom],
         ),
       ),
-      // The default picture (the initials) shows while the logo loads, and
-      // when there is none or it can't be loaded.
       child: bytes != null
           ? Image.memory(
               bytes,
@@ -94,10 +88,6 @@ class HeaderAvatarTile extends StatelessWidget {
   }
 }
 
-/// Tab bar at the bottom of a green header (docs/02 §8.14): equal tabs, top
-/// hairline white 12 %, 14/600 text (`#A9C0AE`, selected white; 250 ms), count
-/// badges, and a gold 2.5 px indicator that slides under the selected tab
-/// (380 ms easeOut).
 class HeaderTabBar extends StatelessWidget {
   const HeaderTabBar({
     super.key,
@@ -150,8 +140,6 @@ class HeaderTabBar extends StatelessWidget {
                 curve: Motion.easeOut,
                 child: FractionallySizedBox(
                   widthFactor: 1 / (n == 0 ? 1 : n),
-                  // An explicit height: a childless DecoratedBox under loose
-                  // constraints collapses to 0 and the line disappears.
                   child: SizedBox(
                     height: 2.5,
                     child: DecoratedBox(
@@ -250,11 +238,7 @@ class _HeaderTabItem extends StatelessWidget {
   }
 }
 
-/// Tab bar that scrolls sideways (Manage startup: six tabs). Tabs keep their
-/// natural width (padding 15 / 14 / 13), 15 px semibold, `#A9C0AE` and white
-/// when selected, with a 3 px gold underline inset 12 px on each side. The
-/// right edge fades out (from 82 %) to show there is more. Choosing a tab
-/// scrolls it into view, centered.
+/// Tab bar that scrolls sideways (Manage startup: six tabs).
 class ScrollableHeaderTabBar extends StatefulWidget {
   const ScrollableHeaderTabBar({
     super.key,
@@ -268,8 +252,6 @@ class ScrollableHeaderTabBar extends StatefulWidget {
   final int selectedIndex;
   final ValueChanged<int> onChanged;
 
-  /// Equal-width tabs that fill the bar: no scrolling and no fade (the startup
-  /// page's four tabs). The look is the same as the scrolling bar.
   final bool equalWidth;
 
   @override
@@ -394,7 +376,6 @@ class _ScrollTab extends StatelessWidget {
           alignment: center ? Alignment.center : AlignmentDirectional.topStart,
           children: [
             Padding(
-              // Equal-width cells are narrower, so the label may shrink a bit.
               padding: EdgeInsets.fromLTRB(
                 center ? 4 : 14,
                 15,
@@ -481,15 +462,6 @@ class _ScrollTab extends StatelessWidget {
   }
 }
 
-/// Tabbed header (Manage startup, Startup profile): green block with no
-/// bottom radius and padding-bottom 0, arches (two paths, 22 %), top row
-/// (back + [actions] or the logo), then an [avatar] + title block, optional
-/// [infoLine] / [metaLeft] + [metaRight], and the [HeaderTabBar].
-///
-/// Startup profile: `actions: [HeaderBookmarkButton, GlassIconButton.share]`,
-/// `pitch`, `infoLine: "HealthTech · Pre-seed · Riyadh"`, `metaLeft` (link
-/// icon + website), `metaRight` ("Raising" + value in light gold).
-/// Manage: `subline` (live dot + "Public · HealthTech · Pre-seed"), no meta.
 class TabbedHeader extends StatelessWidget {
   const TabbedHeader({
     super.key,
@@ -526,19 +498,19 @@ class TabbedHeader extends StatelessWidget {
   final ValueChanged<int> onTabChanged;
   final VoidCallback? onBack;
 
-  /// Right side of the top row (glass buttons); null = the logo. Spaced 6 px.
+  /// Right side of the top row (glass buttons); null = the logo.
   final List<Widget>? actions;
 
-  /// Leading tile, normally a [HeaderAvatarTile].
+  /// Leading tile, normally a HeaderAvatarTile.
   final Widget? avatar;
 
-  /// One-liner under the title (14/20 `#E4EEE6`, profile).
+  /// One-liner under the title (14/20 #E4EEE6, profile).
   final String? pitch;
 
   /// Widget under the title (Manage: live dot + sub-line).
   final Widget? subline;
 
-  /// Sub-line below the block (13 `#CFE0D3`, margin 12 16 0).
+  /// Sub-line below the block (13 #CFE0D3, margin 12 16 0).
   final String? infoLine;
   final Widget? metaLeft;
   final Widget? metaRight;
@@ -646,9 +618,6 @@ class TabbedHeader extends StatelessWidget {
   }
 }
 
-/// Wraps the content of a tabbed screen: when [index] changes the child slides
-/// in 24 px from the side you moved toward (right when the new tab is to the
-/// right) and fades in, 340 ms easeOut. Reduced motion: 200 ms fade.
 class TabPaneSlide extends StatefulWidget {
   const TabPaneSlide({super.key, required this.index, required this.child});
 

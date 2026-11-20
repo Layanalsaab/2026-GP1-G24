@@ -7,24 +7,17 @@ import '../../models/investor_criteria.dart';
 import '../firebase_services/firestore_service.dart';
 import '../device_services/image_fit.dart';
 
-/// Reads and writes the `users` collection (document id = Auth UID).
+/// Reads and writes the users collection (document id = Auth UID).
 class UserRepository {
   UserRepository({FirestoreService? firestore})
     : _firestore = firestore ?? FirestoreService();
 
-  /// The app-wide instance. Tests replace it with a fake.
+  /// The app-wide instance.
   static UserRepository instance = UserRepository();
 
   final FirestoreService _firestore;
 
-  /// Creates the `users/{uid}` document. [phone] is the 9 digits without
-  /// +966; empty / null values are not stored.
-  ///
-  /// The extended fields (phone, city, bio, sectorsOfInterest) need the
-  /// current Firestore rules. If the rules in use reject them (permission
-  /// denied), the document is created again with only the four core fields
-  /// (role, fullName, email, createdAt), so sign-up never fails because the
-  /// rules have not been published yet.
+  /// Creates the users/{uid} document.
   Future<void> createProfile({
     required String uid,
     required AccountRole role,
@@ -81,9 +74,6 @@ class UserRepository {
     }
   }
 
-  /// Saves [photo] as a small compressed picture (base64 text, under ~100 KB)
-  /// in `publicProfiles/{uid}.photoData`; no Firebase Storage. Returns the
-  /// saved text. Needs the signed-in user to be [uid].
   Future<String> uploadProfilePhoto(String uid, File photo) async {
     final data = await ImageFit.base64Of(photo);
     final d = await _firestore.getDocument(FirestoreCollections.users, uid);
@@ -96,7 +86,7 @@ class UserRepository {
     return data;
   }
 
-  /// Removes the profile photo: the `photoData` field is deleted.
+  /// Removes the profile photo: the photoData field is deleted.
   Future<void> removeProfilePhoto(String uid) async {
     try {
       await _firestore.updateDocument(
@@ -115,7 +105,6 @@ class UserRepository {
     final data = await _firestore.getDocument(FirestoreCollections.users, uid);
     final user = AppUser.fromMap(uid, data);
     if (user == null) return null;
-    // The photo is saved on the public profile; read it with the profile.
     try {
       final pub = await _firestore.getDocument(
         FirestoreCollections.publicProfiles,
@@ -131,9 +120,6 @@ class UserRepository {
     return user;
   }
 
-  /// Saves the investor's answers to sign-up steps 3 and 4 and marks their
-  /// onboarding as finished, then publishes them to the `investors` list so
-  /// founders can find them.
   Future<void> saveInvestorOnboarding({
     required String uid,
     required InvestorCriteria criteria,
@@ -147,10 +133,6 @@ class UserRepository {
     await _publishInvestor(uid);
   }
 
-  /// Copies the public part of an investor's profile to `investors/{uid}`,
-  /// with the same field names. The email and phone go along only when the
-  /// investor made them Public. Founders are not listed. A failure here never
-  /// blocks the account.
   Future<void> _publishInvestor(String uid) async {
     try {
       final d = await _firestore.getDocument(FirestoreCollections.users, uid);
@@ -185,14 +167,12 @@ class UserRepository {
         UserFields.valueOffered: keep(UserFields.valueOffered),
         UserFields.lookingFor: keep(UserFields.lookingFor),
         UserFields.title: 'Angel Investor',
-        // Investors who sign up in the app are never dataset investors.
         UserFields.isArchived: false,
         UserFields.createdAt:
             keep(UserFields.createdAt) ?? _firestore.serverTimestamp(),
       };
       await _firestore.setDocument(FirestoreCollections.investors, uid, doc);
     } catch (_) {
-      // The profile itself is saved; the public listing can be retried.
     }
   }
 
@@ -203,13 +183,7 @@ class UserRepository {
     {UserFields.onboardingCompleted: true},
   );
 
-  /// Saves the fields a user can change on the Edit profile screen. The
-  /// email and role never change here. [phone] is the 9 digits without +966.
-  /// A null [city] leaves the stored city as it is.
-  ///
-  /// If the Firestore rules in use don't know `phone` / `sectorsOfInterest`
-  /// yet, the write is denied; then the fields they do accept (name, bio,
-  /// city) are saved so the user's edit is not lost.
+  /// Saves the fields a user can change on the Edit profile screen.
   Future<void> updateProfile({
     required String uid,
     required String fullName,
@@ -249,8 +223,6 @@ class UserRepository {
     }
   }
 
-  /// Re-publishes an investor's public copy after they edited their profile
-  /// (founders have none).
   Future<void> _refreshPublishedInvestor(String uid) async {
     try {
       final existing = await _firestore.getDocument(
@@ -261,8 +233,6 @@ class UserRepository {
     } catch (_) {}
   }
 
-  /// Deletes the user's profile document and their public investor listing
-  /// (used when deleting the account).
   Future<void> deleteProfile(String uid) async {
     try {
       await _firestore.deleteDocument(FirestoreCollections.investors, uid);

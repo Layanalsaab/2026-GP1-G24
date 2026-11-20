@@ -1,6 +1,3 @@
-/// Copy of the profile screens (startup profile, investor profile, program
-/// details, own profile, Edit profile, Settings), word for word from
-/// docs/05_screens.md section C and docs/06 section 7.
 class ProfileStrings {
   ProfileStrings._();
 
@@ -21,7 +18,6 @@ class ProfileStrings {
   static const expressInterest = 'Express interest';
   static const interestSent = 'Interest sent';
 
-  // ---- Investor profile ----
   static const interestedIn = 'Interested in';
   static const investmentSize = 'Investment Size';
   static const perFundingRound = 'Per funding round';
@@ -58,14 +54,12 @@ class ProfileStrings {
   static String associationCount(int n) =>
       n == 1 ? '1 Association' : '$n Associations';
 
-  // ---- Program details ----
   static const focusSectors = 'Focus sectors';
   static const details = 'Details';
   static const duration = 'Duration';
   static const runningSince = 'Running since';
   static const visitWebsite = 'Visit website';
 
-  // ---- Own profile ----
   static const editProfile = 'Edit profile';
   static const myStartups = 'Startups';
   static const addStartup = '+ Add';
@@ -77,18 +71,16 @@ class ProfileStrings {
       'Only the details marked Public are shown to others.';
   static const contactShown = 'Shown on your profile';
 
-  /// "Private. Only you can see your email" / "... your phone number".
+  /// "Private.
   static String contactPrivateNote(String noun) =>
       'Private. Only you can see your $noun';
 
-  /// What someone else sees for a detail that is private ("Email is private").
   static String detailPrivate(String label) => '$label is private';
   static const email = 'Email';
   static const phone = 'Phone Number';
   static const contactPublic = 'Public';
   static const contactOnlyYou = 'Only you';
 
-  // ---- Edit profile ----
   static const save = 'Save';
   static const changePhoto = 'Change photo';
   static const bio = 'Bio';
@@ -98,7 +90,6 @@ class ProfileStrings {
   static const searchCities = 'Search cities';
   static const noCities = 'No cities found';
 
-  // ---- Settings ----
   static const settings = 'Settings';
   static const display = 'DISPLAY';
   static const notifications = 'NOTIFICATIONS';
@@ -112,14 +103,11 @@ class ProfileStrings {
   static const deleteAccount = 'Delete account';
   static const deleteAccountHint = 'Permanently remove your account and data';
 
-  // ---- Share sheet ----
   static const shareTitle = 'Share';
   static const copyLink = 'Copy link';
   static const shareEmail = 'Email';
   static const shareMore = 'More';
   static const shareCantOpen = 'Couldn’t open that app.';
-  // What a friend reads when you share something. [kind] is startup,
-  // investor or program (taken from the link).
   static String shareMessage(String name, {String? kind}) => switch (kind) {
     'startup' =>
       'Look, I found $name on Start.sa. A startup I think you will like.',
@@ -140,17 +128,15 @@ class ProfileStrings {
       : 'Look what I found on Start.sa: ${name!.trim()}';
   static const shareEmailGreeting = 'Hi,';
 
-  /// THE message a startup is shared with. Change the wording here only; the
-  /// placeholders are {name}, {sector} (the main one), {city} and {link}.
+  /// THE message a startup is shared with.
   static const startupShareTemplate =
       'Check out {name} on Start.sa, a {sector} startup from {city}! {link}';
 
-  /// THE message an investor profile is shared with. Placeholders: {name},
-  /// {city} and {link}. An investor with no city drops " from {city}".
+  /// THE message an investor profile is shared with.
   static const investorShareTemplate =
       'Check out {name} on Start.sa, an investor from {city}! {link}';
 
-  /// [investorShareTemplate] filled in.
+  /// investorShareTemplate filled in.
   static String investorShare({
     required String name,
     required String city,
@@ -163,7 +149,7 @@ class ProfileStrings {
         .replaceAll('{link}', link);
   }
 
-  /// [startupShareTemplate] filled in.
+  /// startupShareTemplate filled in.
   static String startupShare({
     required String name,
     required String sector,
@@ -175,7 +161,6 @@ class ProfileStrings {
       .replaceAll('{city}', city.trim())
       .replaceAll('{link}', link);
 
-  // ---- Toasts ----
   static const linkCopied = 'Link copied';
   static const profileSaved = 'Profile saved';
   static const changesSaved = 'Changes saved';
@@ -184,7 +169,6 @@ class ProfileStrings {
   static const darkOff = 'Dark mode off';
   static String requestSentTo(String name) => 'Request sent to $name';
 
-  // ---- Change password (not designed; the existing flow, restyled) ----
   static const changePasswordTitle = 'Change password';
   static const currentPassword = 'Current password';
   static const currentPasswordHint = 'Enter your current password';
@@ -195,7 +179,6 @@ class ProfileStrings {
   static const updatePassword = 'Update password';
   static const passwordUpdated = 'Your password has been updated.';
 
-  // ---- Delete account ----
   static const deleteTitle = 'Delete your account?';
   static const deleteConfirm = 'Yes, delete my account';
   static const cancel = 'Cancel';

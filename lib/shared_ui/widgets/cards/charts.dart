@@ -4,11 +4,7 @@ import '../../motion/motion.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text.dart';
 
-/// "Expected revenue" bars (prototype `.prev`): three columns (gap 12, height
-/// 150, padding 6 4 0). Bar heights are relative to the largest value (min 6 %
-/// of the 144 px column, capped so the labels fit); the last bar is the gold
-/// gradient, the others moss -> green. Bars Grow in (520 ms). Under each bar:
-/// a 12 grey label ("Year 1") and the 14/700 value ("1.2M").
+/// "Expected revenue" bars (prototype .prev): three columns (gap 12, height 150, padding 6 4 0).
 class RevenueBars extends StatelessWidget {
   const RevenueBars({
     super.key,
@@ -20,10 +16,10 @@ class RevenueBars extends StatelessWidget {
   /// Raw numbers used for the relative heights.
   final List<double> values;
 
-  /// e.g. "Year 1".
+  /// e.g.
   final List<String> labels;
 
-  /// e.g. "1.2M" (or "—").
+  /// e.g.
   final List<String> valueLabels;
 
   @override
@@ -32,8 +28,6 @@ class RevenueBars extends StatelessWidget {
     const inner = 144.0;
     const labelsHeight = 46.0;
     final n = values.length;
-    // The two label lines grow with the system font size, so the chart grows
-    // with them (a fixed height overflowed by a few pixels at large text).
     final scale = MediaQuery.textScalerOf(context).scale(1);
     final extra = scale > 1
         ? (labelsHeight * (scale - 1)).ceilToDouble() + 2
@@ -121,11 +115,6 @@ class RevenueBars extends StatelessWidget {
   }
 }
 
-/// Smooth area chart (prototype Manage > Activity `.area`): a Catmull-Rom line
-/// through [values] (moss 2.4), a gradient fill (moss 22 % -> 0) and a gold end
-/// dot with a white ring. Heights are relative to the maximum. When [values]
-/// changes the line morphs over 400 ms (easeOut) by interpolating the points.
-/// [axisLabels] (11 grey, space-between) are drawn under the chart.
 class AreaChart extends StatefulWidget {
   const AreaChart({
     super.key,
@@ -300,7 +289,7 @@ class _AreaPainter extends CustomPainter {
   bool shouldRepaint(_AreaPainter old) => old.f != f;
 }
 
-/// One part of an [OwnershipBar].
+/// One part of an OwnershipBar.
 class OwnershipSegment {
   const OwnershipSegment(this.percent, this.color);
 
@@ -308,10 +297,7 @@ class OwnershipSegment {
   final Color color;
 }
 
-/// Stacked ownership bar (prototype `.obar`): 12 high, radius 6, 2 px gaps,
-/// `#F1EFEA` track. Segment widths animate over 400 ms (easeOut) when
-/// [segments] change. Keep the same number of segments between rebuilds (use a
-/// 0 percent segment for a hidden part).
+/// Stacked ownership bar (prototype .obar): 12 high, radius 6, 2 px gaps, #F1EFEA track.
 class OwnershipBar extends StatefulWidget {
   const OwnershipBar({super.key, required this.segments});
 

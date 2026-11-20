@@ -13,11 +13,6 @@ import '../../../models/investor_criteria.dart';
 import '../../../models/startup_enums.dart';
 import '../../../shared_ui/widgets/forms/money_field.dart';
 
-/// A Minimum / Maximum pair of SAR boxes with its rules (used by the round
-/// size on step 3 and by the ticket amount on step 5): the minimum is at
-/// least SAR 1,000 and never above the maximum. One message at a time:
-/// min above max and min under 1,000 show as soon as they are typed, the
-/// empty ones after Next.
 class MoneyRange {
   MoneyRange();
 
@@ -71,13 +66,7 @@ class MoneyRange {
   List<TextEditingController> get controllers => [min, max];
 }
 
-/// The investor's question steps after verifying their email: step 3
-/// "Investment Background" and step 4 "Investment Interests". One view model
-/// serves both screens (and Edit
-/// profile) so Back keeps every answer. Nothing is pre-selected.
 class InvestorOnboardingViewModel extends ChangeNotifier with SafeNotifier {
-  /// [initial] pre-fills every answer (Edit profile, or an investor who comes
-  /// back to finish; null reads as "nothing answered yet", never a crash).
   InvestorOnboardingViewModel({
     required this.user,
     UserRepository? userRepository,
@@ -108,12 +97,8 @@ class InvestorOnboardingViewModel extends ChangeNotifier with SafeNotifier {
   final InvestorCriteria? _initial;
   final InvestorDraftStore _draftStore;
 
-  /// True on the sign-up steps: every change is kept on the phone so the
-  /// investor can leave and come back (see [InvestorDraftStore]).
   final bool keepDraft;
 
-  /// Fills the answers saved on the phone, if any (before the first frame
-  /// of the step the investor lands on).
   Future<void> restoreDraft() async {
     final saved = await _draftStore.load(user.uid);
     if (saved != null) {
@@ -138,8 +123,6 @@ class InvestorOnboardingViewModel extends ChangeNotifier with SafeNotifier {
     for (final m in CommerceModel.picks) m.label,
   ];
 
-  /// What else counts as a listed commerce model: its abbreviation ("B2B")
-  /// and its name without the brackets ("Business-to-Business").
   static final Map<String, String> modelAlsoCountsAs = {
     for (final m in CommerceModel.picks) ...{
       m.shortLabel: m.label,
@@ -153,13 +136,11 @@ class InvestorOnboardingViewModel extends ChangeNotifier with SafeNotifier {
   final AppUser user;
   final UserRepository _users;
 
-  // ---- Step 3 ----
   String? years;
   String? deals;
   final roundSize = MoneyRange();
   bool step3Tried = false;
 
-  // ---- Step 4 ----
   final Set<String> sectors = {};
   final sectorsOther = TextEditingController();
   final Set<String> stages = {};
@@ -175,8 +156,6 @@ class InvestorOnboardingViewModel extends ChangeNotifier with SafeNotifier {
     sectorsOther,
     modelsOther,
   ];
-
-  // ------------------------------------------------------------ step 3
 
   /// The size question is asked only after a range other than "0".
   bool get showRoundSize => deals != null && deals != '0';
@@ -207,8 +186,6 @@ class InvestorOnboardingViewModel extends ChangeNotifier with SafeNotifier {
     return false;
   }
 
-  // ------------------------------------------------------------ step 4
-
   String? get sectorsError =>
       step4Tried && sectors.isEmpty ? ValidationStrings.sectors : null;
   String? get stagesError => step4Tried && stages.isEmpty
@@ -227,8 +204,6 @@ class InvestorOnboardingViewModel extends ChangeNotifier with SafeNotifier {
       ? 'Tell us your other $noun — it can’t be blank.'
       : null;
 
-  /// The "Other" write-in repeats a listed sector / commerce model (it
-  /// can't): shown as it is typed.
   bool get sectorsOtherRepeats =>
       sectors.contains(otherLabel) &&
       OtherCheck.repeats(sectorsOther.text, sectorOptions);
@@ -279,9 +254,7 @@ class InvestorOnboardingViewModel extends ChangeNotifier with SafeNotifier {
     notifyListeners();
   }
 
-  // ------------------------------------------------------------ finish
-
-  /// The answers as stored in `users/{uid}` (see [InvestorCriteria.toFields]).
+  /// The answers as stored in users/{uid} (see InvestorCriteria.toFields).
   InvestorCriteria buildCriteria({String? lookFor}) {
     List<String> ordered(Set<String> chosen, List<String> options) => [
       for (final o in options)
@@ -290,8 +263,6 @@ class InvestorOnboardingViewModel extends ChangeNotifier with SafeNotifier {
     return InvestorCriteria(
       yearsInvesting: years,
       dealsCount: deals,
-      // "Have you ever led an investment round?" is no longer asked; an
-      // answer saved earlier stays as it is.
       ticketBand: _initial?.ticketBand,
       roundMin: showRoundSize ? roundSize.minAmount : null,
       roundMax: showRoundSize ? roundSize.maxAmount : null,
@@ -308,8 +279,6 @@ class InvestorOnboardingViewModel extends ChangeNotifier with SafeNotifier {
     );
   }
 
-  /// Edit profile: shows every error of the three question groups; true when
-  /// all of it is valid.
   bool validateAll() {
     step3Tried = true;
     step4Tried = true;
@@ -317,9 +286,6 @@ class InvestorOnboardingViewModel extends ChangeNotifier with SafeNotifier {
     return step3Complete && step4Complete;
   }
 
-  /// Tapping Finish (step 4): validates, saves every answer and marks
-  /// onboarding done. Returns the updated profile, or null (see
-  /// [step4Complete], [formError]).
   Future<AppUser?> finish() async {
     if (isSaving) return null;
     formError = null;

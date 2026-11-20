@@ -4,10 +4,7 @@ import '../../../shared_ui/icons/app_icons.dart';
 import '../../../shared_ui/theme/app_colors.dart';
 import '../../../shared_ui/theme/app_text.dart';
 
-/// The calculated runway under the Monthly burn rate field. Deliberately
-/// quiet so it reads as worked out, not typed: indented, a hairline on its
-/// left, a tiny calculator, the word "Runway" and the value. No box, no
-/// colour.
+/// The calculated runway under the Monthly burn rate field.
 class RunwayLine extends StatelessWidget {
   const RunwayLine({super.key, required this.value});
 

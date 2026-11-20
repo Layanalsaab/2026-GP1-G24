@@ -32,7 +32,6 @@ void main() {
         home: StartupStepsScreen(
           mode: StartupStepsMode.add,
           draft: {
-            // Startup Team is step 4 now (the Startup Ask is the last one).
             'step': 4,
             'order': 2,
             'team': [
@@ -58,13 +57,10 @@ void main() {
       ),
     );
     await t.pumpAndSettle();
-    // The primary button is on screen at the bottom ("Next": the Startup Ask
-    // is the last step now).
     expect(find.text('Next'), findsOneWidget);
     expect(find.text('Create startup'), findsNothing);
     final button = t.getRect(find.text('Next'));
     expect(button.bottom, lessThanOrEqualTo(892));
-    // Tags hug their text (never full width) and sit on the name's line.
     for (final label in ['Co-founder', 'Invited']) {
       final tag = find.ancestor(
         of: find.text(label),
@@ -77,7 +73,6 @@ void main() {
     final founderTag = t.getRect(find.byType(RoleTag).first);
     expect(founderTag.width, lessThan(200));
     expect(t.takeException(), isNull);
-    // With the editor open and the keyboard up the button is still there.
     await t.tap(find.text('Add team member'));
     await t.pumpAndSettle();
     t.view.viewInsets = const FakeViewPadding(bottom: 300);

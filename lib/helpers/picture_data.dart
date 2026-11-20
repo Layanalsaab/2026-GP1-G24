@@ -1,11 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-/// Turns the base64 text saved in `photoData` / `logoData` into image bytes.
-///
-/// Each picture is decoded ONCE and kept, so lists and rebuilds never decode
-/// the same text again (the same [Uint8List] also lets Flutter's image cache
-/// recognise it).
+/// Turns the base64 text saved in photoData / logoData into image bytes.
 class PictureData {
   const PictureData._();
 
@@ -14,7 +10,6 @@ class PictureData {
   /// Newest pictures kept (a few hundred KB at most each).
   static const _maxCached = 120;
 
-  /// The bytes of [base64Text], or null when there is none or it is not valid.
   static Uint8List? bytes(String? base64Text) {
     final text = (base64Text ?? '').trim();
     if (text.isEmpty) return null;

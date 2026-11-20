@@ -14,9 +14,7 @@ import '../widgets/investor_fields.dart';
 import 'investor_interests_screen.dart';
 import 'verify_email_screen.dart';
 
-/// Investor step 3 of 4, "Investment background" (docs/05 A10). Next is grey until
-/// the required answers are given; tapping it early shows the errors and the
-/// toast "Please fill in the required fields". Back goes to the Verify step.
+/// Investor step 3 of 4, "Investment background" (docs/05 A10).
 class InvestorInvestmentsScreen extends StatefulWidget {
   const InvestorInvestmentsScreen({
     super.key,
@@ -24,14 +22,11 @@ class InvestorInvestmentsScreen extends StatefulWidget {
     this.resume = false,
   });
 
-  /// True when the investor logs in again without having finished: if their
-  /// saved step-3 answers are complete they go straight on to step 4.
   final bool resume;
 
   /// The investor who just verified their email.
   final AppUser user;
 
-  /// Replaces the stack with step 3 (forward transition) after the Verify step.
   static void open(BuildContext context, AppUser user, {bool resume = false}) =>
       AppNav.reset(
         context,

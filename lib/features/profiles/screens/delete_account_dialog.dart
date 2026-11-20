@@ -12,10 +12,6 @@ import '../../../shared_ui/widgets/forms/app_text_field.dart';
 import '../../../shared_ui/widgets/overlays/app_bottom_sheet.dart';
 import '../view_models/delete_account_view_model.dart';
 
-/// The password step of Delete Account: only "Enter your password to delete
-/// your account" (the warning came before), on the same bottom sheet as the
-/// warning. The founder's startups follow [fates]. Completes with true once
-/// the account is deleted.
 Future<bool> showDeleteAccountPassword(
   BuildContext context, {
   Map<String, StartupFate> fates = const {},
@@ -33,11 +29,6 @@ Future<bool> showDeleteAccountPassword(
   ).whenComplete(viewModel.dispose);
 }
 
-/// The password step of a deletion (an account, or a startup), laid out like
-/// [ConfirmSheet]: the red trash circle, [title], one line ([message]), the
-/// password field, the red [confirmLabel] button and a white Cancel. [submit]
-/// runs with the password and returns what to show under the field (null when
-/// it worked: the sheet closes). Completes with true when it worked.
 Future<bool> showPasswordSheet(
   BuildContext context, {
   required String title,

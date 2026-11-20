@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:path_drawing/path_drawing.dart';
 
-/// Every icon path from the prototype (docs/02_design_system.md §7), 24 x 24
-/// viewBox. Filled icons are rendered with `fill`; the outline sets (bottom
-/// nav, drawer, Explore tabs, share, chevrons) with `stroke`.
+/// Every icon path from the prototype (docs/02_design_system.md §7), 24 x 24 viewBox.
 class AppIcons {
   AppIcons._();
 
-  // ---- Filled (Material-style) icons: the prototype's `P` object ----
   static const arrow =
       'M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z';
   static const arrowBack =
@@ -88,9 +85,7 @@ class AppIcons {
   static const moon =
       'M9.37 5.51A7.35 7.35 0 009.1 7.5c0 4.08 3.32 7.4 7.4 7.4.68 0 1.35-.09 1.99-.27A7.014 7.014 0 0112 19c-3.86 0-7-3.14-7-7 0-2.93 1.81-5.45 4.37-6.49zM12 3a9 9 0 109 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 01-4.4 2.26 5.403 5.403 0 01-3.14-9.8c-.44-.06-.9-.1-1.36-.1z';
 
-  // ---- Outline sets (stroke 1.8, round caps and joins) ----
-
-  /// Bottom nav: [outline, filled]. Support Channels (briefcase).
+  /// Bottom nav: [outline, filled].
   static const navSupport = (
     outline: 'M5.5 7h13A2.5 2.5 0 0 1 21 9.5v8a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17.5v-8A2.5 2.5 0 0 1 5.5 7zM9 7V5.5A1.5 1.5 0 0 1 10.5 4h3A1.5 1.5 0 0 1 15 5.5V7M3 12.5h18',
     filled: 'M20 6h-4V4c0-1.11-.89-2-2-2h-4c-1.11 0-2 .89-2 2v2H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-6 0h-4V4h4v2z',
@@ -167,8 +162,7 @@ class AppIcons {
       'M12 2l2.4 7.6L22 12l-7.6 2.4L12 22l-2.4-7.6L2 12l7.6-2.4z';
 }
 
-/// The Saudi doorway arches motif drawn at the bottom of every green header
-/// (docs/02 §4). Paths are in a 390 x 130 viewBox, stretched to the width.
+/// The Saudi doorway arches motif drawn at the bottom of every green header (docs/02 §4).
 class ArchPaths {
   ArchPaths._();
 
@@ -186,8 +180,6 @@ final Map<String, Path> _pathCache = {};
 Path svgPath(String data) =>
     _pathCache.putIfAbsent(data, () => parseSvgPathData(data));
 
-/// An icon from an SVG path string (24 x 24 viewBox), painted with a
-/// [CustomPainter] so it can be recoloured and (for outline sets) stroked.
 class AppIcon extends StatelessWidget {
   const AppIcon(
     this.path, {
@@ -199,7 +191,7 @@ class AppIcon extends StatelessWidget {
     this.semanticLabel,
   });
 
-  /// Filled icon; the path is painted with `fill`.
+  /// Filled icon; the path is painted with fill.
   const AppIcon.filled(
     this.path, {
     super.key,
@@ -227,7 +219,7 @@ class AppIcon extends StatelessWidget {
   /// Stroke width, or null for a filled icon.
   final double? stroke;
 
-  /// More paths drawn with the same paint (e.g. the two-part card share icon).
+  /// More paths drawn with the same paint (e.g.
   final List<String> extraPaths;
   final String? semanticLabel;
 

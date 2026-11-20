@@ -3,9 +3,6 @@ import 'package:flutter/material.dart';
 import '../../../models/connection_request.dart';
 import '../../startups/widgets/founder_ui.dart';
 
-/// The one pill that says where a request stands, for the investor's wallet
-/// and the founder's requests alike: Pending (gold), Accepted (green, with a
-/// check) and Declined (grey).
 class RequestStatusPill extends StatelessWidget {
   const RequestStatusPill({super.key, required this.status});
 

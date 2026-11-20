@@ -6,8 +6,6 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_metrics.dart';
 import '../../theme/app_text.dart';
 
-/// The 50 x 30 switch: track `#D6D3CC` (on: moss600, 200 ms), 24 px white knob
-/// that slides 20 px (220 ms easeOut).
 class AppSwitch extends StatelessWidget {
   const AppSwitch({
     super.key,
@@ -65,10 +63,6 @@ class AppSwitch extends StatelessWidget {
   }
 }
 
-/// Card with a 36 px icon box, title (15/600), description (13/18 grey) and an
-/// [AppSwitch]: the Visibility card of Add startup step 4 and the Settings
-/// switch rows. [icon] is a filled path from [AppIcons] (globe when public,
-/// lock when private). Toggles never get a `*`.
 class ToggleCard extends StatelessWidget {
   const ToggleCard({
     super.key,

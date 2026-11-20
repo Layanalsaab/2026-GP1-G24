@@ -2,12 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'founder_ui.dart';
 
-/// A big-number tile: a label, a value and a sub-line. Dark = the open
-/// "Raising" tile (green gradient, white text); otherwise white with a 1 px
-/// border. Padding 18 / 16, radius 20. Used by the Manage Dashboard and the
-/// startup page (Raising, Valuation, Capital).
-///
-/// [onTap] null makes it a plain read-only tile.
+/// A big-number tile: a label, a value and a sub-line.
 class StatTile extends StatelessWidget {
   const StatTile({
     super.key,

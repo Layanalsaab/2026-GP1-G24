@@ -6,7 +6,6 @@ enum InvitationStatus {
   /// The person joined the team.
   accepted('accepted'),
 
-  /// The person said no (or signed up as an investor and chose not to join).
   declined('declined'),
 
   /// The team cancelled it (removed the person before they joined).
@@ -22,12 +21,7 @@ enum InvitationStatus {
   );
 }
 
-/// An invitation to join a startup's team (Firestore `invitations/{id}`).
-///
-/// The id is `startupId~email` (the e-mail lower-case), so there is one
-/// invitation per startup and e-mail. The e-mail address is what links the
-/// invitation to the person: whoever signs in with a VERIFIED account of that
-/// e-mail can accept it.
+/// An invitation to join a startup's team (Firestore invitations/{id}).
 class Invitation {
   const Invitation({
     required this.startupId,
@@ -47,9 +41,6 @@ class Invitation {
     this.previousFounderRole,
   });
 
-  /// `coFounder` or `member` (the same words as `Startup.memberRoles`), or
-  /// `owner`: the owner invited this person to take the startup over when
-  /// she leaves (she stays in control until it is accepted).
   static const roleCoFounder = 'coFounder';
   static const roleMember = 'member';
   static const roleOwner = 'owner';
@@ -67,32 +58,20 @@ class Invitation {
   /// True once the e-mail really left (the relay said so).
   final bool emailSent;
 
-  /// The account that accepted (set when [status] is accepted).
+  /// The account that accepted (set when status is accepted).
   final String? acceptedBy;
 
-  /// The name the person has on their account when they joined: it replaces
-  /// the name the founder typed on the team card.
   final String acceptedByName;
 
-  /// True when nobody had a Start.sa account with this e-mail when the
-  /// invitation was made: the e-mail and the link then say "Create your
-  /// account" only (never "log in").
   final bool newUser;
 
   /// When the invitation was made (the server time).
   final DateTime? createdAt;
 
-  /// An invitation to take the startup over: what the founder who sent it
-  /// becomes once it is accepted, `coFounder` or `member`; null when he
-  /// leaves for good.
   final String? previousFounderRole;
 
-  /// An invitation to take a startup over as its owner is open for 30 days;
-  /// after that nobody can accept it and the owner invites again.
   static const ownerValidFor = Duration(days: 30);
 
-  /// When an owner invitation stops being valid, or null (not an owner
-  /// invitation, or no date yet).
   DateTime? get expiresAt =>
       isOwner && createdAt != null ? createdAt!.add(ownerValidFor) : null;
 

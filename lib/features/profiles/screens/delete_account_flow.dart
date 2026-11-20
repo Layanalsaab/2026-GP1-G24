@@ -13,15 +13,6 @@ import '../../../shared_ui/widgets/overlays/app_toast.dart';
 import '../widgets/startup_fates_sheet.dart';
 import 'delete_account_dialog.dart';
 
-/// Delete account (Settings, or the "Create startup" of a founder with no
-/// startup), docs: Closing a Startup, Leaving and Deleting an Account. Two
-/// bottom sheets, then Welcome:
-///
-/// 1. The warning. A founder who holds startups chooses, for each, Close
-///    (with its next founder when it has a team) or Delete, and can't go on
-///    until every one has a choice. Someone who only joined teams is told
-///    they will leave them; an investor gets the investor warning.
-/// 2. The password: only "Enter your password to delete your account".
 Future<void> startAccountDeletion(BuildContext context) async {
   final role = AppSession.instance.user?.role ?? AccountRole.founder;
   var fates = const <String, StartupFate>{};
@@ -73,7 +64,6 @@ Future<void> startAccountDeletion(BuildContext context) async {
   if (!context.mounted) return;
   final deleted = await showDeleteAccountPassword(context, fates: fates);
   if (!deleted || !context.mounted) return;
-  // The account is gone and signed out: back to Welcome with no way back.
   AppSession.instance.signOut();
   AppRouter.openStart(context);
 }

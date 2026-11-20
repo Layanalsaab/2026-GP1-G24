@@ -201,7 +201,6 @@ void main() {
     // ANG-3's profile doesn't fit, but their open ticket does.
     expect(r.map((m) => m.id), ['ANG-3', 'ANG-1', 'ANG-2']);
     expect(r[0].ticketId, 'ANG-3-T1');
-    // ANG-1: (0.41 + 0.29 / sqrt 2) / 0.70 = 0.879 (no commerce models)
     expect(r[1].percent, 88);
     expect(r[1].ticketId, isNull);
     expect(r[2].close, isTrue);
@@ -235,7 +234,6 @@ void main() {
     final about = repo.investorById('ANG-1')!.about!;
     expect(about.length, lessThanOrEqualTo(MatchingRepository.cardBioMax + 1));
     expect(about, endsWith('…'));
-    // Cut after a full sentence still ends with "…"; a short bio is whole.
     expect(
       MatchingRepository.cardPreview(
         '${'Word ' * 20}ends here. More text follows.',
@@ -275,7 +273,6 @@ void main() {
       expect((await first).map((s) => s.id), ['a']);
       var changed = 0;
       liveRepo.changes.addListener(() => changed++);
-      // Another founder's startup arrives, and Alpha closes (no new query).
       live.send('startups', [
         (id: 'a', data: _startup({'name': 'Alpha', 'status': 'closed'})),
         (id: 'b', data: _startup({'name': 'Beta'})),
@@ -303,7 +300,6 @@ void main() {
       await _settle();
       live.send('tickets', const []);
       expect((await first).map((m) => m.id), ['ANG-1']);
-      // ANG-3 opens a ticket that fits: they come first (no new query).
       live.send('tickets', [
         (
           id: 'ANG-3-T1',
@@ -362,7 +358,7 @@ class _FailingFirestore extends FirestoreService {
   }) async => throw Exception('offline');
 }
 
-/// Firestore listeners the test drives: [send] is a new snapshot.
+/// Firestore listeners the test drives: send is a new snapshot.
 class _LiveFirestore extends FirestoreService {
   final Map<String, StreamController<List<FirestoreDocument>>> _streams = {};
   final List<String> listens = [];

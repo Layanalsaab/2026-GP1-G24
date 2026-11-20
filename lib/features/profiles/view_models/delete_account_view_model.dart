@@ -7,9 +7,6 @@ import '../../../data_access/repositories/startup_repository.dart';
 import '../../../helpers/safe_notifier.dart';
 import '../../../models/auth_failure.dart';
 
-/// Logic for the password step of Delete Account (PBI 13): the user
-/// re-enters their password, then the founder's startups follow his choices
-/// ([fates]) and the account and profile are deleted.
 class DeleteAccountViewModel extends ChangeNotifier with SafeNotifier {
   DeleteAccountViewModel({
     AuthRepository? authRepository,
@@ -28,7 +25,6 @@ class DeleteAccountViewModel extends ChangeNotifier with SafeNotifier {
   /// The message to show for the last attempt (null when there is none).
   String? get error => passwordError ?? formError;
 
-  /// Returns true when the account was deleted (the user is then signed out).
   Future<bool> submit(String password) async {
     if (isLoading) return false;
 

@@ -21,9 +21,6 @@ import 'founder_ui.dart';
 import 'runway_line.dart';
 import 'team_member_widgets.dart';
 
-/// The white card content of one step of the Add / Edit / onboarding form
-/// (docs/05 D2, docs/06 section 8). Reads and writes [vm]; rebuilds with it.
-/// [step] is 0-based.
 class StartupStepBody extends StatelessWidget {
   const StartupStepBody({
     super.key,
@@ -35,8 +32,6 @@ class StartupStepBody extends StatelessWidget {
   final StartupStepsViewModel vm;
   final int step;
 
-  /// Editing one Details section (kept for the caller; each section is now
-  /// its own step, so [step] already says what to show).
   final int? section;
 
   @override
@@ -102,7 +97,6 @@ Widget _money(
 );
 
 /// Monthly burn rate with the calculated runway under it (live while typing).
-/// The line sits right under the field, or under the error when there is one.
 Widget _burn(StartupStepsViewModel vm) {
   final runway = vm.runwayLine;
   final error = vm.errorOf(StartupField.burn);
@@ -128,8 +122,6 @@ Widget _burn(StartupStepsViewModel vm) {
     ],
   );
 }
-
-// ----------------------------------------------------------------- step 1
 
 class _Basics extends StatelessWidget {
   const _Basics({required this.vm});
@@ -352,8 +344,6 @@ class _Basics extends StatelessWidget {
   }
 }
 
-// ----------------------------------------------------------------- step 2
-
 class _ProblemSolution extends StatelessWidget {
   const _ProblemSolution({required this.vm});
 
@@ -361,7 +351,6 @@ class _ProblemSolution extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Exactly three questions, shown in sentence case (not Title Case).
     return FormFieldColumn(
       children: [
         _text(
@@ -399,10 +388,7 @@ class _ProblemSolution extends StatelessWidget {
   }
 }
 
-// ----------------------------------------------------------------- step 3
-
 /// Target Market: who the customers are and how big their yearly spend is.
-/// Both labels are shown in sentence case.
 class _TargetMarket extends StatelessWidget {
   const _TargetMarket({required this.vm});
 
@@ -422,8 +408,6 @@ class _TargetMarket extends StatelessWidget {
           multiline: true,
           sentenceCase: true,
         ),
-        // One SAR amount (no K/M/B picker, no hint under it: the explanation
-        // is in the "i"). Stored in the existing `marketSize` value.
         AppField(
           label: FounderToolsStrings.marketLabel,
           required: true,
@@ -442,10 +426,6 @@ class _TargetMarket extends StatelessWidget {
   }
 }
 
-// ----------------------------------------------------------------- step 4
-
-/// Step 6, Finance and Growth: every answer is required, labels in sentence
-/// case, money fields with the SAR prefix and automatic commas.
 class _Finance extends StatelessWidget {
   const _Finance({required this.vm});
 
@@ -518,10 +498,6 @@ class _Finance extends StatelessWidget {
   }
 }
 
-// ----------------------------------------------------------------- step 5
-
-/// Step 7, Startup Ask: Funding / Partnership / Support, each with its own
-/// questions shown only while its box is ticked.
 class _Ask extends StatelessWidget {
   const _Ask({required this.vm});
 
@@ -572,9 +548,6 @@ class _Ask extends StatelessWidget {
           'Other: ${other.text.trim()}',
   ].join(', ');
 
-  /// One option: its checkbox card, then (while ticked) its own questions
-  /// directly under it, indented with a moss line on the left. Unticking
-  /// only hides them; what was typed is kept.
   Widget _section(
     BuildContext context, {
     required LookingFor item,
@@ -621,7 +594,6 @@ class _Ask extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // One list, in this order: each card is followed by its own questions.
     final sections = <Widget>[
       _section(
         context,
@@ -713,7 +685,6 @@ class _Ask extends StatelessWidget {
       children: [
         AppField(
           label: FounderToolsStrings.lookingForLabel,
-          // Required for a new startup only (see StartupField.lookingFor).
           required: !vm.isEditing,
           sentenceCase: true,
           subLabel: 'Select all that apply',
@@ -733,17 +704,11 @@ class _Ask extends StatelessWidget {
   }
 }
 
-// ---------------------------------------------------------------- last step
-
-/// Startup Team: the team member list and editor (moved here from the old
-/// "Market & team" step; otherwise unchanged).
 class _Team extends StatelessWidget {
   const _Team({required this.vm});
 
   final StartupStepsViewModel vm;
 
-  /// Saves the member in the open editor; asks before inviting somebody who
-  /// is not on Start.sa yet.
   Future<void> _save(BuildContext context) async {
     var result = await vm.saveMember();
     if (!context.mounted) return;
@@ -755,7 +720,6 @@ class _Team extends StatelessWidget {
       if (!context.mounted) return;
     }
     if (result == MemberSave.invited) {
-      // The e-mail goes out when the startup is saved (it has to exist first).
       AppToast.confirm(context, FounderToolsStrings.invitationQueued);
     }
   }
@@ -799,8 +763,6 @@ class _Team extends StatelessWidget {
                     onEdit: () => vm.openMemberEditor(i),
                   ),
               ],
-              // A new member's editor sits above the Add button; while any
-              // editor is open the Add button is hidden.
               if (newOpen) ...[
                 if (vm.team.isNotEmpty) const SizedBox(height: 10),
                 _editor(context, null),

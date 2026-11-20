@@ -1,5 +1,3 @@
-/// Copy of the home shell: Hub, Explore, Support Channels, the side menu and
-/// the toasts (docs/05 section B and E).
 class HomeStrings {
   HomeStrings._();
 

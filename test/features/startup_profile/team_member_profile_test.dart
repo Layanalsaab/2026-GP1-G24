@@ -98,8 +98,6 @@ void main() {
       expect(find.text('Startups'), findsOneWidget);
       expect(find.text('VUZ'), findsWidgets);
       expect(find.text('Co-founder'), findsOneWidget);
-      // Both private: the section is still there, like an investor's, with
-      // a lock and no value.
       expect(find.text('Contact Information'), findsOneWidget);
       expect(find.text('Email is private'), findsOneWidget);
       expect(find.text('Phone Number is private'), findsOneWidget);

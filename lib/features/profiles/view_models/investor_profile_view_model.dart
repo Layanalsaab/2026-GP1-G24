@@ -6,9 +6,6 @@ import '../../../helpers/app_session.dart';
 import '../../../models/investor_profile.dart';
 import '../../../models/startup.dart';
 
-/// What the investor profile shows for one [InvestorProfile] and who is
-/// looking (docs/05 C2): founders get "Send investment request"; guests get
-/// no bookmark and no CTA; investors get no CTA.
 class InvestorProfileViewModel extends ChangeNotifier {
   InvestorProfileViewModel({
     required this.investor,

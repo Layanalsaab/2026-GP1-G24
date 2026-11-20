@@ -5,7 +5,7 @@ import '../../motion/motion.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text.dart';
 
-/// One removable chip of the [ResultsRow].
+/// One removable chip of the ResultsRow.
 class ResultChip {
   const ResultChip({
     required this.label,
@@ -13,13 +13,12 @@ class ResultChip {
     this.quoted = false,
   });
 
-  /// The search text chip: white with a border and curly quotes
-  /// (“riyadh”).
+  /// The search text chip: white with a border and curly quotes (“riyadh”).
   const ResultChip.query(String text, {required this.onRemove})
     : label = '“$text”',
       quoted = true;
 
-  /// Visible text (already quoted for [ResultChip.query]).
+  /// Visible text (already quoted for ResultChip.query).
   final String label;
 
   /// True for the white search-text chip.
@@ -27,11 +26,6 @@ class ResultChip {
   final VoidCallback onRemove;
 }
 
-/// The results row shown while searching or filtering (prototype `.xrh` +
-/// `.xchips`): "N results" / "Results" (15.5/700) with a "Clear all" link
-/// (13/600 moss600) and, below, removable chips (green pills 30 high with a
-/// white 12.5/600 label and a 14 px x; the search text is a white chip).
-/// Chips enter with chipIn (220 ms).
 class ResultsRow extends StatelessWidget {
   const ResultsRow({
     super.key,
@@ -43,8 +37,6 @@ class ResultsRow extends StatelessWidget {
   /// "3 results", "1 result" or "Results".
   final String title;
 
-  /// Null hides the "Clear all" link (a plain search has nothing to clear
-  /// but the text).
   final VoidCallback? onClearAll;
   final List<ResultChip> chips;
 

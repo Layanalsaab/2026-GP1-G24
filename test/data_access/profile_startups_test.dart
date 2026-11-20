@@ -8,7 +8,7 @@ import 'package:startsa/models/team_member.dart';
 
 import '../support/fakes.dart';
 
-/// A startup of [founder] with the given team cards and member roles.
+/// A startup of founder with the given team cards and member roles.
 Startup _startup(
   String id, {
   String founder = 'f1',

@@ -11,8 +11,7 @@ import '../forms/select_field.dart';
 import 'app_overlay_route.dart';
 import 'multi_picker_sheet.dart';
 
-/// One option group of the advanced search sheet. [single] groups (e.g.
-/// "Sort by") allow one choice and show no "Choose any" hint.
+/// One option group of the advanced search sheet.
 class AdvancedSearchGroup {
   const AdvancedSearchGroup({
     required this.title,
@@ -26,20 +25,13 @@ class AdvancedSearchGroup {
   final List<String> options;
   final bool single;
 
-  /// A long list (all sectors, all cities): shown as a dropdown that opens a
-  /// searchable list instead of a wall of chips.
   final bool drop;
 
-  /// Set on a dropdown whose list has "Other": choosing it shows a text box
-  /// with this placeholder ("Type a sector, e.g. SportsTech").
   final String? otherHint;
 
   bool get hasOther => otherHint != null && options.contains('Other');
 }
 
-/// The key under which the typed "Other" text of the group [title] is kept in
-/// an [AdvancedSelection] (a one-item set). Not a group, so it is never
-/// counted or shown as a chip.
 String advancedOtherKey(String title) => '__other:$title';
 
 /// The longest "Other" text.
@@ -48,8 +40,6 @@ const advancedOtherMax = 40;
 /// Selected options per group title.
 typedef AdvancedSelection = Map<String, Set<String>>;
 
-/// Number of selected options across multi-choice groups (the filter badge
-/// count; single-choice groups such as "Sort by" are not counted).
 int advancedSelectionCount(
   List<AdvancedSearchGroup> groups,
   AdvancedSelection selection,
@@ -62,12 +52,6 @@ int advancedSelectionCount(
 }
 
 /// Opens the advanced search panel (dim fades 300 ms, panel slides up 420 ms).
-///
-/// The sheet edits a draft copy of [initial]. "Show N results" pops with the
-/// draft (apply); closing with the X, the dim or back pops null (discard).
-/// [countFor] returns the live result count for a draft, used for the button
-/// label ("Show N results" / "Show 1 result" / "Show all results" when nothing
-/// is selected).
 Future<AdvancedSelection?> showAdvancedSearchSheet(
   BuildContext context, {
   required List<AdvancedSearchGroup> groups,
@@ -93,11 +77,6 @@ Future<AdvancedSelection?> showAdvancedSearchSheet(
   );
 }
 
-/// The advanced search panel (prototype `.fpanel`): `#F6F4EF`, top radius 24,
-/// max height 84 %, grabber, "Advanced search" header with a close button,
-/// scrollable groups (title 15/700 + "Choose any" hint, 36 high option chips)
-/// and a footer with "Clear all" and the apply button. Normally opened with
-/// [showAdvancedSearchSheet].
 class AdvancedSearchSheet extends StatefulWidget {
   const AdvancedSearchSheet({
     super.key,
@@ -410,13 +389,6 @@ class _Group extends StatelessWidget {
   }
 }
 
-/// A dropdown group: a select box that opens the same searchable multi-select
-/// list as everywhere else in the app. When the list has "Other", ticking it
-/// shows the same text box; typing something that is already in the list
-/// ticks that option instead (and says so), as in every form.
-///
-/// A filter may look for "Other" with nothing typed (every item whose value is
-/// not in the list), which a form may not.
 class _DropGroup extends StatelessWidget {
   const _DropGroup({
     required this.group,
@@ -432,8 +404,7 @@ class _DropGroup extends StatelessWidget {
   final ValueChanged<String> onToggle;
   final ValueChanged<String> onOtherChanged;
 
-  /// "A, B" or "A, B +1": the first two chosen, in the list's order. Other
-  /// shows what was typed ("Other: SportsTech").
+  /// "A, B" or "A, B +1": the first two chosen, in the list's order.
   String get _summary {
     final chosen = [
       for (final o in group.options)

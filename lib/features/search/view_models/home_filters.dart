@@ -5,11 +5,10 @@ import '../../../models/home_item.dart';
 import '../../../models/startup_enums.dart';
 import '../../../shared_ui/widgets/overlays/advanced_search_sheet.dart';
 
-/// Which list the search bar and the advanced search sheet act on
-/// (prototype `homeCtx`).
+/// Which list the search bar and the advanced search sheet act on (prototype homeCtx).
 enum HomeContext { support, explore, investors, startups }
 
-/// One advanced-search group plus how it filters a [HomeItem].
+/// One advanced-search group plus how it filters a HomeItem.
 class HomeFilterGroup {
   const HomeFilterGroup(
     this.title,
@@ -23,8 +22,6 @@ class HomeFilterGroup {
   final String title;
   final List<String> options;
 
-  /// Which item field this group matches; null = display only (the sample
-  /// data has no such field; it still counts in the badge and chips).
   final HomeFilterField? field;
   final bool single;
 
@@ -55,13 +52,10 @@ enum HomeFilterField {
   status,
 }
 
-/// The advanced search groups, the filtering and the sorting of the home
-/// pages. Pure so it is easy to test (docs/05 section B5).
+/// The advanced search groups, the filtering and the sorting of the home pages.
 class HomeFilters {
   HomeFilters._();
 
-  /// The options are the same lists the forms use, so every stored value
-  /// can be found.
   static final _sectors = [for (final v in Sector.values) v.label];
   static final _stages = [for (final v in StartupStage.picks) v.label];
   static final _cities = List<String>.of(AppStrings.allCities);
@@ -82,7 +76,7 @@ class HomeFilters {
       if (o != 'Other') o,
   ];
 
-  /// The groups shown in the sheet for [ctx].
+  /// The groups shown in the sheet for ctx.
   static List<HomeFilterGroup> groups(HomeContext ctx) {
     switch (ctx) {
       case HomeContext.support:
@@ -219,8 +213,7 @@ class HomeFilters {
       ),
   ];
 
-  /// Does [it] pass the selection and the search text? Within a group any
-  /// option matches; across groups all must.
+  /// Does it pass the selection and the search text?
   static bool passes(
     HomeItem it,
     AdvancedSelection sel,
@@ -244,9 +237,6 @@ class HomeFilters {
     return true;
   }
 
-  /// The sector filter's "Other": with text typed, an item whose own
-  /// (non-standard) sector contains it; with none, every item that has a sector
-  /// outside the standard list.
   static bool _matchesOtherSector(HomeItem it, String typed) {
     final own = [
       for (final s in it.sectors)
@@ -296,8 +286,6 @@ class HomeFilters {
     }
   }
 
-  /// Applies "Sort by": Name A-Z / Z-A, or Newest / Oldest by createdAt (items
-  /// with no date go last, in their old order).
   static List<HomeItem> sorted(List<HomeItem> list, AdvancedSelection sel) {
     final s = (sel['Sort by'] ?? const <String>{}).firstOrNull;
     if (s == 'Name A–Z') {
@@ -309,7 +297,6 @@ class HomeFilters {
         ..sort((a, b) => b.name.toLowerCase().compareTo(a.name.toLowerCase()));
     }
     if (s == 'Oldest') {
-      // Nothing has a date (e.g. Support Channels): the list as it is.
       if (list.every((it) => it.createdAt == null)) return list;
       final order = {for (var i = 0; i < list.length; i++) list[i]: i};
       return [...list]..sort((a, b) {
@@ -321,7 +308,6 @@ class HomeFilters {
       });
     }
     if (s == 'Newest') {
-      // Nothing has a date (e.g. Support Channels): keep the old behaviour.
       if (list.every((it) => it.createdAt == null)) {
         return list.reversed.toList();
       }

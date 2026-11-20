@@ -6,9 +6,7 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_metrics.dart';
 import '../../theme/app_text.dart';
 
-/// The small Start.sa logo of the headers (`assets/images/logo_small.png`),
-/// fading in once (500 ms). 42 px on auth/step/manage/profile headers with a
-/// 6 px right margin; pass `size: 36` for the home header.
+/// The small Start.sa logo of the headers (assets/images/logo_small.png), fading in once (500 ms).
 class HeaderLogo extends StatelessWidget {
   const HeaderLogo({
     super.key,
@@ -22,7 +20,7 @@ class HeaderLogo extends StatelessWidget {
   /// Space to the right of the logo (6 on the auth-style headers).
   final double rightMargin;
 
-  /// Fade in on mount (the documented `fade-in`).
+  /// Fade in on mount (the documented fade-in).
   final bool animate;
 
   @override
@@ -41,9 +39,7 @@ class HeaderLogo extends StatelessWidget {
   }
 }
 
-/// Plain 44 x 44 circular icon button (`.iconbtn`): transparent, press scale
-/// 0.92. Pass a filled [icon] path from [AppIcons] (24 viewBox) or an
-/// outline one via [stroke].
+/// Plain 44 x 44 circular icon button (.iconbtn): transparent, press scale 0.92.
 class AppIconButton extends StatelessWidget {
   const AppIconButton({
     super.key,
@@ -66,8 +62,6 @@ class AppIconButton extends StatelessWidget {
   /// The icon color (the main text color when null).
   final Color? color;
 
-  /// Pointer-hover fill; defaults to `#1F3F270F` on light backgrounds and
-  /// `#FFFFFF1F` when the icon [color] is light (button on a green header).
   final Color? hoverColor;
 
   /// Pressed scale (icon buttons .92; the profile back button .95).
@@ -78,7 +72,7 @@ class AppIconButton extends StatelessWidget {
   /// Stroke width for outline icons (null = filled icon).
   final double? stroke;
 
-  /// Replaces the icon (e.g. a popping bookmark).
+  /// Replaces the icon (e.g.
   final Widget? child;
 
   @override
@@ -118,9 +112,7 @@ class AppIconButton extends StatelessWidget {
   }
 }
 
-/// White back chevron on a green header (44 x 44, filled `chevLeft`, 24).
-/// Use `HeaderBackButton.profile` for the thin stroked chevron of the
-/// profile banner.
+/// White back chevron on a green header (44 x 44, filled chevLeft, 24).
 class HeaderBackButton extends StatelessWidget {
   const HeaderBackButton({
     super.key,
@@ -130,7 +122,7 @@ class HeaderBackButton extends StatelessWidget {
     this.close = false,
   }) : profile = false;
 
-  /// Profile banner back button (`m15 18-6-6 6-6`, stroke 2, radius 12).
+  /// Profile banner back button (m15 18-6-6 6-6, stroke 2, radius 12).
   const HeaderBackButton.profile({
     super.key,
     required this.onTap,
@@ -169,8 +161,6 @@ class HeaderBackButton extends StatelessWidget {
   }
 }
 
-/// Round 40 x 40 "glass" icon button on a green header (`.hicb`): white 12 %
-/// fill, white icon (20 share / 21 bookmark), press 0.92.
 class GlassIconButton extends StatelessWidget {
   const GlassIconButton({
     super.key,
@@ -221,8 +211,6 @@ class GlassIconButton extends StatelessWidget {
       excludeSemantics: true,
       child: Pressable(
         scale: PressScale.icon,
-        // The button already has a white 12 % fill; this overlay brings the
-        // total to the spec's hover fill (white 20 %, #FFFFFF33).
         hoverColor: const Color(0x17FFFFFF),
         hoverDuration: AppDur.fast,
         borderRadius: BorderRadius.circular(AppSize.glassIconButton / 2),
@@ -242,9 +230,7 @@ class GlassIconButton extends StatelessWidget {
   }
 }
 
-/// Bookmark toggle for headers: outline when off, filled (Pop on mount) when
-/// on. Glass (40 px, icon 21) by default; `glass: false` gives the plain 44 px
-/// icon button (icon 22, [color]). Never show it to guests.
+/// Bookmark toggle for headers: outline when off, filled (Pop on mount) when on.
 class HeaderBookmarkButton extends StatelessWidget {
   const HeaderBookmarkButton({
     super.key,
@@ -290,19 +276,13 @@ class HeaderBookmarkButton extends StatelessWidget {
   }
 }
 
-/// Size of a [GoldPillButton].
+/// Size of a GoldPillButton.
 enum GoldPillSize {
-  /// Guest "Sign up" on the home header: 28 high, padding 0 11, 12/600,
-  /// border 1.2, press 0.95.
   compact,
 
-  /// My Startups "Add": 36 high, padding 0 15 0 11, 14/600, icon 18, gap 2,
-  /// 6 px right margin.
   regular,
 }
 
-/// The gold outline pill on green headers: guest "Sign up" and My Startups
-/// "Add" (text `#F3E6C4`, border `#E3CF9B` 75 %, transparent fill).
 class GoldPillButton extends StatefulWidget {
   const GoldPillButton({
     super.key,
@@ -408,8 +388,6 @@ class _GoldPillButtonState extends State<GoldPillButton> {
   }
 }
 
-/// "Edit profile" outline pill on the profile banner: 36 high, padding 0 14,
-/// white 8 % fill, white 30 % border, pencil icon + 13.5/600 label.
 class ProfileEditPill extends StatelessWidget {
   const ProfileEditPill({
     super.key,

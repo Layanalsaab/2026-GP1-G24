@@ -3,16 +3,11 @@ import '../../models/connection_request.dart';
 import '../../models/investment_ticket.dart';
 import '../firebase_services/firestore_service.dart';
 
-/// An investor's investment tickets (`tickets/{investorId}-T{n}`) and the
-/// requests they send through a ticket (`requests` with a `ticketId`).
-///
-/// Every method throws AuthException on failure (network, permission, ...),
-/// like the other repositories.
 class TicketRepository {
   TicketRepository({FirestoreService? firestore})
     : _firestore = firestore ?? FirestoreService();
 
-  /// The app-wide instance. Tests replace it with a fake.
+  /// The app-wide instance.
   static TicketRepository instance = TicketRepository();
 
   final FirestoreService _firestore;
@@ -103,8 +98,7 @@ class TicketRepository {
     return requests;
   }
 
-  /// Sends a request for [amount] to a startup with [ticket]. The founder's
-  /// accept / decline is not built yet: the request only waits as Pending.
+  /// Sends a request for amount to a startup with ticket.
   Future<TicketRequest> sendRequest({
     required InvestmentTicket ticket,
     required String startupId,
@@ -139,8 +133,6 @@ class TicketRepository {
   Future<void> withdraw(String requestId) =>
       _firestore.deleteDocument(FirestoreCollections.requests, requestId);
 
-  /// An investor's account is deleted: their tickets and every request they
-  /// sent go too.
   Future<void> removeAllFor(String investorId) async {
     final tickets = await _firestore.queryWhereEqual(
       FirestoreCollections.tickets,
@@ -158,8 +150,6 @@ class TicketRepository {
     await _commitDeletes(FirestoreCollections.requests, requests);
   }
 
-  /// A startup is deleted: the requests sent to it go too (call this before
-  /// the startup document is deleted; the rules read the startup).
   Future<void> removeRequestsForStartup(String startupId) async {
     final requests = await _firestore.queryWhereEqual(
       FirestoreCollections.requests,
@@ -170,8 +160,7 @@ class TicketRepository {
     await _commitDeletes(FirestoreCollections.requests, requests);
   }
 
-  /// A startup was closed: the requests still waiting are declined. Only its
-  /// owner can (the requests are addressed to [founderId]).
+  /// A startup was closed: the requests still waiting are declined.
   Future<void> declinePendingFor(
     String startupId, {
     required String founderId,
@@ -193,8 +182,6 @@ class TicketRepository {
     ]);
   }
 
-  /// The owner handed the startup to [to]: the requests sent to it move to the
-  /// new owner, so they see them. Done by the previous owner ([from]).
   Future<void> moveRequests(
     String startupId, {
     required String from,

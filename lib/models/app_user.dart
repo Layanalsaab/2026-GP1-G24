@@ -1,14 +1,14 @@
 import '../app_constants/firestore_collections.dart';
 import 'investor_criteria.dart';
 
-/// Roles that have an account. Startup seekers never have one.
+/// Roles that have an account.
 enum AccountRole {
   founder('founder'),
   investor('investor');
 
   const AccountRole(this.value);
 
-  /// The string stored in Firestore (`users/{uid}.role`).
+  /// The string stored in Firestore (users/{uid}.role).
   final String value;
 
   static AccountRole? fromValue(Object? value) {
@@ -19,7 +19,7 @@ enum AccountRole {
   }
 }
 
-/// A signed-up user's profile, stored in `users/{uid}`.
+/// A signed-up user's profile, stored in users/{uid}.
 class AppUser {
   const AppUser({
     required this.uid,
@@ -51,17 +51,15 @@ class AppUser {
   final String email;
 
   /// True once the user has finished their role's onboarding questions.
-  /// Missing in older profiles, which counts as not completed.
   final bool onboardingCompleted;
 
-  /// Where the user is based. Null until they choose one.
+  /// Where the user is based.
   final String? city;
 
-  /// A short "about me" text. Empty when the user hasn't written one.
+  /// A short "about me" text.
   final String bio;
 
-  /// The 9-digit Saudi mobile number without +966 (starts with 5). Null when
-  /// not saved (older profiles).
+  /// The 9-digit Saudi mobile number without +966 (starts with 5).
   final String? phone;
 
   /// "Sectors of interest" chosen at sign-up and shown on the profile.
@@ -70,16 +68,11 @@ class AppUser {
   /// When the account was created (shown as "Joined October 2026").
   final DateTime? createdAt;
 
-  /// Investors only: the sectors and stages they invest in (one or more of
-  /// each) and their typical ticket size. Empty / null until they answer the
-  /// investor onboarding.
   final List<String> preferredSectors;
   final List<String> preferredStages;
   final String? ticketSize;
 
-  /// The photo itself, a small compressed square as base64 text. It lives on
-  /// `publicProfiles/{uid}` (not in `users`) and is read when the profile
-  /// loads; null when the user has none (the initials show instead).
+  /// The photo itself, a small compressed square as base64 text.
   final String? photoData;
 
   /// Optional LinkedIn profile link (sign-up, Edit profile).
@@ -97,7 +90,7 @@ class AppUser {
   /// Investors: the answers to the sign-up questions (steps 3 and 4).
   final InvestorCriteria? investorCriteria;
 
-  /// Whether the profile shows the email / phone. Private by default.
+  /// Whether the profile shows the email / phone.
   final bool emailPublic;
   final bool phonePublic;
 
@@ -171,8 +164,6 @@ class AppUser {
     phonePublic: phonePublic ?? this.phonePublic,
   );
 
-  /// Returns null when the document is missing a valid role, so callers never
-  /// treat a half-created profile as a usable account.
   static AppUser? fromMap(String uid, Map<String, dynamic>? data) {
     if (data == null) return null;
     final role = AccountRole.fromValue(data['role']);

@@ -141,7 +141,6 @@ void main() {
         expect(find.text('What I’m looking for in startups'), findsOneWidget);
         expect(find.text('Investment Background'), findsOneWidget);
         expect(find.text('Years of investing'), findsOneWidget);
-        // The round size is the Investment Size card above: not repeated.
         expect(find.text('Round Size'), findsNothing);
         // "Led a round" is no longer shown, even for an old answer.
         expect(find.text('Led a round'), findsNothing);
@@ -207,8 +206,6 @@ void main() {
         expect(find.text('SAR 100K – 500K'), findsWidgets);
         expect(find.text('Investment Background'), findsOneWidget);
         expect(find.text('Investment Interests'), findsOneWidget);
-        // Someone else's profile has Contact Information too: a private
-        // detail says so, with a lock, and shows no value.
         expect(find.text('Contact Information'), findsOneWidget);
         expect(find.text('Email is private'), findsOneWidget);
         expect(find.text('Phone Number is private'), findsOneWidget);

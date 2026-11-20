@@ -2,26 +2,12 @@
 class AppConfig {
   AppConfig._();
 
-  /// The Google Apps Script web app that sends the invitation e-mails (see
-  /// tools/invite_relay/README.md). If it is ever empty, sending fails with a
-  /// clear message and the invitation stays "not sent".
   static const inviteRelayUrl =
       'https://script.google.com/macros/s/AKfycby587ehh_cOJZuv3jalbS-2VpxlxQLAn1pq_LSQ5AvKtCAYADY4QcGzrmpei0uIiYzdmg/exec';
 
-  /// Someone who ALREADY has an account and is invited to a team: true joins
-  /// them at once, false asks "Join X? Accept / Decline" the next time they
-  /// open the app. (A brand-new account always joins automatically.)
-  ///
-  /// True for now: Accept / Decline comes back with the notifications.
   static const autoJoinExistingAccounts = true;
 
-  /// The web address the "Open Start.sa" button of the invitation e-mail
-  /// points to (the page on Firebase Hosting; Android opens the app instead
-  /// of the page when it is installed).
   static const inviteLinkBase = 'https://startsa-ea49e.web.app/invite';
 
-  /// The site the links people SHARE point to (a startup's or an investor's
-  /// page: `<base>/startup/<id>`, `<base>/investor/<id>`). Same Firebase
-  /// Hosting site as the invitation page; the app opens these links itself.
   static const shareLinkBase = 'https://startsa-ea49e.web.app';
 }

@@ -14,13 +14,6 @@ import '../../search/screens/hub_screen.dart';
 import '../../search/view_models/home_view_model.dart';
 import '../../search/widgets/home_layout.dart';
 
-/// The Explore page: Latest, Trending and For You (the sub-tabs live in the
-/// shell's header; guests only get Trending). Searching or filtering on any
-/// sub-tab turns it into the results view. Rendered inside the shell's scroll
-/// view.
-///
-/// There is no Matches tab: matching lives inside each ticket of the
-/// Investment Wallet and inside each open round of a startup.
 class ExploreScreen extends StatelessWidget {
   const ExploreScreen({
     super.key,
@@ -44,7 +37,7 @@ class ExploreScreen extends StatelessWidget {
         top: 2,
       );
 
-  /// The section heading (`.shd2`: margin 4 2 -2, or 4 2 0 with a dropdown).
+  /// The section heading (.shd2: margin 4 2 -2, or 4 2 0 with a dropdown).
   HomeSlot _heading(Widget header, {double bottom = -2}) =>
       HomeSlot(header, top: 4, bottom: bottom);
 
@@ -62,8 +55,6 @@ class ExploreScreen extends StatelessWidget {
     ];
   }
 
-  /// Latest: "Newest startups" with the time range, each card with its
-  /// "Joined 2 days ago" line.
   List<HomeSlot> _latest(HomeViewModel vm) {
     final items = vm.latest;
     return [
@@ -91,8 +82,7 @@ class ExploreScreen extends StatelessWidget {
     ];
   }
 
-  /// For You: the recommended list only. An investor sees startups, a founder
-  /// investors. The match percentage shows only on a card that has one.
+  /// For You: the recommended list only.
   List<HomeSlot> _forYou(HomeViewModel vm) => [
     _heading(
       _InfoHeading(title: vm.recommendedTitle, info: vm.recommendedInfo),
@@ -101,8 +91,6 @@ class ExploreScreen extends StatelessWidget {
     cardsSlot(vm.recommended, showMatch: true, scope: vm.paneKey),
   ];
 
-  /// Trending: "Top 30 trending" with the range, each card with its rank
-  /// ("#1"). No analytics are shown (no growth, no view counts).
   List<HomeSlot> _trending(HomeViewModel vm) {
     final items = vm.trending;
     return [
@@ -143,8 +131,6 @@ class ExploreScreen extends StatelessWidget {
   }
 }
 
-/// A section heading with an (i) button after the title that opens a tip
-/// under it, and an optional [trailing] widget (the range dropdown).
 class _InfoHeading extends StatefulWidget {
   const _InfoHeading({required this.title, this.info, this.trailing});
 

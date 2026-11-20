@@ -3,15 +3,13 @@ import '../models/startup.dart';
 import '../recommender/content_ranker.dart' show MatchResult;
 import 'formatters.dart';
 
-/// Errors of the ticket form (null = fine). Same wording as the prototype.
+/// Errors of the ticket form (null = fine).
 class TicketErrors {
   TicketErrors._();
 
   static String? name(String value) =>
       value.trim().isEmpty ? 'Enter a name for this ticket.' : null;
 
-  /// [other] is what was typed for "Other" (an unticked or blank Other is
-  /// refused like the other pickers do).
   static String? sectors(Set<String> value, {String other = ''}) {
     if (value.isEmpty) return 'Select at least one sector.';
     if (value.contains('Other') && other.trim().isEmpty) {
@@ -23,9 +21,6 @@ class TicketErrors {
   static String? stages(Set<String> value) =>
       value.isEmpty ? 'Select at least one stage.' : null;
 
-  /// The smallest amount in a ticket, the same minimum as the other money
-  /// boxes in the app. (Nothing limits it from above: a ticket is not tied to
-  /// what the investor usually invests.)
   static const minAmount = 1000;
 
   static String? minimum(int? min) {
@@ -36,8 +31,6 @@ class TicketErrors {
     return null;
   }
 
-  /// The maximum is required, at least the same smallest amount, and more
-  /// than the minimum (when the minimum is filled in).
   static String? maximum(int? max, int? min) {
     if (max == null || max <= 0) return 'Enter the maximum amount.';
     if (max < minAmount) {
@@ -54,8 +47,6 @@ class TicketErrors {
 class TicketSend {
   TicketSend._();
 
-  /// The most a request may be: the ticket's maximum or what the round still
-  /// needs, whichever is smaller.
   static int most(InvestmentTicket ticket, int remaining) =>
       ticket.amountMax < remaining ? ticket.amountMax : remaining;
 
@@ -76,8 +67,6 @@ class TicketSend {
       '${Formatters.sar(most(ticket, remaining))}';
 }
 
-/// A startup in a ticket's matches (the rules and the score are in
-/// lib/recommender; see MatchingRepository.matchesForTicket).
 class TicketMatch {
   const TicketMatch({required this.startup, required this.result});
 
@@ -101,13 +90,13 @@ int remainingOf(Startup s) {
   return left > 0 ? left : 0;
 }
 
-/// "Logistics, E-commerce +1": at most [max] items, then "+N".
+/// "Logistics, E-commerce +1": at most max items, then "+N".
 String shortList(List<String> items, {int max = 2}) {
   if (items.length <= max) return items.join(', ');
   return '${items.take(max).join(', ')} +${items.length - max}';
 }
 
-/// "2h ago", "3d ago" (the time since [when]).
+/// "2h ago", "3d ago" (the time since when).
 String timeAgo(DateTime? when, {DateTime? now}) {
   if (when == null) return 'just now';
   final diff = (now ?? DateTime.now()).difference(when);

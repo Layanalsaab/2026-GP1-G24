@@ -6,15 +6,7 @@ import '../../../app_constants/validation_strings.dart';
 import '../../../helpers/safe_notifier.dart';
 
 /// State and math of the Valuation calculator (docs/05 D4, docs/06 section 9).
-///
-/// post = funding ÷ (equity / 100); pre = post − funding;
-/// you = ownership × (100 − equity) / 100;
-/// others = (100 − ownership) × (100 − equity) / 100;
-/// value of your share = post × you / 100. Errors are live.
 class ValuationCalculatorViewModel extends ChangeNotifier with SafeNotifier {
-  // valuation = the startup's current valuation, used as the pre-money.
-  // if it's there, equity is worked out from it until the user types one.
-  // from a request the equity is the investor's, so it doesn't follow.
   ValuationCalculatorViewModel({
     int? funding,
     double? equityPercent,
@@ -41,7 +33,6 @@ class ValuationCalculatorViewModel extends ChangeNotifier with SafeNotifier {
   late final String _startEquity;
   late final String _startOwnership;
 
-  // something was typed since the calculator opened (asks before leaving)
   bool get hasChanges =>
       funds.text != _startFunds ||
       equity.text != _startEquity ||
@@ -51,8 +42,6 @@ class ValuationCalculatorViewModel extends ChangeNotifier with SafeNotifier {
   String _shownEquity = '';
   bool _syncing = false;
 
-  // A field only shows its error once the founder has typed in it: opening
-  // the calculator with empty boxes must not look like a mistake.
   bool _fundsTouched = false;
   bool _equityTouched = false;
   bool _ownershipTouched = false;
@@ -91,7 +80,6 @@ class ValuationCalculatorViewModel extends ChangeNotifier with SafeNotifier {
     if (funds.text != _startFunds) _fundsTouched = true;
     if (equity.text != _shownEquity) _equityTouched = true;
     if (ownership.text != _startOwnership) _ownershipTouched = true;
-    // user hasn't typed an equity yet, so keep it matching the funding
     if (!_equityTouched && _follow && _valuation != null) {
       final text = _equityText(_autoEquity);
       if (text != equity.text) {
@@ -104,8 +92,6 @@ class ValuationCalculatorViewModel extends ChangeNotifier with SafeNotifier {
     notifyListeners();
   }
 
-  // percent boxes: a number from 0 to 100, one dot, 2 decimals at most
-  // (same as shown), no extra zeros in front. anything else can't be typed.
   static final percentInput = TextInputFormatter.withFunction((
     oldValue,
     newValue,
@@ -118,8 +104,6 @@ class ValuationCalculatorViewModel extends ChangeNotifier with SafeNotifier {
     return v != null && v > 100 ? oldValue : newValue;
   });
 
-  /// JavaScript-like `parseFloat` of the digits and dots in [text]; NaN when
-  /// there is nothing to read.
   static double parse(String text) {
     final clean = text.replaceAll(RegExp(r'[^0-9.]'), '');
     // more than one dot isn't a number
@@ -144,8 +128,6 @@ class ValuationCalculatorViewModel extends ChangeNotifier with SafeNotifier {
   // a founder can't own 0%
   bool get _ownershipBad => !(ownershipValue > 0 && ownershipValue <= 100);
 
-  /// The messages shown under the boxes: only for a box the founder has
-  /// typed in (an untouched, empty box is not red).
   String? get fundingError =>
       _fundingBad && (_fundsTouched || funds.text.isNotEmpty)
       ? (fundingValue > 0
@@ -163,10 +145,8 @@ class ValuationCalculatorViewModel extends ChangeNotifier with SafeNotifier {
       ? ValidationStrings.calcOwnership
       : null;
 
-  /// All three boxes are valid (the result card uses this, not the messages).
   bool get isValid => !_fundingBad && !_equityBad && !_ownershipBad;
 
-  // pre and post money only need funding and equity, not your ownership
   bool get dealValid => !_fundingBad && !_equityBad;
 
   double get post => dealValid ? fundingValue / (equityValue / 100) : 0;
@@ -177,13 +157,10 @@ class ValuationCalculatorViewModel extends ChangeNotifier with SafeNotifier {
   double get newInvestors => isValid ? equityValue : 0;
   double get shareValue => post * you / 100;
 
-  // the note under the green card when these terms don't match the
-  // startup's own valuation. null when they match or there's no valuation.
   bool? get valuationLower {
     final v = _valuation;
     if (v == null || !dealValid) return null;
     final own = _equityFor(fundingValue, v);
-    // compare what's shown (2 decimals) so rounding never makes a note
     if (own == null || _two(own) == _two(equityValue)) return null;
     return equityValue > own;
   }
@@ -202,15 +179,12 @@ class ValuationCalculatorViewModel extends ChangeNotifier with SafeNotifier {
     );
   }
 
-  // dilution box under the ownership card: "15 pts" and "60% → 45%"
   String get dilutionText =>
       '${formatNumber(((ownershipValue - you) * 10).round() / 10)} pts';
   String get ownershipChangeText => '${pct(ownershipValue)} → ${pct(you)}';
 
   /// The "Other existing owners" row only shows below 100 % ownership.
   bool get hasOthers => isValid && ownershipValue < 100;
-
-  // ---- Formatting
 
   static String _group(int n) {
     final digits = n.toString();

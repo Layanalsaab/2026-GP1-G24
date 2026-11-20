@@ -29,8 +29,7 @@ import '../widgets/auth_navigation.dart';
 import '../widgets/phone_formatter.dart';
 import 'verify_email_screen.dart';
 
-/// Sign-up step 1, "Create your account" (docs/05 A7), for [role]. Founders
-/// also pick their sectors; investors say what they hope to gain.
+/// Sign-up step 1, "Create your account" (docs/05 A7), for role.
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key, required this.role, this.flow, this.email});
 
@@ -39,11 +38,9 @@ class SignupScreen extends StatefulWidget {
 
   final AccountRole role;
 
-  /// The sign-up in progress (kept so a second visit never creates a second
-  /// account). Null starts or continues [SignupFlow.current].
   final SignupFlow? flow;
 
-  /// Pushes the step-1 form for [role] (Choose role -> Continue).
+  /// Pushes the step-1 form for role (Choose role -> Continue).
   static void open(BuildContext context, AccountRole role, {String? email}) {
     final flow = SignupFlow.current ?? SignupFlow(role: role);
     // A sign-up that starts from an invitation has two steps only.
@@ -56,8 +53,6 @@ class SignupScreen extends StatefulWidget {
     );
   }
 
-  /// Like [open], but takes the place of the current screen (the invitation
-  /// page): going back doesn't land on a page that offers "Log in".
   static void openReplacing(
     BuildContext context,
     AccountRole role, {
@@ -104,7 +99,7 @@ class _SignupScreenState extends State<SignupScreen> {
     super.dispose();
   }
 
-  /// Picks (or changes) the photo. Only an error shows a toast.
+  /// Picks (or changes) the photo.
   Future<void> _pickPhoto() async {
     final message = await _vm.pickPhoto();
     if (!mounted || message == null) return;
@@ -130,8 +125,7 @@ class _SignupScreenState extends State<SignupScreen> {
     );
   }
 
-  /// Back arrow / system back. Anyone who typed or picked anything is asked
-  /// first; Discard clears the form.
+  /// Back arrow / system back.
   Future<void> _back() async {
     if (_vm.hasInput) {
       final discard = await showDiscardDialog(
@@ -142,8 +136,6 @@ class _SignupScreenState extends State<SignupScreen> {
       );
       if (!mounted || !discard) return;
       _vm.reset();
-      // A plain pop: this screen's back guard would otherwise still see the
-      // form as filled (it only rebuilds on the next frame) and ask again.
       authLeave(context);
       return;
     }
@@ -176,8 +168,6 @@ class _SignupScreenState extends State<SignupScreen> {
     if (result != null) _vm.setCity(result.value);
   }
 
-  /// An investor whose e-mail was invited to a team is asked first: the role
-  /// can't be changed after sign-up.
   Future<bool> _confirmInvestor() async {
     final names = await _vm.invitedTeams();
     if (!mounted) return false;
@@ -185,7 +175,6 @@ class _SignupScreenState extends State<SignupScreen> {
     final join = await showInvitedInvestorDialog(context, names);
     if (!mounted || join == null) return false;
     if (join) {
-      // Back to the form as a founder: the invitation adds them to the team.
       final flow = SignupFlow(role: AccountRole.founder);
       SignupFlow.current = flow;
       Navigator.of(context).pushReplacement(
@@ -209,8 +198,6 @@ class _SignupScreenState extends State<SignupScreen> {
       return;
     }
     final error = _vm.formError;
-    // A mistake in a field (or a failure such as no internet): the pop-up
-    // says so and the user cannot continue.
     AppToast.error(context, error ?? ValidationStrings.fixFields);
   }
 
@@ -222,8 +209,6 @@ class _SignupScreenState extends State<SignupScreen> {
         final vm = _vm;
         final founder = vm.isFounder;
         return PopScope(
-          // Anything typed or picked is asked about before leaving (also for
-          // the system back button).
           canPop: !vm.hasInput,
           onPopInvokedWithResult: (didPop, _) {
             if (!didPop) _back();
@@ -269,8 +254,6 @@ class _SignupScreenState extends State<SignupScreen> {
                               : const [NoEmojiFormatter()],
                           autofillHints: const [AutofillHints.name],
                         ),
-                        // The bio sits right under the full name for both roles
-                        // and is required (the investor's has no emoji).
                         LabeledTextField(
                           label: AuthStrings.bio,
                           required: true,

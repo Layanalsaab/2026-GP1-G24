@@ -99,7 +99,6 @@ void main() {
       expect(AppSession.instance.isGuest, isFalse);
       expect(AppSession.instance.user?.uid, 'u1');
       expect(find.byType(StartupProfileScreen), findsOneWidget);
-      // Nobody is signed out or turned into a guest, and no Home is stacked.
       expect(find.byType(MainScreen), findsNothing);
     });
 

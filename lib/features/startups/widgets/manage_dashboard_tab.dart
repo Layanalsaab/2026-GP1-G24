@@ -15,10 +15,6 @@ import 'manage_card.dart';
 import 'stat_tile.dart';
 import 'hover_lift_card.dart';
 
-/// Manage startup -> Dashboard (top to bottom): the Raising and Valuation
-/// tiles, the Activity card, the Valuation calculator link and the Associated
-/// investors card. (Preview, Visibility, Team, quick actions and "Needs your
-/// attention" are not here any more.)
 class ManageDashboardTab extends StatelessWidget {
   const ManageDashboardTab({
     super.key,
@@ -191,9 +187,6 @@ class ManageDashboardTab extends StatelessWidget {
   }
 }
 
-/// Valuation calculator link: white, 1 px border, radius 18, padding 14 / 16,
-/// a 40 px gold-tint tile with the calculator icon, just the title (no
-/// sub-text) and a chevron.
 class _CalculatorCard extends StatelessWidget {
   const _CalculatorCard({required this.onTap});
 

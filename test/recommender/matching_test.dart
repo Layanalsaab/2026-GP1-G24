@@ -6,11 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:startsa/recommender/content_ranker.dart';
 import 'package:startsa/recommender/knowledge_filter.dart';
 
-/// The matching rules, checked two ways:
-/// 1. hand-checked cases (the same as tests/test_matching_v2.py), and
-/// 2. matching_fixture.json: a slice of the real Firestore data plus
-///    synthetic tickets, with the results the Python reference
-///    (matching_v2.py) gives. Dart must agree.
+/// The matching rules, checked two ways: 1.
 void main() {
   MatchStartup startup([Map<String, dynamic> over = const {}]) =>
       MatchStartup.fromMap(over['id'] as String? ?? 's1', {
@@ -135,7 +131,6 @@ void main() {
     });
 
     test('the score uses the profile commerce models and round fit', () {
-      // SAR 2M left, the ticket goes up to 500K: it covers a quarter.
       final t = ticket({
         'sectors': ['Fintech', 'AI'],
       });
@@ -187,8 +182,6 @@ void main() {
         startup({'id': 'se', 'name': 'Sector off', 'sector': 'media'}),
         startup({'id': 'e', 'name': 'Exact'}),
       ]);
-      // Missing the stage keeps the sector (47%), missing the sector keeps
-      // the stage (33%).
       expect(ids(r), ['e', 'st', 'se']);
       expect([for (final m in r) m.close], [false, true, true]);
       expect('${r[1].rows[1]}', '- Stage · Series A (your ticket: Seed)');

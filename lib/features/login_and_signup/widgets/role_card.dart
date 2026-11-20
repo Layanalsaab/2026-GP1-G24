@@ -6,9 +6,7 @@ import '../../../shared_ui/theme/app_colors.dart';
 import '../../../shared_ui/theme/app_metrics.dart';
 import '../../../shared_ui/theme/app_text.dart';
 
-/// One role card of Choose role (docs/05 A6): a 48 px icon box, title,
-/// description and a radio. Selected = 2 px moss border + moss50 fill, the
-/// icon box turns moss with a white icon and the radio dot pops.
+/// One role card of Choose role (docs/05 A6): a 48 px icon box, title, description and a radio.
 class RoleCard extends StatefulWidget {
   const RoleCard({
     super.key,
@@ -19,7 +17,7 @@ class RoleCard extends StatefulWidget {
     required this.onTap,
   });
 
-  /// A filled [AppIcons] path (sprout, trend).
+  /// A filled AppIcons path (sprout, trend).
   final String icon;
   final String title;
   final String description;

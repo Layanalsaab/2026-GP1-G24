@@ -11,13 +11,6 @@ import '../models/home_item.dart';
 import '../shared_ui/widgets/overlays/app_toast.dart';
 import '../shared_ui/widgets/overlays/share_sheet.dart';
 
-/// The one place every share icon goes through: it opens the share sheet
-/// (WhatsApp, X, Telegram, LinkedIn, Facebook, Email, "Copy link" and "More",
-/// which opens the phone's own share sheet).
-///
-/// The link is `<AppConfig.shareLinkBase>/<startup|investor|program>/<id>`.
-/// A startup or investor link opens that page in the app (see ShareLinks) or,
-/// without the app, the web page on Firebase Hosting.
 class ShareLink {
   ShareLink._();
 
@@ -27,8 +20,6 @@ class ShareLink {
   static String investor(String id) => '$base/investor/$id';
   static String program(String id) => '$base/program/$id';
 
-  /// The link of a bookmark key: `s-<id>` startup, `i-<id>` investor,
-  /// `p-<id>` program (the keys used all over the app).
   static String forKey(String key) {
     final id = key.length > 2 ? key.substring(2) : '';
     return switch (key.isEmpty ? '' : key[0]) {
@@ -39,7 +30,7 @@ class ShareLink {
     };
   }
 
-  /// Opens an app or a web address. Tests replace it.
+  /// Opens an app or a web address.
   static ShareLauncher launcher = (uri) async {
     try {
       return await launchUrl(uri, mode: LaunchMode.externalApplication);
@@ -48,13 +39,12 @@ class ShareLink {
     }
   };
 
-  /// Opens the phone's own share sheet. Tests replace it.
+  /// Opens the phone's own share sheet.
   static SystemShare systemShare = (text, subject) async {
     await SharePlus.instance.share(ShareParams(text: text, subject: subject));
   };
 
-  /// Opens the share sheet for [url]. [title] is the item's name, used in the
-  /// message ("Look, I found Rafeeq Health on Start.sa ...").
+  /// Opens the share sheet for url.
   static Future<void> share(
     BuildContext context,
     String url, {
@@ -70,9 +60,6 @@ class ShareLink {
     systemShare: systemShare,
   );
 
-  /// Shares a startup with its ready message ("Check out Rafeeq Health on
-  /// Start.sa, a HealthTech startup from Riyadh! <link>"); the wording lives
-  /// in [ProfileStrings.startupShareTemplate].
   static Future<void> shareStartup(
     BuildContext context, {
     required String id,
@@ -94,9 +81,6 @@ class ShareLink {
     );
   }
 
-  /// Shares an investor profile with its ready message ("Check out Ahmad
-  /// Alharbi on Start.sa, an investor from Riyadh! <link>"); the wording
-  /// lives in [ProfileStrings.investorShareTemplate].
   static Future<void> shareInvestor(
     BuildContext context, {
     required String id,
@@ -112,8 +96,6 @@ class ShareLink {
     );
   }
 
-  /// Shares a card item: a startup or an investor with its ready message,
-  /// a program with the plain one.
   static Future<void> shareItem(BuildContext context, HomeItem item) =>
       switch (item.kind) {
         HomeItemKind.startup => shareStartup(
@@ -139,7 +121,7 @@ class ShareLink {
     String? title,
   }) => share(context, forKey(key), title: title);
 
-  /// Copies [url] and says "Link copied" (the sheet's "Copy link").
+  /// Copies url and says "Link copied" (the sheet's "Copy link").
   static void copy(BuildContext context, String url) {
     unawaited(Clipboard.setData(ClipboardData(text: url)));
     AppToast.confirm(context, ProfileStrings.linkCopied);

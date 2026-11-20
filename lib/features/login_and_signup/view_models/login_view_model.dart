@@ -32,12 +32,10 @@ class LoginViewModel extends ChangeNotifier with SafeNotifier {
   /// A problem that is not about one field (network, unknown).
   String? formError;
 
-  /// True when the credentials were right but the email is not verified yet.
   bool needsVerification = false;
 
   String? _credentialsError;
 
-  // Kept in memory only, so the verify pop-up can resend the link.
   String _sentEmail = '';
   String _sentPassword = '';
 
@@ -96,8 +94,6 @@ class LoginViewModel extends ChangeNotifier with SafeNotifier {
 
   bool get emailValid => Validators.isEmail(email.text);
 
-  /// Returns the signed-in profile, or null (see [emailError], [passwordError],
-  /// [formError], [needsVerification]).
   Future<AppUser?> submit() async {
     if (isLoading) return null;
     attempted = true;

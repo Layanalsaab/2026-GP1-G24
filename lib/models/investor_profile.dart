@@ -1,7 +1,6 @@
 import 'investor_criteria.dart';
 
-/// An investor as shown to founders: in lists and on their profile page
-/// (Figma "V2 · 10 / 12 / 15").
+/// An investor as shown to founders: in lists and on their profile page (Figma "V2 · 10 / 12 / 15").
 class InvestorProfile {
   const InvestorProfile({
     required this.id,
@@ -37,20 +36,20 @@ class InvestorProfile {
   final String id;
   final String name;
 
-  /// e.g. "Angel Investor", "VC Associate".
+  /// e.g.
   final String title;
   final String city;
   final List<String> sectors;
   final List<String> stages;
 
-  /// Shown as written, e.g. "SAR 100K – 500K".
+  /// Shown as written, e.g.
   final String ticketRange;
   final List<String> locations;
 
   /// Short description shown on the list cards.
   final String? about;
 
-  /// Longer text for the profile page; falls back to [about].
+  /// Longer text for the profile page; falls back to about.
   final String? bio;
 
   String get profileBio => bio ?? about ?? '';
@@ -68,23 +67,20 @@ class InvestorProfile {
   /// "What I hope to gain".
   final String? hopeToGain;
 
-  /// "Joined yesterday" / "Joined 3 days ago" on the "New on Start.sa" rail.
   final String? joinedLabel;
 
   /// When the document was created (orders the "New on Start.sa" rail).
   final DateTime? createdAt;
 
-  /// e.g. "4–6 years".
+  /// e.g.
   final String? yearsInvesting;
 
-  /// "0", "1–3", ... "10+".
+  /// "0", "1–3", ...
   final String? startupsInvested;
 
-  /// Investment size per funding round, e.g. "SAR 500K – 1M".
+  /// Investment size per funding round, e.g.
   final String? roundSize;
 
-  /// Contact details, only set for what the investor made Public (their
-  /// email / phone are never listed otherwise).
   final String? email;
   final String? phone;
   final bool emailPublic;
@@ -95,14 +91,10 @@ class InvestorProfile {
 
   /// Profile photo (null: the default picture).
 
-  /// "How much do you usually invest" band and the round size (SAR) the
-  /// investor takes: the ticket and round-size checks of the matching.
   final String? ticketBand;
   final int? roundMin;
   final int? roundMax;
 
-  /// "SAR 500K – 1M" from two amounts (K thousands, M millions); one amount
-  /// gives "SAR 500K"; none gives "".
   static String amountLabel(int? min, int? max) {
     String short(int n) {
       String trim(double v) =>
@@ -125,8 +117,6 @@ class InvestorProfile {
     return t.isEmpty ? null : t;
   }
 
-  /// Reads an `investors/{id}` document (the same field names as an
-  /// investor's `users/{uid}` document). Null without a name.
   static InvestorProfile? fromMap(String id, Map<String, dynamic>? d) {
     if (d == null) return null;
     final name = _text(d['fullName']);
@@ -139,7 +129,6 @@ class InvestorProfile {
     return InvestorProfile(
       id: id,
       name: name,
-      // An investor who signed up in the app is an angel investor too.
       title: switch (_text(d['title'])) {
         null || 'Investor' => 'Angel Investor',
         final t => t,

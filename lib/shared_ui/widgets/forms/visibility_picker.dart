@@ -5,14 +5,6 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_text.dart';
 import '../overlays/app_bottom_sheet.dart';
 
-/// Who can see a contact detail: the button at the right end of the Email
-/// address and Phone number label rows (sign-up and Edit profile, founder and
-/// investor). It is plain text, no box and no switch: a lock and "Only you",
-/// or a globe and "Public", then a small chevron. A tap opens a bottom sheet
-/// with the two choices; picking one closes it. It never focuses the text
-/// field.
-///
-/// Pass it as `AppField.labelTrailing` / `LabeledTextField.labelTrailing`.
 class VisibilityPicker extends StatefulWidget {
   const VisibilityPicker({
     super.key,
@@ -24,8 +16,6 @@ class VisibilityPicker extends StatefulWidget {
   final bool isPublic;
   final ValueChanged<bool> onChanged;
 
-  /// "email" or "phone": the sheet and the screen reader say "your email" /
-  /// "your phone number".
   final String fieldName;
 
   @override
@@ -38,7 +28,6 @@ class _VisibilityPickerState extends State<VisibilityPicker> {
   String get _noun => widget.fieldName == 'phone' ? 'phone number' : 'email';
 
   Future<void> _open() async {
-    // The keyboard goes away; the field is not focused by this tap.
     FocusManager.instance.primaryFocus?.unfocus();
     final choice = await showAppBottomSheet<bool>(
       context,

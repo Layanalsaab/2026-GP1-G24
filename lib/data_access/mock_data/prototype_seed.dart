@@ -8,11 +8,6 @@ import '../../models/startup_activity.dart';
 import '../../models/startup_enums.dart';
 import '../../models/team_member.dart';
 
-/// The prototype's demo content (docs/07 §4): the startups, investors and
-/// programs the Hub, Explore and Support Channels show, plus sample requests,
-/// interests and activity. Discovery runs on this data (there is no public
-/// directory in Firestore yet); a founder's *own* startups always come from
-/// Firestore. Ids of sample startups start with `mock-`.
 class PrototypeSeed {
   PrototypeSeed._();
 
@@ -102,8 +97,6 @@ class PrototypeSeed {
     valuation: valuation,
   );
 
-  // ------------------------------------------------------------ startups
-
   static final rafeeq = _startup(
     id: 'mock-rafeeq',
     founderId: 'mock-founder-1',
@@ -123,7 +116,6 @@ class PrototypeSeed {
     advantage: 'Every nurse is licensed and background-checked, prices are fixed upfront, and we partner directly with two hospital groups for referrals.',
     marketSize: 2400000000,
     team: const [
-      // SAMPLE team members (kept): the founder first, then a co-founder.
       TeamMember(
         name: 'Shahad Alabdulkarim',
         email: 'shahad@gmail.com',
@@ -206,8 +198,6 @@ class PrototypeSeed {
     website: 'sanabil.sa',
   );
 
-  /// `[id, name, sector, city, tagline]`: the extra startups that fill the
-  /// Trending list up to 30.
   static const _extraStartups = <List<String>>[
     [
       'wasel',
@@ -395,8 +385,6 @@ class PrototypeSeed {
   ];
   static const _fundingCycle = [750000, 300000, 1500000, 400000, 2000000];
 
-  /// Every sample startup, in the order the Hub lists them (the five detailed
-  /// ones first, then the trending extras).
   static final List<Startup> startups = List.unmodifiable([
     rafeeq,
     daftar,
@@ -419,8 +407,6 @@ class PrototypeSeed {
       ),
   ]);
 
-  /// Sample founders by `founderId` (a real startup's founder name is not
-  /// loaded on its profile).
   static const founderNames = {
     'mock-founder-1': 'Shahad Alabdulkarim',
     'mock-founder-2': 'Noura Alsubaie',
@@ -438,8 +424,6 @@ class PrototypeSeed {
     'omar': 'Joined 3 days ago',
     'sara': 'Joined this week',
   };
-
-  // ----------------------------------------------------------- investors
 
   static InvestorProfile _investor({
     required String id,
@@ -460,7 +444,6 @@ class PrototypeSeed {
     String? deals,
     List<String>? models,
   }) {
-    // Sample ticket details so no card looks empty; varied per investor.
     final seed = id.codeUnits.fold<int>(0, (a, b) => a + b);
     const yearsList = ['1–3 years', '4–6 years', '7–9 years', '10+ years'];
     const dealsList = ['1–3', '4–6', '7–9', '10+'];
@@ -576,7 +559,7 @@ class PrototypeSeed {
     gain: 'Early access to promising HealthTech and Fintech teams, and a long-term stake in founders I can grow with.',
   );
 
-  /// `[id, name, sector, city]` for the extra investors that fill Trending.
+  /// [id, name, sector, city] for the extra investors that fill Trending.
   static const _extraInvestors = <List<String>>[
     ['khalid', 'Khalid Al-Otaibi', 'Fintech', 'Riyadh'],
     ['reem', 'Reem Al-Harbi', 'EdTech', 'Jeddah'],
@@ -606,8 +589,6 @@ class PrototypeSeed {
     ['sultana', 'Sultana Al-Amri', 'Tourism', 'Abha'],
   ];
 
-  /// Every sample investor except the demo user [layan]: the five detailed
-  /// ones first, then the trending extras.
   static final List<InvestorProfile> investors = List.unmodifiable([
     ahmad,
     sara,
@@ -631,8 +612,6 @@ class PrototypeSeed {
       ),
   ]);
 
-  /// Which investors are approved associations of which sample startups
-  /// (used when a startup has no accepted request).
   static const associations = <String, List<String>>{
     'mock-rafeeq': ['ahmad'],
     'mock-daftar': ['sara', 'layan'],
@@ -640,8 +619,6 @@ class PrototypeSeed {
     'mock-mizan': ['sara', 'layan'],
     'mock-sanabil': ['nora'],
   };
-
-  // ------------------------------------------------------------ programs
 
   static const programs = <Program>[
     Program(
@@ -687,8 +664,6 @@ class PrototypeSeed {
       websiteUrl: 'bimventures.com',
     ),
   ];
-
-  // ------------------------------------------------- requests / interests
 
   static const requests = <ConnectionRequest>[
     ConnectionRequest(
@@ -741,8 +716,6 @@ class PrototypeSeed {
     ),
   ];
 
-  // ------------------------------------------------------------ activity
-
   static const activity = <ActivityRange, StartupActivity>{
     ActivityRange.today: StartupActivity(
       range: ActivityRange.today,
@@ -778,11 +751,6 @@ class PrototypeSeed {
     ),
   };
 
-  // --------------------------------------------- list screens (interface)
-
-  /// MOCKUP DATA for the tests (FundingRoundRepository.sample()): Round 2
-  /// (Seed) is open and Round 1 (Pre-seed) is closed. The app loads the real
-  /// rounds from Firestore.
   static final List<FundingRound> sampleRounds = [
     FundingRound(
       number: 2,

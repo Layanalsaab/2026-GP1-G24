@@ -4,14 +4,10 @@ import '../../icons/app_icons.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text.dart';
 
-/// Colour family of an [AppPill].
+/// Colour family of an AppPill.
 enum AppPillTone { moss, gold, grey }
 
-/// The prototype's `.pill`: height 28, padding 0 12, radius 999, 13/500.
-/// Moss (moss100 / green), gold (tagGoldFill / tagGoldText) or grey
-/// (mutedFill / grey). [icon] is an optional filled [AppIcons] path shown
-/// before the label (gap 6). [height] 26 with [fontSize] 12 gives the My
-/// Startups card chips.
+/// The prototype's .pill: height 28, padding 0 12, radius 999, 13/500.
 class AppPill extends StatelessWidget {
   const AppPill({
     super.key,
@@ -62,8 +58,7 @@ class AppPill extends StatelessWidget {
   }
 }
 
-/// The card tag chip (`.c2tag`): 12/600 moss600 on `#EEF4EF`, padding 4 9.
-/// Shows a startup's sector, an investor's first sector or a program's type.
+/// The card tag chip (.c2tag): 12/600 moss600 on #EEF4EF, padding 4 9.
 class TagChip extends StatelessWidget {
   const TagChip(this.label, {super.key});
 
@@ -82,8 +77,6 @@ class TagChip extends StatelessWidget {
   }
 }
 
-/// The "live" status dot (`.live`): 7 px green dot with a soft 3 px ring when
-/// [on] (public startup), grey when off (private).
 class LiveDot extends StatelessWidget {
   const LiveDot({super.key, this.on = true});
 

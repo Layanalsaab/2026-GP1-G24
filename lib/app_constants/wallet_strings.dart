@@ -1,7 +1,4 @@
 /// Every word of the Investment Wallet (investor only).
-///
-/// Buttons, field labels and confirm titles are sentence case; screen titles
-/// and menu names are Title Case.
 class WalletStrings {
   WalletStrings._();
 

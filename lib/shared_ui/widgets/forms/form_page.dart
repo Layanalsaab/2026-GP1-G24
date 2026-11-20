@@ -4,12 +4,6 @@ import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text.dart';
 
-/// A scrollable form page: [header] (an `AuthHeader`, `StepHeader`,
-/// `RoleHeader`...) followed by [children] (normally an `AuthCard` or
-/// `OverlapList`, plus an optional `FooterLink`), all in one scroll view on
-/// the cream background, with an optional pinned [footer] (see [FormFooter])
-/// that stays above the keyboard. The header's own overlap makes the card
-/// climb into the green block.
 class FormPageScaffold extends StatelessWidget {
   const FormPageScaffold({
     super.key,
@@ -24,7 +18,7 @@ class FormPageScaffold extends StatelessWidget {
   /// Scrollable content under the header.
   final List<Widget> children;
 
-  /// Pinned bar under the scroll area (usually a [FormFooter]).
+  /// Pinned bar under the scroll area (usually a FormFooter).
   final Widget? footer;
 
   /// Optional scroll controller (scroll to the first error).
@@ -54,9 +48,6 @@ class FormPageScaffold extends StatelessWidget {
   }
 }
 
-/// The pinned footer of a form page (padding 12 24 24): the primary button
-/// ([primary], an `AppButton`) and optionally a [link] text row under it
-/// (14 px gap), e.g. `FooterLink(prefix: 'Already have an account?', ...)`.
 class FormFooter extends StatelessWidget {
   const FormFooter({super.key, required this.primary, this.link});
 
@@ -82,10 +73,7 @@ class FormFooter extends StatelessWidget {
   }
 }
 
-/// Centered grey sentence with a tappable link at its end:
-/// "Already have an account? **Log in**". Footer links are 700 green
-/// (default); the choose-role one is 600 moss ([FooterLink.moss]). The link
-/// is part of the same text run, so it always has the sentence's size.
+/// Centered grey sentence with a tappable link at its end: "Already have an account?
 class FooterLink extends StatefulWidget {
   const FooterLink({
     super.key,
@@ -112,14 +100,10 @@ class FooterLink extends StatefulWidget {
   final String linkLabel;
   final VoidCallback? onTap;
 
-  /// Null: the green text color (moss for [FooterLink.moss]); both follow the
-  /// theme.
   final Color? linkColor;
   final bool _moss;
   final FontWeight linkWeight;
 
-  /// Around the text: `EdgeInsets.fromLTRB(24, 18, 24, 28)` below a
-  /// login-style card; zero inside a [FormFooter].
   final EdgeInsetsGeometry padding;
 
   @override

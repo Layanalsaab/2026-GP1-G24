@@ -15,15 +15,6 @@ import 'role_tag.dart';
 import 'startup_ask.dart';
 import '../../../helpers/startup_finance.dart';
 
-/// Manage startup -> Details: ONE white card holding the six sections of the
-/// add-startup form as an accordion, in this order: Overview, Startup
-/// Description, Target Market, Finance and Growth, Startup Team, Startup Ask.
-///
-/// A section row shows an icon tile, the title, a one-line summary and a
-/// chevron. Tapping it opens it in place (one at a time). While a section is
-/// open and [canEdit], an "Edit" pill appears next to the chevron; it calls
-/// [onEdit] with the section's step number (the same numbering as the form).
-/// Empty answers read "Not added yet".
 class ManageDetailsTab extends StatelessWidget {
   const ManageDetailsTab({
     super.key,
@@ -60,7 +51,7 @@ class ManageDetailsTab extends StatelessWidget {
   /// An amount where 0 is a real answer (revenue, burn rate, valuation).
   static String _amount(int? v) => v == null ? '' : Formatters.sarShort(v);
 
-  /// The one-line summary of section [i].
+  /// The one-line summary of section i.
   String _summary(int i) {
     final s = startup;
     switch (i) {
@@ -94,7 +85,6 @@ class ManageDetailsTab extends StatelessWidget {
     }
   }
 
-  /// The six section titles (also the headers of the single-section editor).
   static const titles = [
     'Startup Overview',
     'Startup Description',
@@ -145,17 +135,12 @@ class ManageDetailsTab extends StatelessWidget {
 
   Widget _body(int i) => sectionBody(startup, i, role: myRole);
 
-  /// The read-only content of section [i] (0-based, the form's steps). The
-  /// startup page shows these same widgets under the same six tab names, so
-  /// the labels and answers can never differ from Manage -> Details and the
-  /// add-startup form.
+  /// The read-only content of section i (0-based, the form's steps).
   static Widget sectionBody(
     Startup s,
     int i, {
     StartupRole role = StartupRole.member,
 
-    /// True for the startup's own team (the tip speaks to them: "your SAM");
-    /// false for anybody else looking at it ("the startup's SAM").
     bool mine = true,
   }) {
     switch (i) {
@@ -175,8 +160,6 @@ class ManageDetailsTab extends StatelessWidget {
   }
 }
 
-/// One accordion row: header (tile, title, summary, Edit pill, chevron) and,
-/// when open, the section's content.
 class _SectionRow extends StatelessWidget {
   const _SectionRow({
     required this.icon,
@@ -260,8 +243,6 @@ class _SectionRow extends StatelessWidget {
                       ],
                     ),
                   ),
-                  // The Edit pill exists only while the section is open and
-                  // fades in (200 ms).
                   if (canEdit && open)
                     TweenAnimationBuilder<double>(
                       tween: Tween(begin: 0, end: 1),
@@ -305,8 +286,7 @@ class _SectionRow extends StatelessWidget {
   }
 }
 
-/// Pencil icon + "Edit": height 34, radius 999, 1 px border, white, moss
-/// 14 px semibold.
+/// Pencil icon + "Edit": height 34, radius 999, 1 px border, white, moss 14 px semibold.
 class _EditPill extends StatelessWidget {
   const _EditPill({required this.onTap});
 
@@ -355,8 +335,6 @@ class _EditPill extends StatelessWidget {
   }
 }
 
-// ------------------------------------------------------------ section bodies
-
 /// A small grey label with a gold bar (the look of the investor's interests).
 class _GoldLabel extends StatelessWidget {
   const _GoldLabel(this.label);
@@ -384,8 +362,7 @@ class _GoldLabel extends StatelessWidget {
   }
 }
 
-/// The answer under a [_GoldLabel]: a little to the right, under the label's
-/// text (past its gold bar). An empty answer reads "Not added yet".
+/// The answer under a _GoldLabel: a little to the right, under the label's text (past its gold bar).
 class _Answer extends StatelessWidget {
   const _Answer(this.text);
 
@@ -409,8 +386,7 @@ class _Answer extends StatelessWidget {
   }
 }
 
-/// A question / label above its answer: the gold-bar label, the answer
-/// indented under it.
+/// A question / label above its answer: the gold-bar label, the answer indented under it.
 class _QA extends StatelessWidget {
   const _QA(this.label, this.answer);
 
@@ -709,8 +685,6 @@ class _MemberCard extends StatelessWidget {
   /// The startup's owner (tagged "Co-founder · Owner" once handed over).
   final String? ownerId;
 
-  /// A person who joined (or the founder) has a profile to open; one who is
-  /// still Invited, Not sent or Declined has none yet.
   bool get _opensProfile =>
       member.isFounder || (!member.invited && member.uid != null);
 
@@ -750,8 +724,6 @@ class _MemberCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Name and the tag capsules on the same line (they wrap only
-                // when they really do not fit).
                 Wrap(
                   spacing: 6,
                   runSpacing: 4,

@@ -60,8 +60,6 @@ Future<void> _openRounds(
     ),
   );
   await t.pumpAndSettle();
-  // The rounds live in the Startup Ask tab, under its card (there is no
-  // Rounds tab any more). The tab bar scrolls sideways.
   final ask = find.descendant(
     of: find.byType(ScrollableHeaderTabBar),
     matching: find.text('Startup Ask'),
@@ -231,7 +229,6 @@ void main() {
       await t.tap(find.text('Add round'));
       await t.pumpAndSettle();
       expect(find.text('New round · Round 3'), findsOneWidget);
-      // Default type: the stage after the last round (Seed -> Series A).
       expect(find.text('Series A'), findsOneWidget);
       await t.tap(find.text('Series A'));
       await t.pump(const Duration(milliseconds: 100));
@@ -280,7 +277,6 @@ void main() {
       await t.pumpAndSettle();
       await t.tap(find.text('Add round').last);
       await t.pumpAndSettle();
-      // The confirm comes first; Cancel keeps the form, nothing is added.
       expect(find.text('Add round?'), findsOneWidget);
       expect(
         find.text('This round will be added to your startup.'),
@@ -478,9 +474,8 @@ void main() {
       // Seven fit; only five are shown.
       expect(find.textContaining('Matched Investor'), findsNWidgets(5));
       expect(find.text('100% match'), findsNWidgets(5));
-      // Why they matched is on the investor's profile, not on the card.
       expect(find.text('Same sector & stage'), findsNothing);
-      // "Angel Investor · [pin] Riyadh" on every match card.
+      // "Angel Investor · pin Riyadh" on every match card.
       expect(find.text('Angel Investor'), findsAtLeastNWidgets(5));
       expect(find.text('Riyadh'), findsAtLeastNWidgets(5));
       expect(
@@ -516,13 +511,10 @@ void main() {
       await t.tap(find.text('Edit round'));
       await t.pumpAndSettle();
       expect(find.text('Edit round · Round 2'), findsOneWidget);
-      // Pre-filled with the current values; the button is hidden meanwhile.
       expect(find.text('500,000'), findsOneWidget);
       expect(find.text('200,000'), findsOneWidget);
       expect(find.text('Edit round'), findsNothing);
       final fields = find.byType(TextField);
-      // (No range per round type any more: the sample's SAR 500,000 Seed is
-      // fine.)
       expect(find.textContaining('range'), findsNothing);
       expect(find.textContaining('at least SAR 1,000'), findsNothing);
       await t.enterText(fields.at(fields.evaluate().length - 2), '3000000');

@@ -21,15 +21,9 @@ import '../widgets/role_tag.dart';
 import 'manage_startup_screen.dart';
 import 'startup_steps_screen.dart';
 
-/// My Startups (docs/05 D1): the shared list banner (back, "Add" pill, title
-/// and logo, filter + sort pills; no count line) and the cards of the
-/// founder's startups plus the ones they joined as a team member, or the
-/// illustrated empty card.
 class MyStartupsScreen extends StatefulWidget {
   const MyStartupsScreen({super.key, this.teamStartups});
 
-  /// Extra startups to list (tests); the real memberships are read from
-  /// Firestore.
   final List<MyStartupEntry>? teamStartups;
 
   /// Opens the screen with the forward transition.
@@ -61,8 +55,6 @@ class _MyStartupsScreenState extends State<MyStartupsScreen> {
     super.dispose();
   }
 
-  /// Pull down: an invitation that arrived is accepted, then the list (the
-  /// startups you own and the ones you belong to) is read again.
   Future<void> _refresh() async {
     await AppRouter.checkInvitations(context);
     final uid = AppSession.instance.user?.uid;
@@ -151,8 +143,6 @@ class _MyStartupsScreenState extends State<MyStartupsScreen> {
                           )
                         : null,
                   ),
-                  // The list starts right under the banner, at the same y as
-                  // the Bookmarks list.
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 8, 16, 28),
                     child: Column(
@@ -202,8 +192,6 @@ class _MyStartupsScreenState extends State<MyStartupsScreen> {
                             for (var i = 0; i < shown.length; i++) ...[
                               // The same gap as between the cards of the Hub.
                               if (i > 0) const SizedBox(height: HomeColumn.gap),
-                              // The Hub's startup card (HomeItemCard), with only
-                              // what your own startups need.
                               HomeItemCard(
                                 key: ObjectKey(shown[i]),
                                 item: HomeItem.fromStartup(shown[i].startup),
@@ -225,8 +213,6 @@ class _MyStartupsScreenState extends State<MyStartupsScreen> {
                                 actionLabel: shown[i].role.canManage
                                     ? FounderToolsStrings.manage
                                     : FounderToolsStrings.view,
-                                // Founder, co-founder and team member all open
-                                // Manage (a team member's is view-only).
                                 onTap: () =>
                                     _manage(shown[i].startup, shown[i].role),
                               ),
@@ -287,8 +273,6 @@ class _NoMatches extends StatelessWidget {
   }
 }
 
-/// The empty-state picture: a 140 circle with a floating white rocket tile,
-/// a gold plus badge and a twinkling sparkle.
 class _EmptyIllustration extends StatelessWidget {
   const _EmptyIllustration();
 

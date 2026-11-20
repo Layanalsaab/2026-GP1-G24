@@ -16,10 +16,6 @@ import '../view_models/wallet_view_model.dart';
 import 'received_request_card.dart';
 import 'ticket_form.dart';
 
-/// Investment Wallet -> one ticket: back link "All tickets", the ticket card
-/// (status, sectors and stages, Minimum and Maximum, "Edit ticket" and "Close
-/// ticket" for an open one), the "Requests" sent with it and, for an open
-/// ticket, its "Matches". Built like the round page.
 class TicketDetail extends StatelessWidget {
   const TicketDetail({
     super.key,
@@ -145,8 +141,6 @@ class _Grey extends StatelessWidget {
     style: AppText.sans(size: 14, height: 20, color: AppColors.grey),
   );
 }
-
-// ------------------------------------------------------------------ card
 
 class _TicketCard extends StatelessWidget {
   const _TicketCard({
@@ -283,10 +277,7 @@ class _TicketCard extends StatelessWidget {
   }
 }
 
-// -------------------------------------------------------------- requests
-
-/// One request sent with the ticket: the startup, "SAR amount · time ago" and
-/// its status.
+/// One request sent with the ticket: the startup, "SAR amount · time ago" and its status.
 class _RequestRow extends StatelessWidget {
   const _RequestRow({required this.vm, required this.request});
 
@@ -334,8 +325,6 @@ class _RequestRow extends StatelessWidget {
     );
   }
 }
-
-// --------------------------------------------------------------- matches
 
 class _Matches extends StatelessWidget {
   const _Matches({

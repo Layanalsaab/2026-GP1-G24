@@ -201,7 +201,6 @@ void main() {
         '${_raising.id}~i1-T1',
         {'founderId': 'someone'},
       );
-      // The repository reads what the signed-in founder already sent.
       expect(await TicketRequestRepository(firestore: db).sentBy('someone'), {
         '${_raising.id}~i1-T1',
       });

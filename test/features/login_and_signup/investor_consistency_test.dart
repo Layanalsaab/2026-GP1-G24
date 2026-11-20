@@ -31,8 +31,6 @@ Future<void> _pump(WidgetTester t, Widget home) async {
   await t.pump(const Duration(milliseconds: 800));
 }
 
-/// The vertical gap between each field and the next, and the left / right
-/// margin of every field.
 ({Set<double> gaps, Set<double> lefts, Set<double> rights}) _measure(
   WidgetTester t,
 ) {

@@ -33,11 +33,6 @@ import '../shared_ui/widgets/overlays/picker_sheet.dart';
 import '../shared_ui/widgets/overlays/app_bottom_sheet.dart';
 import 'app_router.dart';
 
-/// The home shell (Figma 20-27): green header with the avatar menu (or the
-/// guest "Sign up" pill), the search bar with the advanced search sheet, the
-/// page of the selected tab (Support Channels, Hub, Explore) and the 3-tab
-/// bottom navigation. Reads the role from [AppSession]; guests have no drawer.
-/// Opens on the Hub.
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
 
@@ -51,7 +46,6 @@ class _MainScreenState extends State<MainScreen> {
 
   AppSession get _session => AppSession.instance;
 
-  /// Kept so the same notifier is removed in dispose (tests swap instances).
   late final StartupRepository _startups = StartupRepository.instance;
 
   @override
@@ -63,15 +57,11 @@ class _MainScreenState extends State<MainScreen> {
       ownStartupIds: _session.belongingStartupIds,
     );
     _session.addListener(_onSession);
-    // A startup was created, edited (stage, round opened or closed...),
-    // deleted or left: "Matches for" and the hidden ids follow.
     _startups.changes.addListener(_onStartupsChanged);
     if (_session.isFounder) _loadOwnStartups();
     _vm.refreshDirectory();
   }
 
-  /// Pull down: new invitations are accepted, then the lists are read again
-  /// (the directory, the startups the person owns or belongs to, bookmarks).
   Future<void> _refresh() async {
     if (_session.isGuest) {
       await _vm.refreshDirectory();
@@ -100,14 +90,11 @@ class _MainScreenState extends State<MainScreen> {
     super.dispose();
   }
 
-  /// The founder's startups: hidden from the lists and shown in "Matches for".
   Future<void> _loadOwnStartups() async {
     try {
       final mine = await _startups.fetchMyStartups();
       if (!mounted) return;
       _session.setOwnStartupIds([for (final s in mine) s.id]);
-      // The startups they belong to (co-founder / team member) are hidden
-      // from Hub and For You too.
       final member = <String>{};
       final roles = <String, StartupRole>{};
       final uid = _session.user?.uid;
@@ -117,7 +104,6 @@ class _MainScreenState extends State<MainScreen> {
           roles[s.id] = StartupRole.of(s, uid) ?? StartupRole.member;
         }
       } catch (_) {
-        // Memberships are an extra; the founder's own are still hidden.
       }
       if (!mounted) return;
       _session.setMemberRoles(roles);
@@ -128,8 +114,6 @@ class _MainScreenState extends State<MainScreen> {
         );
       }
       _session.setMemberStartupIds(member);
-      // "Matches for" lists the startups the user owns, but not closed
-      // ones (they are not raising); every startup of theirs stays hidden.
       _vm.setOwnStartups(
         [
           for (final s in mine)
@@ -142,8 +126,6 @@ class _MainScreenState extends State<MainScreen> {
     }
   }
 
-  /// Profile edited: refresh the avatar initials and the menu, and give
-  /// Matches the new answers (an investor's preferences).
   void _onSession() {
     if (!mounted) return;
     _vm.setUser(_session.user);
@@ -165,8 +147,6 @@ class _MainScreenState extends State<MainScreen> {
     if (result != null) _vm.applySelection(result);
   }
 
-  /// The sort button (Hub, Explore, Support Channels): Newest, Oldest, Name A–Z or Name Z–A; picking the chosen one again
-  /// goes back to the default order.
   Future<void> _openSort() async {
     final r = await showPickerSheet(
       context,
@@ -281,8 +261,6 @@ class _MainScreenState extends State<MainScreen> {
       // Back on Home does nothing.
       canPop: false,
       child: AnnotatedRegion<SystemUiOverlayStyle>(
-        // The system navigation area under the green bar is green too, so
-        // there is no pale strip below it.
         value: const SystemUiOverlayStyle(
           systemNavigationBarColor: AppColors.green,
           systemNavigationBarIconBrightness: Brightness.light,

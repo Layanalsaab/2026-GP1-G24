@@ -141,8 +141,6 @@ void main() {
             home: StatefulBuilder(
               builder: (context, set) => GestureDetector(
                 onTap: () => set(() => taps++),
-                // A widget that reads the palette but knows nothing about the
-                // theme controller.
                 child: const _Probe(),
               ),
             ),

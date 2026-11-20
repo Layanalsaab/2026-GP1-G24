@@ -6,9 +6,6 @@ import 'package:startsa/shared_ui/widgets/forms/app_text_field.dart';
 import 'package:startsa/shared_ui/widgets/forms/select_field.dart';
 import 'package:startsa/shared_ui/widgets/forms/visibility_picker.dart';
 
-/// The spacing rule of every form: label -> control 8 px, control -> next
-/// label 28 px, whatever sits in the helper line (counter, hint, error, link)
-/// or in the label row (a pill).
 void main() {
   setUpAll(() => GoogleFonts.config.allowRuntimeFetching = false);
 
@@ -37,7 +34,6 @@ void main() {
       }
     });
     await pump(t, [
-      // 0: plain, 1: counter, 2: error, 3: hint, 4: link, 5: dropdown
       LabeledTextField(label: 'Field 0', controller: c[0]),
       LabeledTextField(label: 'Field 1', controller: c[1], maxLength: 50),
       LabeledTextField(
@@ -60,8 +56,6 @@ void main() {
     ]);
     final tops = [for (var i = 0; i < 6; i++) top(t, find.text('Field $i'))];
     for (var i = 1; i < tops.length; i++) {
-      // The field with a link ("Forgot password?") has a little extra room
-      // under it so the link text is not cut off.
       final expected = i == 5 ? 116 : 106;
       expect(tops[i] - tops[i - 1], expected, reason: 'field $i');
     }
@@ -120,7 +114,6 @@ void main() {
     expect(top(t, find.text('With Pill')) - top(t, find.text('Before')), 106);
     expect(top(t, find.text('After')) - top(t, find.text('With Pill')), 106);
 
-    // A tap opens the sheet; picking Public closes it and flips the button.
     expect(find.text('Only you'), findsOneWidget);
     await t.tap(find.text('Only you'));
     await t.pumpAndSettle();
@@ -133,7 +126,6 @@ void main() {
     expect(top(t, find.text('After')) - top(t, find.text('With Pill')), 106);
     expect(top(t, find.text('With Pill')) - top(t, find.text('Before')), 106);
 
-    // The part of the button that hangs above the label row takes taps too.
     final r = t.getRect(find.text('Public'));
     await t.tapAt(Offset(r.center.dx, r.top - 5));
     await t.pumpAndSettle();

@@ -1,5 +1,4 @@
-/// One person in a startup's team (Startup Team step, Team tab on the
-/// startup profile). Stored inside the startup document as a map.
+/// One person in a startup's team (Startup Team step, Team tab on the startup profile).
 class TeamMember {
   const TeamMember({
     required this.name,
@@ -21,10 +20,10 @@ class TeamMember {
 
   final String name;
 
-  /// Lower-case, trimmed. Empty on older startups.
+  /// Lower-case, trimmed.
   final String email;
 
-  /// e.g. "CTO".
+  /// e.g.
   final String role;
 
   /// What this person brings to the startup.
@@ -39,13 +38,9 @@ class TeamMember {
   /// The startup's founder: always the first member.
   final bool isFounder;
 
-  /// The account this person is, once it is linked. A linked member shows
-  /// the account's CURRENT name (it follows Edit profile); an unlinked one
-  /// shows the typed text.
+  /// The account this person is, once it is linked.
   final String? uid;
 
-  /// The person's photo (base64), read from their public profile when a team is
-  /// shown. Never stored on the startup (null: the default picture).
   final String? photoData;
 
   TeamMember copyWith({

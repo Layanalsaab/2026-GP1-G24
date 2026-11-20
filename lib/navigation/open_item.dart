@@ -12,19 +12,12 @@ import '../helpers/app_session.dart';
 import '../models/home_item.dart';
 import '../models/startup.dart';
 
-/// Opens the profile behind a home card or row: startup -> Startup profile,
-/// investor -> Investor profile, program -> Program details. The model is
-/// resolved through [DiscoveryRepository]; a founder opening one of their own
-/// startups gets the preview mode. Counts a profile view for Trending.
 void openStartup(BuildContext context, Startup startup) {
   InteractionRepository.instance.recordProfileView('s-${startup.id}');
   final session = AppSession.instance;
   final own =
       session.ownStartupIds.contains(startup.id) ||
       (session.isFounder && startup.founderId == session.user?.uid);
-  // A startup I belong to never opens as a public page (no bookmark): a
-  // co-founder gets Manage, a team member Manage view only. The founder
-  // sees the preview of the startup page.
   if (!own) {
     final role =
         session.memberRoleOf(startup.id) ??
@@ -45,7 +38,6 @@ void openHomeItem(BuildContext context, HomeItem item) {
   final discovery = DiscoveryRepository.instance;
   switch (item.kind) {
     case HomeItemKind.startup:
-      // Matches cards come from Firestore, the other lists from the samples.
       final startup =
           discovery.startupById(item.id) ??
           MatchingRepository.instance.startupById(item.id);

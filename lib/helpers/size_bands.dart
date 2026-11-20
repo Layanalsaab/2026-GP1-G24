@@ -1,11 +1,10 @@
-/// The five size bands used by the Hub filters "Raising" (startups) and
-/// "Investment size" (investors). Same labels as the investor sign-up.
+/// The five size bands used by the Hub filters "Raising" (startups) and "Investment size" (investors).
 class SizeBand {
   const SizeBand(this.label, this.low, this.high);
 
   final String label;
 
-  /// In SAR; the band is [low] up to, but not including, [high].
+  /// In SAR; the band is low up to, but not including, high.
   final int low;
   final int high;
 
@@ -28,18 +27,12 @@ class SizeBand {
     return null;
   }
 
-  /// A startup raising [amount] is in the band (a startup that is not raising
-  /// is in none).
   bool containsAmount(int? amount) =>
       amount != null && amount > 0 && amount >= low && amount < high;
 
-  /// An investor whose usual ticket runs from [from] to [to] overlaps the
-  /// band.
+  /// An investor whose usual ticket runs from from to to overlaps the band.
   bool overlaps(int from, int to) => to >= low && from < high;
 
-  /// "SAR 100K – 500K" -> (100000, 500000); "Under SAR 100K" -> (0, 100000);
-  /// "Over SAR 5M" -> (5000000, no limit); null when it is not a range
-  /// ("Other", empty).
   static ({int low, int high})? parseRange(String text) {
     final t = text.replaceAll(',', '').trim();
     if (t.isEmpty) return null;
@@ -57,7 +50,6 @@ class SizeBand {
       if (t.startsWith('Over')) return (low: v, high: _open);
       return (low: v, high: v);
     }
-    // "100K – 500K": a missing unit on the first number is the second's.
     final unit = found[1].group(2);
     final a = value(found[0], found[0].group(2) ?? unit);
     final b = value(found[1], null);

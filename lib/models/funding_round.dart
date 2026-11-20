@@ -1,8 +1,7 @@
 import '../app_constants/firestore_collections.dart';
 import 'startup_enums.dart';
 
-/// One investor of a funding round, as stored in the round document:
-/// `{name, investorId, isLead}`.
+/// One investor of a funding round, as stored in the round document: {name, investorId, isLead}.
 class RoundInvestor {
   const RoundInvestor({
     required this.name,
@@ -12,8 +11,6 @@ class RoundInvestor {
 
   final String name;
 
-  /// The `investors/{id}` profile, or null when the investor has none (the
-  /// name is then shown as plain grey text).
   final String? investorId;
 
   /// The lead investor of the round ("· Lead").
@@ -41,12 +38,6 @@ class RoundInvestor {
   }
 }
 
-/// One funding round of a startup: a document of
-/// `startups/{startupId}/fundingRounds/{roundId}` (see FundingRoundFields).
-///
-/// A startup has at most one OPEN round, and only while it asks for Funding:
-/// the startup's `fundingRequirement` is the open round's [amount]. The
-/// startup repository keeps the two in step on every save.
 class FundingRound {
   const FundingRound({
     required this.number,
@@ -63,21 +54,18 @@ class FundingRound {
   /// The document id ('' for a round that is not saved yet).
   final String id;
 
-  /// 1, 2, 3... in date order (the rounds shown are numbered again when
-  /// loaded, so a hidden round leaves no gap).
+  /// 1, 2, 3...
   final int number;
 
   /// "Pre-seed", "Seed", "Series A"...
   final StartupStage type;
 
-  /// The written type when [type] is Other (dataset rounds such as
-  /// "Private Equity").
   final String? typeOther;
 
   /// The amount the startup is raising, in SAR.
   final int amount;
 
-  /// How much of it has been raised so far, in SAR (it can go past [amount]).
+  /// How much of it has been raised so far, in SAR (it can go past amount).
   final int raised;
 
   final DateTime start;
@@ -96,8 +84,7 @@ class FundingRound {
     return type == StartupStage.other && other.isNotEmpty ? other : type.label;
   }
 
-  /// Percentage of [amount] raised. The bar stops at 100 %, the number can go
-  /// past it (e.g. 110 %).
+  /// Percentage of amount raised.
   int get percent => amount <= 0 ? 0 : (raised * 100 / amount).round();
 
   FundingRound copyWith({
@@ -123,14 +110,10 @@ class FundingRound {
 
   FundingRound withRaised(int value) => copyWith(raised: value);
 
-  /// The round closed on [when]. Raised stays what was actually raised (a
-  /// round can close below its target).
+  /// The round closed on when.
   FundingRound closed(DateTime when) => copyWith(end: when);
 
-  // ------------------------------------------------------------ Firestore
-
-  /// The document to save under `startups/[startupId]/fundingRounds`.
-  /// Dates are plain DateTimes (Firestore stores them as Timestamps).
+  /// The document to save under startups/startupId/fundingRounds.
   Map<String, Object?> toMap(String startupId) => {
     FundingRoundFields.startupId: startupId,
     FundingRoundFields.number: number,
@@ -154,8 +137,6 @@ class FundingRound {
     FundingRoundFields.isArchived: false,
   };
 
-  /// Null when the document can't be shown: no amount ("Undisclosed" dataset
-  /// rounds), no start date or an unknown type.
   static FundingRound? fromMap(String id, Map<String, dynamic>? d) {
     if (d == null) return null;
     final amount = d[FundingRoundFields.amount];
@@ -211,9 +192,6 @@ class FundingRound {
     'Dec',
   ];
 
-  /// "Aug 2026 – now" while open, "Feb 2022" when it started and ended in the
-  /// same month, "Jan – Jun 2026" in the same year, otherwise
-  /// "Dec 2025 – Jun 2026".
   String get dateLabel {
     final s = start;
     final e = end;

@@ -117,7 +117,6 @@ void main() {
       expect(sheet[2].hasOther, isFalse);
     });
 
-    // A startup whose sector is not in the standard list (typed by its founder).
     final custom = HomeItem.fromStartup(
       startup.copyWith(
         sector: Sector.other,

@@ -9,10 +9,6 @@ import '../../../shared_ui/widgets/overlays/app_dialog.dart';
 import '../../startups/widgets/manage_card.dart';
 import '../view_models/valuation_calculator_view_model.dart';
 
-/// Valuation calculator (docs/05 D4): inputs card, green result card,
-/// "Ownership after this round" card and the note. From Manage the boxes
-/// are filled from the open round and the startup's valuation, from a
-/// request they are filled from the request. Nothing is saved.
 class ValuationCalculatorScreen extends StatefulWidget {
   const ValuationCalculatorScreen({
     super.key,
@@ -37,7 +33,6 @@ class ValuationCalculatorScreen extends StatefulWidget {
   // true if there are co-founders or older rounds
   final bool ownershipUnknown;
 
-  // opened from the dashboard, filled from the startup and its open round
   static void openForStartup(
     BuildContext context, {
     required Startup startup,
@@ -72,7 +67,6 @@ class ValuationCalculatorScreen extends StatefulWidget {
         funding: funding,
         equityPercent: equityPercent,
         round: round,
-        // so a request's terms can be compared with the startup's valuation
         valuation: startup.valuation,
       ),
       greenHeader: true,
@@ -98,8 +92,6 @@ class _ValuationCalculatorScreenState extends State<ValuationCalculatorScreen> {
     super.dispose();
   }
 
-  // back with something typed: the same "Discard changes?" dialog as the
-  // other forms in the app
   Future<void> _leave() async {
     if (!_vm.hasChanges) {
       AppNav.back(context);
@@ -179,7 +171,6 @@ class _InputsCard extends StatelessWidget {
   final Startup startup;
   final FundingRound? round;
 
-  // same field as the other forms: label, inline (i) tip, error / hint line
   Widget _field({
     required String label,
     required String infoKey,

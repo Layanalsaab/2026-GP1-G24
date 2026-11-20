@@ -62,7 +62,6 @@ void main() {
     await pump(t);
     expect(find.text('Select sector'), findsOneWidget);
     expect(find.text('Select city'), findsOneWidget);
-    // The stage options are chips; the sector options are not on the sheet.
     expect(find.text('Seed'), findsOneWidget);
     expect(find.text('Fintech'), findsNothing);
   });
@@ -85,7 +84,6 @@ void main() {
     await t.pumpAndSettle();
     await t.tap(find.text('Done'));
     await t.pumpAndSettle();
-    // The select box shows what was typed; the draft has it as one filter.
     expect(find.text('Other: SportsTech'), findsOneWidget);
     expect(drafts.last['Sector'], {'Other'});
     expect(drafts.last['__other:Sector'], {'SportsTech'});
@@ -119,8 +117,6 @@ void main() {
     await t.pumpAndSettle();
     await t.tap(find.text('Other'));
     await t.pumpAndSettle();
-    // Capital letters, spaces and a plural do not make it different. After a
-    // short pause the listed sector is ticked and Other goes, with its text.
     await t.enterText(otherBox(), 'Fin Techs');
     await t.pump(const Duration(milliseconds: 700));
     await t.pumpAndSettle();

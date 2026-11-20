@@ -48,7 +48,6 @@ Future<void> _pump(WidgetTester t, Widget home, {Size? size}) async {
   t.view.physicalSize = size ?? const Size(1236, 2676);
   t.view.devicePixelRatio = 3;
   addTearDown(t.view.reset);
-  // A fresh tree each time (the screens read the session when they start).
   await t.pumpWidget(const SizedBox());
   await t.pumpWidget(
     MaterialApp(
@@ -206,7 +205,6 @@ void main() {
         find.byWidgetPredicate((w) => w is AppIcon && w.path == AppIcons.pin),
         findsOneWidget,
       );
-      // Six tabs, named and ordered like the steps of the add-startup form.
       const tabs = [
         'Startup Overview',
         'Startup Description',
@@ -218,7 +216,6 @@ void main() {
       for (final tab in tabs) {
         expect(_tab(tab), findsOneWidget, reason: tab);
       }
-      // The brief description appears once: in the Overview, not in the header.
       expect(find.text(PrototypeSeed.rafeeq.briefDescription), findsOneWidget);
     });
 
@@ -231,7 +228,6 @@ void main() {
       expect(find.text('Round 2 · Open'), findsNothing);
       expect(find.text('Valuation'), findsNothing);
       expect(find.text('Startup Overview'), findsWidgets);
-      // The same questions as the form's first step (and Manage -> Details).
       for (final q in [
         'Startup name',
         'Brief description',
@@ -248,7 +244,6 @@ void main() {
         find.bySemanticsLabel('HealthTech · Pre-seed · Riyadh'),
         findsOneWidget,
       );
-      // What it is looking for is on the last tab, like the form's last step.
       await _goTo(t, 'Startup Ask');
       expect(find.text('Funding'), findsWidgets);
       expect(find.text('Raising SAR 500,000'), findsOneWidget);

@@ -8,16 +8,6 @@ import '../../login_and_signup/view_models/investor_onboarding_view_model.dart';
 import '../../startups/widgets/founder_ui.dart';
 import '../view_models/wallet_view_model.dart';
 
-/// The Add ticket / Edit ticket form: a light green box like the round form,
-/// with the same field spacing, errors and buttons.
-///
-/// [editing] false: "New ticket" with "Cancel" / "Add ticket", above the
-/// tickets table. [editing] true: "Edit ticket" with the current values and
-/// "Cancel" / "Save changes", on the ticket page.
-///
-/// Add and Save changes both save at once, with no confirm (a ticket can be
-/// edited again). Save changes with nothing changed just closes the form.
-/// Cancel after a change asks "Discard changes?".
 class TicketForm extends StatelessWidget {
   const TicketForm({super.key, required this.vm, this.editing = false});
 
@@ -35,8 +25,6 @@ class TicketForm extends StatelessWidget {
     selected: vm.sectors,
     onToggle: vm.toggleSector,
     searchHint: 'Search sectors',
-    // The same "Other" box as everywhere: typing something that is already
-    // in the list ticks that sector instead.
     otherNoun: 'sector',
     otherHint: 'Type a sector, e.g. SportsTech',
     otherText: vm.sectorOther,
@@ -72,13 +60,10 @@ class TicketForm extends StatelessWidget {
       await vm.submit();
       return;
     }
-    // Nothing changed: just close the form (nothing to confirm or save).
     if (editing && !vm.formDirty) {
       vm.cancelForm();
       return;
     }
-    // Adding and saving changes both happen at once: nothing to confirm (a
-    // ticket can always be edited again).
     final ok = await vm.submit();
     if (!context.mounted) return;
     if (!ok && vm.error != null) {

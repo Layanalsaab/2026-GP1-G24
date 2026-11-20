@@ -5,11 +5,6 @@ import '../../motion/motion.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text.dart';
 
-/// A select field that opens a picker sheet (docs/02 §8.5): same box as a text
-/// field, full width, padding 0 14, value 16 ink or [placeholder] (grey), a
-/// 22 px chevron-down at the right, press scale. Pass the display text in
-/// [value] (null or empty shows the placeholder); use [SelectField.otherText]
-/// for the "Other" write-in text.
 class SelectField extends StatelessWidget {
   const SelectField({
     super.key,

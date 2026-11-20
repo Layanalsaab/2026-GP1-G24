@@ -4,15 +4,6 @@ import '../../models/expressed_interest.dart';
 import '../mock_data/prototype_seed.dart';
 
 /// Guests' "Express interest" in startups.
-///
-/// - the **inbox** of a founder's startup: who expressed interest, with a
-///   "new" dot until the founder replies (Manage startup -> Interest);
-/// - the signed-out guest's **sent** interests, toggled on and off
-///   ("Interest sent", tap again to withdraw).
-///
-/// TODO(backend): guests have no account. Use anonymous Auth or a callable
-/// Cloud Function to write `interests` (docs/08 §3); today it lives in memory
-/// for the session and starts empty.
 class InterestRepository {
   InterestRepository({this.sample = false})
     : _inbox = sample ? List.of(PrototypeSeed.interests) : [];
@@ -20,7 +11,7 @@ class InterestRepository {
   /// Tests: start with the sample interests of the sample startup.
   final bool sample;
 
-  /// The app-wide instance. Tests replace it with a fake.
+  /// The app-wide instance.
   static InterestRepository instance = InterestRepository();
 
   List<ExpressedInterest> _inbox;
@@ -29,10 +20,10 @@ class InterestRepository {
 
   ValueListenable<int> get inboxChanges => _inboxVersion;
 
-  /// Keys (`s-<startupId>`) the guest has expressed interest in.
+  /// Keys (s-{startupId}) the guest has expressed interest in.
   ValueListenable<Set<String>> get sent => _sent;
 
-  /// Interests received by [startupId].
+  /// Interests received by startupId.
   List<ExpressedInterest> inboxFor(String startupId) => [
     for (final i in _inbox)
       if (i.startupId == startupId) i,

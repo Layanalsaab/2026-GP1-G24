@@ -1,24 +1,3 @@
-/// Matching, part 1: reading the documents and the hard filters
-/// (knowledge-based). Part 2, the score, the order and the explanation, is
-/// content_ranker.dart.
-///
-/// Matching lives in two places (there is no Matches tab):
-/// - inside each investment ticket of the Wallet (the investor), and
-/// - inside each open funding round of a startup (the founder).
-///
-/// Works on the Firestore documents as stored (field names agreed on
-/// 19 Oct 2026, see firestore-field-names-v1.md):
-/// - `startups/{id}`: stored values ('fintech', 'seed', 'b2b').
-/// - `investors/{id}` (and the investor's own `users/{uid}`): labels
-///   ('Fintech', 'Seed', 'SAR 100K – 500K').
-/// - `tickets/{investorId}-T{n}`: labels ('Fintech', 'Seed') and SAR amounts.
-///
-/// A startup never matches when it is private (`isPublic` is not true),
-/// closed (`status` is 'closed') or not raising (Funding unticked, or nothing
-/// left to raise in its round).
-///
-/// The Python reference is matching_v2.py; test/recommender/matching_test.dart
-/// checks that both give the same results.
 library;
 
 import '../helpers/other_check.dart';
@@ -62,7 +41,7 @@ const Map<String, String> stageValue = {
   'Other': 'other',
 };
 
-/// Investor commerce-model label -> the startups' stored `commerceModel`.
+/// Investor commerce-model label -> the startups' stored commerceModel.
 const Map<String, String> modelValue = {
   'Business-to-Government (B2G)': 'b2g',
   'Business-to-Business (B2B)': 'b2b',
@@ -77,8 +56,7 @@ const Map<String, String> modelValue = {
   'Other': 'other',
 };
 
-/// "How much do you usually invest in one startup?" -> the band's minimum
-/// in SAR. Null (Other, or no answer) means the ticket is not checked.
+/// "How much do you usually invest in one startup?" -> the band's minimum in SAR.
 const Map<String, int?> ticketMin = {
   'Under SAR 100K': 0,
   'SAR 100K – 500K': 100000,
@@ -95,7 +73,7 @@ final Map<String, String> sectorLabelOf = {
   for (final e in sectorValue.entries) e.value: e.key,
 };
 
-/// The fields of a `startups/{id}` document that matching reads.
+/// The fields of a startups/{id} document that matching reads.
 class MatchStartup {
   MatchStartup.fromMap(this.id, Map<String, dynamic> data)
     : name = (data['name'] as String?) ?? '',
@@ -125,8 +103,6 @@ class MatchStartup {
   /// What the founder typed when the main sector is "Other".
   final String? sectorOther;
 
-  /// The sectors picked after the main one (stored values; a typed "Other"
-  /// sector can't be matched). They count as a WEAKER match than [sector].
   final Set<String> otherSectors;
   final String? stage;
   final String? commerceModel;
@@ -138,17 +114,15 @@ class MatchStartup {
   /// What the open round has raised so far (SAR).
   final int? raisedInRound;
 
-  /// `isPublic == true`. A private startup is never shown to an investor.
+  /// isPublic == true.
   final bool isPublic;
 
-  /// `status == 'closed'` (older startups have no status: active).
+  /// status == 'closed' (older startups have no status: active).
   final bool isClosed;
 
   /// Shown to investors at all: public and not closed.
   bool get isListed => isPublic && !isClosed;
 
-  /// What the open round still needs: the amount minus what is raised
-  /// (0 when not raising or fully raised).
   int get remaining {
     if (!lookingFor.contains('funding')) return 0;
     final left = (fundingRequirement ?? 0) - (raisedInRound ?? 0);
@@ -167,9 +141,7 @@ class MatchStartup {
 String? _text(Object? raw) =>
     raw is String && raw.trim().isNotEmpty ? raw.trim() : null;
 
-/// The fields of an `investors/{id}` document (or the investor's own
-/// `users/{uid}`) that matching reads. The lists are turned into the
-/// startups' stored values once, here.
+/// The fields of an investors/{id} document (or the investor's own users/{uid}) that matching reads.
 class MatchInvestor {
   MatchInvestor.fromMap(this.id, Map<String, dynamic> data)
     : name = (data['fullName'] as String?) ?? '',
@@ -201,7 +173,7 @@ class MatchInvestor {
   bool get interestsComplete => sectors.isNotEmpty && stages.isNotEmpty;
 }
 
-/// The fields of a `tickets/{investorId}-T{n}` document that matching reads.
+/// The fields of a tickets/{investorId}-T{n} document that matching reads.
 class MatchTicket {
   MatchTicket.fromMap(this.id, Map<String, dynamic> data)
     : investorId = (data['investorId'] as String?) ?? '',
@@ -245,10 +217,7 @@ class MatchTicket {
   };
 }
 
-// ------------------------------------------------------- profile filters
-
 /// Null = not checked (the startup isn't raising, or the ticket is Other).
-/// The band's minimum must be no more than what the round still needs.
 bool? ticketFits(MatchInvestor investor, MatchStartup startup) {
   if (!startup.isRaising) return null;
   final min = ticketMin[investor.ticketSize ?? ''];
@@ -257,7 +226,6 @@ bool? ticketFits(MatchInvestor investor, MatchStartup startup) {
 }
 
 /// Null = not checked (the startup isn't raising, or no round size given).
-/// The round's whole amount must be within the investor's range.
 bool? roundSizeFits(MatchInvestor investor, MatchStartup startup) {
   final lo = investor.roundSizeMin;
   final hi = investor.roundSizeMax;
@@ -266,8 +234,7 @@ bool? roundSizeFits(MatchInvestor investor, MatchStartup startup) {
   return (lo == null || round >= lo) && (hi == null || round <= hi);
 }
 
-/// True when one of the startup's other (not main) sectors is one the
-/// investor invests in.
+/// True when one of the startup's other (not main) sectors is one the investor invests in.
 bool sharesOtherSector(MatchInvestor investor, MatchStartup startup) =>
     startup.otherSectors.any(investor.sectors.contains);
 
@@ -279,20 +246,12 @@ List<String> failedFilters(MatchInvestor investor, MatchStartup startup) => [
   if (roundSizeFits(investor, startup) == false) 'round size',
 ];
 
-/// A close match: not an exact one, but the sector or the stage fits and
-/// the ticket and round size still fit. Close matches come after every
-/// exact match.
 bool isClose(MatchInvestor investor, MatchStartup startup) =>
     _oneOfSectorOrStage(failedFilters(investor, startup));
 
 bool _oneOfSectorOrStage(List<String> failed) =>
     failed.length == 1 && (failed.first == 'sector' || failed.first == 'stage');
 
-// -------------------------------------------------------- ticket filters
-
-/// The startup's main sector is one of the ticket's: the same text by the
-/// rule of the "Other" box ("Sports Tech" is "SportsTech"), or the ticket
-/// has the plain "Other" and the startup's sector is an Other.
 bool ticketSectorFits(MatchTicket ticket, MatchStartup startup) {
   for (final x in ticket.sectors) {
     if (OtherCheck.same(x, startup.sectorLabel)) return true;
@@ -318,7 +277,6 @@ List<String> failedTicketFilters(MatchTicket ticket, MatchStartup startup) => [
   if (!ticketAmountFits(ticket, startup)) 'amount',
 ];
 
-/// A close match for a ticket: only the sector or only the stage misses,
-/// and the amount still fits.
+/// A close match for a ticket: only the sector or only the stage misses, and the amount still fits.
 bool isCloseForTicket(MatchTicket ticket, MatchStartup startup) =>
     _oneOfSectorOrStage(failedTicketFilters(ticket, startup));

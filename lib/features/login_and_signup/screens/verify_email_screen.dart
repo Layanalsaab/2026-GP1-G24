@@ -27,9 +27,7 @@ import 'forgot_password_screen.dart';
 import 'investor_investments_screen.dart';
 import 'signup_screen.dart';
 
-/// Sign-up step 2, "Verify your email" (docs/05 A8). Arrives with the verify
-/// dialog open; the user opens the emailed link, comes back, enters email and
-/// password and taps Continue, which signs in and checks the email is verified.
+/// Sign-up step 2, "Verify your email" (docs/05 A8).
 class VerifyEmailScreen extends StatefulWidget {
   const VerifyEmailScreen({
     super.key,
@@ -46,14 +44,9 @@ class VerifyEmailScreen extends StatefulWidget {
   static void open(BuildContext context, SignupFlow flow) =>
       AppNav.push(context, VerifyEmailScreen(flow: flow), greenHeader: true);
 
-  /// Returns to step 2 from the first onboarding step after it (the Back arrow
-  /// of founder step 3 and of investor step 3): replaces the stack, back
-  /// transition, no dialog.
   static void openFromOnboarding(BuildContext context) {
     final flow = SignupFlow.current;
     if (flow == null) {
-      // They logged in (no sign-up in progress), so there is no Verify step to
-      // go back to: leaving the form logs them out and returns to Welcome.
       AppRouter.logOut(context);
       return;
     }
@@ -93,7 +86,6 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    // The countdown is derived from an end time, so just re-sync it.
     if (state == AppLifecycleState.resumed) _vm.refreshCountdown();
   }
 
@@ -108,7 +100,6 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen>
     if (Navigator.of(context).canPop()) {
       AppNav.back(context);
     } else {
-      // Arrived by reset from step 3: step 1 is not on the stack any more.
       AppNav.reset(
         context,
         SignupScreen(role: widget.flow.role, flow: widget.flow),
@@ -130,8 +121,6 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen>
     );
   }
 
-  /// Sends the email again: "Sending the email…" shows at once, then a toast
-  /// and the countdown. "Too many attempts" shows under the resend row.
   Future<void> _resend() async {
     final outcome = await _vm.resend();
     if (!mounted) return;
@@ -152,7 +141,6 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen>
     switch (result) {
       case VerifyResult.invalid:
       case VerifyResult.wrongPassword:
-        // The errors are under the fields; the pop-up says to fix them.
         AppToast.error(context, ValidationStrings.fixFields);
       case VerifyResult.notVerified:
         _showDialog(notVerified: true);
@@ -168,9 +156,6 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen>
     // Teams can find this account by e-mail from now on.
     unawaited(TeamLookup.instance.publish(user, emailVerified: true));
     if (user.role == AccountRole.founder) {
-      // A new account joins every team that invited its e-mail, and then has
-      // no need to create a startup first. Taking a startup over as its
-      // owner is asked (Accept / Decline).
       final joined = await InvitationClaimer.acceptAll(user);
       if (!mounted) return;
       final owned = await AppRouter.askOwnerInvitations(context, user);
@@ -188,8 +173,6 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen>
       }
       StartupStepsScreen.openOnboarding(context);
     } else {
-      // An investor can't join a team: whatever invited this e-mail is
-      // marked declined.
       await InvitationClaimer.declineAll();
       if (!mounted) return;
       InvestorInvestmentsScreen.open(context, user);

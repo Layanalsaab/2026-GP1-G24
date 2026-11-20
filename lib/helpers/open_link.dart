@@ -1,7 +1,6 @@
 import 'package:url_launcher/url_launcher.dart';
 
-/// Opens [raw] (a web address, with or without "https://") in the browser or
-/// the matching app. Does nothing for an empty or unusable address.
+/// Opens raw (a web address, with or without "https://") in the browser or the matching app.
 Future<void> openExternalLink(String raw) async {
   final text = raw.trim();
   if (text.isEmpty) return;

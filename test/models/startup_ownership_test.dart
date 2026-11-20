@@ -6,9 +6,6 @@ import 'package:startsa/models/list_entries.dart';
 import 'package:startsa/models/startup.dart';
 import 'package:startsa/models/team_member.dart';
 
-/// Closing a startup and the owner leaving (docs: Closing a Startup, Leaving
-/// and Deleting an Account): who keeps which title, and where a closed
-/// startup shows.
 void main() {
   final base = PrototypeSeed.rafeeq.copyWith(
     founderId: 'noura',
@@ -16,7 +13,6 @@ void main() {
   );
 
   group('the Founder title follows control', () {
-    // Noura created it, then left and named Layan the next founder.
     final moved = base.copyWith(
       founderId: 'layan',
       memberRoles: const {'reem': 'member'},
@@ -92,8 +88,6 @@ void main() {
   });
 
   test('the profile and menu title: the highest one among my startups', () {
-    // Noura created `base`; `handed` was handed to her: both make her a
-    // Founder (the title follows control).
     String title({
       List<Startup> owned = const [],
       List<StartupRole> joined = const [],

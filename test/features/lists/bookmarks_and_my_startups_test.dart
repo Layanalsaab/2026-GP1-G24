@@ -49,8 +49,6 @@ Future<void> _tapPill(WidgetTester t, String label) async {
   await t.pump(const Duration(milliseconds: 600));
 }
 
-/// Test-only memberships (they used to be built-in sample data): Naql as
-/// co-founder, Mizan Learn as team member.
 final _teamStartups = [
   MyStartupEntry(
     startup: PrototypeSeed.naql,
@@ -140,8 +138,6 @@ void main() {
       );
       expect(find.text('Team member'), findsWidgets);
       expect(find.text('View'), findsWidgets);
-      // A co-founder gets the blue tag and, like a team member, "View"
-      // (only the founder manages).
       expect(find.text('Co-founder'), findsOneWidget);
       expect(find.text('Manage'), findsNothing);
     });

@@ -35,10 +35,6 @@ import '../../login_and_signup/widgets/investor_fields.dart';
 import '../../login_and_signup/widgets/phone_formatter.dart';
 import '../view_models/edit_account_view_model.dart';
 
-/// Edit profile (docs/05 C5, docs/06 section 7, screenshots 41 and 41b):
-/// cream top bar with close and "Save", the green photo header, then the
-/// fields. Saving validates, closes with the updated [AppUser] and shows
-/// "Profile saved".
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key, required this.user});
 
@@ -63,8 +59,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     super.dispose();
   }
 
-  /// Close / system back. Founder or investor: with a value that differs from
-  /// how the form opened, the discard dialog asks first.
+  /// Close / system back.
   Future<void> _leave() async {
     // While a save is still running the screen can always be left.
     if (_vm.isLoading || !_vm.hasChanges) {
@@ -83,9 +78,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     Navigator.of(context).pop();
   }
 
-  /// The investor's form: the same fields, order, labels and limits as
-  /// "Create your account" and the two question steps (no password fields),
-  /// all pre-filled. Same layout as the founder's form.
   Widget _investorForm(AppUser u) {
     final c = _vm.criteria!;
     ImageProvider? image;
@@ -235,8 +227,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       confirmLabel: FounderToolsStrings.saveConfirmButton,
     );
     if (!go || !mounted) return;
-    // The role is read again right before the write: the signed-in account
-    // must still be this one, with the same role.
     final now = AppSession.instance.user;
     if (now == null ||
         now.uid != widget.user.uid ||
@@ -254,7 +244,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             ? ProfileStrings.changesSaved
             : ProfileStrings.profileSaved,
       );
-      // pop() directly: the unsaved-changes guard must not hold the screen.
       Navigator.of(context).pop(updated);
     } else if (_vm.formError != null) {
       AppToast.error(context, _vm.formError!);
@@ -319,8 +308,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     ].join(', ');
   }
 
-  /// The founder's form: the same fields, order, labels and limits as
-  /// "Create your account" (no password fields).
   Widget _founderForm(AppUser u) {
     ImageProvider? image;
     if (_vm.hasPhoto) {
@@ -531,8 +518,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 }
 
-/// Cream top bar (prototype `.topbar`): close, title and the green "Save"
-/// pill (38 high).
+/// Cream top bar (prototype .topbar): close, title and the green "Save" pill (38 high).
 class _TopBar extends StatelessWidget {
   const _TopBar({
     required this.onClose,
@@ -545,7 +531,6 @@ class _TopBar extends StatelessWidget {
   final VoidCallback onSave;
   final bool loading;
 
-  /// Grey until the form is valid; still tappable (tapping shows the errors).
   final bool looksOff;
 
   @override

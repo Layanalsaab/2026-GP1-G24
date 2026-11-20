@@ -5,7 +5,7 @@ import '../../motion/motion.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text.dart';
 
-/// One password rule and whether [password] meets it.
+/// One password rule and whether password meets it.
 class PasswordRule {
   const PasswordRule(this.label, this.met);
 
@@ -13,9 +13,6 @@ class PasswordRule {
   final bool met;
 }
 
-/// The five sign-up password rules evaluated live: at least 8 characters,
-/// one uppercase letter, one lowercase letter, one number, one special
-/// character (any character that is not a letter, digit or space).
 List<PasswordRule> evaluatePasswordRules(String password) => [
   PasswordRule('At least 8 characters', password.length >= 8),
   PasswordRule('One uppercase letter', RegExp('[A-Z]').hasMatch(password)),
@@ -28,9 +25,6 @@ List<PasswordRule> evaluatePasswordRules(String password) => [
   ),
 ];
 
-/// The password rule checklist under the sign-up password field: four rows
-/// (12/16, 16 px icon, 6 px apart), unmet = red with an x, met = moss600 with a
-/// check; the color animates over 200 ms. Pass the current [password].
 class PasswordRules extends StatelessWidget {
   const PasswordRules({super.key, required this.password});
 

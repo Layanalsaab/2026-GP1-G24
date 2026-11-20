@@ -15,8 +15,7 @@ class AuthAccount {
   final bool emailVerified;
 }
 
-/// Firebase Authentication. The only code that talks to `FirebaseAuth`.
-/// Every Firebase error is translated into an [AuthException].
+/// Firebase Authentication.
 class AuthService {
   FirebaseAuth get _auth => FirebaseAuth.instance;
 
@@ -31,7 +30,7 @@ class AuthService {
         return _toAccount(credential.user)!;
       });
 
-  /// Signs in and returns fresh account data (including `emailVerified`).
+  /// Signs in and returns fresh account data (including emailVerified).
   Future<AuthAccount> signIn(String email, String password) => _guard(() async {
     final credential = await _auth.signInWithEmailAndPassword(
       email: email,
@@ -42,7 +41,7 @@ class AuthService {
     return _toAccount(_auth.currentUser ?? user)!;
   });
 
-  /// Refreshes the signed-in user from the server. Null when nobody is signed in.
+  /// Refreshes the signed-in user from the server.
   Future<AuthAccount?> reloadCurrentAccount() => _guard(() async {
     final user = _auth.currentUser;
     if (user == null) return null;
@@ -50,8 +49,6 @@ class AuthService {
     return _toAccount(_auth.currentUser);
   });
 
-  /// The signed-in user's Firebase ID token (proof of who they are, used by
-  /// the invitation e-mail relay), or null when nobody is signed in.
   Future<String?> idToken() => _guard(() async {
     final user = _auth.currentUser;
     return user?.getIdToken();
@@ -66,9 +63,7 @@ class AuthService {
   Future<void> sendPasswordReset(String email) =>
       _guard(() => _auth.sendPasswordResetEmail(email: email));
 
-  /// Confirms the signed-in user's password again. Firebase requires a recent
-  /// log in before sensitive actions (changing the password, deleting the
-  /// account). A wrong password fails with [AuthFailure.invalidCredentials].
+  /// Confirms the signed-in user's password again.
   Future<void> reauthenticate(String email, String password) =>
       _guard(() async {
         final user = _auth.currentUser;
@@ -78,16 +73,13 @@ class AuthService {
         );
       });
 
-  /// Sets a new password for the signed-in user. Call [reauthenticate] first.
+  /// Sets a new password for the signed-in user.
   Future<void> updatePassword(String newPassword) => _guard(() async {
     final user = _auth.currentUser;
     if (user == null) throw const AuthException(AuthFailure.unknown);
     await user.updatePassword(newPassword);
   });
 
-  /// True when the user signed in within the last few minutes, which is what
-  /// Firebase requires before it deletes an account without asking for the
-  /// password again.
   bool get signedInRecently {
     final at = _auth.currentUser?.metadata.lastSignInTime;
     return at != null && DateTime.now().difference(at).inMinutes < 4;

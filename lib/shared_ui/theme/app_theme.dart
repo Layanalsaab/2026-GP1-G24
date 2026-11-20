@@ -3,10 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import 'app_colors.dart';
 
-/// The app's two [ThemeData]s, light and dark, built from the same tokens
-/// ([AppColors]). Every screen reads its colors from [AppColors], so the
-/// theme only has to describe what Flutter's own widgets need (page, text,
-/// cursor, dividers).
+/// The app's two ThemeDatas, light and dark, built from the same tokens (AppColors).
 class AppTheme {
   AppTheme._();
 
@@ -14,8 +11,6 @@ class AppTheme {
   static ThemeData get dark => _build(dark: true);
 
   static ThemeData _build({required bool dark}) {
-    // The tokens answer for the palette in use: build with the one asked for,
-    // then put the app's own back.
     final before = AppColors.isDark;
     AppColors.setDark(dark);
     try {
@@ -42,7 +37,6 @@ class AppTheme {
         textTheme: GoogleFonts.interTextTheme(
           dark ? ThemeData.dark().textTheme : ThemeData.light().textTheme,
         ).apply(bodyColor: AppColors.ink, displayColor: AppColors.ink),
-        // Press feedback is the prototype's scale effect, not a ripple.
         splashFactory: NoSplash.splashFactory,
         highlightColor: Colors.transparent,
         splashColor: Colors.transparent,

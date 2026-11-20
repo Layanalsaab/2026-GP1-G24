@@ -25,11 +25,6 @@ enum RequestFilter {
   final String label;
 }
 
-/// State of the Investment Wallet (investor only): the tickets, the Add /
-/// Edit ticket form, the matches of a ticket, "Send request" and the
-/// Requests tab.
-///
-/// Built like Manage -> Rounds (RoundsViewModel): a list, a page and a form.
 class WalletViewModel extends ChangeNotifier with SafeNotifier {
   WalletViewModel({
     required this.investorId,
@@ -45,14 +40,11 @@ class WalletViewModel extends ChangeNotifier with SafeNotifier {
     for (final c in [name, min, max, sendAmount]) {
       c.addListener(notifyListeners);
     }
-    // A startup opened, closed or changed its round: matches follow.
     _pool.changes.addListener(_onPoolChange);
   }
 
   final String investorId;
 
-  /// The investor's profile commerce models (labels): the 20% part of every
-  /// ticket's match score.
   final List<String> commerceModels;
 
   final TicketRepository? _ticketsOverride;
@@ -65,8 +57,6 @@ class WalletViewModel extends ChangeNotifier with SafeNotifier {
       _receivedOverride ?? TicketRequestRepository.instance;
   MatchingRepository get _pool =>
       _matchingOverride ?? MatchingRepository.instance;
-
-  // ------------------------------------------------------------ loading
 
   List<InvestmentTicket> tickets = const [];
   List<TicketRequest> requests = const [];
@@ -91,8 +81,6 @@ class WalletViewModel extends ChangeNotifier with SafeNotifier {
     } catch (_) {
       loadFailed = true;
     }
-    // The requests received load on their own: a failure here must not hide
-    // the tickets.
     try {
       received = await _incoming.receivedBy(investorId);
     } catch (_) {
@@ -114,8 +102,6 @@ class WalletViewModel extends ChangeNotifier with SafeNotifier {
     notifyListeners();
   }
 
-  /// The watched startups changed: read the (already updated) pool again
-  /// (no extra Firestore reads).
   void _onPoolChange() => _loadStartups();
 
   InvestmentTicket? ticketById(String id) {
@@ -125,13 +111,9 @@ class WalletViewModel extends ChangeNotifier with SafeNotifier {
     return null;
   }
 
-  // ------------------------------------------------------------ matches
-
   /// Matches already worked out, by ticket (and what it holds).
   final Map<String, List<TicketMatch>> _matches = {};
 
-  /// The ticket's matches, best first: listed startups that are raising,
-  /// exact matches before close ones. None for a used or closed ticket.
   List<TicketMatch> matchesOf(InvestmentTicket ticket) {
     if (!ticket.isOpen) return const [];
     final key = [
@@ -154,7 +136,7 @@ class WalletViewModel extends ChangeNotifier with SafeNotifier {
     }();
   }
 
-  /// Why [match] matched [ticket], for the top of the startup's profile.
+  /// Why match matched ticket, for the top of the startup's profile.
   MatchSummary summaryOf(InvestmentTicket ticket, TicketMatch match) =>
       MatchSummary.forTicket(ticket.name, match.result);
 
@@ -178,15 +160,11 @@ class WalletViewModel extends ChangeNotifier with SafeNotifier {
     return _pool.startupById(id);
   }
 
-  // --------------------------------------------------------------- form
-
   final name = TextEditingController();
   final min = TextEditingController();
   final max = TextEditingController();
   final Set<String> sectors = {};
 
-  /// What was typed for "Other" in the sectors (the ticket then keeps that
-  /// text as its sector).
   String sectorOther = '';
   final Set<String> stages = {};
 
@@ -316,8 +294,6 @@ class WalletViewModel extends ChangeNotifier with SafeNotifier {
     notifyListeners();
   }
 
-  /// The sectors as the ticket keeps them: the list's order, and the typed
-  /// text in place of "Other".
   List<String> get sectorsToSave {
     final listed = _ordered({...sectors}..remove('Other'), _sectorOrder);
     final typed = sectorOther.trim();
@@ -335,8 +311,6 @@ class WalletViewModel extends ChangeNotifier with SafeNotifier {
   int? get minValue => Formatters.parseMoney(min.text);
   int? get maxValue => Formatters.parseMoney(max.text);
 
-  // A box that is still empty shows its error only after Add ticket / Save
-  // changes was pressed; a wrong value shows it at once.
   String? get nameError => tried ? TicketErrors.name(name.text) : null;
   String? get sectorsError =>
       tried ? TicketErrors.sectors(sectors, other: sectorOther) : null;
@@ -360,8 +334,7 @@ class WalletViewModel extends ChangeNotifier with SafeNotifier {
       TicketErrors.minimum(minValue) == null &&
       TicketErrors.maximum(maxValue, minValue) == null;
 
-  /// Add ticket / Save changes. False (and the errors show) when the form is
-  /// not valid or saving failed ([error] says so).
+  /// Add ticket / Save changes.
   Future<bool> submit() async {
     if (isSaving) return false;
     tried = true;
@@ -409,8 +382,6 @@ class WalletViewModel extends ChangeNotifier with SafeNotifier {
     }
   }
 
-  /// The order of the onboarding lists, so a ticket shows "Logistics,
-  /// E-commerce" the way the lists do.
   List<String> _sectorOrder = const [];
   List<String> _stageOrder = const [];
 
@@ -429,7 +400,7 @@ class WalletViewModel extends ChangeNotifier with SafeNotifier {
       if (!order.contains(c)) c,
   ];
 
-  /// Closes an open ticket. True on success.
+  /// Closes an open ticket.
   Future<bool> closeTicket(InvestmentTicket ticket) async {
     if (!ticket.isOpen || isSaving) return false;
     isSaving = true;
@@ -451,8 +422,6 @@ class WalletViewModel extends ChangeNotifier with SafeNotifier {
       notifyListeners();
     }
   }
-
-  // ------------------------------------------------------- send request
 
   /// The startup whose "Send request" form is open.
   String? sendingTo;
@@ -488,7 +457,7 @@ class WalletViewModel extends ChangeNotifier with SafeNotifier {
   bool sendValid(InvestmentTicket ticket, int remaining) =>
       TicketSend.error(sendValue, ticket, remaining) == null;
 
-  /// A pending request of [ticket] to [startupId] exists.
+  /// A pending request of ticket to startupId exists.
   bool requestSent(InvestmentTicket ticket, String startupId) => requests.any(
     (r) => r.ticketId == ticket.id && r.startupId == startupId && r.isPending,
   );
@@ -526,8 +495,6 @@ class WalletViewModel extends ChangeNotifier with SafeNotifier {
       notifyListeners();
     }
   }
-
-  // ------------------------------------------------------------ requests
 
   RequestFilter filter = RequestFilter.all;
 
@@ -621,8 +588,7 @@ class WalletViewModel extends ChangeNotifier with SafeNotifier {
 
   String ago(DateTime? when) => timeAgo(when, now: _fixedNow?.call());
 
-  /// A real date ("8 Nov 2026"). A time the server hasn't stamped yet is
-  /// today.
+  /// A real date ("8 Nov 2026").
   String dateOf(DateTime? when) =>
       Formatters.dayMonthYear(when ?? _fixedNow?.call() ?? DateTime.now());
 

@@ -8,8 +8,7 @@ import '../../../shared_ui/widgets/overlays/app_bottom_sheet.dart';
 import '../../../shared_ui/widgets/overlays/picker_sheet.dart';
 import '../view_models/my_startups_view_model.dart';
 
-/// Opens the "Filter startups" sheet. Tapping an option applies it right away
-/// (through the view model) and the sheet stays open; Done closes it.
+/// Opens the "Filter startups" sheet.
 Future<void> showStartupFilterSheet(
   BuildContext context,
   MyStartupsViewModel vm,
@@ -18,8 +17,6 @@ Future<void> showStartupFilterSheet(
   builder: (_) => StartupFilterSheet(vm: vm),
 );
 
-/// Two groups, VISIBILITY (All / Public / Private) and MY ROLE (All /
-/// Founder / Team member), small uppercase grey headings, and a Done button.
 class StartupFilterSheet extends StatelessWidget {
   const StartupFilterSheet({super.key, required this.vm});
 

@@ -6,9 +6,6 @@ import '../../theme/app_text.dart';
 import 'arch_background.dart';
 import 'header_buttons.dart';
 
-/// Segmented progress bar of the step header: one segment per step, equal
-/// width, gap 6, 4 high, radius 2. The first [current] segments are gold
-/// (done + current), the rest white 20 %; colors animate 300 ms.
 class StepProgressBar extends StatelessWidget {
   const StepProgressBar({
     super.key,
@@ -16,7 +13,6 @@ class StepProgressBar extends StatelessWidget {
     required this.current,
   });
 
-  /// Number of segments (6 founder sign-up, 4 investor sign-up / add startup).
   final int total;
 
   /// How many segments are filled gold (the current step number).
@@ -52,9 +48,6 @@ class StepProgressBar extends StatelessWidget {
   }
 }
 
-/// The top row of the arch headers: back button (or an empty 44 px spacer when
-/// [onBack] is null, so the logo stays on the right) on the left, [trailing] (default the
-/// 42 px logo with a 6 px right margin) on the right. Height 44.
 class HeaderTopRow extends StatelessWidget {
   const HeaderTopRow({
     super.key,
@@ -66,7 +59,7 @@ class HeaderTopRow extends StatelessWidget {
 
   final VoidCallback? onBack;
 
-  /// Replaces the logo (e.g. the My Startups "Add" pill, glass buttons).
+  /// Replaces the logo (e.g.
   final Widget? trailing;
   final String backLabel;
   final bool close;
@@ -113,14 +106,6 @@ class HeaderTitle extends StatelessWidget {
   }
 }
 
-/// Auth header (log in, forgot password, My Startups, valuation calculator):
-/// green, padding 6 8 72, bottom radius 28, both arch paths at 22 %. Top row:
-/// back button + logo (or [trailing]); title 32/38 (rise 420 ms); optional
-/// [subtitle] (13 `#CFE0D3`, "2 startups").
-///
-/// [overlap] is how far the white card below climbs into the header: 44 for
-/// an [AuthCard] (default), 48 for an [OverlapList]
-/// (`overlap: OverlapList.overlap`).
 class AuthHeader extends StatelessWidget {
   const AuthHeader({
     super.key,
@@ -166,12 +151,6 @@ class AuthHeader extends StatelessWidget {
   }
 }
 
-/// Step header (sign-up steps, add / edit startup steps): like [AuthHeader]
-/// with padding-bottom 64, a [StepProgressBar], the "STEP N OF M" label and a
-/// 28/34 title. Without [onBack] a 44 px spacer keeps the logo on the right.
-///
-/// Edit startup passes `edit: true` for "EDIT STARTUP · STEP N OF 4", or pass
-/// a custom [label].
 class StepHeader extends StatelessWidget {
   const StepHeader({
     super.key,
@@ -205,7 +184,7 @@ class StepHeader extends StatelessWidget {
   final String? label;
   final double overlap;
 
-  /// The generated label, e.g. `STEP 3 OF 6`.
+  /// The generated label, e.g.
   static String labelFor(int step, int total, {bool edit = false}) =>
       '${edit ? 'EDIT STARTUP · ' : ''}STEP $step OF $total';
 
@@ -242,8 +221,6 @@ class StepHeader extends StatelessWidget {
   }
 }
 
-/// Roomy header (choose role): padding-bottom 110, 34/40 title with a 44 px
-/// top margin; the role cards overlap it by 48 ([overlap]).
 class RoleHeader extends StatelessWidget {
   const RoleHeader({
     super.key,
@@ -260,9 +237,6 @@ class RoleHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return ArchHeaderShell(
       overlap: overlap,
-      // The title sits between the back arrow and the gold arches: the
-      // arches are 130 px high at the bottom, so the bottom padding keeps
-      // them below the title.
       padding: const EdgeInsets.fromLTRB(8, 6, 8, 130),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

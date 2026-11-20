@@ -5,14 +5,9 @@ import '../../../models/startup.dart';
 import '../../../models/startup_enums.dart';
 import 'founder_ui.dart';
 
-/// What a startup asks for, read from what it looks for: Funding (the amount
-/// and what is already raised), Partnership and Support (mentorship,
-/// advisors, marketing, tech development, talent...). Shared by the Manage
-/// Details tab and the startup page so both say the same thing.
 class StartupAsk {
   StartupAsk._();
 
-  /// Partnership is selected when its box was ticked or partner types exist.
   static bool partnership(Startup s) =>
       s.lookingFor.contains(LookingFor.partnership) ||
       s.partnerTypes.isNotEmpty;
@@ -27,8 +22,6 @@ class StartupAsk {
   /// The support types the founder picked ("Other" is the typed text).
   static List<String> support(Startup s) => s.supportTypes;
 
-  /// "Raising SAR 500,000 · SAR 200,000 raised so far", full amounts with
-  /// commas.
   static String fundingDetail(Startup s) {
     final amount = s.fundingRequirement ?? 0;
     final raised = s.raisedInRound;
@@ -40,9 +33,7 @@ class StartupAsk {
   }
 }
 
-/// One row of the Startup Ask. Selected = solid border, moss-50 fill, green
-/// icon tile and (when [showStatus]) "Selected"; not selected = dashed grey
-/// border and "Not selected" / "Off".
+/// One row of the Startup Ask.
 class AskRow extends StatelessWidget {
   const AskRow({
     super.key,
@@ -58,8 +49,6 @@ class AskRow extends StatelessWidget {
   final bool selected;
   final String detail;
 
-  /// False hides the "Selected" / "Not selected" word on the right (the
-  /// startup page lists only the selected rows).
   final bool showStatus;
 
   @override

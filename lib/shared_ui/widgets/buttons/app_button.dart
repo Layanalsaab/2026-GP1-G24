@@ -26,8 +26,7 @@ enum AppButtonVariant {
   /// After an action: moss100 fill, green text, moss border, check icon.
   done,
 
-  /// Form not complete: grey fill and text. Still tappable (tapping shows
-  /// the errors), so [AppButton.onPressed] is still required for it.
+  /// Form not complete: grey fill and text.
   off,
 }
 
@@ -42,7 +41,7 @@ enum AppButtonSize {
   cta,
 }
 
-/// The one button of the app. Press scales to 0.97 (140 ms).
+/// The one button of the app.
 class AppButton extends StatelessWidget {
   const AppButton({
     super.key,
@@ -57,14 +56,11 @@ class AppButton extends StatelessWidget {
 
   final String label;
 
-  /// Null disables the button (no press, no scale). The `off` variant is not
-  /// "disabled": pass a handler that shows the form errors.
+  /// Null disables the button (no press, no scale).
   final VoidCallback? onPressed;
   final AppButtonVariant variant;
   final AppButtonSize size;
 
-  /// Optional filled icon path from [AppIcons] shown before the label
-  /// (the `done` variant adds a check automatically when this is null).
   final String? icon;
 
   /// Shows a spinner and ignores taps, so a request can't be sent twice.
@@ -196,7 +192,6 @@ class AppButton extends StatelessWidget {
 
     final interactive = onPressed != null && !loading;
     Widget bodyFor(bool hover) => AnimatedContainer(
-      // Fill, border and shadow change over 200 ms (hover, off <-> enabled).
       duration: Motion.dur(context, AppDur.base),
       curve: AppCurves.ease,
       height: _height,
@@ -212,7 +207,6 @@ class AppButton extends StatelessWidget {
       child: content,
     );
 
-    // The `inset 0 1px 0 #ffffff26` top highlight of primary/dark buttons.
     Widget shined(bool hover) => showShine
         ? Stack(
             children: [
@@ -254,8 +248,6 @@ class AppButton extends StatelessWidget {
   }
 }
 
-/// Reports whether a mouse pointer is over [builder]'s widget (never for
-/// touch), so a button can restyle itself on hover.
 class _HoverBuilder extends StatefulWidget {
   const _HoverBuilder({required this.enabled, required this.builder});
 

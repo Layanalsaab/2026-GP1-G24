@@ -330,7 +330,6 @@ void main() {
         });
         expect(failedFilters(i, s), contains('sector'));
         expect(sharesOtherSector(i, s), isTrue);
-        // The explanation on the profile names the other sector that fits.
         expect(
           '${profileRows(i, s).first}',
           '+ Sector · AI (one of its other sectors)',

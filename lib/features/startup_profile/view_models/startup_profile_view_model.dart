@@ -12,14 +12,6 @@ import '../../../models/funding_round.dart';
 import '../../../models/investor_profile.dart';
 import '../../../models/startup.dart';
 
-/// What the startup profile shows for one [Startup] and who is looking at it
-/// (docs/05 section C1): the selected tab, the preview / CTA rules and the
-/// display values of the Business, Team and Financials tabs.
-///
-/// Roles: a founder looking at their OWN startup sees the preview (no
-/// bookmark, share or CTA); a founder looking at another startup sees no CTA;
-/// an investor gets "Send investment request"; a guest gets "Express
-/// interest" and never a bookmark.
 class StartupProfileViewModel extends ChangeNotifier with SafeNotifier {
   StartupProfileViewModel({
     required this.startup,
@@ -42,8 +34,6 @@ class StartupProfileViewModel extends ChangeNotifier with SafeNotifier {
     notifyListeners();
   }
 
-  /// The funding rounds shown on the Funding tab and in the Raising tile,
-  /// loaded from Firestore (or the ones passed in).
   List<FundingRound> rounds;
 
   final FundingRoundRepository? _roundsOverride;
@@ -87,10 +77,6 @@ class StartupProfileViewModel extends ChangeNotifier with SafeNotifier {
   List<FundingRound> get roundsNewestFirst =>
       [...rounds]..sort((a, b) => b.number.compareTo(a.number));
 
-  /// The "Current round" card: the open round, or (no round but the startup
-  /// is raising) the Step 7 values with the startup's stage as the type.
-  /// Raised is the larger of "already raised in this round" and the total of
-  /// the accepted requests. Null when the startup is not raising.
   CurrentRound? get currentRound {
     final accepted = RequestRepository.instance
         .acceptedFor(startup.id)
@@ -116,9 +102,6 @@ class StartupProfileViewModel extends ChangeNotifier with SafeNotifier {
     return null;
   }
 
-  /// The six tabs are the six steps of the add-startup form, in the same
-  /// order and with the same names: Startup Overview, Startup Description,
-  /// Target Market, Finance and Growth, Startup Team, Startup Ask.
   static const tabLabels = FounderToolsStrings.stepTitles;
 
   Startup startup;
@@ -134,7 +117,6 @@ class StartupProfileViewModel extends ChangeNotifier with SafeNotifier {
     notifyListeners();
   }
 
-  // ---- Who is looking ----
   bool get isPreview =>
       _forcedPreview ||
       (_session.isFounder && _session.ownStartupIds.contains(startup.id));
@@ -147,18 +129,15 @@ class StartupProfileViewModel extends ChangeNotifier with SafeNotifier {
   bool get showCta =>
       !isPreview && (isGuest || isInvestor) && !startup.isClosed;
 
-  /// `s-<id>` for the bookmark, request and interest repositories.
+  /// s-{id} for the bookmark, request and interest repositories.
   String get key => 's-${startup.id}';
 
   String get ctaLabel => isGuest
       ? (ctaDone ? ProfileStrings.interestSent : ProfileStrings.expressInterest)
       : (ctaDone ? ProfileStrings.requestSent : ProfileStrings.sendRequest);
 
-  /// Whether the request / interest was already sent (set by the screen from
-  /// the repositories).
   bool ctaDone = false;
 
-  // ---- Header ----
   /// "HealthTech · Pre-seed · Riyadh": the one sub-line under the name.
   String get infoLine => [
     startup.sectorLabel,
@@ -166,7 +145,6 @@ class StartupProfileViewModel extends ChangeNotifier with SafeNotifier {
     startup.location.label,
   ].join(' · ');
 
-  /// The preview bar sentence (a private startup says only the team sees it).
   String get previewText => startup.isPublic
       ? ProfileStrings.previewBar
       : ProfileStrings.previewBarPrivate;
@@ -178,17 +156,12 @@ class StartupProfileViewModel extends ChangeNotifier with SafeNotifier {
     return v == null || v <= 0 ? null : Formatters.sarShort(v);
   }
 
-  // ---- Overview ----
   List<String> get lookingFor => [
     for (final l in startup.lookingFor) startup.lookingForLabelOf(l),
   ];
 
-  // ---- Business ----
   String? get marketSize => _money(startup.marketSize);
 
-  // ---- Team ----
-  /// The founder's name: sample data, or the signed-in person when they are
-  /// its founder (whoever holds the startup now).
   String? get founderName {
     final sample = _discovery.founderNameOf(startup);
     if (sample != null) return sample;
@@ -200,7 +173,6 @@ class StartupProfileViewModel extends ChangeNotifier with SafeNotifier {
   List<InvestorProfile> get associated =>
       _discovery.associatedInvestors(startup.id);
 
-  // ---- Financials ----
   /// The non-empty cells of "Funding and financials", in prototype order.
   List<(String, String)> get financials {
     return [

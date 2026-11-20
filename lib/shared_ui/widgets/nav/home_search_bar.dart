@@ -7,15 +7,6 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_metrics.dart';
 import '../../theme/app_text.dart';
 
-/// The home search bar (prototype `.below3 .sp`): white, 46 high, radius 15,
-/// search-bar shadow; search icon (20, `#8C918D`), a "Search" text field
-/// (15 px), a 1 x 22 divider and a 40 x 40 tune button (moss600 icon; fill
-/// `#EEF4EF` while filters are active, 200 ms; press scale 0.94) with a gold
-/// count badge ([activeCount] > 0).
-///
-/// By default it overlaps the green header above it by 24 px ([overlap]): put
-/// it directly after the header in a Column; its layout height is 46 - overlap
-/// and the overlapped part still receives taps. Side padding 16.
 class HomeSearchBar extends StatelessWidget {
   const HomeSearchBar({
     super.key,
@@ -39,8 +30,6 @@ class HomeSearchBar extends StatelessWidget {
   final int activeCount;
 
   /// The Hub's sort button, next to the filter button (null hides it).
-  /// [sortActive]: a sort is chosen (the button is filled like an active
-  /// filter).
   final VoidCallback? onSortTap;
   final bool sortActive;
   final String hint;
@@ -100,8 +89,6 @@ class HomeSearchBar extends StatelessWidget {
   }
 }
 
-/// The sort button: two arrows (up and down) on a 40 x 40 button, filled like
-/// an active filter while a sort is chosen.
 class _SortButton extends StatelessWidget {
   const _SortButton({required this.active, required this.onTap});
 
@@ -215,10 +202,6 @@ class _FilterButton extends StatelessWidget {
   }
 }
 
-/// Lays its child out normally but reports a height smaller by [overlap] and
-/// paints the child [overlap] px higher, so it overlaps the previous sibling.
-/// Hit testing covers the overlapped region too (a plain negative margin or a
-/// Transform would leave it dead).
 class _Overlap extends SingleChildRenderObjectWidget {
   const _Overlap({required this.overlap, required super.child});
 
@@ -260,7 +243,6 @@ class _RenderOverlap extends RenderShiftedBox {
 
   @override
   bool hitTest(BoxHitTestResult result, {required Offset position}) {
-    // Skip the size check so taps in the overlapped strip reach the child.
     if (hitTestChildren(result, position: position)) {
       result.add(BoxHitTestEntry(this, position));
       return true;

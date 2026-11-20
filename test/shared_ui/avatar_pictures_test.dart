@@ -75,7 +75,6 @@ void main() {
       final withPhoto = m.copyWith(photoData: 'QUJD');
       expect(withPhoto.photoData, 'QUJD');
       expect(withPhoto.toMap().containsKey('photoData'), isFalse);
-      // The photo is not part of the saved team (so editing isn't "dirty").
       expect(withPhoto == m, isTrue);
     });
   });

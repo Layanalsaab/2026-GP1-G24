@@ -6,30 +6,12 @@ import '../../models/list_entries.dart';
 import '../firebase_services/firestore_service.dart';
 import 'discovery_repository.dart';
 
-/// The signed-in user's bookmarks (cards, startup / investor / program
-/// profiles). Guests never bookmark: screens hide the bookmark icon for them,
-/// and nothing is saved without a signed-in user.
-///
-/// Keys are `s-<startupId>`, `i-<investorId>` and `p-<programId>`
-/// (see `HomeItem.bookmarkKey`).
-///
-/// Saved in Firestore at `users/{uid}/bookmarks/{key}` (one document per
-/// bookmark), so bookmarks survive log out and reinstalling the app:
-/// - [toggle] updates the in-memory set at once (the icon fills straight
-///   away) and then writes or deletes the document in the background;
-/// - [load] reads the user's bookmarks after log in;
-/// - [clear] only forgets the in-memory set (log out); the saved bookmarks
-///   stay in Firestore;
-/// - [deleteAll] removes the saved bookmarks (account deletion).
-///
-/// Bookmarks belong to the account, not to a startup.
-///
-/// My Bookmarks gets its cards from [savedItems].
+/// The signed-in user's bookmarks (cards, startup / investor / program profiles).
 class BookmarkRepository {
   BookmarkRepository({FirestoreService? firestore})
     : _firestore = firestore ?? FirestoreService();
 
-  /// The app-wide instance. Tests replace it with a fake.
+  /// The app-wide instance.
   static BookmarkRepository instance = BookmarkRepository();
 
   final FirestoreService _firestore;
@@ -49,11 +31,10 @@ class BookmarkRepository {
 
   int get count => _keys.value.length;
 
-  /// When [key] was bookmarked, if known.
+  /// When key was bookmarked, if known.
   DateTime? savedAt(String key) => _savedAt[key];
 
-  /// Every bookmarked key, the most recently saved first. Pass [type]
-  /// (`startup`, `investor` or `program`) for the My Bookmarks filter.
+  /// Every bookmarked key, the most recently saved first.
   List<String> newestFirst({String? type}) {
     final list = [
       for (final k in _keys.value)
@@ -65,10 +46,6 @@ class BookmarkRepository {
   }
 
   /// The user's bookmarks as cards for My Bookmarks, newest first.
-  ///
-  /// A bookmark whose startup / investor / program was deleted is removed
-  /// (also from Firestore). A startup that was made private is just not
-  /// shown, so it comes back if the founder makes it public again.
   Future<List<SavedBookmark>> savedItems({
     DiscoveryRepository? discovery,
   }) async {
@@ -92,16 +69,16 @@ class BookmarkRepository {
     return list;
   }
 
-  /// Removes [key] if it is bookmarked (remove button on My Bookmarks).
+  /// Removes key if it is bookmarked (remove button on My Bookmarks).
   void remove(String key) {
     if (isBookmarked(key)) toggle(key);
   }
 
-  /// `users/{uid}/bookmarks`
+  /// users/{uid}/bookmarks
   static String _collectionOf(String uid) =>
       '${FirestoreCollections.users}/$uid/${FirestoreCollections.bookmarks}';
 
-  /// What a key is about: `s-` startup, `i-` investor, `p-` program.
+  /// What a key is about: s- startup, i- investor, p- program.
   static String typeOf(String key) {
     if (key.startsWith('s-')) return 'startup';
     if (key.startsWith('i-')) return 'investor';
@@ -109,17 +86,13 @@ class BookmarkRepository {
     return 'other';
   }
 
-  /// The id after the `s-` / `i-` / `p-` prefix.
+  /// The id after the s- / i- / p- prefix.
   static String targetIdOf(String key) {
     final dash = key.indexOf('-');
     return dash < 0 ? key : key.substring(dash + 1);
   }
 
-  /// Adds or removes [key]. Returns true when it is now bookmarked.
-  ///
-  /// The change shows at once; saving to Firestore happens in the background.
-  /// Firestore keeps the write on the phone while offline and sends it when
-  /// the connection is back, so a failed save is only logged.
+  /// Adds or removes key.
   bool toggle(String key) {
     final next = {..._keys.value};
     final added = next.add(key);
@@ -152,8 +125,7 @@ class BookmarkRepository {
     }
   }
 
-  /// Reads [uid]'s saved bookmarks (after log in or a restored session).
-  /// Keys toggled while loading are kept. A failure keeps what is in memory.
+  /// Reads uid's saved bookmarks (after log in or a restored session).
   Future<void> load(String uid) async {
     _uid = uid;
     try {
@@ -172,8 +144,7 @@ class BookmarkRepository {
     }
   }
 
-  /// Deletes every saved bookmark of [uid] (account deletion). Firestore
-  /// doesn't delete a user's bookmarks when the user document is deleted.
+  /// Deletes every saved bookmark of uid (account deletion).
   Future<void> deleteAll(String uid) async {
     final docs = await _firestore.listCollection(
       _collectionOf(uid),
@@ -185,8 +156,7 @@ class BookmarkRepository {
     clear();
   }
 
-  /// Forgets the bookmarks in memory (log out). The saved ones stay in
-  /// Firestore and come back with [load] at the next log in.
+  /// Forgets the bookmarks in memory (log out).
   void clear() {
     _uid = null;
     _savedAt.clear();

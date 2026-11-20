@@ -10,7 +10,7 @@ typedef FirestoreDocument = ({String id, Map<String, dynamic> data});
 
 enum FirestoreWriteKind { set, update, delete }
 
-/// One write of [FirestoreService.commit].
+/// One write of FirestoreService.commit.
 class FirestoreWrite {
   const FirestoreWrite.set(this.collection, this.id, this.data)
     : kind = FirestoreWriteKind.set;
@@ -26,11 +26,8 @@ class FirestoreWrite {
   final Map<String, Object?> data;
 }
 
-/// Cloud Firestore. The only code that talks to `FirebaseFirestore`.
+/// Cloud Firestore.
 class FirestoreService {
-  /// Firestore never reports an error when the database doesn't exist or the
-  /// phone is offline: it just waits. A timeout turns "waits forever" into a
-  /// failure the app can handle.
   static const _timeout = Duration(seconds: 15);
 
   FirebaseFirestore get _db => FirebaseFirestore.instance;
@@ -38,17 +35,16 @@ class FirestoreService {
   /// A value Firestore replaces with the server's time when writing.
   Object serverTimestamp() => FieldValue.serverTimestamp();
 
-  /// A value that adds [values] to an array field when written.
+  /// A value that adds values to an array field when written.
   Object arrayUnion(List<Object> values) => FieldValue.arrayUnion(values);
 
-  /// A value that removes [values] from an array field when written.
+  /// A value that removes values from an array field when written.
   Object arrayRemove(List<Object> values) => FieldValue.arrayRemove(values);
 
   /// A value that deletes the field when written.
   Object deleteField() => FieldValue.delete();
 
-  /// A new, unused document id. Generated on the device (no network call), so
-  /// files can be uploaded under the id before the document is written.
+  /// A new, unused document id.
   String newDocumentId(String collection) =>
       _db.collection(collection).doc().id;
 
@@ -71,13 +67,10 @@ class FirestoreService {
     Map<String, Object?> data,
   ) => _guard(() => _db.collection(collection).doc(id).update(data));
 
-  /// Deletes the document. Deleting a document that doesn't exist is not an error.
+  /// Deletes the document.
   Future<void> deleteDocument(String collection, String id) =>
       _guard(() => _db.collection(collection).doc(id).delete());
 
-  /// Saves every write of [writes] together: either all of them are saved
-  /// or none is (a Firestore batched write). Used where two documents must
-  /// never disagree, e.g. a startup and its open funding round.
   Future<void> commit(List<FirestoreWrite> writes) => _guard(() {
     final batch = _db.batch();
     for (final w in writes) {
@@ -102,8 +95,7 @@ class FirestoreService {
         return data == null ? null : _toPlain(data);
       });
 
-  /// Every document in [collection] whose [field] equals [value].
-  /// Reads from the server, so pull-to-refresh always shows fresh data.
+  /// Every document in collection whose field equals value.
   Future<List<FirestoreDocument>> queryWhereEqual(
     String collection,
     String field,
@@ -118,7 +110,7 @@ class FirestoreService {
     ];
   });
 
-  /// Every document of [collection] where every field of [where] is equal.
+  /// Every document of collection where every field of where is equal.
   Future<List<FirestoreDocument>> queryWhereAll(
     String collection,
     Map<String, Object> where,
@@ -133,7 +125,7 @@ class FirestoreService {
     ];
   });
 
-  /// Every document in [collection] whose array [field] contains [value].
+  /// Every document in collection whose array field contains value.
   Future<List<FirestoreDocument>> queryWhereArrayContains(
     String collection,
     String field,
@@ -148,10 +140,6 @@ class FirestoreService {
     ];
   });
 
-  /// Every document in [collection] whose [field] equals [value], now and
-  /// after every change: Firestore sends the whole list first, then only the
-  /// documents that changed (one read each), and the stream gives the full
-  /// updated list each time. Errors arrive as [AuthException]s.
   Stream<List<FirestoreDocument>> watchWhereEqual(
     String collection,
     String field,
@@ -179,7 +167,7 @@ class FirestoreService {
         throw e;
       });
 
-  /// Up to [limit] documents of [collection] (no filter).
+  /// Up to limit documents of collection (no filter).
   Future<List<FirestoreDocument>> listCollection(
     String collection, {
     int limit = 100,
@@ -193,8 +181,6 @@ class FirestoreService {
     ];
   });
 
-  /// Replaces Firestore [Timestamp]s with [DateTime]s, so models never import
-  /// Firebase.
   Map<String, dynamic> _toPlain(Map<String, dynamic> data) => {
     for (final entry in data.entries)
       entry.key: entry.value is Timestamp

@@ -226,7 +226,6 @@ void main() {
         ),
         'healthtech',
       );
-      // A: fits only the health startup perfectly. Both: partly fits two.
       final onlyHealth = _c(
         'Amal',
         _f(sector: {'healthtech': 1}, stage: {'seed': 1}),
@@ -236,11 +235,8 @@ void main() {
         [healthTaste, healthTaste],
         [both, onlyHealth],
       );
-      // Both tastes fit "Amal" perfectly: same best score, same fits, so the
-      // name decides.
       expect(tied.first.item, 'Amal');
 
-      // Same best score (1.0), but Twin fits both startups and Solo only one.
       final twin = _c(
         'Twin',
         _f(sector: {'healthtech': 1}, stage: {'seed': 1}),
@@ -604,7 +600,6 @@ void main() {
       marks.toggle('s-${before.first}');
       // Still on For You: nothing moves, the card stays.
       expect([for (final i in vm.recommended) i.id], before);
-      // Leave and come back: the bookmarked one is gone from the list.
       vm.selectExploreTab(1);
       vm.selectExploreTab(0);
       expect(vm.recommended.any((i) => i.id == before.first), isFalse);

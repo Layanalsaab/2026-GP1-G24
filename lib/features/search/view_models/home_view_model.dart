@@ -29,10 +29,6 @@ class HomeChip {
   final VoidCallback onRemove;
 }
 
-/// State and logic of the home shell (Support Channels, Hub, Explore): the
-/// selected tab, the search text, the advanced search selection (remembered per
-/// context), the Startups | Investors switches (one per place) and the
-/// content lists. Presentational screens read it; the tests drive it directly.
 class HomeViewModel extends ChangeNotifier with SafeNotifier {
   HomeViewModel({
     required this.role,
@@ -69,8 +65,7 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
 
   final SessionRole role;
 
-  /// The signed-in user. Replaced by [setUser] when they edit their profile
-  /// (e.g. an investor's preferences).
+  /// The signed-in user.
   AppUser? user;
 
   void setUser(AppUser? value) {
@@ -108,8 +103,6 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
   /// Founder's own startups (hidden from the lists).
   List<Startup> get ownStartups => _own;
 
-  /// [alsoHide]: the startups the founder belongs to as a co-founder or team
-  /// member (hidden from Hub and For You like their own).
   void setOwnStartups(
     List<Startup> startups, {
     Set<String> alsoHide = const {},
@@ -119,9 +112,6 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
     _forYou = null;
     notifyListeners();
   }
-
-  // ---- Switches (a founder starts on Investors; investors and guests on
-  // Startups) ----
 
   /// 0 = Startups, 1 = Investors.
   int get _defaultSwitch => isFounder ? 1 : 0;
@@ -137,8 +127,6 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
     f();
     notifyListeners();
   }
-
-  // ---- Tabs ----
 
   int get tabIndex => tab.index;
 
@@ -159,14 +147,11 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
     notifyListeners();
   }
 
-  /// 0 Latest, 1 Trending, 2 For You. Guests only have Trending, so they
-  /// always see it.
+  /// 0 Latest, 1 Trending, 2 For You.
   int get effectiveExploreTab {
     if (isGuest) return 1;
     return exploreTab.clamp(0, 2);
   }
-
-  // ---- Search and advanced search ----
 
   HomeContext get context {
     switch (tab) {
@@ -209,15 +194,12 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
     notifyListeners();
   }
 
-  /// "Clear all": the filters of this context and the search text. The Hub's
-  /// sort stays: it is not a filter.
+  /// "Clear all": the filters of this context and the search text.
   void clearAll() {
     _adv[context] = {..._keptSort()};
     _clearQuery();
     notifyListeners();
   }
-
-  // ---- Sort (the sort button of Hub, Explore and Support Channels) ----
 
   Map<String, Set<String>> _keptSort() {
     final sort = _adv[context]?['Sort by'];
@@ -228,8 +210,6 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
   String? get sortChoice =>
       (selection['Sort by'] ?? const <String>{}).firstOrNull;
 
-  /// Chooses [value]; the same one again, or null, goes back to the default
-  /// order.
   void setSort(String? value) {
     final cur = {...(_adv[context] ?? <String, Set<String>>{})};
     if (value == null || value == sortChoice) {
@@ -263,8 +243,6 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
     notifyListeners();
   }
 
-  /// The chips of the results row: the search text first, then each selected
-  /// option (single-choice groups such as "Sort by" show no chip).
   List<HomeChip> get chips => [
     if (query.trim().isNotEmpty)
       HomeChip(label: query.trim(), isQuery: true, onRemove: clearQuery),
@@ -291,18 +269,11 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
     return list.where((it) => HomeFilters.passes(it, draft, g, '')).length;
   }
 
-  // ---- Lists ----
-
   List<HomeItem> get _programs => _discovery.programs();
   List<HomeItem> get _investors => _discovery.investors();
 
-  /// Every public startup that isn't closed, the user's own included
-  /// (Explore and its search). Only For You ("New" and "Recommended") leaves
-  /// the user's own out.
   List<HomeItem> get _startups => _discovery.startups();
 
-  /// The Hub's Startups side: every public startup, closed ones included
-  /// (with their Closed tag): the Hub is the full directory.
   List<HomeItem> get _hubStartups => _discovery.startups(includeClosed: true);
 
   List<HomeItem> _filtered(List<HomeItem> base) => HomeFilters.sorted([
@@ -324,28 +295,19 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
   List<HomeItem> get exploreResults =>
       _filtered(resultsSwitch == 0 ? _startups : _investors);
 
-  // ---- Latest ----
-
   /// How far back "Newest startups" goes (Last week by default).
   LatestRange latestRange = LatestRange.week;
 
   void setLatestRange(int index) =>
       _set(() => latestRange = LatestRange.values[index]);
 
-  /// Explore -> Latest: the newest public startups in the chosen range. A
-  /// founder's own startups and private ones are left out.
+  /// Explore -> Latest: the newest public startups in the chosen range.
   List<HomeItem> get latest =>
       _discovery.latestStartups(days: latestRange.days, excludeIds: _ownIds);
 
-  // ---- For You ----
-
-  /// "Recommended startups for you" (investor) or "Recommended investors for
-  /// you" (founder): one list, no switch.
   List<HomeItem> get recommended => _forYou ??= _computeForYou();
 
-  /// The last For You list. It stays as it is while For You is on screen (a
-  /// card must not vanish when you bookmark it) and is worked out again the
-  /// next time For You opens or is refreshed.
+  /// The last For You list.
   List<HomeItem>? _forYou;
 
   List<HomeItem> _computeForYou() {
@@ -367,8 +329,6 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
 
   void _onBookmarks() {
     final now = _bookmarks.keys.value;
-    // Many at once means the saved bookmarks were just loaded (or cleared):
-    // use them right away. One toggle waits until For You is left.
     final bulk =
         now.difference(_seenBookmarks).length > 1 ||
         _seenBookmarks.difference(now).length > 1;
@@ -389,8 +349,6 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
       ? HomeStrings.forYouInfoFounder
       : HomeStrings.forYouInfoInvestor;
 
-  // ---- Trending ----
-
   void setRange(int index) => _set(() => range = TrendingRange.values[index]);
 
   /// The top 30, each with its rank ("#1").
@@ -404,10 +362,6 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
     ];
   }
 
-  // ---- Page identity (replays the card entrance when it changes) ----
-
-  /// Changes whenever the visible list changes kind, so cards animate in again
-  /// (prototype `panes` key).
   String get paneKey =>
       '${tab.name}-$effectiveExploreTab-${role.name}-${filtering ? 'f' : ''}'
       '-$hubSwitch-$resultsSwitch-$trendingSwitch-${latestRange.name}';

@@ -182,7 +182,6 @@ void main() {
       ),
     );
     await t.pump(const Duration(milliseconds: 400));
-    // Narrow the long list to its last row, so the write-in box is built.
     await t.enterText(find.byType(EditableText).first, 'oth');
     await t.pump();
     await t.enterText(find.byType(EditableText).last, 'FINTECH');

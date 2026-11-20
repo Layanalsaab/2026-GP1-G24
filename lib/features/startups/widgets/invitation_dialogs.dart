@@ -8,9 +8,7 @@ import '../../../shared_ui/theme/app_text.dart';
 import '../../../shared_ui/widgets/buttons/app_button.dart';
 import '../../../shared_ui/widgets/overlays/app_dialog.dart';
 
-/// "{Startup} invited you as a Co-founder": Accept or Decline. Completes with
-/// true (accept), false (decline), or null when it is dismissed (decide
-/// later: the invitation stays pending).
+/// "{Startup} invited you as a Co-founder": Accept or Decline.
 Future<bool?> showInvitationDecision(
   BuildContext context,
   Invitation invitation,
@@ -65,9 +63,6 @@ Future<bool?> showInvitationDecision(
   );
 }
 
-/// Sign-up as an investor with an e-mail that was invited to a team:
-/// "Join the team" (true) or "Continue as investor" (false). Dismissing it
-/// completes with null and stays on the form.
 Future<bool?> showInvitedInvestorDialog(
   BuildContext context,
   List<String> startupNames,
@@ -117,9 +112,6 @@ Future<bool?> showInvitedInvestorDialog(
   );
 }
 
-/// The round icon at the top of the startup pop-ups (invitations, and the
-/// one-time notices about my startups): a 64 px moss 100 circle with a 28 px
-/// moss 600 [icon], popping in.
 class DialogIcon extends StatelessWidget {
   const DialogIcon({super.key, this.icon = AppIcons.people});
 

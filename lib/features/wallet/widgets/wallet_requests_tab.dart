@@ -11,10 +11,6 @@ import '../view_models/wallet_view_model.dart';
 import 'received_request_card.dart';
 import '../../connection_requests/widgets/request_status_pill.dart';
 
-/// Investment Wallet -> Requests: the requests the investor sent through
-/// their tickets, with the All / Pending / Accepted / Declined filters.
-///
-/// A card is NOT tappable (nothing opens). A Pending request has "Withdraw".
 class WalletRequestsTab extends StatelessWidget {
   const WalletRequestsTab({super.key, required this.vm});
 

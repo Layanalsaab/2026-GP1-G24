@@ -26,15 +26,6 @@ import '../../startups/widgets/role_tag.dart';
 import 'startup_profile_screen.dart';
 
 /// A person's full profile, opened by tapping them on a startup's Team tab.
-///
-/// The profile is always public (name, city, bio, sectors, LinkedIn, the
-/// startups they belong to). Their e-mail and phone show only when they made
-/// that one Public (each on its own); when both are private the Contact
-/// section is not shown.
-///
-/// Read from `publicProfiles/{uid}`. A person with no profile (no account
-/// link) falls back to what the startup itself knows: name, role and what they
-/// contribute.
 class TeamMemberProfileScreen extends StatefulWidget {
   const TeamMemberProfileScreen({
     super.key,
@@ -47,8 +38,6 @@ class TeamMemberProfileScreen extends StatefulWidget {
   final TeamMember member;
   final String startupName;
 
-  /// The startup this profile was opened from: it is checked too, so the
-  /// person is listed there even if their own list isn't up to date yet.
   final String? startupId;
 
   /// Tests pass a fake.
@@ -127,11 +116,6 @@ class _TeamMemberProfileScreenState extends State<TeamMemberProfileScreen> {
     }
   }
 
-  /// The person's title in the startup this profile was opened from, the
-  /// same words as its team list (Founder, Co-founder, Team member): read
-  /// from the startup itself once loaded (the founder is whoever holds it),
-  /// otherwise from the card. The text typed on the team card (e.g. "CTO")
-  /// is not used here, so the two never disagree.
   String get _roleLine {
     for (final r in _startups) {
       if (r.id == widget.startupId) return RoleTag.labelOf(_roleOf(r.role));
@@ -151,8 +135,6 @@ class _TeamMemberProfileScreenState extends State<TeamMemberProfileScreen> {
     _ => StartupRole.member,
   };
 
-  /// The person's startups as the same cards as the Hub, each with the
-  /// person's role there as a capsule at the top right.
   Widget _startupCards() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -234,10 +216,6 @@ class _TeamMemberProfileScreenState extends State<TeamMemberProfileScreen> {
                       title: ProfileStrings.bio,
                       child: ProfileText(about),
                     ),
-                  // Contact Information right under the bio, like an
-                  // investor's profile: what was made Public, and "Email is
-                  // private" / "Phone is private" (a lock, no value) for the
-                  // rest.
                   ProfileSection(
                     title: ProfileStrings.contact,
                     child: Column(

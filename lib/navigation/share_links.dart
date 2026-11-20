@@ -13,8 +13,7 @@ import 'open_item.dart';
 /// What a shared link points to.
 enum ShareTarget { startup, investor }
 
-/// A parsed share link: `https://<site>/startup/<id>` or
-/// `https://<site>/investor/<id>`.
+/// A parsed share link: https://{site}/startup/{id} or https://{site}/investor/{id}.
 class ShareLinkTarget {
   const ShareLinkTarget(this.kind, this.id);
 
@@ -22,18 +21,6 @@ class ShareLinkTarget {
   final String id;
 }
 
-/// The links people share (the share icon of a startup or an investor) open
-/// that page in the app:
-///
-/// * signed in: the page as usual for their role (their own startup opens
-///   Manage / the preview, exactly like tapping it in a list);
-/// * no account / signed out: Home as a guest, then the page (guest rules);
-/// * a private, closed or deleted startup, or a missing investor: "This
-///   startup is no longer available." and nothing else is shown.
-///
-/// Received by [InviteLinks] (the same App Links handling as the invitation
-/// link); the web page on Firebase Hosting (hosting/open) covers people
-/// whose phone does not hand the link to the app.
 class ShareLinks {
   ShareLinks._();
 
@@ -57,8 +44,6 @@ class ShareLinks {
   static const startupGone = 'This startup is no longer available.';
   static const investorGone = 'This investor is no longer available.';
 
-  /// Opens [target] on top of whatever is showing (Home as a guest first when
-  /// nobody is signed in).
   static Future<void> open(ShareLinkTarget target) async {
     final key = AppToast.navigatorKey;
     var context = key.currentContext;
@@ -84,8 +69,6 @@ class ShareLinks {
             (session.ownStartupIds.contains(startup.id) ||
                 startup.founderId == uid ||
                 StartupRole.of(startup, uid) != null);
-        // A public closed startup opens (it says it is closed); a private
-        // one only for its team.
         if (startup == null || (!startup.isInHub && !belongs)) {
           AppToast.errorGlobal(startupGone);
           return;

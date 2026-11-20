@@ -4,12 +4,6 @@ import '../../../shared_ui/icons/app_icons.dart';
 import '../../../shared_ui/theme/app_colors.dart';
 import '../../../shared_ui/theme/app_text.dart';
 
-/// The notices of the founder tools ("Closed", "You no longer have a
-/// startup"): a soft gold box ([AppColors.noticeFill], 1 px
-/// [AppColors.noticeBorder], radius 16, padding 12 / 14), a white 36 px tile
-/// with a gold icon, a title (15.5 bold) and the reason. Every notice uses
-/// this one widget, so they all look the same. (Team members no longer get a "View only" notice: the
-/// tabs simply have no editing for them.)
 class ViewOnlyBanner extends StatelessWidget {
   /// A notice with its own words (and icon).
   const ViewOnlyBanner.notice({

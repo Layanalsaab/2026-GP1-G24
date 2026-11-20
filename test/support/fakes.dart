@@ -14,15 +14,14 @@ import 'package:startsa/models/invitation.dart';
 import 'package:startsa/models/team_member.dart';
 import 'package:startsa/data_access/repositories/invitation_repository.dart';
 
-/// In-memory stand-in for [AuthService]. Set the fields to script behaviour,
-/// and read [calls] to see what the code under test did.
+/// In-memory stand-in for AuthService.
 class FakeAuthService implements AuthService {
   final List<String> calls = [];
 
   /// The account that is currently signed in, if any.
   AuthAccount? signedIn;
 
-  /// What [createAccount] / [signIn] / [reloadCurrentAccount] return.
+  /// What createAccount / signIn / reloadCurrentAccount return.
   AuthAccount account = const AuthAccount(
     uid: 'uid1',
     email: 'a@b.co',
@@ -85,7 +84,7 @@ class FakeAuthService implements AuthService {
     if (resetFails != null) throw AuthException(resetFails!);
   }
 
-  /// Fails [reauthenticate] when set (e.g. a wrong current password).
+  /// Fails reauthenticate when set (e.g.
   AuthFailure? reauthFails;
   AuthFailure? updatePasswordFails;
   String? updatedPassword;
@@ -117,14 +116,12 @@ class FakeAuthService implements AuthService {
   }
 }
 
-/// In-memory stand-in for [UserRepository].
+/// In-memory stand-in for UserRepository.
 class FakeUserRepository implements UserRepository {
   final Map<String, AppUser> profiles = {};
   bool createFails = false;
   AuthFailure? getFails;
 
-  /// When set, [getProfile] waits for it, so tests can control when a
-  /// profile reload finishes.
   Future<void>? getProfileGate;
 
   @override
@@ -269,7 +266,7 @@ class FakeUserRepository implements UserRepository {
   }
 }
 
-/// Scriptable [AuthRepository] for view-model and widget tests.
+/// Scriptable AuthRepository for view-model and widget tests.
 class FakeAuthRepository implements AuthRepository {
   int signUpCalls = 0;
   int logInCalls = 0;
@@ -282,12 +279,12 @@ class FakeAuthRepository implements AuthRepository {
 
   File? lastSignUpPhoto;
 
-  /// The extra profile fields of the last [signUp] call.
+  /// The extra profile fields of the last signUp call.
   Map<String, String?>? lastSignUp;
 
   AuthFailure? signUpFails;
 
-  /// When true, [signUpFails] applies to the next sign-up only.
+  /// When true, signUpFails applies to the next sign-up only.
   bool signUpFailsOnce = false;
   AuthFailure? logInFails;
   AuthFailure? resendFails;
@@ -365,7 +362,7 @@ class FakeAuthRepository implements AuthRepository {
 
   int updateUnverifiedCalls = 0;
 
-  /// The full name of the last [updateUnverifiedProfile] call.
+  /// The full name of the last updateUnverifiedProfile call.
   String? lastUpdatedName;
 
   @override
@@ -430,7 +427,7 @@ class FakeAuthRepository implements AuthRepository {
   int deleteAccountCalls = 0;
   AuthFailure? deleteAccountFails;
 
-  /// The founder's choices passed to the last [deleteAccount].
+  /// The founder's choices passed to the last deleteAccount.
   Map<String, StartupFate>? deletedWithFates;
 
   @override
@@ -454,7 +451,7 @@ class FakeAuthRepository implements AuthRepository {
   }
 }
 
-/// In-memory stand-in for [AppSettingsRepository].
+/// In-memory stand-in for AppSettingsRepository.
 class FakeAppSettingsRepository implements AppSettingsRepository {
   bool introSeen = false;
   bool darkMode = false;
@@ -472,7 +469,7 @@ class FakeAppSettingsRepository implements AppSettingsRepository {
   Future<void> markIntroSeen() async => introSeen = true;
 }
 
-/// In-memory stand-in for [StartupRepository].
+/// In-memory stand-in for StartupRepository.
 class FakeStartupRepository implements StartupRepository {
   final List<Startup> startups = [];
 
@@ -569,7 +566,6 @@ class FakeStartupRepository implements StartupRepository {
             m.copyWith(isFounder: false, coFounder: stay == 'coFounder'),
       ],
     );
-    // The previous founder no longer holds it (one he may still have joined).
     startups.removeWhere((s) => s.id == startup.id);
     if (stay != null) memberOf.add(moved);
     return moved;
@@ -634,7 +630,7 @@ class FakeStartupRepository implements StartupRepository {
   }
 }
 
-/// An in-memory [InvitationRepository] (no Firebase, no e-mail).
+/// An in-memory InvitationRepository (no Firebase, no e-mail).
 class FakeInvitationRepository implements InvitationRepository {
   final Map<String, Invitation> store = {};
   final List<String> sentEmails = [];
@@ -643,10 +639,10 @@ class FakeInvitationRepository implements InvitationRepository {
   final List<String> declined = [];
   final Map<String, List<String>> inviteIndex = {};
 
-  /// What [sendEmail] answers.
+  /// What sendEmail answers.
   InviteSendResult sendResult = InviteSendResult.sent;
 
-  /// The e-mail of the signed-in user (for [pendingForMe]).
+  /// The e-mail of the signed-in user (for pendingForMe).
   String myEmail = '';
 
   @override

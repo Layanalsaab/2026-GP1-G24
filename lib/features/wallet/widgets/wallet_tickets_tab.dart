@@ -13,11 +13,6 @@ import 'ticket_detail.dart';
 import 'ticket_form.dart';
 
 /// Investment Wallet -> Tickets: built like Manage -> Rounds.
-///
-/// Top row: "Investment tickets" with "All amounts in SAR" and a green "Add
-/// ticket". Below, the "New ticket" form when it is open, then the tickets
-/// table, newest first. Tapping a ticket opens its page ([TicketDetail])
-/// inside this tab.
 class WalletTicketsTab extends StatefulWidget {
   const WalletTicketsTab({super.key, required this.vm});
 
@@ -28,8 +23,7 @@ class WalletTicketsTab extends StatefulWidget {
 }
 
 class _WalletTicketsTabState extends State<WalletTicketsTab> {
-  /// The ticket whose page is open, or null for the list. It lives here (not
-  /// in the view model), so switching tabs always comes back to the list.
+  /// The ticket whose page is open, or null for the list.
   String? _detail;
 
   WalletViewModel get vm => widget.vm;
@@ -130,10 +124,7 @@ class _WalletTicketsTabState extends State<WalletTicketsTab> {
   }
 }
 
-// ------------------------------------------------------------------ table
-
-/// Column widths: Ticket · Amount, gap 10. (A ticket's matches are on its
-/// page, not in the table.)
+/// Column widths: Ticket · Amount, gap 10.
 const _flex = [170, 110];
 const _gap = 10.0;
 
@@ -212,8 +203,6 @@ class _HeaderRow extends StatelessWidget {
   }
 }
 
-/// One ticket: the first line of both cells has the same 22 px line height,
-/// so the first lines sit on one line.
 class _TicketRow extends StatefulWidget {
   const _TicketRow({
     required this.vm,
@@ -282,7 +271,6 @@ class _TicketRowState extends State<_TicketRow> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Ticket: status dot and name, the status word, "Sectors · Stages".
           Expanded(
             flex: _flex[0],
             child: Column(

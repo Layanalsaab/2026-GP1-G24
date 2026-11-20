@@ -7,9 +7,6 @@ import '../../startups/widgets/manage_card.dart';
 import '../view_models/requests_view_model.dart';
 import '../widgets/request_status_pill.dart';
 
-/// Manage startup -> Requests (docs/05 D3): Pending / Accepted / Declined
-/// chips and one card per investor request. [onCheck] opens the valuation
-/// calculator with the offer; [onToast] shows the toasts.
 class RequestsTab extends StatelessWidget {
   const RequestsTab({
     super.key,

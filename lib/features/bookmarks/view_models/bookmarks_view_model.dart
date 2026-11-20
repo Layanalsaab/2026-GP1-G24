@@ -31,16 +31,10 @@ enum BookmarkSort {
   final String label;
 }
 
-/// Local state of the Bookmarks screen: the saved items it was given, the
-/// current type filter and sort, and removing an item. INTERFACE ONLY: it
-/// holds the list in memory; the backend connects the real list (and the
-/// real "remove") through [onRemove].
 class BookmarksViewModel extends ChangeNotifier {
   BookmarksViewModel(List<SavedBookmark> items, {this.onRemove})
     : _all = List.of(items);
 
-  /// Called after an item is removed from the list, so the real bookmark can
-  /// be deleted too. Null = just the list changes.
   final void Function(SavedBookmark removed)? onRemove;
 
   final List<SavedBookmark> _all;

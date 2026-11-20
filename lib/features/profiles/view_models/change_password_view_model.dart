@@ -8,8 +8,7 @@ import '../../../helpers/safe_notifier.dart';
 import '../../../helpers/validators.dart';
 import '../../../models/auth_failure.dart';
 
-/// Logic for the Change Password screen (PBI 7). Uses the same password rules
-/// as sign up ([Validators.isPassword]).
+/// Logic for the Change Password screen (PBI 7).
 class ChangePasswordViewModel extends ChangeNotifier with SafeNotifier {
   ChangePasswordViewModel({AuthRepository? authRepository})
     : _auth = authRepository ?? AuthRepository.instance;
@@ -24,8 +23,7 @@ class ChangePasswordViewModel extends ChangeNotifier with SafeNotifier {
   /// Shown above the button for problems that aren't about one field.
   String? formError;
 
-  /// Returns true when the password was changed. Otherwise the error fields
-  /// say why, and the password is unchanged.
+  /// Returns true when the password was changed.
   Future<bool> submit({
     required String currentPassword,
     required String newPassword,

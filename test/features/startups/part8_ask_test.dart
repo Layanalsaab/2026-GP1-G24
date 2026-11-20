@@ -98,8 +98,6 @@ void main() {
         'Tech development',
         'Co-founder',
       ]);
-      // The form: "Hiring" is still a listed option; the removed ones show
-      // together under Other (none is dropped).
       final vm = StartupStepsViewModel(initial: old);
       addTearDown(vm.dispose);
       expect(vm.supportSel, {'Hiring', 'Other'});

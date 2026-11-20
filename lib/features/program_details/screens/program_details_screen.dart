@@ -17,10 +17,6 @@ import '../../../shared_ui/widgets/headers/header_buttons.dart';
 import '../../profiles/widgets/profile_widgets.dart';
 import '../view_models/program_details_view_model.dart';
 
-/// Program details (docs/05 C3, screenshots 32 and 27f): a light radial hero
-/// with three gold circles that draw themselves, the gold tile, name, pills,
-/// website link and "Visit website", then About, Focus sectors and Details
-/// separated by hairlines.
 class ProgramDetailsScreen extends StatefulWidget {
   const ProgramDetailsScreen({super.key, required this.program});
 
@@ -48,7 +44,7 @@ class _ProgramDetailsScreenState extends State<ProgramDetailsScreen> {
 
   void _openWebsite() => openExternalLink(_vm.website);
 
-  /// A circle as an SVG path (the prototype's `<circle>`).
+  /// A circle as an SVG path (the prototype's {circle}).
   static String _circle(double cx, double cy, double r) =>
       'M${cx + r} $cy a$r $r 0 1 0 ${-2 * r} 0 a$r $r 0 1 0 ${2 * r} 0';
 

@@ -27,23 +27,19 @@ import '../shared_ui/navigation/app_route.dart';
 import '../shared_ui/widgets/overlays/app_toast.dart';
 import 'main_screen.dart';
 
-/// Moving between the top-level areas of the app. Each of these clears the
-/// navigation stack, so Back can never return to a screen the user left.
+/// Moving between the top-level areas of the app.
 class AppRouter {
   AppRouter._();
 
   /// The Start screen (Welcome), with the back transition.
   static void openStart(BuildContext context) => WelcomeScreen.open(context);
 
-  /// Called when the user finishes or skips the intro screens: remembers that
-  /// they have seen them (so they never show again) and opens Welcome.
   static void finishIntro(BuildContext context) {
     AppSettingsRepository.instance.markIntroSeen();
     openStart(context);
   }
 
-  /// Home: reset, "up" transition. The role comes from [AppSession]; the Hub
-  /// opens on Startups for guests and Investors for everyone else.
+  /// Home: reset, "up" transition.
   static void openHome(BuildContext context) => AppNav.reset(
     context,
     const MainScreen(),
@@ -51,15 +47,7 @@ class AppRouter {
     greenHeader: true,
   );
 
-  /// Where a user lands after log in, sign up or a restored session. A founder
-  /// with no startup goes to the onboarding "Add your startup" steps, an
-  /// investor who did not finish the investor steps to step 3; everyone else
-  /// to Home. [welcomeBack] shows "Welcome back" with the first name.
-  ///
-  /// [lostStartup]: the founder just left their last startup, so
-  /// "Add your startup" explains why it opened. A founder who had a startup
-  /// before ([AppUser.onboardingCompleted]) gets the same note at log in
-  /// (e.g. after the owner removed them from their only team).
+  /// Where a user lands after log in, sign up or a restored session.
   static Future<void> openAfterLogin(
     BuildContext context,
     AppUser user, {
@@ -67,7 +55,6 @@ class AppRouter {
     bool lostStartup = false,
   }) async {
     AppSession.instance.signIn(user);
-    // The saved bookmarks load in the background (icons fill when ready).
     unawaited(BookmarkRepository.instance.load(user.uid));
     // Teams can find this account by e-mail from now on.
     unawaited(TeamLookup.instance.publish(user, emailVerified: true));
@@ -89,14 +76,10 @@ class AppRouter {
           } catch (_) {}
         }
       } catch (_) {
-        // Offline or denied: open Home; the shell loads the list again.
       }
     }
     if (!context.mounted) return;
     if (needsStartup) {
-      // A verified founder who never created a startup continues where they
-      // stopped: the first "Add your startup" step (no second verification).
-      // One who HAD a startup is told why they are here.
       StartupStepsScreen.openOnboarding(
         context,
         lostStartup: lostStartup || user.onboardingCompleted,
@@ -106,8 +89,6 @@ class AppRouter {
       return;
     }
     if (user.role == AccountRole.investor && !user.onboardingCompleted) {
-      // Likewise a verified investor who did not finish the investor steps
-      // continues at the first step still incomplete (step 3 or 4 of 4).
       InvestorInvestmentsScreen.open(context, user, resume: true);
       return;
     }
@@ -117,8 +98,6 @@ class AppRouter {
     } else if (welcomeBack) {
       AppToast.showGlobal('Welcome back, ${user.firstName}');
     }
-    // What happened to my startups since last time (closed, deleted, a new
-    // founder, ...): one pop-up each, once.
     if (user.role == AccountRole.founder) _showNoticesLater();
   }
 
@@ -130,11 +109,6 @@ class AppRouter {
     });
   }
 
-  /// After the user left a startup in the app: when it was their
-  /// last one, the same steps as a log in run at once (pending invitations
-  /// first, then "Add your startup" with a note). Returns true when it
-  /// navigated; false when they still have a startup (or it can't tell:
-  /// offline, then the next log in checks).
   static Future<bool> openIfNoStartupLeft(BuildContext context) async {
     final user = AppSession.instance.user;
     if (user == null || user.role != AccountRole.founder) return false;
@@ -148,9 +122,6 @@ class AppRouter {
     return true;
   }
 
-  /// Invitations to a team that wait for this account's e-mail: a founder
-  /// joins (at once, or after "Accept / Decline"); an investor can't, so
-  /// they are marked declined. Returns the names of the startups joined.
   static Future<List<String>> _handleInvitations(
     BuildContext context,
     AppUser user,
@@ -162,8 +133,6 @@ class AppRouter {
     final joined = <String>[];
     final repo = InvitationRepository.instance;
     for (final invitation in await InvitationClaimer.pending()) {
-      // Taking a startup over as its owner is always asked (Accept /
-      // Decline); joining a team may happen at once.
       final ask = invitation.isOwner || !AppConfig.autoJoinExistingAccounts;
       var accept = !ask;
       if (ask) {
@@ -189,10 +158,6 @@ class AppRouter {
     return joined;
   }
 
-  /// A new account (just verified): the invitations to take a startup over
-  /// as its owner are asked one by one (Accept / Decline), after the teams
-  /// were joined. Returns the startups it now owns. Dismissing a pop-up
-  /// leaves that invitation pending (asked again at the next log in).
   static Future<List<String>> askOwnerInvitations(
     BuildContext context,
     AppUser user,
@@ -218,9 +183,6 @@ class AppRouter {
     return owned;
   }
 
-  /// Pull to refresh: checks the invitations that arrived since the last
-  /// log in, the same way a log in does (a founder joins the team, an
-  /// investor's are declined). Returns the startups joined; tells the person.
   static Future<List<String>> checkInvitations(BuildContext context) async {
     final user = AppSession.instance.user;
     if (user == null || AppSession.instance.isGuest) return const [];
@@ -241,12 +203,6 @@ class AppRouter {
     openHome(context);
   }
 
-  /// Signs out of Firebase, forgets the session data and returns to Welcome
-  /// with the back transition. A guest simply leaves.
-  ///
-  /// With [email] the next screen starts with that address: Log in, or, with
-  /// [signup], "Create your account" (an invitation sent to somebody who has
-  /// no account yet).
   static Future<void> logOut(
     BuildContext context, {
     bool toLogin = false,

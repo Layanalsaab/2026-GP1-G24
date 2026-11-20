@@ -3,25 +3,21 @@ import '../models/startup.dart';
 import 'app_strings.dart';
 import 'founder_tools_strings.dart';
 
-/// User-facing text for the Account, Edit Account, Settings, Change Password,
-/// Delete Account and Log Out screens, in one place.
 class AccountStrings {
   AccountStrings._();
 
-  /// What an investor is called on their profile (the dataset says the same).
   static const investorTitle = 'Angel Investor';
 
   static const _months = [
     'January', 'February', 'March', 'April', 'May', 'June', 'July',
-    'August', 'September', 'October', 'November', 'December', //
+    'August', 'September', 'October', 'November', 'December',
   ];
 
   /// "Joined October 2026".
   static String joined(DateTime date) =>
       'Joined ${_months[date.month - 1]} ${date.year}';
 
-  /// "55 123 4567" -> "+966 55 123 4567". Anything that isn't 9 digits is
-  /// shown as it is, after the country code.
+  /// "55 123 4567" -> "+966 55 123 4567".
   static String formatPhone(String phone) {
     final p = phone.trim();
     final nine = RegExp(r'^\d{9}$').hasMatch(p);
@@ -31,11 +27,6 @@ class AccountStrings {
     return '${AppStrings.phoneCountryCode} $shown';
   }
 
-  /// What a startup-side account is called on its own profile and in the
-  /// menu: its highest title among its startups. "Founder" when it holds a
-  /// startup, then "Co-founder", then "Team member"; "Founder" before it has
-  /// any. [owned]: the startups it holds; [joined]: its role in each startup
-  /// it joined.
   static String startupTitle(
     String uid, {
     required Iterable<Startup> owned,

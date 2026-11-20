@@ -3,8 +3,6 @@ import 'package:startsa/data_access/firebase_services/firestore_service.dart';
 import 'package:startsa/data_access/repositories/user_repository.dart';
 import 'package:startsa/models/auth_failure.dart';
 
-/// A Firestore stand-in that behaves like the OLD security rules: it rejects
-/// any user document holding a field outside the original list.
 class _OldRulesFirestore extends FirestoreService {
   _OldRulesFirestore();
 

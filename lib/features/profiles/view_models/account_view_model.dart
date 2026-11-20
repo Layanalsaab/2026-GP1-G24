@@ -12,9 +12,6 @@ import '../../../models/app_user.dart';
 import '../../../models/list_entries.dart';
 import '../../../models/startup.dart';
 
-/// Logic of the own profile (docs/05 C4): the profile on screen, kept fresh
-/// from the repository, plus the founder's startups and the investor's
-/// associations.
 class AccountViewModel extends ChangeNotifier with SafeNotifier {
   AccountViewModel({
     required this._user,
@@ -38,8 +35,6 @@ class AccountViewModel extends ChangeNotifier with SafeNotifier {
   List<Startup> startups = const [];
 
   /// The startups the founder belongs to as a co-founder or team member.
-  /// The real ones are read from Firestore; the sample ones (interface only)
-  /// are added until the invites exist.
   List<MyStartupEntry> memberEntries = const [];
 
   /// Every startup of the founder's profile, each with their role in it.
@@ -53,17 +48,12 @@ class AccountViewModel extends ChangeNotifier with SafeNotifier {
     ...memberEntries,
   ];
 
-  /// Counts edits shown with [updateUser], so a reload that started earlier
-  /// can't replace them with older data.
   int _edits = 0;
 
   AppUser get user => _user;
 
   bool get isFounder => _user.isFounder;
 
-  /// "Investor", or a startup-side account's highest title among its
-  /// startups: "Founder", "Owner", "Co-founder" or "Team member" (see
-  /// [AccountStrings.startupTitle]).
   String get roleLabel => _user.isFounder
       ? AccountStrings.startupTitle(
           _user.uid,
@@ -72,8 +62,6 @@ class AccountViewModel extends ChangeNotifier with SafeNotifier {
         )
       : AccountStrings.investorTitle;
 
-  /// The chips under the name: a founder's sectors of interest, an
-  /// investor's sectors (the typed "Other" replaces the label "Other").
   List<String> get sectors {
     final criteria = _user.investorCriteria;
     final raw = _user.isInvestor
@@ -104,10 +92,6 @@ class AccountViewModel extends ChangeNotifier with SafeNotifier {
 
   String get linkedin => (_user.linkedin ?? '').trim();
 
-  /// The Contact section: the email and the phone, each with whether it is
-  /// public. On the user's OWN profile both are listed (a phone only when one
-  /// is saved) with their pills; anybody else sees only the ones set to
-  /// Public, and no Contact section at all when both are private.
   List<ContactRow> contactRows({bool isOwner = true}) {
     final rows = [
       ContactRow(ContactKind.email, _user.email, _user.emailPublic),
@@ -122,14 +106,10 @@ class AccountViewModel extends ChangeNotifier with SafeNotifier {
           ];
   }
 
-  /// The sample startups an investor is associated with (none for real
-  /// accounts until associations are stored in Firestore).
   List<Startup> get associations => _user.isInvestor
       ? _discovery.associationsOfInvestor(_user.uid)
       : const [];
 
-  /// The user passed in may be older than what's saved, so fetch the latest
-  /// profile (and the founder's startups). Failures keep what is shown.
   Future<void> reload() async {
     final editsAtStart = _edits;
     if (_user.isFounder) await _loadStartups();
@@ -170,14 +150,10 @@ class AccountViewModel extends ChangeNotifier with SafeNotifier {
         );
       }
     } catch (_) {
-      // Memberships are an extra: the founder's own startups still show.
     }
     return entries;
   }
 
-  /// Leave a startup I belong to (from the profile): the same logic as My
-  /// Startups. A real startup drops only my own membership; the sample ones
-  /// (interface only) just disappear locally.
   Future<void> leave(String startupId, {bool alreadyLeft = false}) async {
     final entry = memberEntries
         .where((e) => e.startup.id == startupId)
@@ -192,7 +168,7 @@ class AccountViewModel extends ChangeNotifier with SafeNotifier {
       ...session.memberStartupIds.where((id) => id != startupId),
     });
     notifyListeners();
-    // Manage already left it ([alreadyLeft]): only the list changes.
+    // Manage already left it (alreadyLeft): only the list changes.
     if (!alreadyLeft && !PrototypeSeed.isSampleStartup(startupId)) {
       try {
         await _startups.leave(entry.startup);
@@ -219,8 +195,7 @@ class AccountViewModel extends ChangeNotifier with SafeNotifier {
 
 enum ContactKind { email, phone }
 
-/// One line of the Contact section: what it is, its value and whether the
-/// owner made it public.
+/// One line of the Contact section: what it is, its value and whether the owner made it public.
 class ContactRow {
   const ContactRow(this.kind, this.value, this.isPublic);
 

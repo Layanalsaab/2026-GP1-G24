@@ -6,14 +6,7 @@ import 'package:flutter/rendering.dart';
 import '../../icons/app_icons.dart';
 import '../../theme/app_colors.dart';
 
-/// The gold Saudi-doorway arches drawn at the bottom of every green header
-/// (docs/02 §4). Place it inside a [Stack]; it positions itself at the bottom
-/// and stretches to the full width (`preserveAspectRatio="none"`).
-///
-/// Presets: auth / step / manage / tabbed headers use [ArchBackground]
-/// (height 130, opacity .22, both paths); the home header uses
-/// [ArchBackground.home] (outer path only, .13, fills the header height); the
-/// profile banner uses [ArchBackground.banner] (outer only, .15, height 96).
+/// The gold Saudi-doorway arches drawn at the bottom of every green header (docs/02 §4).
 class ArchBackground extends StatelessWidget {
   const ArchBackground({
     super.key,
@@ -100,11 +93,7 @@ class _ArchPainter extends CustomPainter {
       old.opacity != opacity || old.inner != inner;
 }
 
-/// Reports a height [overlap] pixels smaller than its child while still
-/// painting the whole child. The next sibling in a column therefore starts
-/// [overlap] px above the child's bottom and paints over it: this is how the
-/// white auth card (44), the role/list cards (48), the profile avatar (48) and
-/// the home search bar (24) overlap a green header without negative margins.
+/// Reports a height overlap pixels smaller than its child while still painting the whole child.
 class HeaderOverlap extends SingleChildRenderObjectWidget {
   const HeaderOverlap({super.key, required this.overlap, required Widget child})
     : super(child: child);
@@ -168,9 +157,6 @@ class _RenderHeaderOverlap extends RenderProxyBox {
       math.max(0, (child?.getMaxIntrinsicHeight(width) ?? 0) - _overlap);
 }
 
-/// Shared green block of every arch header: green fill, rounded bottom
-/// corners, the arches, and the status-bar inset on top. Used by the header
-/// widgets in this folder; screens normally use those instead.
 class ArchHeaderShell extends StatelessWidget {
   const ArchHeaderShell({
     super.key,
@@ -190,7 +176,6 @@ class ArchHeaderShell extends StatelessWidget {
   /// Bottom corner radius: 28 auth / steps / role, 30 home, 0 tabbed.
   final double bottomRadius;
 
-  /// How far the following content overlaps this header (see [HeaderOverlap]).
   final double overlap;
   final ArchBackground arches;
 

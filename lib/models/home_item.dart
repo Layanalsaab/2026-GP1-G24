@@ -7,9 +7,6 @@ import 'startup_enums.dart';
 /// What a Hub / Explore / Support Channels card shows.
 enum HomeItemKind { startup, investor, program }
 
-/// One card of the home pages, built from a [Startup], an [InvestorProfile]
-/// or a [Program] so the cards, search, filters and bookmarks work the same
-/// for all three.
 class HomeItem {
   const HomeItem({
     required this.kind,
@@ -48,20 +45,14 @@ class HomeItem {
   final String name;
   final String initials;
 
-  /// The chip on the card: a startup's sector, an investor's first sector, a
-  /// program's type.
   final String tag;
   final String city;
 
   /// The body line: tagline, "about" or summary.
   final String line;
 
-  /// A startup's stage ("Pre-seed") or an investor's stage range
-  /// ("Pre-seed – Seed").
   final String stage;
 
-  /// Every stage the item has / invests in (matched one by one by the
-  /// "Stage" filters).
   final List<String> stages;
 
   /// An investor's ticket size as stored ("SAR 100K – 500K").
@@ -79,12 +70,9 @@ class HomeItem {
   /// The commerce models an investor invests in ("B2B", "B2C"...).
   final List<String> models;
 
-  /// What a startup looks for in partners and in support (its stored lists).
   final List<String> partnerTypes;
   final List<String> supportTypes;
 
-  /// An investor's usual ticket in SAR, read from [ticket] (null when it is
-  /// not a range).
   final int? ticketLow;
   final int? ticketHigh;
 
@@ -97,22 +85,19 @@ class HomeItem {
   final String? joinedLabel;
   final bool isNew;
 
-  /// A line shown in the match pill's style instead of "N% match" (Latest:
-  /// "Joined 2 days ago"; Trending: "#1").
   final String? highlight;
   final String? highlightReason;
 
   /// The saved logo or photo (base64); null: the default picture.
   final String? imageData;
 
-  /// When the startup / investor joined Start.sa (for "Newest"). Null when
-  /// unknown (programs, older documents).
+  /// When the startup / investor joined Start.sa (for "Newest").
   final DateTime? createdAt;
 
   /// A closed startup (shown in the Hub only, with a Closed tag).
   final bool closed;
 
-  /// `s-<id>`, `i-<id>`, `p-<id>`: the key a bookmark is stored under.
+  /// s-{id}, i-{id}, p-{id}: the key a bookmark is stored under.
   String get bookmarkKey => switch (kind) {
     HomeItemKind.startup => 's-$id',
     HomeItemKind.investor => 'i-$id',
@@ -124,8 +109,6 @@ class HomeItem {
 
   HomeItem withJoined(String label) => _copy(joinedLabel: label, isNew: true);
 
-  /// A line under the body in the match pill's style: "Joined 2 days ago"
-  /// (Latest) or "#1" (Trending), with an optional [reason].
   HomeItem withHighlight(String text, {String? reason}) =>
       _copy(highlight: text, highlightReason: reason);
 
@@ -179,8 +162,6 @@ class HomeItem {
     stage: s.stageLabel,
     stages: [s.stageLabel, if (s.stage == StartupStage.other) 'Other'],
     raising: s.fundingRequirement,
-    // Every sector, so the startup shows under each of them in the filters
-    // and in search. (A typed "Other" sector also counts as "Other".)
     sectors: [
       ...s.sectorLabels,
       if (s.sector == Sector.other ||

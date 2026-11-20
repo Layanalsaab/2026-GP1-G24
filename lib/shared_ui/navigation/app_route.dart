@@ -11,8 +11,6 @@ enum RouteKind {
   /// Back button / closing a preview: fade in, slide from x -28.
   back,
 
-  /// Entering Home (after log in, finishing sign-up, guest entry): fade in,
-  /// slide from y +24.
   up,
 
   /// Splash -> Intro: opacity only.
@@ -20,15 +18,6 @@ enum RouteKind {
 }
 
 /// A page route with the Start.sa transitions.
-///
-/// The previous screen is replaced instantly (a cream backdrop covers it
-/// from the first frame), so there is no exit animation. Popping is also
-/// instant: the revealed screen plays the "back" entrance itself, which is
-/// how the prototype's Back works.
-///
-/// Screens whose top is a green arch header pass [greenHeader]: they never
-/// fade (fading from 0 would flash the cream background behind the green
-/// bar) and slide only 12 px.
 class AppRoute<T> extends PageRouteBuilder<T> {
   AppRoute({
     required WidgetBuilder builder,
@@ -53,8 +42,6 @@ class AppRoute<T> extends PageRouteBuilder<T> {
   @override
   void didPopNext(Route<dynamic> nextRoute) {
     super.didPopNext(nextRoute);
-    // Only our own screens trigger the back entrance; closing a sheet or a
-    // dialog must not re-animate the screen underneath.
     if (nextRoute is AppRoute) _backTick.value++;
   }
 
@@ -139,8 +126,6 @@ class _Enter extends StatelessWidget {
         final moved = (dx == 0 && dy == 0)
             ? child!
             : Transform.translate(offset: Offset(dx, dy), child: child);
-        // Green-header screens keep full opacity, except under reduced
-        // motion (which is a plain fade) or the explicit fade kind.
         final shouldFade = fades || kind == RouteKind.fade;
         return shouldFade ? Opacity(opacity: v, child: moved) : moved;
       },
@@ -148,8 +133,6 @@ class _Enter extends StatelessWidget {
   }
 }
 
-/// Plays the "back" entrance on this screen when the screen above it pops:
-/// fade in and slide from x -28 (12 and no fade for green-header screens).
 class _BackEnter extends StatefulWidget {
   const _BackEnter({
     required this.tick,
@@ -219,12 +202,10 @@ class _BackEnterState extends State<_BackEnter>
   }
 }
 
-/// Navigation helpers matching the prototype's stack model
-/// (docs/04_navigation_and_flows.md §Stack model).
 class AppNav {
   AppNav._();
 
-  /// `go`: pushes [screen] with the forward transition.
+  /// go: pushes screen with the forward transition.
   static Future<T?> push<T>(
     BuildContext context,
     Widget screen, {
@@ -238,14 +219,11 @@ class AppNav {
     ),
   );
 
-  /// `back`: pops the current screen. The revealed screen plays the back
-  /// entrance. Does nothing when there is nothing to pop.
+  /// back: pops the current screen.
   static void back<T extends Object?>(BuildContext context, [T? result]) =>
       Navigator.of(context).maybePop<T>(result);
 
-  /// `reset`: replaces the whole stack with [screen]. [kind] picks the
-  /// entrance (`up` for Home, `back` for log out, `forward` for onboarding
-  /// steps, `fade` for splash -> intro).
+  /// reset: replaces the whole stack with screen.
   static Future<T?> reset<T>(
     BuildContext context,
     Widget screen, {
@@ -256,8 +234,7 @@ class AppNav {
     (route) => false,
   );
 
-  /// `reset` to a stack of several screens (e.g. `[Home, MyStartups]`). Only
-  /// the last one animates, with [kind]; the ones beneath appear instantly.
+  /// reset to a stack of several screens (e.g.
   static Future<T?> resetStack<T>(
     BuildContext context,
     List<Widget> screens, {
@@ -278,7 +255,6 @@ class AppNav {
     if (routes.isEmpty) {
       return navigator.pushAndRemoveUntil<T>(last, (route) => false);
     }
-    // Clear everything, seat the base screens, then animate the top one in.
     navigator.pushAndRemoveUntil<dynamic>(routes.first, (route) => false);
     for (final r in routes.skip(1)) {
       navigator.push<dynamic>(r);

@@ -11,8 +11,7 @@ import 'package:startsa/models/startup_enums.dart';
 
 import '../support/fakes.dart';
 
-/// Firestore kept in a map: collection path -> document id -> data. A batch
-/// applies its writes one after the other; [commits] counts the batches.
+/// Firestore kept in a map: collection path -> document id -> data.
 class _MemoryFirestore extends FirestoreService {
   final Map<String, Map<String, Map<String, Object?>>> store = {};
   int commits = 0;
@@ -268,7 +267,6 @@ void main() {
       expect(w.data['stage'], 'pre_seed');
       expect(w.data['amount'], 500000);
       expect(w.data['raised'], 100000);
-      // The lead-investor question is gone: a new round doesn't carry it.
       expect(
         w.data.containsKey('wantsLeadInvestor') &&
             w.data['wantsLeadInvestor'] != null,

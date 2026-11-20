@@ -18,8 +18,6 @@ import '../widgets/auth_navigation.dart';
 import '../widgets/resend_row.dart';
 import 'forgot_password_screen.dart';
 
-/// Log in (docs/05 A12): email and password; an unverified account gets the
-/// "Verify your email" dialog ending "...then log in."
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key, this.email});
 
@@ -145,8 +143,6 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 }
 
-/// The resend row of the "Email not verified yet" pop-up: the same row and
-/// 60 s countdown as the Verify step.
 class _LoginResend extends StatelessWidget {
   const _LoginResend({required this.vm});
 

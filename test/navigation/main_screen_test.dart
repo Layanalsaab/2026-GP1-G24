@@ -108,7 +108,6 @@ void main() {
     await pumpMain(tester);
     await tester.tap(find.bySemanticsLabel('Explore').last);
     await tester.pump(const Duration(milliseconds: 500));
-    // The Sign up pill is 1.5 px wider in the test font: not what is tested.
     tester.takeException();
     expect(find.byType(ExploreTabs), findsNothing);
     expect(find.text('Top 30 trending'), findsOneWidget);
@@ -178,7 +177,6 @@ void main() {
         onLogOut: () {},
       );
       await tester.pump(const Duration(milliseconds: 600));
-      // A feature that is not built yet shows no message and does nothing.
       await tester.tap(find.text('Notifications'));
       await tester.pump(const Duration(milliseconds: 400));
       expect(find.text('Notifications'), findsOneWidget);

@@ -13,16 +13,6 @@ import '../firebase_services/firestore_service.dart';
 import '../mock_data/prototype_seed.dart';
 import 'request_repository.dart';
 
-/// Everything the Hub, Explore and Support Channels pages browse, and the
-/// lookups behind the startup, investor and program profiles.
-///
-/// The startups and investors come from Firestore: the public `startups`
-/// documents and the `investors` documents, loaded by [refresh] and kept in
-/// memory. Nothing is invented: until something is loaded the lists are empty.
-/// A founder's own startups are hidden from the lists by the caller.
-///
-/// `DiscoveryRepository.sample()` serves the built-in sample people instead;
-/// it exists only so tests have stable data.
 class DiscoveryRepository {
   DiscoveryRepository({FirestoreService? firestore})
     : _firestore = firestore ?? FirestoreService(),
@@ -39,12 +29,10 @@ class DiscoveryRepository {
        _investors = List.of(investors ?? PrototypeSeed.investors),
        _tickets = List.of(tickets);
 
-  /// The app-wide instance. Tests replace it with a fake.
+  /// The app-wide instance.
   static DiscoveryRepository instance = DiscoveryRepository();
 
-  /// How many documents each list loads. The dataset has more than 150
-  /// public startups, so 150 hid most of them. Cards still show 20 at a
-  /// time ("Show more").
+  /// How many documents each list loads.
   static const startupLimit = 2000;
   static const investorLimit = 2000;
   static const ticketLimit = 3000;
@@ -56,7 +44,7 @@ class DiscoveryRepository {
   List<InvestorProfile> _investors = [];
   List<InvestmentTicket> _tickets = [];
 
-  /// The open investment tickets of [investorId] (what they want right now).
+  /// The open investment tickets of investorId (what they want right now).
   List<InvestmentTicket> openTicketsOf(String investorId) => [
     for (final t in _tickets)
       if (t.investorId == investorId && t.isOpen) t,
@@ -84,8 +72,6 @@ class DiscoveryRepository {
           limit: startupLimit,
         ),
         db.listCollection(FirestoreCollections.investors, limit: investorLimit),
-        // Signed-in people can read the tickets; for anyone else (or when it
-        // fails) For You simply goes without them.
         db
             .queryWhereEqual(
               FirestoreCollections.tickets,
@@ -111,11 +97,6 @@ class DiscoveryRepository {
     }
   }
 
-  /// The signed-in founder saved [startup] (edited, closed, made public or
-  /// private): the loaded lists follow at once, without reading every
-  /// startup again. A startup that is no longer public leaves them; one that
-  /// became public joins them. Other people's changes still show at the next
-  /// load (opening the app, pull to refresh).
   void apply(Startup startup) {
     final i = _startups.indexWhere((s) => s.id == startup.id);
     if (!startup.isPublic) {
@@ -129,7 +110,7 @@ class DiscoveryRepository {
     changes.value++;
   }
 
-  /// [startupId] was deleted: it leaves the loaded lists.
+  /// startupId was deleted: it leaves the loaded lists.
   void forget(String startupId) {
     final before = _startups.length;
     _startups = [
@@ -143,10 +124,6 @@ class DiscoveryRepository {
   List<Startup> get allStartups => List.unmodifiable(_startups);
   List<InvestorProfile> get allInvestors => List.unmodifiable(_investors);
 
-  /// The public startups: Explore and search ([includeClosed] false), or the
-  /// Hub's Startups side ([includeClosed] true: a public closed startup is
-  /// shown there, and only there, with its Closed tag). [excludeIds] hides
-  /// the founder's own startups.
   List<HomeItem> startups({
     Set<String> excludeIds = const {},
     bool includeClosed = false,
@@ -162,13 +139,9 @@ class DiscoveryRepository {
     for (final i in _investors) HomeItem.fromInvestor(i),
   ];
 
-  /// Support Channels. There are none yet: the page says so instead of
-  /// showing made-up programs.
+  /// Support Channels.
   List<HomeItem> programs() => const [];
 
-  /// Explore -> Latest: the public startups that joined at most [days] days
-  /// ago, newest first, each with its "Joined 2 days ago" line. The founder's
-  /// own startups ([excludeIds]) and private or closed ones are left out.
   List<HomeItem> latestStartups({
     required int days,
     Set<String> excludeIds = const {},
@@ -196,8 +169,6 @@ class DiscoveryRepository {
     today.day,
   ).difference(DateTime(created.year, created.month, created.day)).inDays;
 
-  /// "Joined today" / "Joined yesterday" / "Joined 3 days ago" / "Joined 2
-  /// weeks ago" / "Joined 4 months ago" / "Joined over a year ago".
   static String joinedAgo(DateTime created, {DateTime? now}) {
     final d = _daysSince(created, now ?? DateTime.now());
     if (d < 1) return 'Joined today';
@@ -233,8 +204,6 @@ class DiscoveryRepository {
     ];
   }
 
-  /// "Joined today" / "Joined yesterday" / "Joined 3 days ago" / "Joined
-  /// October 2026".
   static String joinedLabel(DateTime created, {DateTime? now}) {
     final today = now ?? DateTime.now();
     final days = DateTime(
@@ -262,12 +231,6 @@ class DiscoveryRepository {
     return 'Joined ${months[created.month - 1]} ${created.year}';
   }
 
-  /// For You, investor side: startups like the investor's criteria and their
-  /// open tickets, pulled toward the startups they bookmarked ([bookmarks]:
-  /// key -> when). A startup is left out when its amount is outside their
-  /// onboarding amount, unless one of their open tickets takes it; a startup
-  /// an open ticket takes (amount, sector, stage) ranks higher. With nothing
-  /// to go on it is the first three.
   List<HomeItem> recommendedStartups({
     Set<String> excludeIds = const {},
     InvestorCriteria? criteria,
@@ -318,13 +281,6 @@ class DiscoveryRepository {
     return [for (final p in picks) HomeItem.fromStartup(p.item)];
   }
 
-  /// For You, founder side: each of the founder's startups ([own]) is its
-  /// own taste, pulled toward the investors they bookmarked. An investor is
-  /// scored against every startup whose amount their onboarding answers (or
-  /// one of their open tickets) take, and ranked by the best of those; an
-  /// open ticket that takes the startup's amount, sector and stage ranks the
-  /// investor higher. When two investors tie, the one that fits more of the
-  /// startups goes first. With no startup, only the bookmarks count.
   List<HomeItem> recommendedInvestors({
     List<Startup> own = const [],
     Map<String, DateTime> bookmarks = const {},
@@ -377,10 +333,6 @@ class DiscoveryRepository {
     return [for (final p in picks) HomeItem.fromInvestor(p.item)];
   }
 
-  // ---- Profile lookups ----
-
-  /// A loaded startup by id, or null (a founder's own startup is passed in
-  /// directly).
   Startup? startupById(String id) {
     for (final s in _startups) {
       if (s.id == id) return s;
@@ -396,8 +348,6 @@ class DiscoveryRepository {
     return sample && id == PrototypeSeed.layan.id ? PrototypeSeed.layan : null;
   }
 
-  /// An investor's profile by id: the loaded one, else read from
-  /// `investors/{id}`. Null when it doesn't exist or can't be read.
   Future<InvestorProfile?> loadInvestor(String id) async {
     final loaded = investorById(id);
     if (loaded != null) return loaded;
@@ -405,11 +355,7 @@ class DiscoveryRepository {
     return InvestorProfile.fromMap(id, read.data);
   }
 
-  /// The card for bookmark [key] (`s-<id>`, `i-<id>` or `p-<id>`).
-  ///
-  /// [item] is null when the card can't be shown. [deleted] is true only
-  /// when the startup / investor / program doesn't exist anymore; a private
-  /// startup or a failed read (offline) is not counted as deleted.
+  /// The card for bookmark key (s-{id}, i-{id} or p-{id}).
   Future<({HomeItem? item, bool deleted})> itemForBookmark(String key) async {
     final dash = key.indexOf('-');
     if (dash < 0) return (item: null, deleted: true);
@@ -449,8 +395,7 @@ class DiscoveryRepository {
     return (item: null, deleted: true);
   }
 
-  /// Reads one document. [missing] is true only when Firestore says the
-  /// document doesn't exist (not when the read is refused or offline).
+  /// Reads one document.
   Future<({Map<String, dynamic>? data, bool missing})> _read(
     String collection,
     String id,
@@ -473,13 +418,9 @@ class DiscoveryRepository {
     return null;
   }
 
-  /// The founder's name for [startup]; null when it is not known (founders'
-  /// accounts are private, so only the sample data has names).
   String? founderNameOf(Startup startup) =>
       sample ? PrototypeSeed.founderNames[startup.founderId] : null;
 
-  /// The investors shown as "associated" on a startup: those whose request the
-  /// founder accepted.
   List<InvestorProfile> associatedInvestors(String startupId) {
     final accepted = RequestRepository.instance.acceptedFor(startupId);
     final ids = accepted.isNotEmpty
@@ -490,8 +431,6 @@ class DiscoveryRepository {
     return [for (final id in ids) ?investorById(id)];
   }
 
-  /// The startups an investor is associated with (investor profile ->
-  /// "Investment associations").
   List<Startup> associationsOfInvestor(String investorId) => [
     for (final s in _startups)
       if (associatedInvestors(s.id).any((i) => i.id == investorId)) s,

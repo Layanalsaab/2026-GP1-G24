@@ -5,9 +5,6 @@ import '../../startups/widgets/founder_ui.dart';
 import '../../startups/widgets/manage_card.dart';
 import '../view_models/interest_view_model.dart';
 
-/// Manage startup -> EOI (docs/05 D3): a header, New / All chips and one card
-/// listing the people who expressed interest. The round reply button marks the
-/// person as seen and calls [onToast] with "Messaging opens in the full app".
 class InterestTab extends StatelessWidget {
   const InterestTab({
     super.key,
@@ -182,9 +179,6 @@ class InterestTab extends StatelessWidget {
       when == null || when.isEmpty ? role : '$role · $when';
 }
 
-/// The round reply button of an interest row: moss50 fill, moss100 while a
-/// mouse pointer hovers (150 ms). Messaging is not built yet, so it has no
-/// action (and no click cursor).
 class InterestReplyButton extends StatefulWidget {
   const InterestReplyButton({super.key});
 

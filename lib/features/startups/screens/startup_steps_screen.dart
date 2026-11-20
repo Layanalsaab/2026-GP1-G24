@@ -18,8 +18,7 @@ import 'my_startups_screen.dart';
 
 /// Which flow the 4-step startup form is in.
 enum StartupStepsMode {
-  /// Founder sign-up: "STEP 3 OF 7" .. "STEP 7 OF 7" (the total follows the
-  /// list of steps); Create goes Home.
+  /// Founder sign-up: "STEP 3 OF 7" ..
   onboarding,
 
   /// My Startups -> Add: "STEP N OF 4"; Create goes back to My Startups.
@@ -29,10 +28,7 @@ enum StartupStepsMode {
   edit,
 }
 
-/// The Add / Edit startup form and the founder onboarding steps (docs/05 D2,
-/// A9). One screen with four internal steps; the footer button is grey until
-/// the step is complete and, when tapped early, shows the errors plus the
-/// toast "Please fill in the required fields".
+/// The Add / Edit startup form and the founder onboarding steps (docs/05 D2, A9).
 class StartupStepsScreen extends StatefulWidget {
   const StartupStepsScreen({
     super.key,
@@ -43,26 +39,19 @@ class StartupStepsScreen extends StatefulWidget {
     this.lostStartup = false,
   }) : assert(mode != StartupStepsMode.edit || startup != null);
 
-  /// Onboarding opened because the founder no longer has a startup (they
-  /// deleted or left their last one, or were removed from it): a note on the
-  /// first step says why.
   final bool lostStartup;
 
   final StartupStepsMode mode;
 
-  /// A saved draft to continue ([StartupStepsMode.add] only).
+  /// A saved draft to continue (StartupStepsMode.add only).
   final Map<String, Object?>? draft;
 
-  /// The startup being edited ([StartupStepsMode.edit] only).
+  /// The startup being edited (StartupStepsMode.edit only).
   final Startup? startup;
 
-  /// Edit just this Details section (0-based: Overview, Startup Description,
-  /// Target Market, Finance and Growth, Startup Team, Startup Ask) of a saved
-  /// startup: no progress bar, a "Save" button, Back asks before discarding.
   final int? onlySection;
 
   /// Founder onboarding: replaces the whole stack (forward transition).
-  /// [lostStartup] adds the "You no longer have a startup" note.
   static void openOnboarding(BuildContext context, {bool lostStartup = false}) {
     AppNav.reset(
       context,
@@ -89,8 +78,6 @@ class StartupStepsScreen extends StatefulWidget {
     pushEdit(context, startup);
   }
 
-  /// Like [openEdit] but completes with the saved startup (null when the
-  /// founder backed out), so Manage can refresh itself.
   static Future<Startup?> pushEdit(BuildContext context, Startup startup) =>
       AppNav.push<Startup>(
         context,
@@ -98,9 +85,6 @@ class StartupStepsScreen extends StatefulWidget {
         greenHeader: true,
       );
 
-  /// Manage -> Details -> Edit pill: opens ONE section ([section], 0-based)
-  /// of [startup], pre-filled. Completes with the saved startup, or null when
-  /// the user backed out.
   static Future<Startup?> pushEditSection(
     BuildContext context,
     Startup startup,
@@ -131,9 +115,6 @@ class _StartupStepsScreenState extends State<StartupStepsScreen> {
   bool get _edit => widget.mode == StartupStepsMode.edit;
   bool get _section => widget.onlySection != null;
 
-  /// The first startup was forced after a log in (no sign-up in progress):
-  /// the account and the e-mail are already done, so the steps are numbered
-  /// 1 to 6 and leaving the flow means signing out.
   bool get _fromLogin => _onboarding && SignupFlow.current == null;
 
   @override
@@ -141,7 +122,6 @@ class _StartupStepsScreenState extends State<StartupStepsScreen> {
     super.initState();
     final d = widget.draft;
     if (d != null) _vm.loadDraft(d);
-    // Editing: who declined, and who accepted while the startup was private.
     if (widget.startup != null) _vm.loadInvitations();
   }
 
@@ -166,17 +146,13 @@ class _StartupStepsScreenState extends State<StartupStepsScreen> {
     } else if (_fromLogin) {
       _leaveForcedStartup();
     } else if (_onboarding) {
-      // Step 3 of 8: Back returns to the Verify step (the stack was reset).
       VerifyEmailScreen.openFromOnboarding(context);
     } else {
       _leave();
     }
   }
 
-  /// Back on the first step of the startup forced after a log in. If
-  /// anything was entered, asks first (Discard / Keep editing). Either way
-  /// the unfinished startup is dropped and the user is signed out and sent to
-  /// Log in: the ACCOUNT stays, and the next log in starts from an empty form.
+  /// Back on the first step of the startup forced after a log in.
   Future<void> _leaveForcedStartup() async {
     if (_vm.isDirty) {
       final discard = await showDiscardDialog(
@@ -191,8 +167,6 @@ class _StartupStepsScreenState extends State<StartupStepsScreen> {
     await AppRouter.logOut(context, toLogin: true);
   }
 
-  /// Leaving the first step: nothing entered or changed -> just go back;
-  /// otherwise a centered dialog asks (Discard / Keep editing).
   Future<void> _leave() async {
     if (!_vm.isDirty) {
       AppNav.back(context);
@@ -218,9 +192,7 @@ class _StartupStepsScreenState extends State<StartupStepsScreen> {
     _exit();
   }
 
-  /// Leaves the form. A plain pop, not `maybePop`: this screen's PopScope
-  /// blocks the back gesture while there are unsaved changes, and the founder
-  /// has just decided what happens to them.
+  /// Leaves the form.
   void _exit() {
     if (!mounted) return;
     Navigator.of(context).pop();
@@ -250,9 +222,6 @@ class _StartupStepsScreenState extends State<StartupStepsScreen> {
       case StepAdvance.memberOpen:
         AppToast.error(context, FounderToolsStrings.saveMemberFirst);
       case StepAdvance.readyToSave:
-        // Editing an existing startup (one section or the full edit) asks
-        // first; creating one (sign-up, Create startup) does not. The role
-        // is checked again inside _vm.save(), right before the write.
         if (_edit) {
           final go = await showSaveConfirmDialog(
             context,
@@ -266,8 +235,6 @@ class _StartupStepsScreenState extends State<StartupStepsScreen> {
     }
   }
 
-  /// The invitation e-mails of this save: an error when some did not go out,
-  /// "Invitation sent" when they did (replaces the plain "saved" message).
   bool _tellAboutInvitations() {
     final r = _vm.inviteSummary;
     if (r.nothing) return false;
@@ -292,7 +259,6 @@ class _StartupStepsScreenState extends State<StartupStepsScreen> {
     if (!mounted) return;
     if (saved == null) {
       AppToast.error(context, _vm.saveError ?? FounderToolsStrings.saveFailed);
-      // Lost the right to edit: nothing was saved, so close the editor.
       if (_vm.lostPermission) Navigator.of(context).pop();
       return;
     }
@@ -314,11 +280,7 @@ class _StartupStepsScreenState extends State<StartupStepsScreen> {
         }
         AppNav.resetStack(context, [MainScreen(), const MyStartupsScreen()]);
       case StartupStepsMode.edit:
-        // "Changes saved" pop-up (a confirmation that is wanted on purpose).
         if (!told) AppToast.confirm(context, FounderToolsStrings.changesSaved);
-        // A plain pop: maybePop would hit this screen's own back guard (it
-        // blocks leaving while there are unsaved changes) and step back to
-        // the previous step instead of leaving.
         Navigator.of(context).pop(saved);
     }
   }
@@ -332,7 +294,6 @@ class _StartupStepsScreenState extends State<StartupStepsScreen> {
         final offset = _onboarding && !_fromLogin ? 2 : 0;
         final total = offset + StartupStepsViewModel.stepCount;
         return PopScope(
-          // The first step can only be left through the unsaved-changes check.
           canPop: _section
               ? !_vm.isDirty
               : !_fromLogin && step == 0 && (_onboarding || !_vm.isDirty),
@@ -361,8 +322,6 @@ class _StartupStepsScreenState extends State<StartupStepsScreen> {
               ),
             ),
             children: [
-              // Back in "Add your startup" after losing the last one: the
-              // account is pending until a startup is created.
               if (widget.lostStartup && _fromLogin && step == 0)
                 const ViewOnlyBanner.notice(
                   title: FounderToolsStrings.lostStartupTitle,

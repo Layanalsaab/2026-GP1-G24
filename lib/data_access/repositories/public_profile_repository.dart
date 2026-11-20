@@ -8,16 +8,11 @@ import '../../models/team_member.dart';
 import 'startup_repository.dart';
 import '../firebase_services/firestore_service.dart';
 
-/// Public profiles (`publicProfiles/{id}`): the always-public face of an
-/// account, read when somebody taps a person (a team member, a founder).
-///
-/// The e-mail and the phone are in a profile only when that one is Public;
-/// the real ones stay in the private `users/{uid}` document.
 class PublicProfileRepository {
   PublicProfileRepository({FirestoreService? firestore})
     : _firestore = firestore ?? FirestoreService();
 
-  /// The app-wide instance. Tests replace it with a fake.
+  /// The app-wide instance.
   static PublicProfileRepository instance = PublicProfileRepository();
 
   final FirestoreService _firestore;
@@ -37,9 +32,6 @@ class PublicProfileRepository {
   static final Map<String, (String, String?, DateTime)> _nameCache = {};
   static const _nameTtl = Duration(minutes: 2);
 
-  /// The CURRENT name and photo of [uids] (from their public profiles), so a
-  /// team card follows the person's Edit profile. A person with no profile is
-  /// simply missing from the result. Cached for two minutes; best effort.
   Future<Map<String, ({String name, String? photoData})>> liveOf(
     Iterable<String> uids,
   ) async {
@@ -77,17 +69,7 @@ class PublicProfileRepository {
   /// Forget the cached names (after I change my own name).
   static void forgetNames() => _nameCache.clear();
 
-  /// The startups of [profile], each with the person's role there.
-  ///
-  /// A profile stores only the ids of the startups it MAY belong to (written
-  /// by its owner when they join, create or leave one). Each is then read ONE
-  /// BY ONE (a private startup loads only for people on its team, so a
-  /// stranger never sees it) and kept only if the person really is its
-  /// founder, a member or on its team list; the role comes from the startup,
-  /// so a stale id never shows a startup the person has left.
-  ///
-  /// [alsoCheck] is a startup to test too (the one the profile was opened
-  /// from), so a person is listed there even before their own list caught up.
+  /// The startups of profile, each with the person's role there.
   Future<List<ProfileStartupRef>> startupsOf(
     PublicProfile profile, {
     String? alsoCheck,
@@ -107,8 +89,6 @@ class PublicProfileRepository {
       for (final m in s.team) {
         if (m.uid == personId) card = m;
       }
-      // The title follows control: whoever holds the startup now is its
-      // founder (also after a handover).
       final onTeam =
           s.founderId == personId ||
           s.memberRoles.containsKey(personId) ||
@@ -131,20 +111,15 @@ class PublicProfileRepository {
       if (role == null) return null;
       return ProfileStartupRef(id: s.id, name: s.name, role: role, startup: s);
     } catch (_) {
-      // Not allowed to read it (a private startup) or not there any more.
       return null;
     }
   }
 
-  /// Saves the ids of MY startups (founded, or joined) on my public profile,
-  /// so other people's profile view of me can list them. Best effort, and it
-  /// only updates a profile that exists (it never brings a deleted one back).
   Future<void> refreshMyStartups(String uid) async {
     try {
       final repo = StartupRepository.instance;
       final mine = await repo.fetchMyStartups();
       final joined = await repo.fetchMemberStartups();
-      // The title follows control: whoever holds a startup is its founder.
       String titleIn(Startup s) => s.founderId == uid
           ? 'founder'
           : s.memberRoles[uid] == 'coFounder'
@@ -163,9 +138,7 @@ class PublicProfileRepository {
     }
   }
 
-  /// Publishes (or refreshes) a founder's own public profile. The e-mail and
-  /// the phone are written only while they are Public and removed when not.
-  /// Best effort: a failure never blocks the user.
+  /// Publishes (or refreshes) a founder's own public profile.
   Future<void> publish(AppUser user) async {
     if (!user.isFounder) return;
     try {

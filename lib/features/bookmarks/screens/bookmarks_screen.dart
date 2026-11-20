@@ -23,11 +23,6 @@ import '../../../models/home_item.dart';
 import '../../search/widgets/home_layout.dart' show avatarKindOf;
 import '../view_models/bookmarks_view_model.dart';
 
-/// Bookmarks (side menu): the startups, investors and support channels the
-/// user saved, with a type filter and a sort, using the same card as the Hub.
-///
-/// The list is passed in as [items] (the user's bookmarks, loaded by
-/// `BookmarkRepository.savedItems`). [onRemove] deletes the bookmark.
 class BookmarksScreen extends StatefulWidget {
   const BookmarksScreen({
     super.key,
@@ -67,8 +62,6 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
     onRemove: widget.onRemove,
   );
 
-  /// Pull down: the saved items are read again (a startup that was deleted
-  /// or made private since drops out).
   Future<void> _refresh() async {
     final uid = AppSession.instance.user?.uid;
     await DiscoveryRepository.instance.refresh();
@@ -174,8 +167,6 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
   }
 }
 
-/// The same [HomeCard] as For You / Hub / Support Channels, always showing the
-/// filled gold bookmark; tapping it removes the card from the list.
 class _BookmarkCard extends StatelessWidget {
   const _BookmarkCard({
     super.key,
@@ -208,8 +199,6 @@ class _BookmarkCard extends StatelessWidget {
   }
 }
 
-/// Nothing saved at all: a bookmark icon in a light green circle, a title, a
-/// message and a primary "Explore" button.
 class _NoBookmarks extends StatelessWidget {
   const _NoBookmarks({this.onExplore});
 

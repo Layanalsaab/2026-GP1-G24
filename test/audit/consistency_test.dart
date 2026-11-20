@@ -1,5 +1,3 @@
-// Checks that the same pick-list is the same everywhere it is used, and that
-// firestore.rules accepts every value the app can store.
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -12,8 +10,6 @@ import 'package:startsa/features/search/view_models/home_filters.dart';
 import 'package:startsa/models/investor_criteria.dart';
 import 'package:startsa/models/startup_enums.dart';
 
-/// The text inside the quotes of the regular expression `matches('^(a|b)$')`
-/// that follows [field] in firestore.rules.
 Set<String> _ruleValues(String rules, String field) {
   final m = RegExp(
     'd\\.$field\\.matches\\(\'\\^\\(([^)]*)\\)\\\$\'\\)',

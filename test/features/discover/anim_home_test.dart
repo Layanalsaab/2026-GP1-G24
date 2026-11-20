@@ -24,7 +24,7 @@ HomeItem _item(int i) => HomeItem(
   line: 'Line $i',
 );
 
-/// Opacity of the entrance of the [index]th card (1 once it has settled).
+/// Opacity of the entrance of the indexth card (1 once it has settled).
 double _cardOpacity(WidgetTester t, [int index = 0]) => t
     .widget<Opacity>(
       find
@@ -65,12 +65,10 @@ void main() {
       await t.pump(const Duration(seconds: 2));
       expect(_cardOpacity(t), 1);
 
-      // The same items again (a bookmark toggle rebuilds like this): no replay.
       await t.pumpWidget(app([...a]));
       await t.pump(const Duration(milliseconds: 16));
       expect(_cardOpacity(t), 1);
 
-      // Other content (search text, filter, tab): the stagger plays again.
       await t.pumpWidget(app(b));
       await t.pump();
       await t.pump(const Duration(milliseconds: 100));
@@ -141,13 +139,11 @@ void main() {
     ) async {
       await pumpMain(t);
       final x0 = thumbX(t);
-      // A founder starts on the Investors side, so Startups is the other one.
       final other = x0 > 100 ? 'Startups' : 'Investors';
       await t.tap(find.text(other));
       await t.pump();
       await t.pump(const Duration(milliseconds: 100));
       final mid = thumbX(t);
-      // The switch kept its state: the thumb is travelling, not teleported.
       expect(mid, isNot(x0));
       expect(find.byType(SegmentedSwitch), findsOneWidget);
       if (find.byType(HomeCard).evaluate().isNotEmpty) {
@@ -180,7 +176,6 @@ void main() {
       await t.tap(find.text('Trending').first);
       await t.pump();
       await t.pump(const Duration(milliseconds: 600));
-      // Standard cards (no ranked box): the rank and the growth in the pill.
       expect(find.byType(HomeCard), findsWidgets);
       expect(find.text('#1'), findsOneWidget);
       // No analytics on the cards.

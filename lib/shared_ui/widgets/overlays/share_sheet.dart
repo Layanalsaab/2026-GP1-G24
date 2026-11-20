@@ -8,22 +8,10 @@ import '../../theme/app_text.dart';
 import 'app_bottom_sheet.dart';
 import 'app_toast.dart';
 
-/// Where a share option goes. The sheet only builds the web address / mail
-/// link; opening it (and the phone's own share sheet) is done by the caller, so
-/// the sheet can be tested without a phone.
+/// Where a share option goes.
 typedef ShareLauncher = Future<bool> Function(Uri uri);
 typedef SystemShare = Future<void> Function(String text, String subject);
 
-/// The share sheet every share icon opens: a row of the common apps
-/// (WhatsApp, X, Telegram, LinkedIn, Facebook, Email), "Copy link" and "More",
-/// which opens the phone's own share sheet with every app installed.
-///
-/// [url] is the link of the item, [title] its name (used in the message:
-/// "Look, I found Rafeeq Health on Start.sa. ..."). [text] is a ready message
-/// that already contains [url] (a startup's or investor's "Check out ...");
-/// without it the message is built from [title]. [copy] copies the link;
-/// [launch] opens an app or web address; [systemShare] opens the phone's
-/// share sheet.
 Future<void> showShareSheet(
   BuildContext context, {
   required String url,
@@ -61,7 +49,7 @@ class _ShareOption {
   final String label;
   final Color fill;
 
-  /// An [AppIcons] path, or a short [glyph] text ("X", "f").
+  /// An AppIcons path, or a short glyph text ("X", "f").
   final String? icon;
   final String? glyph;
   final Future<void> Function() onTap;
@@ -80,14 +68,12 @@ class _ShareOptions extends StatelessWidget {
   final String url;
   final String? title;
 
-  /// A ready message that contains [url], or null.
+  /// A ready message that contains url, or null.
   final String? fullText;
   final VoidCallback copy;
   final ShareLauncher launch;
   final SystemShare systemShare;
 
-  /// What the link is for, read from its address (startup, investor or
-  /// program), so the message says the right thing.
   String? get _kind {
     for (final k in const ['startup', 'investor', 'program']) {
       if (url.contains('/$k/')) return k;
@@ -95,10 +81,8 @@ class _ShareOptions extends StatelessWidget {
     return null;
   }
 
-  /// "Look, I found Rafeeq Health on Start.sa. A startup I think you will
-  /// like.", or a plain line when the name is unknown.
+  /// "Look, I found Rafeeq Health on Start.sa.
   String get _message {
-    // A ready message: the line without its link (X, Telegram, mail subject).
     final ready = fullText;
     if (ready != null) return ready.replaceFirst(url, '').trim();
     final name = (title ?? '').trim();
@@ -107,8 +91,6 @@ class _ShareOptions extends StatelessWidget {
         : ProfileStrings.shareMessage(name, kind: _kind);
   }
 
-  /// [base] with [query] percent-encoded ("%20" for a space: Uri's own
-  /// queryParameters would write "+", which some apps show as a plus sign).
   Uri _web(String base, Map<String, String> query) => Uri.parse(
     '$base${base.contains('?') ? '&' : '?'}'
     '${query.entries.map((e) => '${e.key}=${Uri.encodeComponent(e.value)}').join('&')}',
@@ -128,8 +110,6 @@ class _ShareOptions extends StatelessWidget {
       }
     }
 
-    // The message, then "Take a look:" and the link (a ready message
-    // already ends with its link).
     final text = fullText ?? '$_message\n${ProfileStrings.shareTakeALook} $url';
     final subject = ProfileStrings.shareEmailSubject(title);
     final options = <_ShareOption>[
@@ -187,8 +167,6 @@ class _ShareOptions extends StatelessWidget {
         onTap: () => open(
           Uri(
             scheme: 'mailto',
-            // Uri(queryParameters) would turn spaces into "+", which a mail
-            // app shows as plus signs.
             query:
                 'subject=${Uri.encodeComponent(subject)}'
                 '&body=${Uri.encodeComponent('${ProfileStrings.shareEmailGreeting}\n\n$text')}',

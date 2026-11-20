@@ -1,9 +1,6 @@
 import '../app_constants/firestore_collections.dart';
 
-/// An investor's answers to the sign-up questions (steps 3 and 4,
-/// docs/06 §3-4). Stored as flat fields on `users/{uid}` (see [toFields]),
-/// with the same names as the `investors` collection, and used for matching
-/// (docs/08 §4).
+/// An investor's answers to the sign-up questions (steps 3 and 4, docs/06 §3-4).
 class InvestorCriteria {
   const InvestorCriteria({
     this.yearsInvesting,
@@ -19,7 +16,6 @@ class InvestorCriteria {
     this.lookFor = '',
   });
 
-  // ---- Fixed answer lists (exact copy) ----
   static const yearsOptions = [
     'Less than 1 year',
     '1–3 years',
@@ -47,11 +43,9 @@ class InvestorCriteria {
   /// "0", "1–5", "6–15" or "16+": how many startups they invested in.
   final String? dealsCount;
 
-  /// "Less than 1 year" ... "10+ years" (one of [yearsOptions]).
+  /// "Less than 1 year" ...
   final String? yearsInvesting;
 
-  /// "SAR 500K – 1M" (K for thousands, M for millions): the round size per
-  /// startup; empty when it was not asked (no startups invested in yet).
   String get roundSizeLabel {
     String short(int n) {
       String trim(double v) =>
@@ -65,10 +59,10 @@ class InvestorCriteria {
     return 'SAR ${short(roundMin!)} – ${short(roundMax!)}';
   }
 
-  /// One of [ticketOptions].
+  /// One of ticketOptions.
   final String? ticketBand;
 
-  /// Round sizes they like to join, in SAR. Both optional.
+  /// Round sizes they like to join, in SAR.
   final int? roundMin;
   final int? roundMax;
 
@@ -76,13 +70,11 @@ class InvestorCriteria {
   final String? sectorsOther;
   final List<String> stages;
 
-  /// Full commerce-model labels, e.g. "Business-to-Business (B2B)".
+  /// Full commerce-model labels, e.g.
   final List<String> commerceModels;
   final String? commerceModelsOther;
   final String lookFor;
 
-  /// "B2B, B2C": the commerce models with their short names; the typed text
-  /// replaces "Other".
   String get commerceModelsShort {
     final other = (commerceModelsOther ?? '').trim();
     final shown = [
@@ -103,10 +95,6 @@ class InvestorCriteria {
         : stages.first;
   }
 
-  /// The answers as flat Firestore fields of the investor's document
-  /// (`investmentsCount`, `ticketSize`, `roundSizeMin`, `roundSizeMax`, `preferredSectors`,
-  /// `preferredStages`, `preferredCommerceModels`, `lookingFor`, and the
-  /// typed "Other" texts).
   Map<String, Object?> toFields() => {
     UserFields.investmentsCount: dealsCount,
     UserFields.yearsInvesting: yearsInvesting,
@@ -123,8 +111,7 @@ class InvestorCriteria {
     UserFields.lookingFor: lookFor,
   };
 
-  /// Reads [toFields] back from a user / investor document. Null when the
-  /// document holds none of the investor answers.
+  /// Reads toFields back from a user / investor document.
   static InvestorCriteria? fromFields(Map<String, dynamic> d) {
     final hasAny = [
       UserFields.investmentsCount,
@@ -152,8 +139,6 @@ class InvestorCriteria {
     );
   }
 
-  /// The old single-map form (kept so documents saved before the flat fields
-  /// still load).
   Map<String, Object?> toMap() => {
     'dealsCount': dealsCount,
     'yearsInvesting': yearsInvesting,

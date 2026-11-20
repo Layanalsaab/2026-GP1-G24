@@ -6,14 +6,7 @@ import '../forms/app_field.dart';
 import '../forms/app_text_field.dart';
 import 'app_chip.dart';
 
-/// Wrapping group of [AppChip]s (gap 8). Works for single and multi choice:
-/// it only reports taps through [onTap]; the owner updates [selected]
-/// (replace the value for single choice, toggle for multi).
-///
-/// When the [otherLabel] chip ("Other") is selected and an Other write-in is
-/// wired ([otherController] or [onOtherChanged]), the write-in field appears
-/// below the chips (margin-top 10): inline prefix "Other", counter `n/40`,
-/// "Required" or the [otherError] line.
+/// Wrapping group of AppChips (gap 8).
 class ChipGroup extends StatelessWidget {
   const ChipGroup({
     super.key,
@@ -38,11 +31,10 @@ class ChipGroup extends StatelessWidget {
   final String? otherValue;
   final ValueChanged<String>? onOtherChanged;
 
-  /// Placeholder of the write-in, e.g. "Type your sector, e.g. SportsTech".
+  /// Placeholder of the write-in, e.g.
   final String? otherHint;
 
-  /// Red line replacing "Required", e.g. "Please type your other sector —
-  /// it can’t be blank."
+  /// Red line replacing "Required", e.g.
   final String? otherError;
   final int otherMax;
 
@@ -84,9 +76,6 @@ class ChipGroup extends StatelessWidget {
   }
 }
 
-/// The "Other" write-in under chips: min height 46, inline "Other" prefix
-/// (14/600 moss600), 15 px input, helper row "Required" (or the red [error])
-/// on the left and `n/max` on the right.
 class OtherWriteIn extends StatelessWidget {
   const OtherWriteIn({
     super.key,
@@ -144,10 +133,6 @@ class OtherWriteIn extends StatelessWidget {
   }
 }
 
-/// A chip question as a full field: label (red `*` when [required]), optional
-/// info tip, the sub-text "Select all that apply · N selected" when [multi],
-/// the [ChipGroup] and the group-level [error] ("Select at least one
-/// sector." / "Please choose one.") under it.
 class ChipGroupField extends StatelessWidget {
   const ChipGroupField({
     super.key,

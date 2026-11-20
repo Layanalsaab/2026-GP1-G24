@@ -17,8 +17,6 @@ import 'package:startsa/shared_ui/theme/app_theme.dart';
 
 import '../../support/fakes.dart';
 
-/// Manage -> Rounds saves through the startup: Close round unticks Funding,
-/// Add round ticks it with the new round's answers (and its Stage).
 void main() {
   late FakeStartupRepository startups;
   final startup = PrototypeSeed.rafeeq;
@@ -56,7 +54,6 @@ void main() {
       addTearDown(vm.dispose);
       expect(await vm.closeOpenRound(), isTrue);
       expect(vm.openRound, isNull);
-      // A closed round keeps what it raised (the sample: 200K of 500K).
       expect(vm.rounds.first.raised, 200000);
       expect(vm.rounds.first.isOpen, isFalse);
       final s = startups.startups.single;
@@ -86,7 +83,6 @@ void main() {
       expect(s.seeksFunding, isTrue);
       expect(s.fundingRequirement, 10000000);
       expect(s.raisedInRound, 0);
-      // The lead-investor question is gone: nothing is written for it.
       expect(s.stage, StartupStage.seriesA);
     },
   );

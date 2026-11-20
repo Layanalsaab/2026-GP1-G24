@@ -5,17 +5,11 @@ import '../../models/received_request.dart';
 import '../../models/startup.dart';
 import '../firebase_services/firestore_service.dart';
 
-/// A startup's requests to an investor's tickets (`ticketRequests`): the
-/// founder sends one from the investor's profile, the investor gets it as
-/// "Request received" in the wallet and accepts or declines it.
-///
-/// Every method throws on failure (network, permission, ...), like the other
-/// repositories.
 class TicketRequestRepository {
   TicketRequestRepository({FirestoreService? firestore})
     : _firestore = firestore ?? FirestoreService();
 
-  /// The app-wide instance. Tests replace it with a fake.
+  /// The app-wide instance.
   static TicketRequestRepository instance = TicketRequestRepository();
 
   final FirestoreService _firestore;
@@ -49,7 +43,7 @@ class TicketRequestRepository {
     ]);
   }
 
-  /// The ids (`startup~ticket`) of what the founder already sent.
+  /// The ids (startup~ticket) of what the founder already sent.
   Future<Set<String>> sentBy(String founderId) async {
     final docs = await _firestore.queryWhereEqual(
       FirestoreCollections.ticketRequests,
@@ -60,7 +54,7 @@ class TicketRequestRepository {
     return {for (final d in docs) d.id};
   }
 
-  /// The founder of [startup] asks the owner of [ticket] to invest [amount].
+  /// The founder of startup asks the owner of ticket to invest amount.
   Future<ReceivedRequest> send({
     required InvestmentTicket ticket,
     required Startup startup,

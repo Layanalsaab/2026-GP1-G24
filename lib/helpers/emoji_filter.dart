@@ -1,7 +1,6 @@
 import 'package:flutter/services.dart';
 
-/// Removes emoji and pictographs from what is typed or pasted. Letters (also
-/// Arabic), digits and normal punctuation are kept.
+/// Removes emoji and pictographs from what is typed or pasted.
 class NoEmojiFormatter extends TextInputFormatter {
   const NoEmojiFormatter();
 
@@ -22,7 +21,7 @@ class NoEmojiFormatter extends TextInputFormatter {
       r == 0x2139 ||
       (r >= 0xE0000 && r <= 0xE007F); // tag characters
 
-  /// [text] without emoji.
+  /// text without emoji.
   static String strip(String text) =>
       String.fromCharCodes(text.runes.where((r) => !_isEmoji(r)));
 
@@ -33,7 +32,6 @@ class NoEmojiFormatter extends TextInputFormatter {
   ) {
     final clean = strip(newValue.text);
     if (clean == newValue.text) return newValue;
-    // Keep the cursor after the characters that were kept before it.
     final before = strip(
       newValue.text.substring(
         0,

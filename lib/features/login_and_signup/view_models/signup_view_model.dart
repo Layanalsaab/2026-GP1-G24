@@ -18,8 +18,6 @@ import '../../../models/startup_enums.dart';
 import 'signup_flow.dart';
 
 /// Sign-up step 1, "Create your account" (docs/05 A7, docs/06 section 1).
-/// Owns the field controllers, validates exactly as the design says and
-/// creates the account (docs/08 section 1).
 class SignupViewModel extends ChangeNotifier with SafeNotifier {
   SignupViewModel({
     required this.role,
@@ -34,8 +32,6 @@ class SignupViewModel extends ChangeNotifier with SafeNotifier {
     }
     passwordFocus.addListener(_passwordFocusChanged);
     for (final c in _trackedFields) {
-      // A change of the TEXT counts as typing (a caret move or a focus
-      // change does not).
       var last = c.text;
       c.addListener(() {
         if (c.text == last) return;
@@ -92,13 +88,6 @@ class SignupViewModel extends ChangeNotifier with SafeNotifier {
     sectorsOther,
   ];
 
-  // ---- "required" errors after leaving a field
-  //
-  // A FORMAT error shows from the first keystroke and updates on every one.
-  // A REQUIRED error (the field is empty) shows only after Continue is
-  // pressed, or after the person typed in a field and then left it. An
-  // untouched empty form is never full of red.
-
   final nameFocus = FocusNode();
   final bioFocus = FocusNode();
   final emailFocus = FocusNode();
@@ -126,12 +115,10 @@ class SignupViewModel extends ChangeNotifier with SafeNotifier {
     notifyListeners();
   }
 
-  /// True when an empty [c] may show its "required" message now.
+  /// True when an empty c may show its "required" message now.
   bool _requiredShown(TextEditingController c) =>
       attempted || _left.contains(c);
 
-  /// Focus of the password field: its rule checklist stays hidden until the
-  /// user has tapped into the field once.
   final passwordFocus = FocusNode();
   bool passwordTouched = false;
 
@@ -148,8 +135,7 @@ class SignupViewModel extends ChangeNotifier with SafeNotifier {
   final Set<String> sectors = {};
   File? photo;
 
-  /// Whether the email / phone are shown on the profile. Private by default;
-  /// the Private / Public switch flips them with one tap.
+  /// Whether the email / phone are shown on the profile.
   bool emailPublic = false;
   bool phonePublic = false;
 
@@ -163,8 +149,6 @@ class SignupViewModel extends ChangeNotifier with SafeNotifier {
     notifyListeners();
   }
 
-  /// True when the user has typed or picked anything (the discard dialog is
-  /// only needed then).
   bool get hasInput =>
       _controllers.any((c) => c.text.trim().isNotEmpty) ||
       (city ?? '').isNotEmpty ||
@@ -211,17 +195,11 @@ class SignupViewModel extends ChangeNotifier with SafeNotifier {
     notifyListeners();
   }
 
-  // ------------------------------------------------------------- errors
-
-  /// Live: shown as soon as something is typed that is not yet a first and
-  /// last name; after a submit also when empty.
   String? get nameError =>
       Validators.fullNameLive(name.text) ??
       (_requiredShown(name) ? Validators.fullName(name.text) : null);
 
-  /// Live once something is typed; after a submit also when empty. The
-  /// domain must be a common provider (.com) or a university address; a
-  /// misspelled domain is simply "not valid" (no correction is offered).
+  /// Live once something is typed; after a submit also when empty.
   String? get emailError {
     if (_serverEmailError != null) return _serverEmailError;
     final v = email.text.trim();
@@ -309,8 +287,6 @@ class SignupViewModel extends ChangeNotifier with SafeNotifier {
   bool get confirmValid =>
       Validators.confirmMatches(password.text, confirm.text);
 
-  // ------------------------------------------------------------ editing
-
   void setCity(String value) {
     city = value;
     notifyListeners();
@@ -322,8 +298,6 @@ class SignupViewModel extends ChangeNotifier with SafeNotifier {
   }
 
   /// Picks and crops a square photo (the same button changes it later).
-  /// Returns an error message to show in a toast, or null: picking a photo
-  /// shows no toast, the square simply shows the photo.
   Future<String?> pickPhoto() async {
     try {
       final file = await _picker.pickSquarePhoto();
@@ -340,15 +314,8 @@ class SignupViewModel extends ChangeNotifier with SafeNotifier {
     }
   }
 
-  // ------------------------------------------------------ invited e-mail
-
-  /// The e-mail an investor already confirmed ("Continue as investor") after
-  /// the "you've been invited" warning, so it is not asked twice.
   String? _confirmedInvestorEmail;
 
-  /// The names of the startups that invited this e-mail, when an INVESTOR is
-  /// about to sign up with it (empty otherwise, or if the e-mail was already
-  /// confirmed). The sign-up screen warns before the account is created.
   Future<List<String>> invitedTeams({InvitationRepository? repository}) async {
     final mail = email.text.trim().toLowerCase();
     if (isFounder || flow.accountCreated || mail == _confirmedInvestorEmail) {
@@ -368,8 +335,6 @@ class SignupViewModel extends ChangeNotifier with SafeNotifier {
     _confirmedInvestorEmail = email.text.trim().toLowerCase();
   }
 
-  /// Everything on the form except the email, password and photo, as one
-  /// string, to see if it changed since the account was saved.
   String get detailsKey => [
     name.text.trim(),
     Validators.phoneDigits(phone.text),
@@ -384,11 +349,7 @@ class SignupViewModel extends ChangeNotifier with SafeNotifier {
     phonePublic,
   ].join('|');
 
-  // ------------------------------------------------------------- submit
-
-  /// Validates, then creates the account. Returns true when the user may
-  /// move on to the Verify step. When false, [isValid] / [formError] tell
-  /// the screen which toast to show.
+  /// Validates, then creates the account.
   Future<bool> submit() async {
     if (isLoading) return false;
     attempted = true;
@@ -408,8 +369,6 @@ class SignupViewModel extends ChangeNotifier with SafeNotifier {
             flow.email.toLowerCase() == mail.toLowerCase() &&
             flow.password == pw &&
             flow.createdRole == role;
-        // Back to step 1 and Continue again: never create a second account.
-        // If only the details changed, they are saved on the same account.
         if (same) {
           if (detailsKey != flow.savedDetails ||
               photo?.path != flow.savedPhotoPath) {
@@ -439,12 +398,9 @@ class SignupViewModel extends ChangeNotifier with SafeNotifier {
           }
           return true;
         }
-        // Changed email / password / role: remove the unverified account.
         try {
           await _auth.discardUnverifiedAccount(flow.email, flow.password);
         } on AuthException catch (e) {
-          // The old account may already be verified or gone: carry on and
-          // create the new one. Only a network problem stops here.
           if (e.failure == AuthFailure.network) rethrow;
         }
         flow.accountCreated = false;
@@ -469,10 +425,6 @@ class SignupViewModel extends ChangeNotifier with SafeNotifier {
         emailPublic: emailPublic,
         phonePublic: phonePublic,
       );
-      // An earlier attempt that was never verified (the app was closed or
-      // refreshed) left an unverified account behind. With the same password
-      // it is removed and the sign-up starts fresh, so the user is not locked
-      // out of their own email. A verified account is never touched.
       SignupResult result;
       try {
         result = await create();
@@ -482,7 +434,7 @@ class SignupViewModel extends ChangeNotifier with SafeNotifier {
           await _auth.discardUnverifiedAccount(mail, pw);
         } on AuthException catch (d) {
           if (d.failure == AuthFailure.network) rethrow;
-          throw e; // verified, or another password: really "in use".
+          throw e;
         }
         result = await create();
       }

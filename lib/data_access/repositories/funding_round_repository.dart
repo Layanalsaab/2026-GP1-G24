@@ -5,15 +5,6 @@ import '../../models/startup_enums.dart';
 import '../firebase_services/firestore_service.dart';
 import '../mock_data/prototype_seed.dart';
 
-/// Reads a startup's funding rounds (`startups/{id}/fundingRounds`) and works
-/// out the round writes that go with a startup save.
-///
-/// THE RULE: a startup asks for Funding exactly while it has an OPEN round,
-/// and its `fundingRequirement` is that round's amount. [writesFor] keeps it
-/// true; StartupRepository sends those writes in the same batch as the
-/// startup, so the two documents never disagree.
-///
-/// Every method throws AuthException on failure (network, permission, ...).
 class FundingRoundRepository {
   FundingRoundRepository({FirestoreService? firestore})
     : _firestore = firestore ?? FirestoreService(),
@@ -22,7 +13,7 @@ class FundingRoundRepository {
   /// Tests: every startup has the sample rounds, nothing is read or saved.
   FundingRoundRepository.sample() : _firestore = null, sample = true;
 
-  /// The app-wide instance. Tests replace it.
+  /// The app-wide instance.
   static FundingRoundRepository instance = FundingRoundRepository();
 
   final FirestoreService? _firestore;
@@ -31,9 +22,7 @@ class FundingRoundRepository {
   /// More rounds than any startup has.
   static const _limit = 50;
 
-  /// The rounds to show for [startupId], oldest first, numbered 1, 2, 3...
-  /// Rounds without an amount (undisclosed dataset rounds) are left out and
-  /// the others are numbered without a gap.
+  /// The rounds to show for startupId, oldest first, numbered 1, 2, 3...
   Future<List<FundingRound>> roundsOf(String startupId) async {
     if (sample) return List.of(PrototypeSeed.sampleRounds);
     final stored = await _load(startupId);
@@ -42,8 +31,6 @@ class FundingRoundRepository {
     ];
   }
 
-  /// The shown rounds in date order (open round last), with their stored
-  /// numbers.
   Future<List<FundingRound>> _load(String startupId) async {
     final docs = await _firestore!.listCollection(
       FundingRoundFields.collectionOf(startupId),
@@ -58,15 +45,6 @@ class FundingRoundRepository {
     return rounds;
   }
 
-  /// The writes that make [startupId]'s rounds agree with [startup] as it is
-  /// about to be saved. [isNew]: the startup has no rounds yet (skips the
-  /// read).
-  ///
-  /// | Funding ticked? | Open round? | Writes                                 |
-  /// | yes             | no          | a new open round                       |
-  /// | yes             | yes         | the open round updated (when changed)  |
-  /// | no              | yes         | the open round closed (raised kept)    |
-  /// | no              | no          | nothing                                |
   Future<List<FirestoreWrite>> writesFor(
     String startupId,
     Startup startup, {
@@ -134,8 +112,6 @@ class FundingRoundRepository {
     return const [];
   }
 
-  /// The writes that delete every round of [startupId] (before the startup
-  /// itself is deleted: the rules check the startup's founder).
   Future<List<FirestoreWrite>> deletesFor(String startupId) async {
     final db = _firestore;
     if (sample || db == null) return const [];
@@ -144,8 +120,6 @@ class FundingRoundRepository {
     return [for (final d in docs) FirestoreWrite.delete(collection, d.id)];
   }
 
-  /// A round is one of the stages a founder can pick; an old startup stage
-  /// that is no longer offered counts as Pre-seed.
   static StartupStage _roundType(StartupStage stage) =>
       StartupStage.picks.contains(stage) ? stage : StartupStage.preSeed;
 }

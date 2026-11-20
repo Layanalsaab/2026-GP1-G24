@@ -20,12 +20,6 @@ enum TrendingRange {
   String get note => 'Ranked by profile views $noteText';
 }
 
-/// Profile views and the Trending ranking (Explore -> Trending, top 30 per
-/// side, ranked by profile views, no counts shown).
-///
-/// TODO(backend): record a view event per profile open and rank by the views
-/// in the selected range (docs/08 section 5); until then the order is the
-/// loaded order, nudged by the views recorded in this session.
 class InteractionRepository {
   InteractionRepository({DiscoveryRepository? discovery})
     // ignore: prefer_initializing_formals
@@ -34,14 +28,14 @@ class InteractionRepository {
   final DiscoveryRepository? _discovery;
   DiscoveryRepository get _d => _discovery ?? DiscoveryRepository.instance;
 
-  /// The app-wide instance. Tests replace it with a fake.
+  /// The app-wide instance.
   static InteractionRepository instance = InteractionRepository();
 
   static const topCount = 30;
 
   final Map<String, int> _views = {};
 
-  /// Counts a profile open. [key] is `s-<id>` or `i-<id>`.
+  /// Counts a profile open.
   void recordProfileView(String key) => _views[key] = (_views[key] ?? 0) + 1;
 
   List<HomeItem> _rank(List<HomeItem> items) {
@@ -55,14 +49,14 @@ class InteractionRepository {
     return [for (final e in indexed.take(topCount)) e.$2];
   }
 
-  /// The top startups for [range] (the sample order for every range).
+  /// The top startups for range (the sample order for every range).
   List<HomeItem> trendingStartups(TrendingRange range) => _rank([
     // A private or closed startup is never trending.
     for (final s in _d.allStartups)
       if (s.isListed) HomeItem.fromStartup(s),
   ]);
 
-  /// The top investors for [range].
+  /// The top investors for range.
   List<HomeItem> trendingInvestors(TrendingRange range) =>
       _rank([for (final i in _d.allInvestors) HomeItem.fromInvestor(i)]);
 }

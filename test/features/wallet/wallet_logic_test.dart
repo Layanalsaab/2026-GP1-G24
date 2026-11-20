@@ -159,7 +159,6 @@ void main() {
   });
 
   group('ticket matches (lib/recommender)', () {
-    // Rafeeq Health: HealthTech, Pre-seed, B2C, raising SAR 500,000.
     final rafeeq = PrototypeSeed.rafeeq;
 
     List<TicketMatch> matches(
@@ -187,8 +186,6 @@ void main() {
     test('same sector and stage, minimum within what is left', () {
       final m = matches(ticket(), [rafeeq]).single;
       expect(m.remaining, 500000);
-      // No commerce models; the ticket's 300K covers 60% of the 500K left:
-      // (0.41 + 0.29 + 0.12 * 0.6) / 0.82.
       expect(m.percent, 94);
       expect(m.close, isFalse);
     });
@@ -388,8 +385,6 @@ void main() {
         vm.openForm();
         expect(vm.sectorsError, isNull);
         expect(vm.minError, isNull);
-        // At least SAR 1,000, and no limit from what the investor usually
-        // invests.
         vm.min.text = '999';
         expect(vm.minError, 'The minimum must be at least SAR 1,000.');
         vm.min.text = '50,000';
@@ -694,7 +689,6 @@ void main() {
     test('a request status is read from the stored value', () {
       final r = TicketRequest.fromMap('r', _requestDoc('r', 'accepted', 1));
       expect(r!.status, RequestStatus.accepted);
-      // A request that was not sent through a ticket is not a wallet request.
       expect(
         TicketRequest.fromMap('x', {'startupId': 's', 'amount': 1}),
         isNull,

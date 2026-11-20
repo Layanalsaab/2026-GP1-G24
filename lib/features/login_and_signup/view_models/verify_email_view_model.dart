@@ -22,10 +22,10 @@ enum VerifyResult {
   /// The password is wrong (the error shows under the field).
   wrongPassword,
 
-  /// Network or unknown problem ([VerifyEmailViewModel.formError]).
+  /// Network or unknown problem (VerifyEmailViewModel.formError).
   failed,
 
-  /// Verified: [VerifyEmailViewModel.user] is the signed-in profile.
+  /// Verified: VerifyEmailViewModel.user is the signed-in profile.
   verified,
 }
 
@@ -33,8 +33,6 @@ enum VerifyResult {
 enum ResendOutcome { sent, alreadyVerified, failed }
 
 /// Sign-up step 2, "Verify your email" (docs/05 A8, docs/08 section 1).
-/// There is no code to type: the user opens the emailed link, comes back and
-/// signs in with the email and password; we then check `emailVerified`.
 class VerifyEmailViewModel extends ChangeNotifier with SafeNotifier {
   VerifyEmailViewModel({required this.flow, AuthRepository? authRepository})
     : _auth = authRepository ?? AuthRepository.instance,
@@ -50,9 +48,7 @@ class VerifyEmailViewModel extends ChangeNotifier with SafeNotifier {
 
   Timer? _timer;
 
-  /// Seconds left before "Resend email" turns on (0 = available). Always
-  /// derived from [SignupFlow.nextResendAt], never counted down by hand, so
-  /// it is right after the app returns from the background.
+  /// Seconds left before "Resend email" turns on (0 = available).
   int resendSeconds = 0;
 
   /// The "Too many attempts" line under the resend row.

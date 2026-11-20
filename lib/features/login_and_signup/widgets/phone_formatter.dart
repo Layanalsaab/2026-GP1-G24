@@ -1,16 +1,10 @@
 import 'package:flutter/services.dart';
 
-/// Phone input of the sign-up form: digits only, capped at 9 (the digits are
-/// what count), shown as "5X XXX XXXX" while typing. A pasted number such as
-/// "+966 55-123-4567" or "0551234567" keeps working: the country code and a
-/// leading zero are dropped first.
 class PhoneInputFormatter extends TextInputFormatter {
   const PhoneInputFormatter({this.maxDigits = 9});
 
   final int maxDigits;
 
-  /// The digits of [text] without a pasted "966" / "00966" / "0" prefix,
-  /// at most [maxDigits].
   String digitsOf(String text) {
     var digits = text.replaceAll(RegExp(r'[^0-9]'), '');
     if (digits.startsWith('00966')) {

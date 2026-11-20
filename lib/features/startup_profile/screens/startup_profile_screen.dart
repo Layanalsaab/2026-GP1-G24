@@ -25,10 +25,6 @@ import '../../startups/widgets/view_only_banner.dart';
 import '../view_models/startup_profile_view_model.dart';
 import '../widgets/startup_profile_tabs.dart';
 
-/// The startup page (docs/05 C1): the Manage-style green header (back, bookmark
-/// and share, logo tile, name, one sub-line) with four equal tabs (Overview,
-/// Business, Team, Funding), the pinned request / interest bar for investors
-/// and guests, and the preview mode ("Preview · ..." bar, close icon).
 class StartupProfileScreen extends StatefulWidget {
   const StartupProfileScreen({
     super.key,
@@ -39,12 +35,8 @@ class StartupProfileScreen extends StatefulWidget {
 
   final Startup startup;
 
-  /// Opened from a ticket's matches: why this startup matched, shown at the
-  /// top. Null anywhere else.
   final MatchSummary? match;
 
-  /// The founder's own view ("Preview · This is how others see your
-  /// startup"). Also turned on automatically for a founder's own startup.
   final bool preview;
 
   /// Opens the profile with the forward transition.
@@ -105,14 +97,9 @@ class _StartupProfileScreenState extends State<StartupProfileScreen> {
             : requests.value.contains(_vm.key);
         final preview = _vm.isPreview;
         final s = _vm.startup;
-        // Same header style as Manage: back (or close in preview), the logo
-        // tile, the name, ONE sub-line, and six tabs. No description
-        // and no stat strip here: they live in the Overview tab.
         final header = TabbedHeader(
           title: s.name,
           avatar: HeaderAvatarTile(initials: s.initials, imageData: s.logoData),
-          // "HealthTech · Pre-seed · [pin] Riyadh": the pin takes the line's
-          // own (light) colour because the header is green.
           subline: Text.rich(
             TextSpan(
               children: [
@@ -139,8 +126,6 @@ class _StartupProfileScreenState extends State<StartupProfileScreen> {
           tabs: [
             for (final t in StartupProfileViewModel.tabLabels) HeaderTab(t),
           ],
-          // Six tabs, named like the steps of the add-startup form, scroll
-          // sideways the way Manage startup's do.
           scrollableTabs: true,
           selectedIndex: _vm.tab,
           onTabChanged: _vm.selectTab,
@@ -235,8 +220,6 @@ class _StartupProfileScreenState extends State<StartupProfileScreen> {
   }
 }
 
-/// The gold "Preview" bar above the header (prototype `.pvbar`): eye icon and
-/// the preview sentence, 13/600 green on `#F7EDD5`.
 class _PreviewBar extends StatelessWidget {
   const _PreviewBar(this.text);
 

@@ -4,8 +4,6 @@ import '../../../data_access/repositories/interest_repository.dart';
 import '../../../helpers/safe_notifier.dart';
 import '../../../models/expressed_interest.dart';
 
-/// State of Manage startup -> Interest (docs/05 D3): the New / All filter and
-/// marking a person as replied to. Follows [InterestRepository] changes.
 class InterestViewModel extends ChangeNotifier with SafeNotifier {
   InterestViewModel({required this.startupId, InterestRepository? interests})
     : _interests = interests ?? InterestRepository.instance {
@@ -15,7 +13,7 @@ class InterestViewModel extends ChangeNotifier with SafeNotifier {
   final String startupId;
   final InterestRepository _interests;
 
-  /// True: only new ones. False: everyone.
+  /// True: only new ones.
   bool onlyNew = true;
 
   void select({required bool onlyNew}) {

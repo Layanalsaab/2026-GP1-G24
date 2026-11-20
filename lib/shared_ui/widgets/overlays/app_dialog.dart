@@ -8,9 +8,6 @@ import '../../theme/app_text.dart';
 import '../buttons/app_button.dart';
 import 'app_overlay_route.dart';
 
-/// Shows a centered dialog (docs/02 §8.13): scrim fades in (260 ms), the card
-/// fades and scales 0.96 -> 1 over 240 ms. Tapping the scrim pops (unless
-/// [dismissible] is false). [builder] normally returns an [AppDialog].
 Future<T?> showAppDialog<T>(
   BuildContext context, {
   required WidgetBuilder builder,
@@ -24,15 +21,12 @@ Future<T?> showAppDialog<T>(
     dimDuration: const Duration(milliseconds: 260),
     duration: const Duration(milliseconds: 260),
     entry: AppOverlayEntry.fadeScale,
-    // The route runs 260 ms for the scrim; the card finishes at 240 ms.
     curve: const Interval(0, 240 / 260, curve: Motion.easeOut),
     label: barrierLabel,
     dismissible: dismissible,
   );
 }
 
-/// The dialog card (prototype `.dialog`): 20 px side margin, white, radius 24,
-/// padding 28 24 16, dialog shadow. [child] is the content.
 class AppDialog extends StatelessWidget {
   const AppDialog({super.key, required this.child});
 
@@ -64,11 +58,6 @@ class AppDialog extends StatelessWidget {
   }
 }
 
-/// "Verify your email" dialog content (docs 11c / 08): a Pop-ing mail icon in a
-/// 64 px gold circle, title 21/700, the explanation with the bold [email],
-/// the spam hint and one green full-width "OK" button (resending lives on the
-/// Verify step, with its 60 s countdown). [needLogin] appends ", then log in"; [inSignup] appends ",
-/// then come back here to continue".
 class VerifyEmailDialog extends StatelessWidget {
   const VerifyEmailDialog({
     super.key,
@@ -83,14 +72,10 @@ class VerifyEmailDialog extends StatelessWidget {
   final String email;
   final VoidCallback onClose;
 
-  /// Extra content under the spam hint (Log in: the resend row with its
-  /// 60 s countdown, the same as on the Verify step).
   final Widget? below;
   final bool needLogin;
   final bool inSignup;
 
-  /// The user tried to continue / log in before opening the link: the title
-  /// and text say the email has not been verified yet.
   final bool notVerifiedYet;
 
   @override
@@ -171,9 +156,6 @@ class VerifyEmailDialog extends StatelessWidget {
   }
 }
 
-/// The "save these changes?" confirmation: the same dialog as
-/// [showDiscardDialog] with a green (primary) [confirmLabel] button and a
-/// "Cancel" text button. Completes with true only for the primary button.
 Future<bool> showSaveConfirmDialog(
   BuildContext context, {
   required String title,
@@ -189,10 +171,6 @@ Future<bool> showSaveConfirmDialog(
   danger: false,
 );
 
-/// The "leave this form?" confirmation: a centered dialog with a [title], the
-/// [message], a red full-width [discardLabel] button and a "Keep editing" text
-/// button under it. Completes with true only for Discard; "Keep editing" and
-/// a tap outside both complete with false (the form stays open).
 Future<bool> showDiscardDialog(
   BuildContext context, {
   required String title,

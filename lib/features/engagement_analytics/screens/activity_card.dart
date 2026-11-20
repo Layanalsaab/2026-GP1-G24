@@ -6,9 +6,6 @@ import '../../startups/widgets/founder_ui.dart';
 import '../../startups/widgets/manage_card.dart';
 import '../view_models/activity_view_model.dart';
 
-/// The Activity card of Manage -> Overview (docs/05 D3): range control, three
-/// stats with delta pills and the area chart; or the empty text when the
-/// startup has no analytics yet.
 class ActivityCard extends StatelessWidget {
   const ActivityCard({super.key, required this.vm});
 

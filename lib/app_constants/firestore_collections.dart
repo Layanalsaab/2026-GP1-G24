@@ -6,19 +6,17 @@ class FirestoreCollections {
   static const startups = 'startups';
   static const requests = 'requests';
 
-  /// A startup's requests to an investor's tickets (id = `startupId~ticketId`).
   static const ticketRequests = 'ticketRequests';
 
-  /// An investor's investment tickets (id = `investorId-T1`, ...).
+  /// An investor's investment tickets (id = investorId-T1, ...).
   static const tickets = 'tickets';
   static const interests = 'interests';
   static const publicProfiles = 'publicProfiles';
 
   /// Investors (imported dataset and, later, public investor profiles).
-  /// Same field names as an investor's `users/{uid}` document.
   static const investors = 'investors';
 
-  /// Team invitations (id = `startupId~email`): see [InvitationFields].
+  /// Team invitations (id = startupId~email): see InvitationFields.
   static const invitations = 'invitations';
 
   /// Names of the startups that invited an e-mail with no account yet.
@@ -27,12 +25,9 @@ class FirestoreCollections {
   /// Finds an account by e-mail (id = the e-mail, lower-case).
   static const emailIndex = 'emailIndex';
 
-  /// `users/{uid}/bookmarks/{itemKey}`
+  /// users/{uid}/bookmarks/{itemKey}
   static const bookmarks = 'bookmarks';
 
-  /// `users/{uid}/notices/{id}`: the one-time pop-ups about the person's
-  /// startups (closed, deleted, a new founder, ...), written by whoever made
-  /// the change.
   static const notices = 'notices';
 }
 
@@ -58,12 +53,9 @@ class UserFields {
   static const emailPublic = 'emailPublic';
   static const phonePublic = 'phonePublic';
 
-  /// `investors/{id}` only: true on the investors imported from the dataset
-  /// (Crunchbase), false on investors who signed up in the app.
   static const isArchived = 'isArchived';
   static const sectorsOfInterest = 'sectorsOfInterest';
 
-  // Added when an investor finishes onboarding (their investment criteria).
   static const preferredSectors = 'preferredSectors';
   static const preferredStages = 'preferredStages';
   static const ticketSize = 'ticketSize';
@@ -71,17 +63,11 @@ class UserFields {
   // Added by the redesigned sign-up (docs/07).
   static const linkedin = 'linkedinUrl';
 
-  /// Investor: "What I can bring to startups" (also the sign-up step 4
-  /// "Besides funding, what can you offer startups?").
   static const valueOffered = 'offer';
   static const sectorsOther = 'sectorsOther';
 
-  /// Older documents kept the investor questions in one map; new documents
-  /// store them as the flat fields below (see InvestorCriteria).
   static const investorCriteria = 'investorCriteria';
 
-  // Investor questions from sign-up steps 3 and 4, stored flat on the user
-  // (same names as the `investors` collection).
   static const investmentsCount = 'investmentsCount';
   static const roundSizeMin = 'roundSizeMin';
   static const roundSizeMax = 'roundSizeMax';
@@ -94,12 +80,11 @@ class UserFields {
   /// "What do you look for in a startup?" (a string).
   static const lookingFor = 'lookingFor';
 
-  /// Investor headline, e.g. "Angel Investor" (set by the dataset).
+  /// Investor headline, e.g.
   static const title = 'title';
 }
 
-/// Fields of a `startups/{startupId}` document. firestore.rules uses the same
-/// names, so change both together.
+/// Fields of a startups/{startupId} document.
 class StartupFields {
   StartupFields._();
 
@@ -109,8 +94,6 @@ class StartupFields {
   static const sector = 'sector';
   static const sectorOther = 'sectorOther';
 
-  /// The sectors after the main one (`sector`): their display labels, the
-  /// typed text for "Other". Older startups don't have it.
   static const otherSectors = 'otherSectors';
   static const stage = 'stage';
   static const commerceModel = 'commerceModel';
@@ -122,8 +105,6 @@ class StartupFields {
   static const fundingRequirement = 'fundingRequirement';
   static const isPublic = 'isPublic';
 
-  /// The logo itself, a small compressed picture saved as base64 text inside
-  /// the startup (no Firebase Storage).
   static const logoData = 'logoData';
   static const createdAt = 'createdAt';
   static const updatedAt = 'updatedAt';
@@ -149,19 +130,13 @@ class StartupFields {
   static const partnerTypes = 'partnerTypes';
   static const supportTypes = 'supportTypes';
 
-  /// The people of the startup other than the founder. Kept INSIDE the
-  /// startup document: `memberIds` (for queries) and `memberRoles` (uid ->
-  /// 'coFounder' or 'member'). Deleting the startup deletes every membership
-  /// with it, and "Leave startup" removes only the user's own entry.
+  /// The people of the startup other than the founder.
   static const memberIds = 'memberIds';
   static const memberRoles = 'memberRoles';
 
-  /// The uids of the joined co-founders (the `coFounder` entries of
-  /// [memberRoles]). firestore.rules can't look inside a map, so this list is
-  /// what stops a co-founder from removing or demoting another co-founder.
   static const coFounderIds = 'coFounderIds';
 
-  /// `active` or `closed`. Older startups don't have it (active).
+  /// active or closed.
   static const status = 'status';
   static const statusActive = 'active';
   static const statusClosed = 'closed';
@@ -170,13 +145,9 @@ class StartupFields {
   static const closedAt = 'closedAt';
 
   /// True only on the startups imported from the dataset (Crunchbase).
-  /// Startups made in the app are saved with false, and nobody can change it
-  /// in the app (firestore.rules).
   static const isArchived = 'isArchived';
 }
 
-/// Fields of a `startups/{startupId}/fundingRounds/{roundId}` document (the
-/// same names as the imported dataset and firestore.rules).
 class FundingRoundFields {
   FundingRoundFields._();
 
@@ -197,18 +168,17 @@ class FundingRoundFields {
   static const investorIds = 'investorIds';
   static const investorCount = 'investorCount';
 
-  /// True only on rounds imported from the dataset (Crunchbase). Rounds added
-  /// in the app are saved with false.
+  /// True only on rounds imported from the dataset (Crunchbase).
   static const isArchived = 'isArchived';
   static const createdAt = 'createdAt';
   static const updatedAt = 'updatedAt';
 
-  /// [status] values.
+  /// status values.
   static const active = 'active';
   static const completed = 'completed';
 }
 
-/// Fields of a `requests/{id}` document (investor -> startup).
+/// Fields of a requests/{id} document (investor -> startup).
 class RequestFields {
   RequestFields._();
 
@@ -222,7 +192,7 @@ class RequestFields {
   static const createdAt = 'createdAt';
 }
 
-/// Fields of an `interests/{id}` document (guest -> startup).
+/// Fields of an interests/{id} document (guest -> startup).
 class InterestFields {
   InterestFields._();
 
@@ -234,13 +204,11 @@ class InterestFields {
   static const seenByFounder = 'seenByFounder';
 }
 
-/// Firebase Storage folders. storage.rules uses the same paths.
+/// Firebase Storage folders.
 class StoragePaths {
   StoragePaths._();
 }
 
-/// Fields of a `tickets/{investorId}-T{n}` document (an investor's investment
-/// ticket, see tools/investor_tickets). firestore.rules uses the same names.
 class TicketFields {
   TicketFields._();
 
@@ -251,7 +219,7 @@ class TicketFields {
   static const amountMin = 'amountMin';
   static const amountMax = 'amountMax';
 
-  /// [open], [closed] or [used].
+  /// open, closed or used.
   static const status = 'status';
 
   /// The startup the ticket was used for; null until then.
@@ -262,7 +230,7 @@ class TicketFields {
   static const closed = 'closed';
   static const used = 'used';
 
-  /// Extra fields of a `requests` document sent through a ticket.
+  /// Extra fields of a requests document sent through a ticket.
   static const ticketId = 'ticketId';
   static const startupName = 'startupName';
 }

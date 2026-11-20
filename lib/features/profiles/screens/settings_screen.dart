@@ -14,8 +14,6 @@ import '../../../shared_ui/widgets/overlays/app_toast.dart';
 import 'change_password_screen.dart';
 import 'delete_account_flow.dart';
 
-/// Settings (docs/05 C6, screenshot 42): Display (Dark mode), Notifications
-/// (not designed yet: toast) and Account (Change password, Delete account).
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
@@ -172,7 +170,7 @@ class _GroupLabel extends StatelessWidget {
   );
 }
 
-/// White card (radius 18, border `#EBE7DF`, padding 4 0) holding rows.
+/// White card (radius 18, border #EBE7DF, padding 4 0) holding rows.
 class _GroupCard extends StatelessWidget {
   const _GroupCard({required this.children});
 
@@ -191,8 +189,6 @@ class _GroupCard extends StatelessWidget {
   );
 }
 
-/// A settings row: 38 icon box (radius 12), title 15/600, grey 13 subtitle
-/// and a switch ([trailing]) or a chevron. The destructive row is red.
 class _SettingsRow extends StatelessWidget {
   const _SettingsRow({
     required this.icon,

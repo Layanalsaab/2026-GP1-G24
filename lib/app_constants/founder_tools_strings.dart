@@ -1,11 +1,6 @@
-/// User-facing copy of the founder tools (My Startups, the 4-step startup form,
-/// Manage startup, Valuation calculator), word for word from
-/// docs/05_screens.md section D, docs/06 section 8 and 9, and docs/07 section 5.
-/// Curly quotes (’ “ ”) are part of the copy.
 class FounderToolsStrings {
   FounderToolsStrings._();
 
-  // ---- My Startups ----
   static const myStartupsTitle = 'My Startups';
   static const manage = 'Manage';
   static const view = 'View';
@@ -34,7 +29,6 @@ class FounderToolsStrings {
   static const loadFailed = 'We couldn’t load your startups.';
   static const retry = 'Retry';
 
-  // ---- Steps ----
   static const stepTitles = [
     'Startup Overview',
     'Startup Description',
@@ -208,7 +202,6 @@ class FounderToolsStrings {
   static const no = 'No';
   static const required = 'Required';
 
-  // ---- Manage startup ----
   static const tabDashboard = 'Dashboard';
   static const tabInterest = 'EOI';
   static const interestTitle = 'Expressions of interest';
@@ -248,7 +241,6 @@ class FounderToolsStrings {
   static const interestEmpty = 'No new expressions of interest.';
   static const interestAllEmpty = 'No expressions of interest yet.';
   static const replyLabel = 'Reply';
-  // Manage -> Settings shows the same two texts as the Startup Overview step.
   static const publicProfileOn = visibilityPublicText;
   static const publicProfileOff = visibilityPrivateText;
   static const nowPublic = 'Startup is now public';
@@ -271,21 +263,17 @@ class FounderToolsStrings {
   static const leaveFailed =
       'We couldn’t remove you from the startup. Please try again.';
 
-  /// The gold note under a confirmation when the startup is the person's
-  /// only one: afterwards, "Create startup" opens.
   static const onlyStartupTitle = 'This is your only startup';
   static const pendingAccountText =
       'Your account will be pending until you create a startup.';
 
-  // ---- Closing a startup (docs: Closing a Startup, Leaving and Deleting
-  // an Account) ----
   static const closedPill = 'Closed';
   static const closeStartup = 'Close startup';
   static const closeStartupText =
       'Permanently closes the startup so it can no longer be edited, while your team keeps access.';
   static String closeTitle(String name) => 'Close $name?';
 
-  /// The confirmation. [teamCount]: the people who joined (not the founder).
+  /// The confirmation.
   static String closeMessage(String name, int teamCount) {
     final where = teamCount <= 0
         ? '$name will remain in your account as a closed startup.'
@@ -309,8 +297,6 @@ class FounderToolsStrings {
   static String closedToast(String name) => '$name is now closed.';
   static const closeFailed = 'We couldn’t close the startup. Please try again.';
   static const closedBannerTitle = 'Closed';
-  // The founder's banner. Not "You closed": a closed startup can be handed
-  // to a new founder (its founder deleted his account).
   static String closedBannerOwner(String? date) => date == null
       ? 'This startup has been closed. It cannot be edited or reopened. You can choose whether it appears in the Hub from Settings.'
       : 'This startup was closed on $date. It cannot be edited or reopened. You can choose whether it appears in the Hub from Settings.';
@@ -331,13 +317,12 @@ class FounderToolsStrings {
   static const closedNoSettings =
       'This startup is closed, so there is nothing to change here.';
 
-  // ---- Deleting a startup (the founder only, with his password) ----
   static const deleteStartup = 'Delete startup';
   static const deleteStartupText =
       'Permanently deletes the startup and all its details for everyone.';
   static String deleteTitle(String name) => 'Delete $name?';
 
-  /// The confirmation. [teamCount]: the people who joined (not the founder).
+  /// The confirmation.
   static String deleteMessage(String name, int teamCount) => teamCount <= 0
       ? 'This cannot be undone. $name, its funding rounds and its requests will be permanently deleted.'
       : 'This cannot be undone. $name, its funding rounds and its requests will be permanently deleted for everyone, and your team will be notified.';
@@ -347,7 +332,6 @@ class FounderToolsStrings {
   static const deleteFailed =
       'We couldn’t delete the startup. Please try again.';
 
-  // ---- The founder leaving: naming the next founder ----
   static const nextFounderTitle = 'Choose the next founder';
   static String nextFounderText(String name) =>
       'They will have full control of $name.';
@@ -367,8 +351,7 @@ class FounderToolsStrings {
   static const leaveForGood = 'Leave for good';
   static String leaveForGoodText(String name) => 'You leave $name’s team.';
 
-  /// What happens to the founder, in the confirmations. [stay] is
-  /// `coFounder`, `member`, or null (leaving for good).
+  /// What happens to the founder, in the confirmations.
   static String _after(String name, String? stay) => switch (stay) {
     'coFounder' => 'you will stay on the team as a co-founder',
     'member' => 'you will stay on the team as a team member',
@@ -439,8 +422,6 @@ class FounderToolsStrings {
   static const ownerInviteCancelFailed =
       'We couldn’t cancel the invitation. Please try again.';
 
-  // ---- One-time pop-ups (the notice inbox, shown the next time the app
-  // opens) ----
   static String noticeClosedTitle(String name) => '$name has been closed';
   static const noticeClosedMessage =
       'It remains in your startups as a closed startup and can still be viewed.';
@@ -451,8 +432,6 @@ class FounderToolsStrings {
       'You are now the founder of $name';
   static const noticeNewFounderMessage =
       'You have full control of its team, visibility and settings.';
-  // A closed startup handed over (its founder deleted his account): only
-  // its visibility can change.
   static const noticeNewFounderClosedMessage =
       'It is closed and can’t be edited. You can choose whether it appears in the Hub from Settings.';
   static String noticeFounderChangedTitle(String name) =>
@@ -487,7 +466,6 @@ class FounderToolsStrings {
   static const lostStartupTitle = 'You no longer have a startup';
   static const lostStartupMessage = pendingAccountText;
 
-  // ---- Valuation calculator ----
   static const calcTitle = 'Valuation Calculator';
   static const thisRound = 'THIS ROUND';
   static const fundingToRaise = 'Funding to raise';
@@ -507,7 +485,6 @@ class FounderToolsStrings {
       'Round $number · $type · $raised raised so far';
   static const calcOwnershipHint =
       'You had earlier rounds or have co-founders, so you probably own less than 100%. Enter your share.';
-  // under the green card when the terms don't match the startup's valuation
   static String calcValuationNote({
     required bool lower,
     required String valuation,
@@ -555,7 +532,6 @@ class FounderToolsStrings {
     ),
   };
 
-  // ---- Confirm before saving ----
   static const saveConfirmTitle = 'Save changes?';
   static const saveConfirmButton = 'Save changes';
   static const saveProfileMessage =
@@ -568,7 +544,6 @@ class FounderToolsStrings {
   static const addRoundButton = 'Add round';
   static const roundUpdated = 'Round updated';
 
-  // ---- Leaving the form / drafts ----
   static const discard = 'Discard';
   static const keepEditing = 'Keep editing';
   static const discardStartupTitle = 'Discard this startup?';

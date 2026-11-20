@@ -12,11 +12,9 @@ class ProfileStartupRef {
   final String id;
   final String name;
 
-  /// The startup itself, when it was loaded for the profile (so it can be
-  /// shown as a full card). Never stored.
   final Startup? startup;
 
-  /// `founder`, `coFounder` or `member`.
+  /// founder, coFounder or member.
   final String role;
 
   static ProfileStartupRef? fromMap(Object? raw) {
@@ -34,9 +32,7 @@ class ProfileStartupRef {
   Map<String, Object?> toMap() => {'id': id, 'name': name, 'role': role};
 }
 
-/// The public face of an account (Firestore `publicProfiles/{id}`): always
-/// public. The e-mail and the phone are in it ONLY when the person made that
-/// one Public (each on its own).
+/// The public face of an account (Firestore publicProfiles/{id}): always public.
 class PublicProfile {
   const PublicProfile({
     required this.id,
@@ -66,14 +62,13 @@ class PublicProfile {
   /// The photo as base64 text (null: the initials show).
   final String? photoData;
 
-  /// Present only when [emailPublic] / [phonePublic].
+  /// Present only when emailPublic / phonePublic.
   final String? email;
   final String? phone;
   final bool emailPublic;
   final bool phonePublic;
 
-  /// The startups stored on the profile (sample profiles). Real accounts get
-  /// theirs from the startups themselves.
+  /// The startups stored on the profile (sample profiles).
   final List<ProfileStartupRef> startups;
   final bool isSample;
 

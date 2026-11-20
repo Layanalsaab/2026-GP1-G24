@@ -9,9 +9,7 @@ import '../../../shared_ui/widgets/buttons/app_button.dart';
 import '../widgets/auth_decor.dart';
 import '../widgets/intro_widgets.dart';
 
-/// The three intro pages (docs/05 A2-A4) in one screen. "Skip" and the last
-/// page's "Get started" call [AppRouter.finishIntro]; the round arrow moves to
-/// the next page (forward transition: slide from x +28 with a fade, 260 ms).
+/// The three intro pages (docs/05 A2-A4) in one screen.
 class IntroScreen extends StatefulWidget {
   const IntroScreen({super.key});
 

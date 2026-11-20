@@ -5,9 +5,6 @@ import '../../../models/startup.dart';
 import 'founder_ui.dart';
 import 'hover_lift_card.dart';
 
-/// The saved draft at the top of My Startups: a gold "Draft" pill, the name
-/// typed so far (or "Untitled startup"), "Continue editing", and a trash
-/// button that discards it. Tap continues the form where it stopped.
 class DraftCard extends StatelessWidget {
   const DraftCard({
     super.key,

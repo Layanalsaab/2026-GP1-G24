@@ -17,8 +17,6 @@ import '../../../shared_ui/widgets/lists/empty_state.dart';
 import '../../startups/widgets/role_tag.dart';
 import '../view_models/home_view_model.dart';
 
-/// One entry of a [HomeColumn]: the [child] plus the CSS-style margins the
-/// prototype uses between list items (they may be negative).
 class HomeSlot {
   const HomeSlot(
     this.child, {
@@ -31,12 +29,10 @@ class HomeSlot {
   final double top;
   final double bottom;
 
-  /// Full width (ignores the 16 px side padding), e.g. the "New" rail.
+  /// Full width (ignores the 16 px side padding), e.g.
   final bool bleed;
 }
 
-/// The home list (prototype `.hlst`): padding 18 16 28, 16 px gap between
-/// items, each item's own margins added to the gap.
 class HomeColumn extends StatelessWidget {
   const HomeColumn({super.key, required this.slots});
 
@@ -78,8 +74,6 @@ HueAvatarKind avatarKindOf(HomeItemKind kind) => switch (kind) {
   HomeItemKind.program => HueAvatarKind.program,
 };
 
-/// A [HomeCard] built from a [HomeItem]: opens the profile, share toast, and a
-/// bookmark button that is absent for guests.
 class HomeItemCard extends StatelessWidget {
   const HomeItemCard({
     super.key,
@@ -100,8 +94,6 @@ class HomeItemCard extends StatelessWidget {
   /// My Startups only: "Manage" / "View" at the bottom right.
   final String? actionLabel;
 
-  /// My Startups only: what a tap does (Manage) instead of opening the public
-  /// page.
   final VoidCallback? onTap;
 
   /// False on My Startups: you can't bookmark your own startup.
@@ -113,7 +105,6 @@ class HomeItemCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Guests never bookmark, and an investor can't bookmark their own profile.
     final session = AppSession.instance;
     final canBookmark =
         bookmarkable &&
@@ -136,14 +127,11 @@ class HomeItemCard extends StatelessWidget {
           matchReason: showMatch ? item.matchReason : null,
           highlight: item.highlight,
           highlightReason: item.highlightReason,
-          // A closed startup (Hub only) says so; My Startups passes its own.
           badges: badges.isEmpty && item.closed
               ? const [GreyTag(FounderToolsStrings.closedPill)]
               : badges,
           actionLabel: actionLabel,
           onTap: onTap ?? () => openHomeItem(context, item),
-          // The share sheet (the teammate's change), with the startup's name
-          // as the title.
           onShare: () => ShareLink.shareItem(context, item),
           onBookmark: canBookmark
               ? () => BookmarkRepository.instance.toggle(item.bookmarkKey)
@@ -154,7 +142,7 @@ class HomeItemCard extends StatelessWidget {
   }
 }
 
-/// Cards of [items] with the staggered entrance (40 ms per card).
+/// Cards of items with the staggered entrance (40 ms per card).
 List<Widget> homeCardsOf(List<HomeItem> items, {bool showMatch = false}) => [
   for (var i = 0; i < items.length; i++)
     Padding(
@@ -163,13 +151,7 @@ List<Widget> homeCardsOf(List<HomeItem> items, {bool showMatch = false}) => [
     ),
 ];
 
-/// The cards as one slot (the prototype's `.hcards`, gap 16). Only the first
-/// page is built; "Show more" adds the next one, so a list of hundreds of
-/// startups stays smooth to scroll.
-///
-/// The list is keyed by [scope] plus the content of [items], so whenever the
-/// list changes (tab, sub-tab, switch side, search text, filters, "See all")
-/// every card is built again and replays its staggered entrance.
+/// The cards as one slot (the prototype's .hcards, gap 16).
 HomeSlot cardsSlot(
   List<HomeItem> items, {
   bool showMatch = false,
@@ -186,7 +168,7 @@ HomeSlot cardsSlot(
 int contentSignature(List<HomeItem> items) =>
     Object.hashAll([for (final i in items) i.bookmarkKey]);
 
-/// [homeCardsOf] in pages of [pageSize].
+/// homeCardsOf in pages of pageSize.
 class PagedCards extends StatefulWidget {
   const PagedCards({
     super.key,
@@ -209,7 +191,6 @@ class _PagedCardsState extends State<PagedCards> {
   @override
   void didUpdateWidget(PagedCards old) {
     super.didUpdateWidget(old);
-    // A different list (a filter, a search, another tab): back to page one.
     final a = old.items, b = widget.items;
     final same =
         a.length == b.length &&
@@ -266,7 +247,7 @@ class _PagedCardsState extends State<PagedCards> {
   }
 }
 
-/// The "‹ For You" link of the "See all" view (prototype `.xback`).
+/// The "‹ For You" link of the "See all" view (prototype .xback).
 class BackLink extends StatelessWidget {
   const BackLink({super.key, required this.label, required this.onTap});
 
@@ -315,9 +296,6 @@ class BackLink extends StatelessWidget {
   }
 }
 
-/// What a list shows when it has no cards: a spinner while Firestore loads,
-/// a retry when loading failed, "No matches" while filtering, otherwise a
-/// plain "nothing here yet".
 Widget homeEmptyState(HomeViewModel vm) {
   if (vm.isLoadingDirectory) {
     return Padding(
@@ -354,11 +332,9 @@ Widget homeEmptyState(HomeViewModel vm) {
 Widget homeNoResults(HomeViewModel vm) {
   final searching = vm.query.trim().isNotEmpty;
   if (vm.selectionCount > 0) {
-    // Filters are on (with or without a search): the filter wording.
     return EmptyState.noMatches(onAction: vm.clearAll);
   }
   if (searching) {
-    // Only a search: say it was not found, not that a filter is on.
     return EmptyState(
       title: HomeStrings.noResultsTitle(vm.query.trim()),
       message: '',

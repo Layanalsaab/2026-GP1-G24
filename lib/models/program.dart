@@ -31,17 +31,16 @@ class Program {
   final ProgramType type;
   final String city;
 
-  /// Shown as written, e.g. "6 months".
+  /// Shown as written, e.g.
   final String duration;
   final int sinceYear;
   final String about;
   final List<String> focusSectors;
 
-  /// One short sentence for the list card; falls back to [about].
+  /// One short sentence for the list card; falls back to about.
   final String? summary;
 
-  /// The "Focus" line on the list card, e.g. "Early-stage tech"; falls back to
-  /// the focus sectors.
+  /// The "Focus" line on the list card, e.g.
   final String? focus;
 
   /// The letters in the logo square when they differ from the first letter.

@@ -3,19 +3,17 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// The one unfinished "Add startup" form a founder can save as a draft. It is
-/// kept on the phone (per account), not in Firebase, so an incomplete startup
-/// never reaches the public `startups` collection.
+/// The one unfinished "Add startup" form a founder can save as a draft.
 class StartupDraftRepository {
-  /// The app-wide instance. Tests replace it with a fake.
+  /// The app-wide instance.
   static StartupDraftRepository instance = StartupDraftRepository();
 
-  /// The current draft (null when there is none). My Startups listens to it.
+  /// The current draft (null when there is none).
   final ValueNotifier<Map<String, Object?>?> current = ValueNotifier(null);
 
   static String _key(String uid) => 'startup_draft_$uid';
 
-  /// Reads the saved draft of [uid] into [current].
+  /// Reads the saved draft of uid into current.
   Future<void> load(String uid) async {
     try {
       final prefs = await SharedPreferences.getInstance();

@@ -4,9 +4,7 @@ import '../../icons/app_icons.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text.dart';
 
-/// A tappable card with a checkbox on the left and a title (and an optional
-/// description) next to it. Used for "What are you looking for?" (Funding /
-/// Partnership / Support) and the Co-founder box of a team member.
+/// A tappable card with a checkbox on the left and a title (and an optional description) next to it.
 class CheckboxCard extends StatelessWidget {
   const CheckboxCard({
     super.key,
@@ -17,7 +15,6 @@ class CheckboxCard extends StatelessWidget {
     this.compact = false,
   });
 
-  /// The team editor's smaller card (radius 14, padding 12 x 14, 16 px title).
   final bool compact;
 
   final String title;

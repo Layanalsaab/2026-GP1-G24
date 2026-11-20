@@ -1,6 +1,3 @@
-/// User-facing text for the Services hub, startup management (My Startups,
-/// Create/Edit, Profile), in one place.
-/// Wording follows Figma "V2 · 24 / 25 / 25b / 35" where it exists.
 class StartupStrings {
   StartupStrings._();
 

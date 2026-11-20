@@ -35,12 +35,6 @@ enum InviteSendResult {
   tooSoon,
 }
 
-/// Team invitations: creating them, sending the e-mail, and the invited
-/// person's side (finding, accepting, declining).
-///
-/// Everything about who may do what is in `firestore.rules`; this class only
-/// reads and writes the `invitations` collection (and `inviteEmails`, the
-/// little index that lets sign-up warn an invited person).
 class InvitationRepository {
   InvitationRepository({
     AuthService? auth,
@@ -50,7 +44,7 @@ class InvitationRepository {
        _firestore = firestore ?? FirestoreService(),
        _relay = relay ?? const InviteRelayService();
 
-  /// The app-wide instance. Tests replace it with a fake.
+  /// The app-wide instance.
   static InvitationRepository instance = InvitationRepository();
 
   final AuthService _auth;
@@ -65,11 +59,6 @@ class InvitationRepository {
     return uid;
   }
 
-  // ------------------------------------------------------------ the team
-
-  /// Makes sure an invitation exists and is pending for [member] of
-  /// [startup] (a new one, or a cancelled / declined one invited again), and
-  /// keeps its role text and contribution up to date. Returns it.
   Future<Invitation> ensure({
     required Startup startup,
     required TeamMember member,
@@ -101,16 +90,11 @@ class InvitationRepository {
       await _addToInviteIndex(email, startup.name);
       return invitation;
     }
-    // A joined person stays; a declined one is not invited again behind the
-    // founder's back (removing the card and adding it again does that).
-    // Somebody who joined and then LEFT (or was removed) can be invited
-    // again: their old "accepted" invitation turns pending.
     if (existing.status == InvitationStatus.declined ||
         (existing.status == InvitationStatus.accepted &&
             await _stillOnTeam(existing, startup))) {
       return existing;
     }
-    // Pending, cancelled or declined: pending again with the current words.
     await _firestore.updateDocument(_col, id, {
       'status': InvitationStatus.pending.value,
       'role': role,
@@ -136,10 +120,7 @@ class InvitationRepository {
     );
   }
 
-  /// The person who accepted [invitation] is still on the startup's team.
-  /// Read from the STORED startup: [startup] may be a copy loaded before
-  /// they joined (the editor was open), and treating them as gone would turn
-  /// their accepted invitation back into a pending one.
+  /// The person who accepted invitation is still on the startup's team.
   Future<bool> _stillOnTeam(Invitation invitation, Startup startup) async {
     Startup current;
     try {
@@ -153,23 +134,17 @@ class InvitationRepository {
           ) ??
           startup;
     } catch (_) {
-      // Can't check (offline): keep the accepted invitation as it is.
       return true;
     }
     final uid = invitation.acceptedBy;
     if (uid != null && uid.isNotEmpty) {
       return uid == current.founderId || current.memberRoles.containsKey(uid);
     }
-    // Older invitations don't say who accepted: a joined card with that
-    // e-mail means they are still there.
     return current.team.any(
       (m) => !m.invited && m.email == invitation.emailLower,
     );
   }
 
-  /// Cancels the invitation of everybody invited to [startup] who hasn't
-  /// joined yet (before the startup is deleted or closed), so nobody is asked
-  /// to join a startup they can't join. Best effort per person.
   Future<void> cancelAllFor(Startup startup) async {
     for (final m in startup.team) {
       if (!m.invited || m.email.trim().isEmpty) continue;
@@ -189,8 +164,6 @@ class InvitationRepository {
       return;
     }
     if (existing.status == InvitationStatus.declined) {
-      // The founder removed a declined card: forget it, so inviting the same
-      // e-mail again starts fresh.
       await _firestore.deleteDocument(_col, id);
       return;
     }
@@ -200,13 +173,7 @@ class InvitationRepository {
     await _removeFromInviteIndex(existing.emailLower, existing.startupName);
   }
 
-  // ------------------------------------------------------ the next owner
-
-  /// The founder invites [email] to take [startup] over when he leaves. He
-  /// stays in control until it is accepted; then he becomes [stay]
-  /// (`coFounder` or `member`), or leaves for good (null). Like the team's,
-  /// there is one invitation per startup and e-mail: a cancelled or declined
-  /// one is invited again. Returns it.
+  /// The founder invites email to take startup over when he leaves.
   Future<Invitation> inviteOwner({
     required Startup startup,
     required String email,
@@ -227,9 +194,6 @@ class InvitationRepository {
       newUser: newUser,
       previousFounderRole: stay,
     );
-    // Inviting again (after a cancel, a decline or an expiry) is a NEW
-    // invitation: the old document goes first so it gets a new date, and with
-    // it a new 30 days.
     if (existing != null) await _firestore.deleteDocument(_col, id);
     await _firestore.setDocument(_col, id, {
       ...invitation.toCreateMap(),
@@ -249,8 +213,6 @@ class InvitationRepository {
     );
   }
 
-  /// The owner invitation of [startupId] still waiting for an answer (the
-  /// "Waiting for…" banner in Settings), or null.
   Future<Invitation?> pendingOwnerInvite(String startupId) async {
     for (final i in await sentFor(startupId)) {
       if (i.isOwner && i.isPending) return i;
@@ -258,14 +220,12 @@ class InvitationRepository {
     return null;
   }
 
-  /// Cancels the owner invitation of [startup] that is still waiting, if any
-  /// (Cancel invitation, closing the startup, or handing it to a team member).
   Future<void> cancelOwnerInvite(Startup startup) async {
     final pending = await pendingOwnerInvite(startup.id);
     if (pending != null) await cancel(startup.id, pending.emailLower);
   }
 
-  /// Sends the e-mail of [invitation] through the relay and records it.
+  /// Sends the e-mail of invitation through the relay and records it.
   Future<InviteSendResult> sendEmail(Invitation invitation) async {
     try {
       final token = await _auth.idToken();
@@ -292,7 +252,7 @@ class InvitationRepository {
     }
   }
 
-  /// The invitations I sent for [startupId] (statuses: Invited / Declined).
+  /// The invitations I sent for startupId (statuses: Invited / Declined).
   Future<List<Invitation>> sentFor(String startupId) async {
     final docs = await _firestore.queryWhereEqual(_col, 'invitedBy', _uid);
     return [
@@ -301,14 +261,10 @@ class InvitationRepository {
     ];
   }
 
-  // ------------------------------------------------------ the invited side
-
   /// One invitation by its id (readable before the person has an account).
   Future<Invitation?> byId(String id) async =>
       Invitation.fromMap(await _firestore.getDocument(_col, id));
 
-  /// The startup names that invited [email] (no account needed), for the
-  /// sign-up warning.
   Future<List<String>> invitedBy(String email) async {
     final data = await _firestore.getDocument(
       FirestoreCollections.inviteEmails,
@@ -334,14 +290,10 @@ class InvitationRepository {
     return [
       for (final d in docs)
         if (Invitation.fromMap(d.data) case final i?)
-          // An owner invitation nobody answered in 30 days is no longer asked.
           if (!i.isExpired(now)) i,
     ];
   }
 
-  /// Joins the team: I am added to the startup (with the invitation's role)
-  /// and the invitation turns "accepted", together. When the startup is
-  /// readable (a public one) my card in the team list is updated too.
   Future<void> accept(Invitation invitation, {required String fullName}) async {
     if (invitation.isOwner) {
       return _acceptOwnership(invitation, fullName: fullName);
@@ -364,7 +316,6 @@ class InvitationRepository {
         ];
       }
     } catch (_) {
-      // A private startup can't be read yet: the team updates the card later.
     }
     await _firestore.commit([
       FirestoreWrite.update(
@@ -391,14 +342,6 @@ class InvitationRepository {
     unawaited(PublicProfileRepository.instance.refreshMyStartups(uid));
   }
 
-  /// I take over the startup that invited me as its next founder: I become
-  /// its founder (my card first, with the Founder title), the previous
-  /// founder becomes what he chose when he sent the invitation (a co-founder
-  /// or a team member, his card following) or leaves its team, card
-  /// included, and the invitation turns accepted, together. The rules let a
-  /// person with a pending owner invitation read the startup first. The
-  /// previous founder and the team get a notice (sent before the change,
-  /// while the rules can still see that it concerns them).
   Future<void> _acceptOwnership(
     Invitation invitation, {
     required String fullName,
@@ -416,7 +359,6 @@ class InvitationRepository {
     }
     final previous = startup.founderId;
     final stay = invitation.previousFounderRole;
-    // My card first, as the founder (it replaces my invited card, if any).
     final team = <Map<String, Object?>>[
       TeamMember(
         name: fullName,
@@ -488,8 +430,6 @@ class InvitationRepository {
     unawaited(PublicProfileRepository.instance.refreshMyStartups(uid));
   }
 
-  /// "No thanks." Declining to take a startup over tells its founder (a
-  /// notice, sent while the invitation is still pending).
   Future<void> decline(Invitation invitation) async {
     if (invitation.isOwner && invitation.isPending) {
       await NoticeRepository.instance.send(
@@ -508,11 +448,6 @@ class InvitationRepository {
     await _removeFromInviteIndex(invitation.emailLower, invitation.startupName);
   }
 
-  // ------------------------------------------------- the team, afterwards
-
-  /// A person accepted while the startup was private (so only they could not
-  /// update the team list): the team fixes the card now. Returns the new list
-  /// (or null when nothing changed).
   Future<List<TeamMember>?> reconcileTeam(Startup startup) async {
     if (!startup.team.any((m) => m.invited && m.email.isNotEmpty)) return null;
     final sent = await sentFor(startup.id);
@@ -543,8 +478,6 @@ class InvitationRepository {
     ];
     return changed ? team : null;
   }
-
-  // ------------------------------------------------------------- the index
 
   Future<void> _addToInviteIndex(String email, String startupName) async {
     try {

@@ -6,10 +6,6 @@ import '../../../shared_ui/widgets/overlays/app_dialog.dart';
 import 'founder_ui.dart';
 import 'role_tag.dart';
 
-/// One saved team member in the Startup Team step: a white card (1 px border,
-/// radius 14, padding 12, items at the top, 10 px gap) with the initials tile,
-/// the name followed by the tag capsules, the role, the contribution and the
-/// pencil button that opens the editor in this card's place.
 class TeamMemberRow extends StatelessWidget {
   const TeamMemberRow({
     super.key,
@@ -25,8 +21,6 @@ class TeamMemberRow extends StatelessWidget {
   final VoidCallback onEdit;
   final bool isYou;
 
-  /// The startup's owner, so a co-founder it was handed to is tagged
-  /// "Co-founder · Owner".
   final String? ownerId;
 
   /// The invited person said no (the tag reads "Declined").
@@ -131,8 +125,6 @@ class TeamMemberRow extends StatelessWidget {
   }
 }
 
-/// The dashed "Add team member" button: full width, 48 high, radius 12, 1.5 px
-/// dashed moss 600 border, transparent, "+" and the text in moss 600.
 class AddMemberButton extends StatelessWidget {
   const AddMemberButton({super.key, required this.onTap});
 
@@ -180,8 +172,6 @@ class AddMemberButton extends StatelessWidget {
   }
 }
 
-/// A locked field (my own name / e-mail, or the founder's): muted fill, no
-/// border, grey text and a 16 px lock on the right; no counter, no hint.
 class _LockedValue extends StatelessWidget {
   const _LockedValue(this.text);
 
@@ -220,8 +210,6 @@ class _LockedValue extends StatelessWidget {
 }
 
 /// One of the editor's two buttons: 44 high, radius 12, 14 px semibold.
-/// [outlined] = Cancel (white, 1.5 px moss border); otherwise the green
-/// primary, which is grey while [off].
 class _EditorButton extends StatelessWidget {
   const _EditorButton({
     required this.label,
@@ -275,8 +263,6 @@ class _EditorButton extends StatelessWidget {
   }
 }
 
-/// One of the two choices of the member editor (Team member / Co-founder): a
-/// card with a round radio mark. Nothing is picked until it is tapped.
 class _AccessOption extends StatelessWidget {
   const _AccessOption({
     required this.title,
@@ -351,12 +337,7 @@ class _AccessOption extends StatelessWidget {
   }
 }
 
-/// The inline editor card: moss 50, 1 px moss 100 border, radius 16, padding
-/// 14. It REPLACES the card being edited (or sits above the Add button for a
-/// new member) and rises in over 320 ms.
-///
-/// [lockedIdentity]: my own card and the founder's: the name and e-mail are
-/// locked, there is no Co-founder box and no "Remove this member".
+/// The inline editor card: moss 50, 1 px moss 100 border, radius 16, padding 14.
 class TeamMemberEditor extends StatelessWidget {
   const TeamMemberEditor({
     super.key,
@@ -380,23 +361,17 @@ class TeamMemberEditor extends StatelessWidget {
     this.canChangeCoFounder,
   });
 
-  /// "Remove this member" is offered (default: an existing card that isn't
-  /// [lockedIdentity]). Only the owner removes a co-founder who joined.
   final bool? canRemove;
 
-  /// The Co-founder box is shown (default: not [lockedIdentity]). Only the
-  /// owner changes it for someone who already joined.
+  /// The Co-founder box is shown (default: not lockedIdentity).
   final bool? canChangeCoFounder;
 
-  /// "Your details" / "Edit team member" / "New team member" / "Edit founder".
   final String title;
 
   /// True when editing an existing member (the button reads "Save").
   final bool editing;
   final bool lockedIdentity;
 
-  /// A member who joined: the name and e-mail are theirs (the name follows
-  /// their account), but the role, contribution and Co-founder box can change.
   final bool lockedNameEmail;
   final TextEditingController name;
   final TextEditingController email;
@@ -416,8 +391,6 @@ class TeamMemberEditor extends StatelessWidget {
   final VoidCallback onSave;
   final VoidCallback onRemove;
 
-  /// The focus node of a field, so leaving it after typing can show its
-  /// "required" message.
   final FocusNode? Function(TextEditingController)? focusOf;
 
   Widget _field(
@@ -600,10 +573,6 @@ class TeamMemberEditor extends StatelessWidget {
   }
 }
 
-/// "This person isn't on Start.sa yet": a centred white card like the Verify
-/// email dialog, with a popping paper-plane in a 64 px green circle, the
-/// title, the explanation with the bold e-mail, a green "Send invite" button
-/// and a ghost "Cancel". Completes with true only for "Send invite".
 Future<bool> showInviteDialog(BuildContext context, String email) async {
   FocusManager.instance.primaryFocus?.unfocus();
   final base = AppText.sans(size: 15, color: AppColors.grey, height: 22);

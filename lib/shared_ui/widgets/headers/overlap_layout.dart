@@ -4,16 +4,9 @@ import '../../motion/motion.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_metrics.dart';
 
-/// White card that sits on the green [AuthHeader] / [StepHeader] (log in,
-/// forgot password, every sign-up and add-startup step): radius 22,
-/// `authCard` shadow, side margin 16, rise animation (460 ms, 60 ms delay).
-///
-/// The header is what overlaps (it reports a height 44 px smaller, see
-/// [overlap]); place this card directly after it in a column.
 class AuthCard extends StatelessWidget {
   const AuthCard({super.key, required this.child, this.animate = true});
 
-  /// How far the card climbs into the header (the header's default overlap).
   static const double overlap = 44;
 
   final Widget child;
@@ -43,11 +36,6 @@ class AuthCard extends StatelessWidget {
   }
 }
 
-/// The list variant of [AuthCard] (choose role, My Startups, calculator): a
-/// column of separate cards with a [gap] (12, role 14) and side margin 16,
-/// bottom padding 20, rising together (460 ms, 60 ms delay). Its header
-/// overlap is [overlap] = 48 (`AuthHeader(overlap: OverlapList.overlap)`;
-/// [RoleHeader] already defaults to it).
 class OverlapList extends StatelessWidget {
   const OverlapList({
     super.key,

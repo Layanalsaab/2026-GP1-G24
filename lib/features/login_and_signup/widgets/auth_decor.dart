@@ -4,10 +4,7 @@ import '../../../shared_ui/icons/app_icons.dart';
 import '../../../shared_ui/motion/motion.dart';
 import '../../../shared_ui/theme/app_colors.dart';
 
-/// The full Start.sa logo on a cream page (splash 150 x 143, welcome
-/// 120 x 114). The prototype blends it with `multiply`, which on the cream
-/// background equals multiplying the image by the cream color, so the logo's
-/// white backdrop disappears.
+/// The full Start.sa logo on a cream page (splash 150 x 143, welcome 120 x 114).
 class BrandLogo extends StatelessWidget {
   const BrandLogo({super.key, required this.width, required this.height});
 
@@ -16,8 +13,6 @@ class BrandLogo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // On a dark page the dark-green logo would vanish: use the light logo
-    // (the one of the green headers), with no blending.
     if (AppColors.isDark) {
       return Image.asset(
         'assets/images/logo_small.png',
@@ -39,9 +34,6 @@ class BrandLogo extends StatelessWidget {
   }
 }
 
-/// A full-height column that scrolls when the content is taller than the
-/// screen (small phones, large text) and otherwise lets a [Spacer] push the
-/// last children to the bottom. Used by the intro and welcome pages.
 class FlexPage extends StatelessWidget {
   const FlexPage({super.key, required this.children});
 
@@ -66,8 +58,7 @@ class FlexPage extends StatelessWidget {
   }
 }
 
-/// A 4-point gold sparkle (the prototype's `twinkle` star) of [size] px.
-/// Wrap it in [Twinkle] to animate it.
+/// A 4-point gold sparkle (the prototype's twinkle star) of size px.
 class Sparkle extends StatelessWidget {
   const Sparkle({super.key, required this.size, this.color = AppColors.gold});
 
@@ -110,8 +101,7 @@ class _SparklePainter extends CustomPainter {
   bool shouldRepaint(_SparklePainter old) => old.color != color;
 }
 
-/// The gold divider (line, rotated diamond, line) under the splash and
-/// welcome taglines.
+/// The gold divider (line, rotated diamond, line) under the splash and welcome taglines.
 class GoldDivider extends StatelessWidget {
   const GoldDivider({super.key, this.lineWidth = 44, this.diamond = 8});
 
@@ -144,9 +134,6 @@ class GoldDivider extends StatelessWidget {
   }
 }
 
-/// Moss arch outlines drawn behind the splash screen: three nested arches that
-/// draw in sequence (0 / 120 / 240 ms) and three twinkling sparkles
-/// (0 / 800 / 1400 ms). Anchored at the bottom, scaled to the width.
 class SplashBackdrop extends StatelessWidget {
   const SplashBackdrop({super.key});
 
@@ -196,8 +183,6 @@ class SplashBackdrop extends StatelessWidget {
   }
 }
 
-/// Two static moss arches and two twinkling sparkles behind the welcome
-/// screen (top, scaled to the width).
 class WelcomeBackdrop extends StatelessWidget {
   const WelcomeBackdrop({super.key});
 
@@ -255,7 +240,7 @@ class WelcomeBackdrop extends StatelessWidget {
   }
 }
 
-/// Paints static stroked SVG paths authored in [viewBox], scaled to fit.
+/// Paints static stroked SVG paths authored in viewBox, scaled to fit.
 class PathsPainter extends CustomPainter {
   PathsPainter({
     required this.viewBox,

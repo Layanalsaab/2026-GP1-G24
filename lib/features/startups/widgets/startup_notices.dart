@@ -10,22 +10,12 @@ import '../screens/manage_startup_screen.dart';
 import 'founder_ui.dart';
 import 'invitation_dialogs.dart';
 
-/// The one-time pop-ups about my startups (docs: Closing a Startup, Leaving
-/// and Deleting an Account), read from my notice inbox
-/// ([NoticeRepository]): a startup I'm on was closed or deleted, it has a new
-/// founder (or I am it), the person I invited to take over answered, I was
-/// removed from a team, or someone left mine.
-///
-/// They show the next time the app opens (log in, a saved session, or
-/// "Create startup" after losing my last one), one after the other. Each is
-/// deleted once shown, so it never shows twice, on any phone.
 class StartupNotices {
   StartupNotices._();
 
   static bool _showing = false;
 
-  /// Shows what the signed-in founder hasn't seen yet. "View …" opens the
-  /// startup (the rest wait for next time).
+  /// Shows what the signed-in founder hasn't seen yet.
   static Future<void> showPending(BuildContext context) async {
     final user = AppSession.instance.user;
     if (_showing || user == null || !user.isFounder) return;
@@ -54,9 +44,6 @@ class StartupNotices {
     }
   }
 
-  /// A startup handed to me while closed (its founder deleted his account)
-  /// is read only: its "new founder" pop-up says so. Only that pop-up needs
-  /// to know.
   static Future<bool> _isClosed(StartupNotice n) async {
     if (n.type != StartupNotice.newFounder) return false;
     try {

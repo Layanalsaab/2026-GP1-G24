@@ -16,10 +16,6 @@ import '../../../shared_ui/widgets/overlays/app_toast.dart';
 import '../../login_and_signup/screens/login_screen.dart';
 import '../../login_and_signup/screens/signup_screen.dart';
 
-/// Where the "Open Start.sa" button of the invitation e-mail lands when the
-/// app is installed: who invited you, to which startup and as what, with the
-/// e-mail to use. A person with no account creates one; somebody who is
-/// already signed in with that e-mail accepts or declines.
 class InviteScreen extends StatefulWidget {
   const InviteScreen({super.key, required this.invitationId});
 
@@ -54,9 +50,6 @@ class _InviteScreenState extends State<InviteScreen> {
       found = null;
     }
     if (!mounted) return;
-    // Nobody is signed in: go straight to the screen that fits, with the
-    // invited e-mail filled in. No account yet -> "Create your account";
-    // an account already -> "Log in".
     if (found != null && found.isPending && AppSession.instance.user == null) {
       if (found.newUser) {
         SignupScreen.openReplacing(
@@ -87,15 +80,11 @@ class _InviteScreenState extends State<InviteScreen> {
       _me!.isFounder &&
       _me!.email.trim().toLowerCase() == _invitation?.emailLower;
 
-  /// Signed in with an investor account that has the invited email: it can't
-  /// join a team, and logging out would not help.
   bool get _investorWithThatEmail =>
       _me != null &&
       !_me!.isFounder &&
       _me!.email.trim().toLowerCase() == _invitation?.emailLower;
 
-  /// Signs out and opens Log in (or Create your account for somebody who
-  /// has none) with the invited email already filled in.
   Future<void> _logOutAndContinue(Invitation inv) => AppRouter.logOut(
     context,
     toLogin: true,
@@ -255,8 +244,6 @@ class _InviteScreenState extends State<InviteScreen> {
             loading: _busy,
             onPressed: () => _answer(true),
           ),
-          // Taking a startup over can always be declined; joining a team
-          // can when it isn't automatic.
           if (owner || !AppConfig.autoJoinExistingAccounts) ...[
             const SizedBox(height: 4),
             AppButton(
@@ -278,8 +265,6 @@ class _InviteScreenState extends State<InviteScreen> {
             onPressed: () => AppRouter.openHome(context),
           ),
         ] else if (other) ...[
-          // Somebody else is signed in on this phone: one tap signs them out
-          // and opens Log in (or Create account) with the invited email.
           Text(
             FounderToolsStrings.inviteSignedInAs(me.email, inv.emailLower),
             textAlign: TextAlign.center,

@@ -5,15 +5,6 @@ import '../../motion/motion.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_metrics.dart';
 
-/// The home bottom navigation (prototype `.gnav`, docs/05 §B10): a green bar
-/// (padding 4 0 14, shadow) with three icon-only items in a 270 px wide
-/// centered grid: 0 Support Channels (briefcase), 1 Hub (house), 2 Explore
-/// (compass).
-///
-/// Selected item: icon lifts 3 px (350 ms), cross-fades outline -> filled
-/// (filled: opacity 250 ms + scale 0.6 -> 1 over 350 ms; outline: opacity
-/// 200 ms), colour white 62 % -> `#E3CF9B` (250 ms). A 5 px gold dot slides
-/// under the selected item (420 ms easeOut). Bottom safe-area is added.
 class AppBottomNav extends StatelessWidget {
   const AppBottomNav({
     super.key,

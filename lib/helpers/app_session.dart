@@ -12,16 +12,10 @@ enum SessionRole {
   guest,
 }
 
-/// The signed-in user (or the guest) for the running app, so screens deep in
-/// the tree can read the role without it being passed through every
-/// constructor.
-///
-/// Set by the auth flow ([signIn], [signInAsGuest]) and cleared by [signOut].
-/// Profile edits call [updateUser] so the header and menu refresh.
 class AppSession extends ChangeNotifier {
   AppSession();
 
-  /// The app-wide instance. Tests replace it or call [reset].
+  /// The app-wide instance.
   static AppSession instance = AppSession();
 
   AppUser? _user;
@@ -53,12 +47,8 @@ class AppSession extends ChangeNotifier {
   /// Ids of the founder's own startups, so Hub and Explore never list them.
   Set<String> get ownStartupIds => _ownStartupIds;
 
-  /// Ids of the startups the user belongs to as a co-founder or team member.
   Set<String> get memberStartupIds => _memberStartupIds;
 
-  /// Every startup the user belongs to (founder, co-founder, team member):
-  /// none of them is listed in the user's Hub or For You (Trending still
-  /// shows them, and they are always reachable from My Startups).
   Set<String> get belongingStartupIds => {
     ..._ownStartupIds,
     ..._memberStartupIds,
@@ -99,9 +89,6 @@ class AppSession extends ChangeNotifier {
     _memberRoles = Map.unmodifiable(roles);
   }
 
-  /// A startup-side account's highest title among its startups ("Founder",
-  /// "Owner", "Co-founder", "Team member") for the menu; null until its
-  /// startups have been read.
   String? get startupTitle => _startupTitle;
 
   void setStartupTitle(String? title) => _startupTitle = title;

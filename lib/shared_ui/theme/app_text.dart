@@ -4,15 +4,10 @@ import 'package:google_fonts/google_fonts.dart';
 import 'app_colors.dart';
 
 /// Typography (docs/02_design_system.md §2).
-///
-/// Inter everywhere (400/500/600/700). The only serif is the "Start.sa"
-/// wordmark on Splash and Welcome ([wordmark]). Headings the CSS calls
-/// `.serif` are Inter 700 with letter-spacing -0.4, never a serif.
 class AppText {
   AppText._();
 
-  /// Inter. [height] is the line height in logical pixels (CSS `line-height`),
-  /// converted to Flutter's multiplier.
+  /// Inter.
   static TextStyle sans({
     required double size,
     Color? color,
@@ -46,8 +41,6 @@ class AppText {
 
   /// Welcome wordmark (40/44).
   static TextStyle get wordmarkWelcome => wordmark(size: 40, height: 44);
-
-  // ---- Headings on green headers (white) ----
 
   /// Auth header title: log in, forgot password, my startups, calculator.
   static TextStyle get authTitle => sans(
@@ -109,8 +102,6 @@ class AppText {
     letterSpacing: 1.32, // 0.12em
   );
 
-  // ---- Page-level text on cream ----
-
   /// Intro headline.
   static TextStyle get introHeadline =>
       sans(size: 31, weight: FontWeight.w700, height: 38, letterSpacing: -0.3);
@@ -131,8 +122,6 @@ class AppText {
   static TextStyle get paragraph =>
       sans(size: 14.5, color: AppColors.paragraph, height: 22);
 
-  // ---- Forms ----
-
   /// Field label above an input.
   static TextStyle get label =>
       sans(size: 14, weight: FontWeight.w500, height: 20);
@@ -152,8 +141,6 @@ class AppText {
 
   /// Form chip.
   static TextStyle get chip => sans(size: 13, weight: FontWeight.w500);
-
-  // ---- Buttons and small UI ----
 
   static TextStyle get button =>
       sans(size: 16, color: AppColors.onDark, weight: FontWeight.w600);

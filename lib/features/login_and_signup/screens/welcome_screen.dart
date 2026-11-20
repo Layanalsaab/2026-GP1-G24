@@ -11,13 +11,9 @@ import '../widgets/auth_decor.dart';
 import 'choose_role_screen.dart';
 import 'login_screen.dart';
 
-/// Welcome (docs/05 A5): logo, "Start.sa", two lines of description, and the
-/// Create account / Log in / Continue as guest stack.
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key});
 
-  /// Replaces the whole stack with Welcome (the back transition: used after
-  /// Log out).
   static void open(BuildContext context) =>
       AppNav.reset(context, const WelcomeScreen(), kind: RouteKind.back);
 

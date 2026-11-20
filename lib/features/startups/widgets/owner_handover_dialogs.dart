@@ -6,8 +6,6 @@ import '../../../models/startup.dart';
 import 'founder_ui.dart';
 import 'role_tag.dart';
 
-/// What the founder picked in "Choose the next founder": a joined person
-/// ([uid]) or "Invite someone new" ([invite]).
 class NextOwnerPick {
   const NextOwnerPick.person(String this.uid);
   const NextOwnerPick.invite() : uid = null;
@@ -16,11 +14,6 @@ class NextOwnerPick {
   bool get invite => uid == null;
 }
 
-/// "Choose the next founder" when the founder leaves (docs: Closing a
-/// Startup, Leaving and Deleting an Account): a bottom sheet with a card for every
-/// person who joined [startup] (their picture or initials, name and tag, like
-/// the team list) and, under them, the dashed "Invite someone new" card.
-/// Completes with the pick, or null when closed.
 Future<NextOwnerPick?> showNextOwnerSheet(
   BuildContext context, {
   required Startup startup,
@@ -73,9 +66,6 @@ class _NextOwnerSheet extends StatelessWidget {
   }
 }
 
-/// One person who can take over: a white card (1 px border, radius 14,
-/// padding 12) with the 40 px picture or initials, the name, the
-/// Co-founder / Team member tag and a chevron.
 class _PersonCard extends StatelessWidget {
   const _PersonCard({
     required this.startup,
@@ -154,8 +144,6 @@ class _PersonCard extends StatelessWidget {
   }
 }
 
-/// "Invite someone new": the dashed moss card of "Add team member", with an
-/// envelope tile and "Send an invitation by email".
 class _InviteCard extends StatelessWidget {
   const _InviteCard({required this.onTap});
 
@@ -229,8 +217,6 @@ class _InviteCard extends StatelessWidget {
   }
 }
 
-/// What the founder chose to be after the handover: [stay] is `coFounder` or
-/// `member`, or null (he leaves for good).
 class StayPick {
   const StayPick(this.stay);
 
@@ -238,11 +224,6 @@ class StayPick {
   bool get leaves => stay == null;
 }
 
-/// "Your role after the handover" (docs: Closing a Startup, Leaving and
-/// Deleting an Account): after naming the next founder, the founder chooses
-/// whether he stays on [startupName]'s team as a co-founder or a team member,
-/// or leaves for good. The same cards as "Choose the next founder".
-/// Completes with the choice, or null when closed.
 Future<StayPick?> showStayChoiceSheet(
   BuildContext context, {
   required String startupName,
@@ -289,9 +270,6 @@ Future<StayPick?> showStayChoiceSheet(
   );
 }
 
-/// One choice: a white card (1 px border, radius 14, padding 12) with a
-/// 40 px icon tile (moss, or red for leaving), the title, a line and a
-/// chevron.
 class _StayCard extends StatelessWidget {
   const _StayCard({
     required this.icon,
@@ -372,13 +350,6 @@ class _StayCard extends StatelessWidget {
   }
 }
 
-/// "Invite a new founder" when the founder leaves (docs: Closing a Startup,
-/// Leaving and Deleting an Account): a bottom sheet laid out like the other
-/// leave sheets ([ConfirmSheet]): a round moss envelope, the title, what
-/// happens next ([message]), the e-mail field, "Send invitation" and a white
-/// "Cancel". [check] says what is wrong with an address (null when it can be
-/// invited); it may look the address up, so it is awaited. Completes with the
-/// e-mail (trimmed, lower-case), or null when cancelled.
 Future<String?> showOwnerEmailSheet(
   BuildContext context, {
   required String message,

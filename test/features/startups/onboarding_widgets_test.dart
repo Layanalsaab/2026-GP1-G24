@@ -172,8 +172,6 @@ void main() {
     ]) {
       expect(find.text(gone), findsNothing, reason: gone);
     }
-    // Like the Stage / Commerce model pickers: as tall as its options (not
-    // a whole page), growing by the text box when Other is ticked.
     final height = t.getSize(find.byType(AppSheetScaffold)).height;
     expect(height, lessThan(700));
     await t.tap(find.text('Other').last);
@@ -190,7 +188,6 @@ void main() {
     final vm = await _pump(t, 5);
     double y(String text) =>
         t.getTopLeft(find.textContaining(text, findRichText: true).first).dy;
-    // Tick in a "wrong" order: Support, then Funding, then Partnership.
     await t.tap(find.text('Support'));
     await _settle(t);
     await t.tap(find.text('Funding'));
@@ -208,7 +205,6 @@ void main() {
     ];
     final sorted = [...order]..sort();
     expect(order, sorted);
-    // Unticking hides only its own questions and keeps what was typed.
     vm.funding.text = '1,000,000';
     await t.tap(find.text('Funding'));
     await _settle(t);
@@ -246,11 +242,9 @@ void main() {
 
   testWidgets('Startup Team: card, tags, editor and invite dialog', (t) async {
     final vm = await _pump(t, 4, size: const Size(360, 1400));
-    // My card: tag, "Add your role" until it is filled in, pencil label.
     expect(find.text('You · Founder'), findsOneWidget);
     expect(find.text('Add your role'), findsOneWidget);
     expect(find.bySemanticsLabel('Edit Shahad Alabdulkarim'), findsOneWidget);
-    // My editor replaces my card: locked name and e-mail, no Co-founder box.
     await t.tap(find.bySemanticsLabel('Edit Shahad Alabdulkarim'));
     await _settle(t);
     expect(find.text('Your details'), findsOneWidget);

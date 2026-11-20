@@ -13,14 +13,7 @@ import 'manage_card.dart';
 import 'round_detail.dart';
 import 'round_form.dart';
 
-/// Manage startup -> Rounds: the startup's rounds from Firestore. Adding,
-/// editing or closing a round is saved with the startup (see
-/// RoundsViewModel).
-///
-/// Top row: "Funding rounds" with "All amounts in SAR", and on the right
-/// "Close round" (a round is open) or "Add round" (none is). Below, the
-/// "New round" form when it is open, then the rounds table, newest first.
-/// Tapping a round opens its page ([RoundDetail]) inside this tab.
+/// Manage startup -> Rounds: the startup's rounds from Firestore.
 class ManageRoundsTab extends StatefulWidget {
   const ManageRoundsTab({
     super.key,
@@ -33,16 +26,10 @@ class ManageRoundsTab extends StatefulWidget {
 
   final RoundsViewModel vm;
 
-  /// False hides Add round / Close round / Edit round (a team member only
-  /// reads).
   final bool canManage;
 
-  /// The startup's investment requests, shown on the page of the OPEN round
-  /// ("Investment requests"). Null hides that section.
   final RequestsViewModel? requests;
 
-  /// "Check in the calculator" of a request, and the toasts of Accept /
-  /// Decline.
   final void Function(ConnectionRequest request)? onCheck;
   final void Function(String message)? onToast;
 
@@ -51,8 +38,7 @@ class ManageRoundsTab extends StatefulWidget {
 }
 
 class _ManageRoundsTabState extends State<ManageRoundsTab> {
-  /// The round whose page is open, or null for the list. It lives here (not in
-  /// the view model), so switching Manage tabs always comes back to the list.
+  /// The round whose page is open, or null for the list.
   int? _detail;
 
   RoundsViewModel get vm => widget.vm;
@@ -183,8 +169,7 @@ class _ManageRoundsTabState extends State<ManageRoundsTab> {
   }
 }
 
-/// "Close round" (white, 1 px border) or "Add round" (green, plus icon):
-/// height 40, radius 999.
+/// "Close round" (white, 1 px border) or "Add round" (green, plus icon): height 40, radius 999.
 class PillButton extends StatelessWidget {
   const PillButton({
     super.key,
@@ -240,14 +225,11 @@ class PillButton extends StatelessWidget {
   }
 }
 
-// ------------------------------------------------------------------ table
-
 /// Column widths: 1.2fr · 0.8fr · 0.85fr · 1fr, gap 10.
 const _flex = [120, 80, 85, 100];
 const _gap = 10.0;
 
-/// The rounds table (read only): used by Manage -> Rounds and by the startup
-/// page's Funding tab.
+/// The rounds table (read only): used by Manage -> Rounds and by the startup page's Funding tab.
 class RoundsTable extends StatelessWidget {
   const RoundsTable({
     super.key,
@@ -259,9 +241,6 @@ class RoundsTable extends StatelessWidget {
 
   final List<FundingRound> rounds;
 
-  /// When set (Manage -> Rounds) every row is tappable: it shows its status
-  /// word and a chevron. Null (the startup page) keeps the plain read-only
-  /// table.
   final ValueChanged<FundingRound>? onOpen;
 
   /// The text of an empty table (the startup page centres its own).
@@ -292,7 +271,6 @@ class RoundsTable extends StatelessWidget {
     );
     return ManageCard(
       padding: EdgeInsets.zero,
-      // A pressed row's background stays inside the card's rounded corners.
       child: open == null
           ? table
           : ClipRRect(borderRadius: BorderRadius.circular(19), child: table),
@@ -300,8 +278,7 @@ class RoundsTable extends StatelessWidget {
   }
 }
 
-/// Right padding of a tappable row: room for the chevron so the columns do
-/// not touch it.
+/// Right padding of a tappable row: room for the chevron so the columns do not touch it.
 const double _chevronRoom = 32;
 
 class _HeaderRow extends StatelessWidget {
@@ -343,15 +320,11 @@ class _HeaderRow extends StatelessWidget {
   }
 }
 
-/// One round: every first line has the same 22 px line height, so the first
-/// lines of the four cells sit on one line.
 class _RoundRow extends StatefulWidget {
   const _RoundRow({required this.round, this.onTap});
 
   final FundingRound round;
 
-  /// Set in Manage: the row opens the round page (it also shows the status
-  /// word and a chevron).
   final VoidCallback? onTap;
 
   static const double line = 22;
@@ -524,8 +497,6 @@ class _RoundRowState extends State<_RoundRow> {
             ),
           ),
           const SizedBox(width: _gap),
-          // Investors: one name per line (long names wrap), the first
-          // three then "+N more", or "None yet".
           Expanded(
             flex: _flex[3],
             child: Column(
@@ -582,8 +553,7 @@ class StatusDot extends StatelessWidget {
   }
 }
 
-/// A 6 px progress bar, at most 64 px wide, grey track and green fill. It
-/// never goes past 100 % (the percentage under it can).
+/// A 6 px progress bar, at most 64 px wide, grey track and green fill.
 class _RaisedBar extends StatelessWidget {
   const _RaisedBar({required this.percent});
 
@@ -617,9 +587,6 @@ class _RaisedBar extends StatelessWidget {
   }
 }
 
-/// An investor of a round: with a profile, the name in 14 px semibold moss
-/// green (no underline) that opens it; without one, plain grey text. The
-/// lead investor gets "· Lead" in gold.
 class _InvestorLink extends StatelessWidget {
   const _InvestorLink({required this.investor});
 
@@ -640,8 +607,6 @@ class _InvestorLink extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final linked = investor.hasProfile;
-    // At least one table line high (the first lines of the cells stay on
-    // one line); a long name wraps instead of being cut.
     final line = ConstrainedBox(
       constraints: const BoxConstraints(minHeight: _RoundRow.line),
       child: Padding(
@@ -689,8 +654,6 @@ class _InvestorLink extends StatelessWidget {
   }
 }
 
-/// The investors of a round: the first [shown] names, then "+N more" that
-/// opens the full list ("Show less" closes it).
 class _InvestorList extends StatefulWidget {
   const _InvestorList({required this.investors});
 

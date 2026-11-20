@@ -7,12 +7,6 @@ import '../../../shared_ui/widgets/buttons/app_button.dart';
 import '../../../shared_ui/widgets/overlays/app_bottom_sheet.dart';
 import 'investor_profile_body.dart' show ProfileValueRows;
 
-/// One investment ticket of an investor, everything it says: its status, the
-/// sectors and stages it is for, the minimum and the maximum, and the day it
-/// was made. Opened from the "Investment Tickets" section of a profile.
-///
-/// With [canSendRequest] (a founder looking at somebody else's open ticket)
-/// the sheet ends with "Send request"; it returns true when that was tapped.
 Future<bool> showTicketInfoSheet(
   BuildContext context,
   InvestmentTicket ticket, {

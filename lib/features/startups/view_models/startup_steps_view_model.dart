@@ -93,21 +93,14 @@ enum StepAdvance {
   /// Moved to the next step.
   advanced,
 
-  /// The step is not complete: errors are now shown (toast "Please fill in
-  /// the required fields").
   incomplete,
 
-  /// Step 3 with the team member editor open (toast "Save or cancel the team
-  /// member first").
   memberOpen,
 
-  /// The last step is complete: call [StartupStepsViewModel.save].
+  /// The last step is complete: call StartupStepsViewModel.save.
   readyToSave,
 }
 
-/// State of the Add / Edit startup form and the onboarding steps (docs/06
-/// section 8): four steps, a "tried" flag per step that makes errors appear,
-/// the team member editor and the save.
 class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
   StartupStepsViewModel({
     this.initial,
@@ -131,8 +124,6 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
       c.addListener(notifyListeners);
     }
   }
-
-  // ---------------------------------------------------------------- drafts
 
   late String _baseline;
 
@@ -177,7 +168,6 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
     'isPublic': isPublic,
   };
 
-  /// True when anything differs from how the form opened (a new logo counts).
   bool get isDirty =>
       newLogo != null || removeLogo || _signature() != _baseline;
 
@@ -185,12 +175,9 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
   Map<String, Object?> toDraft() => {
     ..._state(),
     'step': furthestStep,
-    // 2 = Startup Team before Startup Ask (older drafts have no marker).
     'order': 2,
   };
 
-  /// Fills the form from [toDraft] output and makes that the new starting
-  /// point, so opening a draft and leaving at once asks nothing.
   void loadDraft(Map<String, Object?> d) {
     String t(String k) => (d[k] as String?) ?? '';
     name.text = t('name');
@@ -253,8 +240,6 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
     isPublic = d['isPublic'] != false;
     _ensureFounder();
     var savedStep = (d['step'] as num?)?.toInt() ?? 0;
-    // A draft from before the two last steps swapped places: Startup Ask was
-    // step 4 and Startup Team step 5.
     if (d['order'] != 2) {
       if (savedStep == 4) {
         savedStep = 5;
@@ -271,17 +256,9 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
 
   final Startup? initial;
 
-  /// Editing ONE section of a saved startup (Manage -> Details -> Edit): the
-  /// section number is its position in the Details tab (0 Overview, 1 Startup
-  /// Description, 2 Target Market, 3 Finance and Growth, 4 Startup Team, 5
-  /// Startup Ask). Only that section's fields are shown, with a "Save"
-  /// button instead of Next. Null = the normal form. The onboarding steps
-  /// themselves are not changed by this.
   final int? onlySection;
   bool get isSectionEdit => onlySection != null;
 
-  /// The form step that holds each Details section (each section is its own
-  /// step: Finance and Growth is step 3, Startup Team step 4, Startup Ask 5).
   static const sectionSteps = [0, 1, 2, 3, 4, 5];
   int? get onlyStep => onlySection == null ? null : sectionSteps[onlySection!];
   final StartupRepository _repository;
@@ -296,13 +273,8 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
 
   bool get isEditing => initial != null;
 
-  /// One step per title: Startup Overview, Startup Description, Target
-  /// Market, Finance and Growth, Startup Team, Startup Ask. Built from the
-  /// list so a new step only needs a new title.
   static int get stepCount => FounderToolsStrings.stepTitles.length;
 
-  /// The step that holds the team member list and editor (the one before
-  /// the last).
   static int get teamStep => stepCount - 2;
 
   /// The Startup Ask: the last step ("Create startup" / "Save changes").
@@ -311,16 +283,8 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
   /// The current step, 0-based.
   int step = 0;
 
-  /// The furthest step the founder reached (Back moves [step] down, but a
-  /// saved draft should reopen where they got to).
   int furthestStep = 0;
   final Set<int> _tried = {};
-
-  // ---- "Required" errors after leaving a field
-  //
-  // A FORMAT error shows from the first keystroke. A REQUIRED error (the field
-  // is empty) shows after Next / Save is pressed, or after the person typed in
-  // the field and then left it. A form nobody touched is never full of red.
 
   final Map<StartupField, FocusNode> _focus = {};
   final Map<StartupField, String> _lastText = {};
@@ -348,8 +312,6 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
     _ => null,
   };
 
-  /// The focus node of a text field: give it to the field, so leaving it
-  /// after typing can show its "required" message.
   FocusNode focusOf(StartupField f) {
     final existing = _focus[f];
     if (existing != null) return existing;
@@ -358,7 +320,6 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
     _lastText[f] = c?.text ?? '';
     node.addListener(() {
       final text = c?.text ?? '';
-      // A change of the TEXT counts as typing (a caret move does not).
       if (text != _lastText[f]) {
         _lastText[f] = text;
         _edited.add(f);
@@ -376,7 +337,6 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
     return _focus[f] = node;
   }
 
-  // ---- Step 1
   final name = TextEditingController();
   final description = TextEditingController();
   final founded = TextEditingController();
@@ -384,8 +344,6 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
   final sectorOther = TextEditingController();
   final modelOther = TextEditingController();
 
-  /// The sectors picked, in the order they were picked (the labels; "Other"
-  /// stands for the typed [sectorOther]). The FIRST one is the main sector.
   final List<String> sectorPicks = [];
 
   /// The main sector: the first one picked.
@@ -398,17 +356,15 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
   bool removeLogo = false;
   bool isPickingLogo = false;
 
-  // ---- Step 2
   final problem = TextEditingController();
   final solution = TextEditingController();
   final customers = TextEditingController();
   final advantage = TextEditingController();
 
-  // ---- Step 3
   final marketSize = TextEditingController();
   List<TeamMember> team = [];
 
-  /// The member editor: null index with [editorOpen] = adding.
+  /// The member editor: null index with editorOpen = adding.
   bool editorOpen = false;
   int? editingIndex;
   bool memberTried = false;
@@ -423,7 +379,6 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
   /// null until a new member's Team member / Co-founder choice is made.
   bool? memberCoFounder;
 
-  // ---- Step 4
   final revenueNow = TextEditingController();
   final capital = TextEditingController();
   final burn = TextEditingController();
@@ -437,15 +392,13 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
   final valuation = TextEditingController();
   final funding = TextEditingController();
 
-  /// Funding / Partnership / Support. Nothing is ticked by default.
+  /// Funding / Partnership / Support.
   Set<LookingFor> lookingFor = {};
 
-  /// The picked partner / support types ("Other" stands for what was typed).
   Set<String> partnerSel = {};
   Set<String> supportSel = {};
   bool isPublic = true;
 
-  // ---- Async
   bool isSaving = false;
   String? saveError;
   String? logoError;
@@ -480,8 +433,6 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
     funding,
   ];
 
-  /// The labels the Sector and Commerce model pickers list (the "Other"
-  /// write-in can't repeat one of them).
   static final List<String> _sectorLabels = [
     for (final s in Sector.values) s.label,
   ];
@@ -489,8 +440,6 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
     for (final m in CommerceModel.picks) ...[m.label, m.shortLabel],
   ];
 
-  /// What else counts as a listed commerce model: its abbreviation ("B2B")
-  /// and its name without the brackets ("Business-to-Business").
   static final Map<String, String> modelAlsoCountsAs = {
     for (final m in CommerceModel.picks) ...{
       m.shortLabel: m.label,
@@ -540,11 +489,9 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
 
   bool get hasLogo => newLogo != null || existingLogoData != null;
 
-  // ------------------------------------------------------------ validation
-
   static bool _blank(TextEditingController c) => c.text.trim().isEmpty;
 
-  /// The raw error of [f] (null when valid), regardless of "tried".
+  /// The raw error of f (null when valid), regardless of "tried".
   String? _rawError(StartupField f) {
     switch (f) {
       case StartupField.name:
@@ -606,9 +553,6 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
       case StartupField.raised:
         return StartupValidators.raisedInRound(raised.text, funding.text);
       case StartupField.lookingFor:
-        // A new startup says what it needs. An existing one may need nothing
-        // right now (e.g. its funding round just closed and Funding was its
-        // only ask): it then shows "Not raising right now".
         return isEditing ? null : StartupValidators.lookingFor(lookingFor);
       case StartupField.partnerTypes:
         if (partnerOtherRepeats) return ValidationStrings.otherRepeats;
@@ -657,7 +601,6 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
       StartupField.website,
     ],
     [StartupField.problem, StartupField.solution, StartupField.advantage],
-    // Target Market: who the customers are and how big the market is.
     [StartupField.customers, StartupField.marketSize],
     // Finance and Growth.
     [
@@ -668,10 +611,7 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
       StartupField.revenue,
       StartupField.modelText,
     ],
-    // Startup Team: no required field (the member editor must be closed).
     [],
-    // Startup Ask, the last step (the funding / partner / support fields
-    // only count while their box is ticked: see [_fieldsOf]).
     [
       StartupField.lookingFor,
       StartupField.funding,
@@ -681,7 +621,7 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
     ],
   ];
 
-  /// The fields that must be valid on step [s] right now.
+  /// The fields that must be valid on step s right now.
   List<StartupField> _fieldsOf(int s) {
     if (s != askStep) return _stepFields[s];
     return [
@@ -699,54 +639,41 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
     return 0;
   }
 
-  /// The error to show under [f]: only after the step was tried (the founded
-  /// year also shows as soon as 4 digits are typed). Empty string for the
-  /// valuation (it only turns the button grey, no text).
   String? errorOf(StartupField f) {
     final raw = _rawError(f);
     if (raw == null) return null;
-    // A year outside 2000..this year says so as soon as 4 digits are typed;
-    // fewer digits or an empty field wait for Next (or for leaving the field).
     if (f == StartupField.founded && founded.text.trim().length >= 4) {
       return raw;
     }
-    // The "Other" write-in repeating a listed option says so at once.
     if (f == StartupField.partnerTypes && partnerOtherRepeats) return raw;
     if (f == StartupField.supportTypes && supportOtherRepeats) return raw;
     if (f == StartupField.sectorOther && sectorOtherRepeats) return raw;
     if (f == StartupField.modelOther && modelOtherRepeats) return raw;
-    // The range error shows as soon as a number is entered (and follows the
-    // Stage if it changes); an empty field waits for Next.
     if (f == StartupField.funding &&
         StartupValidators.money(funding.text) != null) {
       return raw;
     }
-    // "Already raised" can't pass the amount being raised: says so at once.
     if (f == StartupField.raised &&
         StartupValidators.money(raised.text) != null) {
       return raw;
     }
-    // A year under SAR 1,000 says so at once (empty boxes wait for Next).
     if (f == StartupField.revenue &&
         StartupValidators.revenueTooLow(rev1.text, rev2.text, rev3.text)) {
       return raw;
     }
-    // A typed zero says so at once (an empty field waits for Next).
     if (f == StartupField.marketSize && marketSize.text.trim().isNotEmpty) {
       return raw;
     }
-    // The website is checked from the first character (it is optional, so
-    // an empty one is never an error).
     if (f == StartupField.website && website.text.trim().isNotEmpty) {
       return raw;
     }
     return _tried.contains(_stepOf(f)) || _left.contains(f) ? raw : null;
   }
 
-  /// True when [f] should be drawn in the error style.
+  /// True when f should be drawn in the error style.
   bool hasError(StartupField f) => errorOf(f) != null;
 
-  /// Every required answer of [s] (0-based) is given.
+  /// Every required answer of s (0-based) is given.
   bool stepComplete(int s) {
     if (s == teamStep && (editorOpen || !founderComplete)) return false;
     // Editing one section checks only that section's fields.
@@ -761,11 +688,9 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
 
   bool get currentComplete => stepComplete(step);
 
-  /// The fields of Details section [section] (see [sectionSteps]).
+  /// The fields of Details section section (see sectionSteps).
   List<StartupField> _sectionFields(int section) =>
       section == teamStep ? const [] : _fieldsOf(section);
-
-  // --------------------------------------------------------------- changes
 
   /// Rebuilds after a selection change.
   void _touch(VoidCallback change) {
@@ -840,8 +765,6 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
     }
   }
 
-  // ------------------------------------------------------------------ steps
-
   /// Goes back one step; false when already on the first step.
   bool previous() {
     if (step == 0 || isSectionEdit) return false;
@@ -869,14 +792,10 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
     return StepAdvance.readyToSave;
   }
 
-  // ----------------------------------------------------------- team members
-
-  /// The signed-in founder's row, always first. Name and e-mail come from
-  /// the account (locked); the founder fills in the role and contribution.
+  /// The signed-in founder's row, always first.
   void _ensureFounder() {
     final user = AppSession.instance.user;
     if (user == null || !user.isFounder) return;
-    // Only the startup's founder (whoever holds it now) has the Founder card.
     if (initial != null && initial!.founderId != user.uid) return;
     final list = [...team];
     var i = list.indexWhere((m) => m.isFounder);
@@ -907,8 +826,6 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
     team = list;
   }
 
-  /// On the team step, the founder's own details open straight away while
-  /// their role or contribution is still empty, so they see what to fill in.
   void _openFounderIfNeeded() {
     if (step != teamStep || editorOpen || founderComplete) return;
     final i = team.indexWhere((m) => m.isFounder);
@@ -920,8 +837,6 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
     return i < 0 ? null : team[i];
   }
 
-  /// The founder filled in their role and contribution (or there is no
-  /// founder row, e.g. a co-founder editing).
   bool get founderComplete {
     final f = founderMember;
     return f == null ||
@@ -931,17 +846,12 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
   /// Show the "add your role and contribution" line under the founder card.
   bool get founderRowError => _tried.contains(teamStep) && !founderComplete;
 
-  /// True for the founder's own row and for my own row: their name and
-  /// e-mail come from the account and are locked (only the role and the
-  /// contribution can be edited).
   bool isLockedMember(TeamMember m) {
     if (m.isFounder) return true;
     final uid = AppSession.instance.user?.uid;
     return uid != null && m.uid == uid;
   }
 
-  /// Somebody who joined through their account: their name and e-mail are
-  /// theirs, so the founder can't edit them.
   bool isLinkedMember(TeamMember m) =>
       !m.isFounder && !m.invited && m.uid != null;
 
@@ -953,15 +863,13 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
     return uid != null && uid == s.founderId;
   }
 
-  /// [m] joined as a co-founder.
+  /// m joined as a co-founder.
   bool _joinedCoFounder(TeamMember m) =>
       !m.invited &&
       m.uid != null &&
       (initial?.memberRoles[m.uid] == 'coFounder' || m.coFounder);
 
-  /// "Remove this member" on [m]'s card. Nobody removes their own card (they
-  /// leave instead) or the owner's; only the owner removes a co-founder who
-  /// joined. Co-founders can remove members.
+  /// "Remove this member" on m's card.
   bool canRemoveMember(TeamMember m) {
     final me = AppSession.instance.user?.uid;
     final owner = initial?.founderId;
@@ -971,9 +879,7 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
     return true;
   }
 
-  /// The Co-founder box on [m]'s card. Only the owner changes it for someone
-  /// who already joined (it decides who can edit and who blocks a delete);
-  /// the founder and the owner never have one.
+  /// The Co-founder box on m's card.
   bool canChangeCoFounder(TeamMember m) {
     if (isLockedMember(m)) return false;
     final owner = initial?.founderId;
@@ -990,9 +896,6 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
 
   bool _validName(String v) => Validators.isFullName(v);
 
-  // ---- the editor's "required" messages after leaving a field (the same
-  // rule as the steps: a format error shows from the first keystroke, an
-  // empty field only after "Add member" or after typing in it and leaving).
   final Map<TextEditingController, FocusNode> _memberFocus = {};
   final Set<TextEditingController> _memberEdited = {};
   final Set<TextEditingController> _memberLeft = {};
@@ -1019,8 +922,6 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
   bool _memberRequiredShown(TextEditingController c) =>
       memberTried || _memberLeft.contains(c);
 
-  /// The same e-mail rule as sign-up: a common provider or a university
-  /// address, with its real extension.
   bool get _emailValid => Validators.isSignupEmail(memberEmail.text);
 
   /// Another member (not the one being edited) already has this e-mail.
@@ -1034,8 +935,6 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
     return false;
   }
 
-  /// Every field of the editor is filled and valid (the founder's own row
-  /// only needs the role and the contribution).
   bool get memberComplete {
     final roleOk =
         !_blank(memberRole) &&
@@ -1050,8 +949,6 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
         memberCoFounder != null;
   }
 
-  /// The error under an editor field: empty ones after "Add member" was
-  /// tried; format and duplicate errors show as soon as they apply.
   String? memberError(TextEditingController c) {
     if ((editingFounder || editingLinked) &&
         (c == memberName || c == memberEmail)) {
@@ -1116,8 +1013,6 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
       '${memberName.text}|${memberEmail.text}|${memberRole.text}|'
       '${memberContribution.text}|$memberCoFounder';
 
-  /// True when a value of the open member editor differs from how it opened:
-  /// its Cancel asks "Discard changes?" only then.
   bool get memberDirty => editorOpen && _memberSignature() != _memberBaseline;
 
   void setMemberCoFounder(bool v) => _touch(() => memberCoFounder = v);
@@ -1130,17 +1025,9 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
     _memberLeft.clear();
   });
 
-  /// E-mails found to be registered accounts while adding members: their
-  /// invitation is not a "create your account" one.
   final Set<String> _registeredEmails = {};
 
   /// "Add member" / "Save member".
-  ///
-  /// - [MemberSave.invalid]: a field is wrong or empty (errors now show).
-  /// - [MemberSave.needsInvite]: nobody is registered with that e-mail; the
-  ///   screen asks "This person isn't on Start.sa yet" and, on "Send
-  ///   invite", calls this again with [inviteConfirmed].
-  /// - [MemberSave.saved]: the member is in the list.
   Future<MemberSave> saveMember({bool inviteConfirmed = false}) async {
     final i = editingIndex;
     final old = i == null ? null : team[i];
@@ -1157,8 +1044,6 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
       );
       return MemberSave.saved;
     }
-    // Somebody who already joined: only the role, the contribution and the
-    // Co-founder box change (their name and e-mail are theirs).
     if (old != null && !old.invited && old.uid != null) {
       if (_blank(memberRole) ||
           Validators.hasDigit(memberRole.text) ||
@@ -1194,8 +1079,6 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
     }
     if (account != null) {
       _registeredEmails.add(email);
-      // Already on Start.sa: they get an invitation to accept (no dialog
-      // needed); their account name replaces the typed one.
       final alreadyInvited = old != null && old.invited && old.email == email;
       memberName.text = account.name;
       _commitMember(
@@ -1254,10 +1137,7 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
     });
   }
 
-  // ------------------------------------------------------------------- save
-
-  /// Saves the startup (create or update). Returns it, or null with
-  /// [saveError] set.
+  /// Saves the startup (create or update).
   Future<Startup?> save() async {
     if (isSaving) return null;
     isSaving = true;
@@ -1265,8 +1145,6 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
     lostPermission = false;
     notifyListeners();
     try {
-      // Editing: my CURRENT role is read again right before writing. If I was
-      // removed (or turned into a team member) nothing is saved.
       if (isEditing && !await _stillAllowed()) {
         lostPermission = true;
         saveError = FounderToolsStrings.noPermissionAnymore;
@@ -1292,8 +1170,6 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
       inviteSummary = await _sendInvitations(saved);
       return saved;
     } catch (e) {
-      // In a debug build the real reason is appended, so a failure can be
-      // diagnosed from the screen (the plain message ships in release).
       saveError = FounderToolsStrings.saveFailed;
       debugPrint('Saving the startup failed: $e (${startupErrorMessage(e)})');
       return null;
@@ -1306,15 +1182,11 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
   /// Why the last invitation e-mail was refused (shown in debug builds).
   String? lastInviteError;
 
-  /// What happened to the invitation e-mails of the last [save].
+  /// What happened to the invitation e-mails of the last save.
   InviteSummary inviteSummary = const InviteSummary();
 
-  /// The status of each invitation I sent for this startup, by e-mail (to
-  /// show "Declined" on a card).
   Map<String, InvitationStatus> inviteStatus = const {};
 
-  /// Reads the invitations of this startup and, when somebody accepted while
-  /// the startup was private, fixes their card.
   Future<void> loadInvitations() async {
     final s = initial;
     if (s == null) return;
@@ -1332,8 +1204,6 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
     }
   }
 
-  /// Creates the invitations of every invited member, cancels the ones of
-  /// members that were removed, and sends the e-mails not sent yet.
   Future<InviteSummary> _sendInvitations(Startup saved) async {
     var sent = 0, failed = 0;
     var offline = false, limit = false;
@@ -1433,9 +1303,7 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
       name: name.text.trim(),
       description: description.text.trim(),
       sector: sector ?? initial!.sector,
-      // The typed text belongs to the main sector only when "Other" is it.
       sectorOther: sector == Sector.other ? sectorOther.text.trim() : null,
-      // The other picks, in order ("Other" replaced by what was typed).
       otherSectors: [
         for (final p in sectorPicks.skip(1))
           if (p != _other)
@@ -1509,8 +1377,6 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
           other.text.trim(),
   ];
 
-  /// The reverse of [_typesToSave]: saved texts that are not in [order] were
-  /// typed under "Other".
   static (Set<String>, String) _typesFromSaved(
     List<String> saved,
     List<String> order,
@@ -1522,17 +1388,12 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
         picked.add(v);
       } else {
         picked.add('Other');
-        // An older value that is not in the list any more is shown under
-        // "Other" (all of them, not only the last one).
         if (v != 'Other') typed.add(v);
       }
     }
     return (picked, typed.join(', '));
   }
 
-  /// Who has access: the startup's current members, updated by the team list.
-  /// A person who joined gets the role of their Co-founder box; a joined
-  /// person removed from the list loses access.
   Map<String, String> _roles() {
     final roles = {...?initial?.memberRoles};
     final owner = initial?.founderId;
@@ -1570,7 +1431,6 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
   void _fillFrom(Startup? s) {
     if (s == null) return;
     name.text = s.name;
-    // One brief description (older startups had a pitch and a description).
     description.text = s.briefDescription;
     founded.text = s.foundedYear?.toString() ?? '';
     website.text = s.websiteUrl ?? '';
@@ -1587,8 +1447,6 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
         sectorOther.text = o;
       }
     }
-    // A stage or commerce model that is no longer offered stays empty, so
-    // the founder picks a real one the next time.
     stage = StartupStage.picks.contains(s.stage) ? s.stage : null;
     model = CommerceModel.picks.contains(s.commerceModel)
         ? s.commerceModel

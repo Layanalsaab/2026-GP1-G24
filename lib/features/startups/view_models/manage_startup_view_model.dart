@@ -15,9 +15,6 @@ import '../../../models/connection_request.dart';
 import '../../../models/invitation.dart';
 import '../../../models/startup.dart';
 
-/// State of Manage startup (docs/05 D3): the startup as last saved, the
-/// current tab, the visibility switch, closing, and leaving (the owner names
-/// the next owner first).
 class ManageStartupViewModel extends ChangeNotifier with SafeNotifier {
   ManageStartupViewModel({required this.startup, StartupRepository? repository})
     : _repository = repository ?? StartupRepository.instance;
@@ -27,9 +24,6 @@ class ManageStartupViewModel extends ChangeNotifier with SafeNotifier {
   /// The startup as last saved.
   Startup startup;
 
-  /// 0 Dashboard, 1 Interest (EOI), 2-7 the six steps of the add-startup form
-  /// (Startup Overview ... Startup Ask, the same tabs as the startup page), 8
-  /// Settings. (The requests of a round live inside the round.)
   int tab = 0;
 
   bool isSavingVisibility = false;
@@ -47,8 +41,7 @@ class ManageStartupViewModel extends ChangeNotifier with SafeNotifier {
     notifyListeners();
   }
 
-  /// Flips Public / Private and saves it. Returns the new value, or null
-  /// when saving failed (the switch goes back).
+  /// Flips Public / Private and saves it.
   Future<bool?> setPublic(bool value) async {
     if (isSavingVisibility || value == startup.isPublic) return null;
     final before = startup;
@@ -57,7 +50,6 @@ class ManageStartupViewModel extends ChangeNotifier with SafeNotifier {
     error = null;
     notifyListeners();
     try {
-      // A closed startup: only its visibility changes (its owner only).
       startup = before.isClosed
           ? await _repository.setClosedVisibility(before, value)
           : await _repository.update(startup);
@@ -75,8 +67,6 @@ class ManageStartupViewModel extends ChangeNotifier with SafeNotifier {
   /// A change (close, hand over, leave, invite) is being saved.
   bool isBusy = false;
 
-  /// The people who joined the team (co-founders and members), who can
-  /// become the next owner: (uid, name, role), in the order of the team list.
   List<(String, String, String)> get nextOwnerChoices {
     final ids = startup.memberIds.toSet();
     final ordered = <String>[
@@ -93,13 +83,9 @@ class ManageStartupViewModel extends ChangeNotifier with SafeNotifier {
       ? FounderToolsStrings.roleCoFounder
       : FounderToolsStrings.roleMember;
 
-  /// The owner invitation still waiting for an answer (the "Waiting for…"
-  /// card in Settings), or null.
   Invitation? pendingOwnerInvite;
 
-  /// Reads [pendingOwnerInvite] (the owner, on an active startup).
-  /// The e-mail of an owner invitation that was not answered in 30 days (it
-  /// is cancelled when Settings opens). The tab says so once.
+  /// Reads pendingOwnerInvite (the owner, on an active startup).
   String? expiredOwnerEmail;
 
   Future<void> loadOwnerInvite() async {
@@ -113,7 +99,6 @@ class ManageStartupViewModel extends ChangeNotifier with SafeNotifier {
         startup.id,
       );
       if (found != null && found.isExpired(DateTime.now())) {
-        // Nobody answered in 30 days: it ends, and she may invite again.
         await InvitationRepository.instance.cancelOwnerInvite(startup);
         expiredOwnerEmail = found.emailLower;
         pendingOwnerInvite = null;
@@ -126,9 +111,6 @@ class ManageStartupViewModel extends ChangeNotifier with SafeNotifier {
     }
   }
 
-  /// The founder hands the startup to the joined person [uid] and becomes
-  /// [stay] (`coFounder` or `member`), or leaves for good (null). True on
-  /// success.
   Future<bool> transferTo(String uid, {String? stay}) =>
       _run(FounderToolsStrings.handoverFailed, () async {
         startup = await _repository.transferOwnership(
@@ -152,9 +134,6 @@ class ManageStartupViewModel extends ChangeNotifier with SafeNotifier {
         }
       });
 
-  /// The founder invites [email] to take over (he stays in control until it
-  /// is accepted, then becomes [stay], or leaves for good when null); the
-  /// invitation e-mail is sent too. True on success.
   Future<bool> inviteOwner(
     String email, {
     required bool newUser,
@@ -170,15 +149,12 @@ class ManageStartupViewModel extends ChangeNotifier with SafeNotifier {
         );
         pendingOwnerInvite = invitation;
         expiredOwnerEmail = null;
-        // The e-mail is best effort: the invitation also waits in the app.
         ownerEmailResult = await repo.sendEmail(invitation);
       });
 
   /// What happened to the e-mail of the last owner invitation or resend.
   InviteSendResult? ownerEmailResult;
 
-  /// "Resend email": sends the waiting owner invitation again (the relay
-  /// allows one e-mail per invitation per hour). Returns what happened.
   Future<InviteSendResult> resendOwnerInvite() async {
     final invite = pendingOwnerInvite;
     if (invite == null) return InviteSendResult.failed;
@@ -188,15 +164,14 @@ class ManageStartupViewModel extends ChangeNotifier with SafeNotifier {
     return result;
   }
 
-  /// Cancels [pendingOwnerInvite]. True on success.
+  /// Cancels pendingOwnerInvite.
   Future<bool> cancelOwnerInvite() =>
       _run(FounderToolsStrings.ownerInviteCancelFailed, () async {
         await InvitationRepository.instance.cancelOwnerInvite(startup);
         pendingOwnerInvite = null;
       });
 
-  /// Closes the startup (its owner): permanent, kept for everyone. Waiting
-  /// requests are declined too. True on success.
+  /// Closes the startup (its owner): permanent, kept for everyone.
   Future<bool> close() => _run(FounderToolsStrings.closeFailed, () async {
     startup = await _repository.close(startup);
     pendingOwnerInvite = null;
@@ -208,9 +183,6 @@ class ManageStartupViewModel extends ChangeNotifier with SafeNotifier {
     }
   });
 
-  /// Delete startup (the founder): checks [password], then deletes it for
-  /// everyone (its team gets a notice). Returns what to show under the
-  /// password field, or null once it is deleted.
   Future<String?> deleteStartup(String password) async {
     if (isBusy) return AppStrings.genericError;
     isBusy = true;
@@ -242,8 +214,6 @@ class ManageStartupViewModel extends ChangeNotifier with SafeNotifier {
   }
 
   /// Leaves the startup (a co-founder or team member of an active one).
-  /// Sample startups (interface only) are left by the screen that listed
-  /// them. True on success.
   Future<bool> leave() => _run(FounderToolsStrings.leaveFailed, () async {
     if (!PrototypeSeed.isSampleStartup(startup.id)) {
       await _repository.leave(startup);
@@ -260,7 +230,6 @@ class ManageStartupViewModel extends ChangeNotifier with SafeNotifier {
       await action();
       return true;
     } catch (e) {
-      // The real cause (e.g. PERMISSION_DENIED) for the debug console.
       debugPrint('$failed ($e)');
       error = failed;
       return false;
@@ -270,7 +239,7 @@ class ManageStartupViewModel extends ChangeNotifier with SafeNotifier {
     }
   }
 
-  /// The session stops listing [id] as one of my startups.
+  /// The session stops listing id as one of my startups.
   void _forget(String id) {
     final session = AppSession.instance;
     session.setOwnStartupIds([

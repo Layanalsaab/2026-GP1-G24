@@ -5,11 +5,6 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_metrics.dart';
 import '../../theme/app_text.dart';
 
-/// The segmented "Startups | Investors" switch (prototype `.fytop`, docs/02
-/// §8.11): track 42 high, padding 3, radius 13, fill `#E9E6DF`, equal
-/// segments and a white thumb (radius 10, segment-thumb shadow) that slides
-/// 300 ms easeOut. Labels 14.5/600 (`#6B726C`, selected green) change colour
-/// in 200 ms. No press scale. Works for any number of labels >= 2.
 class SegmentedSwitch extends StatefulWidget {
   const SegmentedSwitch({
     super.key,
@@ -18,7 +13,7 @@ class SegmentedSwitch extends StatefulWidget {
     required this.onChanged,
   });
 
-  /// The segment labels, e.g. `['Startups', 'Investors']`.
+  /// The segment labels, e.g.
   final List<String> labels;
   final int selectedIndex;
   final ValueChanged<int> onChanged;

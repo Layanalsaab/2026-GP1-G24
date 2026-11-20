@@ -19,17 +19,7 @@ import '../../../models/match_summary.dart';
 import '../../../models/startup.dart';
 import '../../../models/startup_enums.dart';
 
-/// State of Manage -> Rounds: the startup's rounds, the "Add round" form and
-/// "Close round".
-///
-/// With a [startup], the rounds are loaded from Firestore and every action is
-/// saved: "Add round" ticks Funding with the new amount (and moves the
-/// startup's Stage to the round type), "Close round" unticks it. Both go
-/// through StartupRepository.update, which opens / closes the round in the
-/// same write, so the startup and its rounds always agree. [onStartupSaved]
-/// gets the startup as saved.
-///
-/// Without a startup (tests), [rounds] (or the sample rounds) live in memory.
+/// State of Manage -> Rounds: the startup's rounds, the "Add round" form and "Close round".
 class RoundsViewModel extends ChangeNotifier with SafeNotifier {
   RoundsViewModel({
     Startup? startup,
@@ -57,8 +47,6 @@ class RoundsViewModel extends ChangeNotifier with SafeNotifier {
   /// Called with the startup as saved after a round was added or closed.
   final void Function(Startup saved)? onStartupSaved;
 
-  /// False for a team member: every action below does nothing (checked here,
-  /// not only hidden in the screen).
   final bool canManage;
   final DateTime? _fixedNow;
   DateTime get _today => _fixedNow ?? DateTime.now();
@@ -72,8 +60,7 @@ class RoundsViewModel extends ChangeNotifier with SafeNotifier {
 
   Startup? _startup;
 
-  /// The startup as the screen has it now (it can change elsewhere, e.g. the
-  /// Public switch), so a round save never puts back old values.
+  /// The startup as the screen has it now (it can change elsewhere, e.g.
   final Startup Function()? _currentStartupOf;
   Startup? get _latest => _currentStartupOf?.call() ?? _startup;
 
@@ -86,8 +73,6 @@ class RoundsViewModel extends ChangeNotifier with SafeNotifier {
   /// The message of the last failed save (the screen shows it once).
   String? error;
 
-  /// Loads the rounds again (also after the startup was edited: the Startup
-  /// Ask may have opened, changed or closed a round).
   Future<void> load([Startup? updated]) async {
     if (updated != null) _startup = updated;
     final s = _startup;
@@ -112,9 +97,6 @@ class RoundsViewModel extends ChangeNotifier with SafeNotifier {
   /// Add round / Close round can be offered (the rounds are known).
   bool get ready => !isLoading && !loadFailed;
 
-  /// The startup's "already raised in this round" (from the Startup Ask), or
-  /// the accepted requests total when that is higher. When set, it is what
-  /// the OPEN round's Raised column shows. Null leaves the round's own value.
   int? openRaised;
 
   /// Newest round first.
@@ -128,7 +110,6 @@ class RoundsViewModel extends ChangeNotifier with SafeNotifier {
     ];
   }
 
-  /// The open round, or null when every round is closed (or there are none).
   FundingRound? get openRound {
     for (final r in rounds) {
       if (r.isOpen) return r;
@@ -138,8 +119,6 @@ class RoundsViewModel extends ChangeNotifier with SafeNotifier {
 
   int get nextNumber => _rounds.isEmpty ? 1 : rounds.first.number + 1;
 
-  // ------------------------------------------------------------ add form
-
   bool formOpen = false;
   StartupStage? type;
   final amount = TextEditingController();
@@ -148,18 +127,12 @@ class RoundsViewModel extends ChangeNotifier with SafeNotifier {
   /// True after the first tap on "Add round" with something missing.
   bool tried = false;
 
-  /// The round types that can be picked: the SAME stage as the last round
-  /// and the later ones (after a Seed round: Seed, Series A, Series B,
-  /// Series C). Earlier stages are never offered.
   List<StartupStage> get allowedTypes {
     const all = StartupStage.picks;
     final from = _earliestIndex;
     return from < 0 ? all : all.sublist(from);
   }
 
-  /// The earliest stage that can be picked: the last round's and, with a
-  /// startup, its current Stage (opening a round sets the Stage, so it never
-  /// goes back). -1 when anything goes.
   int get _earliestIndex {
     const all = StartupStage.picks;
     final last = _rounds.isEmpty ? -1 : all.indexOf(rounds.first.type);
@@ -168,8 +141,6 @@ class RoundsViewModel extends ChangeNotifier with SafeNotifier {
     return last > stage ? last : stage;
   }
 
-  /// The next stage after the last round (the form's default); with no
-  /// rounds, the startup's Stage (or Pre-seed).
   StartupStage get defaultType {
     const all = StartupStage.picks;
     if (_rounds.isEmpty) {
@@ -184,21 +155,12 @@ class RoundsViewModel extends ChangeNotifier with SafeNotifier {
     return from > all.indexOf(next) ? all[from] : next;
   }
 
-  // ----------------------------------------------------------- edit form
-
-  /// The open round being edited (the Edit round form on the round page), or
-  /// null. The form uses the same fields, limits and errors as Add round.
   FundingRound? editing;
 
   bool get editOpen => editing != null;
 
-  /// Back on the rounds list: forgets an Edit round form without telling the
-  /// screen (called when the Rounds tab is built again, so switching Manage
-  /// tabs always shows the list and no half-open edit).
   void resetView() => editing = null;
 
-  /// Opens "Edit round" for the OPEN round, pre-filled with its current
-  /// values. Closed rounds can't be edited; a view-only member can't either.
   void openEdit() {
     if (!canManage || formOpen || editing != null) return;
     final open = openRound;
@@ -217,10 +179,6 @@ class RoundsViewModel extends ChangeNotifier with SafeNotifier {
     notifyListeners();
   }
 
-  /// Saves the edited open round: the new type, amount and "already raised"
-  /// go to the startup (Funding ask + Stage), and the repository updates the
-  /// round in the same write (the same path as Add round / Close round), after
-  /// the role was read again. Returns true when it was saved.
   Future<bool> saveEdit() async {
     if (!canManage || isSaving) return false;
     final edited = editing;
@@ -255,8 +213,6 @@ class RoundsViewModel extends ChangeNotifier with SafeNotifier {
     return true;
   }
 
-  // -------------------------------------------------------------- matches
-
   /// How many investors the Matches section of a round shows.
   static const matchesShown = 5;
 
@@ -264,15 +220,8 @@ class RoundsViewModel extends ChangeNotifier with SafeNotifier {
   MatchingRepository get _matching =>
       _matchingOverride ?? MatchingRepository.instance;
 
-  /// Bumps when the investors or startups changed (the list is computed again).
   ValueListenable<int> get matchChanges => _matching.changes;
 
-  /// The top [matchesShown] investors for an OPEN [round]: the startup with
-  /// the round's type as its stage, the round's amount as its ask and what
-  /// it raised, against the investors' open tickets first, then their
-  /// profiles (lib/recommender has the rules: sector 0.41, stage 0.29,
-  /// commerce model 0.18). Works for a private startup too; a closed one
-  /// gets none. Throws AuthException when the investors can't be read.
   Future<List<MatchResult>> matchesFor(FundingRound round) async {
     final s = _latest;
     if (s == null || s.isClosed || !round.isOpen) return const [];
@@ -286,10 +235,10 @@ class RoundsViewModel extends ChangeNotifier with SafeNotifier {
     return all.take(matchesShown).toList();
   }
 
-  /// The profile of a matched investor shown in [matchesFor].
+  /// The profile of a matched investor shown in matchesFor.
   InvestorProfile? matchedInvestor(String id) => _matching.investorById(id);
 
-  /// Why [match] matched, for the top of the investor's profile.
+  /// Why match matched, for the top of the investor's profile.
   MatchSummary summaryOf(MatchResult match) =>
       MatchSummary.forStartup(_latest?.name ?? 'this startup', match);
 
@@ -312,8 +261,6 @@ class RoundsViewModel extends ChangeNotifier with SafeNotifier {
 
   String _formSignature() => '${type?.value}|${amount.text}|${raised.text}';
 
-  /// True when a value differs from how the form opened: the Cancel button
-  /// asks "Discard changes?" only then.
   bool get formDirty =>
       (formOpen || editing != null) && _formSignature() != _formBaseline;
 
@@ -334,17 +281,12 @@ class RoundsViewModel extends ChangeNotifier with SafeNotifier {
 
   int? get raisedValue => Formatters.parseMoney(raised.text);
 
-  /// Empty (after "Add round" was tried) or under SAR 1,000: the same rule
-  /// and wording as the Startup Ask step. A number under the minimum says so
-  /// at once.
   String? get amountError {
     final v = amountValue;
     if (v == null) return tried ? ValidationStrings.funding : null;
     return RoundLimits.error(v);
   }
 
-  /// "How much have you already raised in this round?": required (0 is
-  /// fine), and not more than the amount being raised.
   String? get raisedError {
     final r = raisedValue;
     if (r == null) return tried ? ValidationStrings.raisedEmpty : null;
@@ -360,8 +302,6 @@ class RoundsViewModel extends ChangeNotifier with SafeNotifier {
       raisedValue != null &&
       raisedValue! <= amountValue!;
 
-  /// Adds the round (opening it) when the form is valid; otherwise marks the
-  /// errors. Returns true when it was added (and saved, with a startup).
   Future<bool> addRound() async {
     if (!canManage || isSaving) return false;
     tried = true;
@@ -379,8 +319,6 @@ class RoundsViewModel extends ChangeNotifier with SafeNotifier {
     );
     final s = _latest;
     if (s != null) {
-      // Funding ticked with this round's answers; the Stage becomes the
-      // round type. The repository opens the round in the same write.
       final saved = await _save(
         s.copyWith(
           lookingFor: {...s.lookingFor, LookingFor.funding},
@@ -397,12 +335,6 @@ class RoundsViewModel extends ChangeNotifier with SafeNotifier {
     return true;
   }
 
-  // --------------------------------------------------------- close round
-
-  /// Closes the open round (it moves to "Closed" in the list with what it
-  /// raised)
-  /// and, with a startup, removes Funding from its asks. Returns true when
-  /// it was closed.
   Future<bool> closeOpenRound() async {
     if (!canManage || isSaving) return false;
     final open = openRound;
@@ -423,8 +355,6 @@ class RoundsViewModel extends ChangeNotifier with SafeNotifier {
     return true;
   }
 
-  /// The founder's / co-founder's CURRENT role, read again right before a
-  /// write (not only when the screen opened). Offline: the rules decide.
   Future<bool> _stillAllowed(Startup s) async {
     final uid = AppSession.instance.user?.uid;
     if (uid == null) return true;

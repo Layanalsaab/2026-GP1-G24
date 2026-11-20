@@ -20,17 +20,12 @@ class TeamAccount {
   final bool isFounder;
 }
 
-/// Finds a registered Start.sa account by e-mail (case-insensitive) when a
-/// founder adds a team member.
-///
-/// It reads `emailIndex/{email}`: one small document per account (the uid,
-/// the name and the role) that the account's owner publishes after verifying
-/// the e-mail. Nobody can list the index, so accounts can't be scraped.
+/// Finds a registered Start.sa account by e-mail (case-insensitive) when a founder adds a team member.
 class TeamLookup {
   // ignore: prefer_initializing_formals
   const TeamLookup({FirestoreService? firestore}) : _firestore = firestore;
 
-  /// The app-wide instance. Tests replace it.
+  /// The app-wide instance.
   static TeamLookup instance = const TeamLookup();
 
   final FirestoreService? _firestore;
@@ -56,7 +51,6 @@ class TeamLookup {
   }
 
   /// Publishes (or refreshes) my entry, so teams can find me by e-mail.
-  /// Called after a verified log in and when my name changes. Best effort.
   Future<void> publish(AppUser user, {required bool emailVerified}) async {
     if (!emailVerified || user.email.trim().isEmpty) return;
     try {
@@ -80,8 +74,6 @@ class TeamLookup {
     }
   }
 
-  /// Removes my entry and my public profile when my account is deleted, so
-  /// nobody finds or opens a person who no longer exists. Best effort.
   Future<void> remove({required String uid, required String email}) async {
     final key = email.trim().toLowerCase();
     try {

@@ -1,11 +1,3 @@
-// Exports every write the app can make, with the biggest values the forms
-// allow and every pick-list value, to build/rules_parity.json.
-// tools/rules_tests/parity.test.mjs replays that file against the REAL
-// firestore.rules, so a field the app writes but the rules refuse (or a limit
-// that differs) is caught here instead of as "We couldn't save your startup".
-//
-//   flutter test test/audit/rules_parity_export_test.dart
-//   cd tools/rules_tests && npm run parity
 import 'dart:convert';
 import 'dart:io';
 
@@ -31,7 +23,7 @@ import '../support/recording_firestore.dart';
 
 String _text(int n, [String c = 'a']) => List.filled(n, c).join();
 
-/// A web address of exactly [n] characters ending in .com.
+/// A web address of exactly n characters ending in .com.
 String _site(int n) => 'https://${_text(n - 'https://.com'.length)}.com';
 
 void main() {
@@ -42,9 +34,7 @@ void main() {
   late InvitationRepository invitations;
   late TeamLookup lookup;
 
-  /// Switches the signed-in user. Waits first, so writes the app starts
-  /// without waiting for them (profile refreshes) are labelled with the user
-  /// who made them.
+  /// Switches the signed-in user.
   Future<void> actor(String uid, String email) async {
     await Future<void>.delayed(const Duration(milliseconds: 20));
     db.as(uid, email);
@@ -126,7 +116,6 @@ void main() {
   }
 
   test('export every write the app makes', () async {
-    // ---------------------------------------------------------- accounts
     db.scenario = 'founder signup (typical)';
     await founderAccount(uid: 'f1', email: 'f1@gmail.com');
 
@@ -211,7 +200,6 @@ void main() {
       valueOffered: _text(1000),
     );
 
-    // ----------------------------------------------- every pick-list value
     var n = 0;
     Future<void> createAndEdit(String label, Startup s) async {
       db.scenario = 'startup: $label';
@@ -243,7 +231,6 @@ void main() {
       await createAndEdit('looking for ${v.value}', base(looking: {v}));
     }
 
-    // ----------------------------------------------------- biggest startup
     final year = DateTime.now().year;
     final biggest = Startup(
       id: 'x',
@@ -305,8 +292,6 @@ void main() {
     await actor('f1', 'f1@gmail.com');
     final saved = await startups.create(biggest);
     await startups.update(saved.copyWith(description: 'Edited.'));
-    // (Only the founder edits: a co-founder has a team member's rights.)
-    // Switching Funding off closes the round in the same write.
     await startups.update(
       saved.copyWith(
         lookingFor: {LookingFor.talent},
@@ -314,16 +299,12 @@ void main() {
         isPublic: false,
       ),
     );
-    // The founder leaves by naming a joined co-founder the next founder (he
-    // leaves the team).
     final current = Startup.fromMap(
       saved.id,
       await db.getDocument(FirestoreCollections.startups, saved.id),
     )!;
     await startups.transferOwnership(current, 'm0');
 
-    // Zero amounts and the smallest texts; nobody else on it, so the owner
-    // can delete it.
     db.scenario = 'startup: smallest everything';
     final smallest = await startups.create(
       Startup(
@@ -350,7 +331,6 @@ void main() {
     );
     await startups.delete(smallest);
 
-    // -------------------------------------------------- the team and invites
     db.scenario = 'team: invite, accept, rename, leave';
     await actor('f1', 'f1@gmail.com');
     final team = await startups.create(
@@ -424,7 +404,6 @@ void main() {
       newName: 'Fahad Alharbi',
     );
 
-    // ----------------------------------------------------------- the rest
     db.scenario = 'edit profile: founder (biggest answers)';
     await actor('f2', 'f2@gmail.com');
     await users.updateProfile(

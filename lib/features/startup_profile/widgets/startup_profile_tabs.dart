@@ -24,12 +24,7 @@ import '../../startups/widgets/role_tag.dart';
 import '../screens/team_member_profile_screen.dart';
 import '../view_models/startup_profile_view_model.dart';
 
-/// The content of the selected tab of the startup page. The six tabs are the
-/// six steps of the add-startup form (Startup Overview, Startup Description,
-/// Target Market, Finance and Growth, Startup Team, Startup Ask) and show the
-/// same questions and answers as Manage -> Details. White cards (radius 20, padding 18, 16 px side
-/// margins), 12 px apart; question blocks inside a card are separated by a
-/// soft 1 px divider.
+/// The content of the selected tab of the startup page.
 class StartupProfilePane extends StatelessWidget {
   const StartupProfilePane({
     super.key,
@@ -44,23 +39,16 @@ class StartupProfilePane extends StatelessWidget {
 
   final StartupProfileViewModel viewModel;
 
-  /// Manage startup only: shows an "Edit" action on each section's card and
-  /// calls this with the step number (0 Overview ... 5 Ask). Null (the
-  /// profile everybody else sees) shows none.
   final ValueChanged<int>? onEdit;
 
   /// Manage startup only: under the Startup Team cards (Leave startup).
   final Widget? teamFooter;
 
-  /// Manage startup only: replaces the read-only round card and rounds table
-  /// of Startup Ask with the page that manages the rounds.
   final Widget? roundsSection;
 
   /// False when the parent already pads the pane (Manage startup).
   final bool padded;
 
-  /// Manage startup only: the team can open the profile of a person who was
-  /// invited and has an account, even before they accepted or saw it.
   final bool openInvited;
 
   /// Opens an associated investor's profile.
@@ -91,13 +79,8 @@ class StartupProfilePane extends StatelessWidget {
     );
   }
 
-  // ------------------------------------------------------- the form's steps
-
   VoidCallback? _editOf(int i) => onEdit == null ? null : () => onEdit!(i);
 
-  /// One of the first four steps (Overview, Description, Target Market,
-  /// Finance and Growth): the heading of the step and the same body Manage ->
-  /// Details opens.
   List<Widget> _section(int i) => [
     _SectionCard(
       title: FounderToolsStrings.stepTitles[i],
@@ -105,7 +88,6 @@ class StartupProfilePane extends StatelessWidget {
       child: ManageDetailsTab.sectionBody(
         viewModel.startup,
         i,
-        // Mine (or my team's): "your SAM". Somebody else's: "the startup's".
         mine:
             viewModel.isPreview ||
             StartupRole.of(viewModel.startup, AppSession.instance.user?.uid) !=
@@ -114,12 +96,8 @@ class StartupProfilePane extends StatelessWidget {
     ),
   ];
 
-  /// The Startup Ask card: the asks of the form (Funding, Partnership,
-  /// Support) that the startup chose. None is shown as "Not selected", and with
-  /// none chosen there is no card.
   Widget? _askCard() {
     final rows = _askRows();
-    // Manage startup always has the card (so Edit is there to add an ask).
     if (rows == null && onEdit == null) return null;
     return _SectionCard(
       title: FounderToolsStrings.stepTitles[5],
@@ -138,7 +116,6 @@ class StartupProfilePane extends StatelessWidget {
     final raising = viewModel.currentRound;
     final partnership = StartupAsk.partnership(s);
     final support = StartupAsk.supportSelected(s);
-    // Only what the startup chose: nothing says what it did not choose.
     final rows = <Widget>[
       if (raising != null)
         AskRow(
@@ -174,8 +151,6 @@ class StartupProfilePane extends StatelessWidget {
     );
   }
 
-  /// Startup Ask: what the startup is looking for (as in the form), then the
-  /// round it is raising and its funding rounds.
   List<Widget> _ask() => [
     // No card at all when the startup chose nothing.
     ?_askCard(),
@@ -196,7 +171,6 @@ class StartupProfilePane extends StatelessWidget {
             style: AppText.sans(size: 13, color: AppColors.hint),
           ),
           const SizedBox(height: 12),
-          // The same table as Manage, read only (the startup's real rounds).
           RoundsTable(
             rounds: viewModel.roundsNewestFirst,
             emptyText: viewModel.roundsEmptyText,
@@ -206,9 +180,6 @@ class StartupProfilePane extends StatelessWidget {
       ),
   ];
 
-  /// Founder first, then the co-founders, then the members (each group in the
-  /// order they were added). Invited people (no account yet) are hidden from
-  /// everyone outside the team; the team previewing sees them, dashed.
   List<TeamMember> _people() {
     final s = viewModel.startup;
     final team = [...s.team];
@@ -275,8 +246,6 @@ class StartupProfilePane extends StatelessWidget {
                       member: m,
                       isYou: me != null && m.uid == me,
                       ownerId: viewModel.startup.founderId,
-                      // Invited people (shown only to the team) open only in
-                      // Manage startup, and only when they have an account.
                       onTap: m.invited && !m.isFounder
                           ? (openInvited
                                 ? () => _openInvitedPerson(context, m)
@@ -297,8 +266,6 @@ class StartupProfilePane extends StatelessWidget {
     ];
   }
 
-  /// An invited person: their account is found by the e-mail they were
-  /// invited with. No account yet means no profile to open.
   Future<void> _openInvitedPerson(BuildContext context, TeamMember m) async {
     final account = m.email.trim().isEmpty
         ? null
@@ -331,8 +298,6 @@ class StartupProfilePane extends StatelessWidget {
   }
 }
 
-/// A section of the startup page: the same white card as the founder and
-/// investor profiles (a plain title, the content indented under it).
 class _SectionCard extends StatelessWidget {
   const _SectionCard({required this.title, required this.child, this.onEdit});
 
@@ -352,11 +317,6 @@ class _SectionCard extends StatelessWidget {
   );
 }
 
-// ----------------------------------------------------------------- rows
-
-/// Rows of a card (people, investors): padding 12 0 between them, a soft
-/// divider between rows and NO line above the first one. The first row has
-/// no top padding, so the space under the title is the card's 14 px.
 class _Rows extends StatelessWidget {
   const _Rows(this.rows);
 
@@ -387,10 +347,6 @@ class _Rows extends StatelessWidget {
   }
 }
 
-/// One person of the Team card: a 46 px circle avatar, the name with the tag
-/// capsules on the same line, the role, what they contribute and a chevron.
-/// Tapping opens their profile (no underline). [onTap] null = not tappable
-/// (an invited person, seen by the team).
 class _PersonRow extends StatelessWidget {
   const _PersonRow({
     required this.member,
@@ -490,8 +446,6 @@ class _PersonRow extends StatelessWidget {
   }
 }
 
-/// An associated investor: a 46 px circle avatar with the gold gradient, the
-/// name, "Title · City" and a chevron. Tapping opens their profile.
 class _InvestorRow extends StatelessWidget {
   const _InvestorRow({required this.investor, required this.onTap});
 
@@ -543,10 +497,7 @@ class _InvestorRow extends StatelessWidget {
   }
 }
 
-// -------------------------------------------------------- current round
-
-/// "Current round": the type pill, the goal, the progress bar and what is
-/// raised. Not raising: only the title and "Not raising right now."
+/// "Current round": the type pill, the goal, the progress bar and what is raised.
 class _CurrentRoundCard extends StatelessWidget {
   const _CurrentRoundCard({required this.round});
 

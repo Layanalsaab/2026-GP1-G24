@@ -33,14 +33,10 @@ class InvestorContactData {
   final bool phonePublic;
   final String linkedin;
 
-  /// True on the investor's own profile: email and phone are both listed,
-  /// each with its pill. Anybody else sees only what was made Public, and no
-  /// Contact section when both are private.
   final bool ownerView;
 }
 
 /// Everything the investor profile body shows, as plain strings and lists.
-/// Every field may be empty; empty parts are hidden.
 class InvestorProfileData {
   const InvestorProfileData({
     this.sizeAmount = '',
@@ -55,15 +51,13 @@ class InvestorProfileData {
     this.commerceModels = const [],
   });
 
-  /// "SAR 500K – 1M" per funding round; empty (no startups invested in yet)
-  /// hides the hero card.
   final String sizeAmount;
   final String about;
   final String offer;
   final String lookingFor;
   final String yearsInvesting;
 
-  /// "0", "1–3", ... "10+".
+  /// "0", "1–3", ...
   final String startupsInvested;
   final String roundSize;
   final List<String> sectors;
@@ -126,10 +120,6 @@ class InvestorProfileData {
   }
 }
 
-/// The body of an investor profile, shared by the investor's own profile and
-/// the founder's view of an investor: ticket hero card, About, offer, what
-/// they look for, background, interests, associations and (own profile only)
-/// contact.
 class InvestorProfileBody extends StatelessWidget {
   const InvestorProfileBody({
     super.key,
@@ -146,8 +136,6 @@ class InvestorProfileBody extends StatelessWidget {
   /// Shown only on the investor's own profile.
   final InvestorContactData? contact;
 
-  /// The investor's open tickets, listed under the interests; tapping one
-  /// opens everything it says.
   final List<InvestmentTicket> tickets;
   final ValueChanged<InvestmentTicket>? onOpenTicket;
 
@@ -390,9 +378,6 @@ class _BackgroundGrid extends StatelessWidget {
   }
 }
 
-/// One interests group (shared with the founder profile): a small grey label
-/// with a gold bar, then the values
-/// as plain text, one per line (no chips).
 class ProfileValueRows extends StatelessWidget {
   const ProfileValueRows(this.label, this.values, {super.key});
 
@@ -422,8 +407,6 @@ class ProfileValueRows extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 6),
-          // The values sit a little to the right, under the label's text (past
-          // its gold bar).
           for (final v in values)
             Padding(
               padding: const EdgeInsets.only(left: 11),
@@ -443,10 +426,6 @@ class ProfileValueRows extends StatelessWidget {
   }
 }
 
-/// "Contact Information": on your own profile both details with a note on who
-/// sees each (and your LinkedIn); on someone else's profile the details they
-/// made Public, and "Email is private" / "Phone is private" (a lock and the
-/// Private tag, no value) for the rest.
 class _ContactBlock extends StatelessWidget {
   const _ContactBlock({required this.contact});
 

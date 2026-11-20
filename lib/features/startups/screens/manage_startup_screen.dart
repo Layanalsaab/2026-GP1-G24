@@ -40,10 +40,6 @@ import '../widgets/owner_handover_dialogs.dart';
 import 'my_startups_screen.dart';
 import 'startup_steps_screen.dart';
 
-/// Manage startup (docs/05 D3): tabbed green header (Dashboard, EOI, then the
-/// six tabs of the startup page: Startup Overview, Startup Description, Target
-/// Market, Finance and Growth, Startup Team, Startup Ask, and Settings; the
-/// tab bar scrolls sideways) and the pane of the selected tab. [role] is the user's role in this startup.
 class ManageStartupScreen extends StatefulWidget {
   const ManageStartupScreen({
     super.key,
@@ -54,16 +50,12 @@ class ManageStartupScreen extends StatefulWidget {
 
   final Startup startup;
 
-  /// Called after the user leaves this startup (it then disappears from their
-  /// My Startups). INTERFACE ONLY: the real leaving is done by the backend.
   final VoidCallback? onLeave;
 
-  /// The user's role in this startup (shown above the name). Null reads it
-  /// from the startup itself (founder / `memberRoles`), the founder when
-  /// nothing matches.
+  /// The user's role in this startup (shown above the name).
   final StartupRole? role;
 
-  /// Opens Manage for [startup] (forward transition).
+  /// Opens Manage for startup (forward transition).
   static void open(
     BuildContext context,
     Startup startup, {
@@ -71,7 +63,7 @@ class ManageStartupScreen extends StatefulWidget {
     VoidCallback? onLeave,
   }) => push(context, startup, role: role, onLeave: onLeave);
 
-  /// Like [open] but completes when the screen is closed.
+  /// Like open but completes when the screen is closed.
   static Future<void> push(
     BuildContext context,
     Startup startup, {
@@ -91,15 +83,12 @@ class _ManageStartupScreenState extends State<ManageStartupScreen> {
   late final ManageStartupViewModel _vm = ManageStartupViewModel(
     startup: widget.startup,
   );
-  // The investment requests of the open round (shown on the round page).
   late final RequestsViewModel _requests = RequestsViewModel(
     startupId: widget.startup.id,
   );
   late final InterestViewModel _interest = InterestViewModel(
     startupId: widget.startup.id,
   );
-  // The startup's funding rounds. Adding / closing one saves the startup
-  // too (Funding ticked / unticked), so the header and Details follow.
   late final RoundsViewModel _rounds = RoundsViewModel(
     startup: widget.startup,
     currentStartup: () => _vm.startup,
@@ -109,8 +98,6 @@ class _ManageStartupScreenState extends State<ManageStartupScreen> {
   late final ActivityViewModel _activity = ActivityViewModel(
     startupId: widget.startup.id,
   );
-  // The six step tabs are the startup page itself (the same cards), with Edit
-  // buttons, Leave startup and the rounds added for the team.
   late final StartupProfileViewModel _profile = StartupProfileViewModel(
     startup: widget.startup,
     preview: true,
@@ -125,9 +112,6 @@ class _ManageStartupScreenState extends State<ManageStartupScreen> {
     _vm.loadOwnerInvite();
   }
 
-  /// Somebody accepted an invitation while the startup was private, so only
-  /// the team can fix their card ("Invited" -> a member). Done when a person
-  /// who can manage opens the startup.
   Future<void> _fixInvitedCards() async {
     if (!_canEdit || !widget.startup.team.any((m) => m.invited)) return;
     try {
@@ -142,8 +126,6 @@ class _ManageStartupScreenState extends State<ManageStartupScreen> {
     }
   }
 
-  /// Pull down: the startup (details, team) and its funding rounds are read
-  /// again, so a change made by someone else shows.
   Future<void> _refresh() async {
     final fresh = await StartupRepository.instance.fetchById(widget.startup.id);
     if (fresh == null || !mounted) return;
@@ -190,8 +172,7 @@ class _ManageStartupScreenState extends State<ManageStartupScreen> {
 
   String? get _uid => AppSession.instance.user?.uid;
 
-  /// Edit pill: opens ONLY that section of the form, filled in. Saving goes
-  /// back here and updates the Details tab.
+  /// Edit pill: opens ONLY that section of the form, filled in.
   Future<void> _editSection(int section) async {
     if (!_canEdit) return;
     final saved = await StartupStepsScreen.pushEditSection(
@@ -201,7 +182,6 @@ class _ManageStartupScreenState extends State<ManageStartupScreen> {
     );
     if (saved != null && mounted) {
       _vm.replace(saved);
-      // The Startup Ask may have opened, changed or closed the round.
       _rounds.load(saved);
     }
   }
@@ -224,7 +204,6 @@ class _ManageStartupScreenState extends State<ManageStartupScreen> {
   void _preview() =>
       StartupProfileScreen.open(context, startup: _vm.startup, preview: true);
 
-  // if there are co-founders or older rounds we can't assume 100% ownership
   void _calculator() {
     final s = _vm.startup;
     final coFounders =
@@ -248,15 +227,12 @@ class _ManageStartupScreenState extends State<ManageStartupScreen> {
       if (_vm.error != null) AppToast.error(context, _vm.error!);
       return;
     }
-    // A startup saved before rounds existed gets its open round now.
     _rounds.load(_vm.startup);
     _toast(
       result ? FounderToolsStrings.nowPublic : FounderToolsStrings.nowPrivate,
     );
   }
 
-  /// This is the user's only startup (owned, joined or closed): the owner's
-  /// leave confirmation says so. False when it can't tell.
   Future<bool> _isLastStartup() async {
     final session = AppSession.instance;
     if (session.user == null || !session.isFounder) return false;
@@ -274,17 +250,12 @@ class _ManageStartupScreenState extends State<ManageStartupScreen> {
     }
   }
 
-  /// After leaving: a founder with no startup left goes through the log-in
-  /// steps (invitations, then "Add your startup" with a note); otherwise
-  /// back to My Startups.
   Future<void> _afterLosingStartup() async {
     if (await AppRouter.openIfNoStartupLeft(context)) return;
     if (!mounted) return;
     AppNav.resetStack(context, [MainScreen(), const MyStartupsScreen()]);
   }
 
-  /// Close startup (the owner): permanent; the startup stays in everyone's
-  /// account as closed. The confirmation names who is still only invited.
   Future<void> _close() async {
     final s = _vm.startup;
     if (!_isOwner || s.isClosed) return;
@@ -316,10 +287,7 @@ class _ManageStartupScreenState extends State<ManageStartupScreen> {
     AppNav.resetStack(context, [MainScreen(), const MyStartupsScreen()]);
   }
 
-  /// Leave startup. The owner names the next owner first ([_leaveAsOwner]);
-  /// a co-founder or team member just confirms. Nobody leaves a closed
-  /// startup. Then [onLeave] lets the list that opened Manage drop it, and a
-  /// founder with no startup left goes to "Add your startup".
+  /// Leave startup.
   Future<void> _leave() async {
     final s = _vm.startup;
     if (s.isClosed) return;
@@ -350,11 +318,6 @@ class _ManageStartupScreenState extends State<ManageStartupScreen> {
     if (mounted) AppNav.back(context);
   }
 
-  /// The founder leaves: he picks the next founder among the people who
-  /// joined, or invites someone new by e-mail (he stays in control until it
-  /// is accepted), then chooses whether he stays on the team (as a co-founder
-  /// or a team member) or leaves for good. Alone on the team, inviting is the
-  /// only way.
   Future<void> _leaveAsOwner() async {
     final s = _vm.startup;
     final choices = _vm.nextOwnerChoices;
@@ -374,7 +337,6 @@ class _ManageStartupScreenState extends State<ManageStartupScreen> {
       return _inviteNewOwner(alone: choices.isEmpty, stay: stay.stay);
     }
     final (uid, person, _) = choices.firstWhere((c) => c.$1 == pickedUid);
-    // Leaving for good my only startup: my account waits for a new one.
     final last = stay.leaves && await _isLastStartup();
     if (!mounted) return;
     final go = await showConfirmSheet(
@@ -405,22 +367,15 @@ class _ManageStartupScreenState extends State<ManageStartupScreen> {
     if (stay.leaves) {
       await _afterLosingStartup();
     } else if (mounted) {
-      // Still on the team: back to My Startups, where it is now one I joined.
       AppNav.resetStack(context, [MainScreen(), const MyStartupsScreen()]);
     }
   }
 
-  /// The gold note under a confirmation when this is my only startup:
-  /// afterwards my account waits until I create one ("Create startup").
   Widget _onlyStartupNote() => ViewOnlyBanner.notice(
     title: FounderToolsStrings.onlyStartupTitle,
     message: FounderToolsStrings.pendingAccountText,
   );
 
-  /// Delete startup (the founder): the confirmation (the gold note when it is
-  /// my only startup), then my password, then it is deleted for everyone
-  /// (its team gets a notice). A founder with no startup left goes to
-  /// "Create startup".
   Future<void> _delete() async {
     final s = _vm.startup;
     if (!_isOwner) return;
@@ -448,10 +403,6 @@ class _ManageStartupScreenState extends State<ManageStartupScreen> {
     await _afterLosingStartup();
   }
 
-  /// "Invite someone new": one sheet with what happens next and the e-mail
-  /// (not mine, not someone on the team, not an investor account), then the
-  /// invitation. [stay]: what I become once it is accepted (null: I leave).
-  /// The Team tab shows "Waiting for…" until it is answered.
   Future<void> _inviteNewOwner({required bool alone, String? stay}) async {
     final s = _vm.startup;
     final myEmail = (AppSession.instance.user?.email ?? '')
@@ -534,8 +485,6 @@ class _ManageStartupScreenState extends State<ManageStartupScreen> {
     }
   }
 
-  /// "Cancel invitation" on the Waiting card: asked first, like the other
-  /// leave steps.
   Future<void> _cancelOwnerInvite() async {
     final invite = _vm.pendingOwnerInvite;
     if (invite == null) return;
@@ -569,8 +518,6 @@ class _ManageStartupScreenState extends State<ManageStartupScreen> {
       listenable: Listenable.merge([_vm, _interest, _rounds]),
       builder: (context, _) {
         final s = _vm.startup;
-        // The open round's Raised: the "already raised" answer of the
-        // startup, or the accepted requests total when that is higher.
         final already = s.raisedInRound;
         _rounds.openRaised = already == null
             ? null
@@ -712,8 +659,6 @@ class _ManageStartupScreenState extends State<ManageStartupScreen> {
                   child: SingleChildScrollView(
                     physics: AppRefresh.physics,
                     padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
-                    // A team member sees the same tabs, read only. A closed
-                    // startup says so at the top of every one.
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [

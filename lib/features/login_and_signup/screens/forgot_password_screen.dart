@@ -14,15 +14,13 @@ import '../../../shared_ui/widgets/overlays/app_toast.dart';
 import '../view_models/forgot_password_view_model.dart';
 import '../widgets/auth_navigation.dart';
 
-/// Forgot password (docs/05 A13): enter the email, "Send reset link" goes
-/// back with the toast `Reset link sent to <email>`.
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key, this.email = ''});
 
   /// Pre-filled email (from Log in or the Verify step).
   final String email;
 
-  /// Pushes Forgot password with [email] pre-filled.
+  /// Pushes Forgot password with email pre-filled.
   static void open(BuildContext context, {String email = ''}) => AppNav.push(
     context,
     ForgotPasswordScreen(email: email),
@@ -52,7 +50,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       AppToast.show(context, AuthStrings.resetLinkSent(sentTo));
       authBack(context);
     } else {
-      // A mistake in the field: say so (it also shows under the field).
       AppToast.error(context, _vm.formError ?? ValidationStrings.fixFields);
     }
   }

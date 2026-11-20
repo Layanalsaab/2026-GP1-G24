@@ -16,29 +16,23 @@ import 'user_repository.dart';
 class SignupResult {
   const SignupResult({required this.verificationEmailSent});
 
-  /// False when the account was created but the verification email could not
-  /// be sent. The user can still tap "Resend verification email".
   final bool verificationEmailSent;
 }
 
 enum ResendResult { sent, alreadyVerified }
 
-/// All sign-up / log-in / log-out rules live here. Screens and view models
-/// never talk to Firebase directly.
+/// All sign-up / log-in / log-out rules live here.
 class AuthRepository {
   AuthRepository({AuthService? authService, UserRepository? userRepository})
     : _auth = authService ?? AuthService(),
       _users = userRepository ?? UserRepository();
 
-  /// The app-wide instance. Tests replace it with a fake.
+  /// The app-wide instance.
   static AuthRepository instance = AuthRepository();
 
   final AuthService _auth;
   final UserRepository _users;
 
-  /// Creates the Auth account and the `users` profile, sends the verification
-  /// email, then signs out. If the profile can't be saved, the Auth account is
-  /// deleted so nobody is left with an account that has no role.
   Future<SignupResult> signUp({
     required String fullName,
     required String email,
@@ -81,7 +75,6 @@ class AuthRepository {
       throw const AuthException(AuthFailure.profileSaveFailed);
     }
 
-    // The photo is optional: a failed upload never fails the sign-up.
     if (photo != null) {
       try {
         await _users
@@ -102,10 +95,7 @@ class AuthRepository {
     return SignupResult(verificationEmailSent: verificationEmailSent);
   }
 
-  /// Logs in and returns the user's profile. Throws [AuthException] with
-  /// [AuthFailure.invalidCredentials] for any wrong/missing email or password
-  /// (never revealing which), and [AuthFailure.emailNotVerified] when the
-  /// email isn't verified yet. In every failure case the user ends up signed out.
+  /// Logs in and returns the user's profile.
   Future<AppUser> logIn(String email, String password) async {
     final account = await _signInOrGeneric(email, password);
 
@@ -128,10 +118,6 @@ class AuthRepository {
     return user;
   }
 
-  /// Sign-up step 2 when the user went back and changed the email: signs in
-  /// with the old, still unverified credentials and deletes that account and
-  /// its profile, so a new one can be created. A verified account is never
-  /// deleted (it throws [AuthFailure.unknown] instead).
   Future<void> discardUnverifiedAccount(String email, String password) async {
     final account = await _signInOrGeneric(email, password);
     if (account.emailVerified) {
@@ -139,7 +125,6 @@ class AuthRepository {
       throw const AuthException(AuthFailure.unknown);
     }
     try {
-      // An investor's tickets and the requests they sent go with the account.
     try {
       await TicketRepository.instance.removeAllFor(account.uid);
     } catch (_) {
@@ -153,9 +138,6 @@ class AuthRepository {
     await _safeSignOut();
   }
 
-  /// Sign-up: the user went back from the Verify step and changed only their
-  /// details (same email and password). Signs in just long enough to save
-  /// the new details on the still unverified account, then signs out.
   Future<void> updateUnverifiedProfile({
     required String email,
     required String password,
@@ -189,7 +171,6 @@ class AuthRepository {
         emailPublic: emailPublic,
         phonePublic: phonePublic,
       );
-      // The photo is optional, so a failed upload never stops the sign-up.
       try {
         if (photo != null) {
           await _users
@@ -207,8 +188,7 @@ class AuthRepository {
     }
   }
 
-  /// Sends a new verification email. Signing in is needed to send it, so the
-  /// session is opened just long enough and always closed again.
+  /// Sends a new verification email.
   Future<ResendResult> resendVerification(String email, String password) async {
     final account = await _signInOrGeneric(email, password);
     try {
@@ -220,9 +200,7 @@ class AuthRepository {
     }
   }
 
-  /// Sends a reset email. Unknown emails are silently ignored so the app never
-  /// reveals which emails are registered; only network / rate-limit problems
-  /// are reported.
+  /// Sends a reset email.
   Future<void> sendPasswordReset(String email) async {
     try {
       await _auth.sendPasswordReset(email);
@@ -234,8 +212,6 @@ class AuthRepository {
     }
   }
 
-  /// The user to open on app launch, or null when there is no verified,
-  /// signed-in user with a profile.
   Future<AppUser?> restoreSession() async {
     try {
       final account = await _auth.reloadCurrentAccount();
@@ -248,7 +224,6 @@ class AuthRepository {
       if (user == null) await _safeSignOut();
       return user;
     } on AuthException catch (e) {
-      // Offline at launch: keep the session, just don't auto-open it.
       if (e.failure != AuthFailure.network) await _safeSignOut();
       return null;
     }
@@ -256,9 +231,7 @@ class AuthRepository {
 
   Future<void> signOut() => _auth.signOut();
 
-  /// Changes the signed-in user's password. The current password is checked
-  /// first; a wrong one fails with [AuthFailure.invalidCredentials] and nothing
-  /// changes.
+  /// Changes the signed-in user's password.
   Future<void> changePassword({
     required String currentPassword,
     required String newPassword,
@@ -269,24 +242,8 @@ class AuthRepository {
     await _auth.updatePassword(newPassword);
   }
 
-  /// Permanently deletes the signed-in user: checks the password, deletes the
-  /// `users` profile, then the Auth account, and signs out.
-  ///
-  /// The profile is deleted first because the security rules only let a
-  /// signed-in user delete their own document. If any step fails, the steps
-  /// after it don't run, so a wrong password deletes nothing.
-  ///
-  /// A founder's startups follow his choice for each ([fates]: closed, and
-  /// handed to a next founder when it has a team, or deleted;
-  /// StartupRepository.settleMineBeforeDeletion); the account leaves every
-  /// team it is on.
   // TODO(Sprint 2+): also delete the founder's requests and Investment
   // Associations once those collections exist (PBI 13).
-  ///
-  /// Without a [password] the account is deleted straight away when the user
-  /// signed in a moment ago; otherwise it throws
-  /// [AuthFailure.requiresRecentLogin] before anything is removed, and the
-  /// caller asks for the password once and calls again with it.
   Future<void> deleteAccount({
     String? password,
     Map<String, StartupFate> fates = const {},
@@ -298,13 +255,7 @@ class AuthRepository {
     } else if (!_auth.signedInRecently) {
       throw const AuthException(AuthFailure.requiresRecentLogin);
     }
-    // A founder's startups follow his choices (closed and handed over, or
-    // deleted), and the account leaves the teams it is on. If any of that
-    // fails, NOTHING else is deleted (the account stays and the user tries
-    // again), so a startup is never left half done.
     await StartupRepository.instance.settleMineBeforeDeletion(fates);
-    // Invitations still waiting for this person are declined, so an owner
-    // waiting for them to take over isn't left waiting.
     try {
       final invitations = InvitationRepository.instance;
       for (final i in await invitations.pendingForMe()) {
@@ -315,8 +266,6 @@ class AuthRepository {
     }
     // Nobody can find or open a person who no longer exists.
     await TeamLookup.instance.remove(uid: account.uid, email: account.email);
-    // Saved bookmarks live under the user document and are not deleted
-    // with it, so they are removed first (while still signed in).
     try {
       await BookmarkRepository.instance.deleteAll(account.uid);
     } catch (_) {
@@ -329,8 +278,6 @@ class AuthRepository {
     await _safeSignOut();
   }
 
-  /// Checks the signed-in person's [password] (Delete startup asks for it):
-  /// throws [AuthFailure.invalidCredentials] when it is wrong.
   Future<void> verifyPassword(String password) async {
     final account = _auth.currentAccount;
     if (account == null) throw const AuthException(AuthFailure.unknown);
@@ -360,7 +307,6 @@ class AuthRepository {
     try {
       await _auth.signOut();
     } catch (_) {
-      // Nothing more we can do; the caller is already handling a failure.
     }
   }
 }

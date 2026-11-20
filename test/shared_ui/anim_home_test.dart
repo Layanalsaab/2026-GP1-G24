@@ -59,7 +59,7 @@ Color? _textColor(WidgetTester t, String text) => t
     .style
     .color;
 
-/// The fill of the closest AnimatedContainer around [text].
+/// The fill of the closest AnimatedContainer around text.
 Color? _rowColor(WidgetTester t, String text) =>
     (t
                 .widget<AnimatedContainer>(
@@ -392,7 +392,6 @@ void main() {
           ),
         ),
       );
-      // The gold line is one column wide (a third of the row), 3 high.
       final ind = find.byWidgetPredicate(
         (w) => w is Container && w.constraints?.maxHeight == 3,
       );

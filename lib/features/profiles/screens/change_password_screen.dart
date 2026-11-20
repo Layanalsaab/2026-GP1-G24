@@ -13,9 +13,6 @@ import '../../../shared_ui/widgets/headers/overlap_layout.dart';
 import '../../../shared_ui/widgets/overlays/app_toast.dart';
 import '../view_models/change_password_view_model.dart';
 
-/// Change password (not designed in the prototype: the existing flow in the
-/// design system): green header, a card with the current password, the new
-/// password with its live rules and the confirmation, and a pinned button.
 class ChangePasswordScreen extends StatefulWidget {
   const ChangePasswordScreen({super.key});
 

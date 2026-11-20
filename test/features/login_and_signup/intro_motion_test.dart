@@ -126,7 +126,6 @@ void main() {
     ) async {
       await _pump(t, const SplashScreen(), reduce: true);
       await t.pump(const Duration(milliseconds: 50));
-      // No looping animation is left running: nothing stays scheduled.
       expect(find.byType(DrawPath), findsNWidgets(3));
       await t.pump(const Duration(seconds: 3));
       await t.pump(const Duration(milliseconds: 600));

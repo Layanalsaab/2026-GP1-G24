@@ -16,14 +16,6 @@ import 'founder_ui.dart';
 import 'manage_card.dart';
 import 'round_form.dart';
 
-/// Manage startup -> Rounds -> one round: back link "All rounds", the round
-/// card (status, type and dates, Amount and Raised, progress, "Edit round" for
-/// an open round), the "Investors" in the round and, for an OPEN round, its
-/// "Investment requests" (Accept / Decline) and top "Matches".
-///
-/// Not here yet (they need the investment wallet, a later sprint): what each
-/// investor paid, wallet links and a founder sending an investor a request.
-/// Each section is a separate widget, so those can be added next to them.
 class RoundDetail extends StatelessWidget {
   const RoundDetail({
     super.key,
@@ -38,16 +30,12 @@ class RoundDetail extends StatelessWidget {
 
   final RoundsViewModel vm;
 
-  /// The shown round's number (it is looked up again on every build, so the
-  /// page follows an edit).
   final int number;
   final VoidCallback onBack;
 
   /// False for a view-only team member: no "Edit round".
   final bool canManage;
 
-  /// The startup's investment requests (open round only), with the
-  /// calculator check and toasts of Accept / Decline. Null hides the section.
   final RequestsViewModel? requests;
   final void Function(ConnectionRequest request)? onCheck;
   final void Function(String message)? onToast;
@@ -87,8 +75,6 @@ class RoundDetail extends StatelessWidget {
         ),
         const SizedBox(height: 10),
         _Investors(round: round),
-        // The investment requests belong to the open round (they used to be
-        // a tab of Manage startup).
         if (round.isOpen && requests != null) ...[
           const SizedBox(height: 22),
           const SectionTitle(
@@ -117,8 +103,7 @@ class RoundDetail extends StatelessWidget {
   }
 }
 
-/// Chevron + "All rounds" (or another [label]) in moss green. Also the back
-/// link of the Investment Wallet ticket page.
+/// Chevron + "All rounds" (or another label) in moss green.
 class DetailBackLink extends StatelessWidget {
   const DetailBackLink({
     super.key,
@@ -169,8 +154,7 @@ class DetailBackLink extends StatelessWidget {
   }
 }
 
-/// A section heading (19 bold) with its grey 13 line under it; also used by
-/// the Investment Wallet.
+/// A section heading (19 bold) with its grey 13 line under it; also used by the Investment Wallet.
 class SectionTitle extends StatelessWidget {
   const SectionTitle({super.key, required this.title, required this.subtitle});
 
@@ -194,8 +178,6 @@ class SectionTitle extends StatelessWidget {
     );
   }
 }
-
-// ------------------------------------------------------------------ card
 
 class _RoundCard extends StatelessWidget {
   const _RoundCard({required this.round, required this.onEdit});
@@ -281,8 +263,7 @@ class _RoundCard extends StatelessWidget {
   }
 }
 
-/// A small green box with a grey label and a bold value (Amount / Raised,
-/// Minimum / Maximum).
+/// A small green box with a grey label and a bold value (Amount / Raised, Minimum / Maximum).
 class InfoBox extends StatelessWidget {
   const InfoBox({super.key, required this.label, required this.value});
 
@@ -344,9 +325,7 @@ class DetailProgress extends StatelessWidget {
   }
 }
 
-// ------------------------------------------------------------- investors
-
-/// The style of the "Title · [pin] City" line of an investor.
+/// The style of the "Title · pin City" line of an investor.
 TextStyle get _subStyle =>
     AppText.sans(size: 13.5, height: 19, color: AppColors.grey);
 
@@ -435,8 +414,6 @@ class _InvestorsState extends State<_Investors> {
   }
 }
 
-// --------------------------------------------------------------- matches
-
 class _Matches extends StatefulWidget {
   const _Matches({required this.vm, required this.round});
 
@@ -472,8 +449,6 @@ class _MatchesState extends State<_Matches> {
     super.didUpdateWidget(old);
     final a = old.round;
     final b = widget.round;
-    // The round's type, amount or raised changed (Edit round): new matches.
-    // A build follows, so no setState here.
     if (a.type != b.type || a.amount != b.amount || a.raised != b.raised) {
       _future = _load();
     }
@@ -549,11 +524,6 @@ class _MatchesState extends State<_Matches> {
   }
 }
 
-// ------------------------------------------------------------------ tile
-
-/// One investor: avatar, name, "Title · City" and, for a match, the pill
-/// ("86% match"; why they matched is on their profile). Tappable when
-/// [onTap] is set.
 class _PersonTile extends StatelessWidget {
   const _PersonTile({
     required this.name,
@@ -565,7 +535,7 @@ class _PersonTile extends StatelessWidget {
 
   final String name;
 
-  /// The investor's title ("Angel investor"), then the [city] with its pin.
+  /// The investor's title ("Angel investor"), then the city with its pin.
   final String title;
   final String city;
   final int? matchPercent;

@@ -1,26 +1,4 @@
-/// Matching, part 2: score, order and explanation (content-based). Part 1
-/// (documents and hard filters) is knowledge_filter.dart. Python reference:
-/// matching_v2.py.
-///
-/// Rules (team decisions, 9 Nov 2026):
-/// - Score: weighted cosine, sector 0.41, stage 0.29, commerce model 0.18,
-///   divided by the weights used (0.88), so sector counts 47%, stage 33%
-///   and commerce model 20%. Each part is 1 / sqrt(number of picks) when the
-///   startup's value is picked, else 0. A match on one of the startup's
-///   OTHER sectors counts half ([otherSectorFactor]). A blank part is
-///   skipped and the weights are shared out again.
-/// - Ticket (the investor's Wallet): sector and stage come from the ticket,
-///   the commerce model from the investor's profile, plus a fourth part,
-///   round fit (weight 0.12): how much of what the round still needs the
-///   ticket's maximum can cover (1 when it covers all of it). A ticket's
-///   weights add up to 1.0 (sector 41%, stage 29%, model 18%, fit 12%);
-///   the profile matches don't have the fit part (still 47% / 33% / 20%).
-/// - Founder's open round: investors with an open ticket that fits come
-///   first (group 1, scored by their best ticket), then everyone else on
-///   their profile (group 2). Each investor appears once.
-/// - Order inside each group: exact matches, then close matches (only the
-///   sector or only the stage misses), each by score; then the name.
-///   No boosts and no lead tie-break. City / region is not used.
+/// Matching, part 2: score, order and explanation (content-based).
 library;
 
 import 'dart:math' as math;
@@ -31,16 +9,12 @@ const Map<String, double> weights = {
   'sector': 0.41,
   'stage': 0.29,
   'model': 0.18,
-  // Tickets only: how much of what the round still needs the ticket covers.
   'fit': 0.12,
 };
 
 /// How many investors a round's Matches can hold (the screen shows fewer).
 const int topN = 20;
 
-/// How much a match on one of a startup's OTHER sectors counts compared with
-/// a match on its main sector (1.0). Ticking every sector therefore never
-/// beats a startup whose main sector fits.
 const double otherSectorFactor = 0.5;
 
 final Map<String, String> _stageLabel = {
@@ -55,9 +29,6 @@ final Map<String, String> _modelShort = {
         : e.key,
 };
 
-/// One line of a match's explanation, shown at the top of a profile opened
-/// from a match: "Sector · Fintech" (fits, green bar) or "Commerce model ·
-/// B2C" with "they prefer B2B" (differs, gold bar).
 class MatchRow {
   const MatchRow(this.label, this.value, {required this.fits, this.note});
 
@@ -73,8 +44,7 @@ class MatchRow {
       '${fits ? '+' : '-'} $label · $value${note == null ? '' : ' ($note)'}';
 }
 
-/// One match: a startup (a ticket's matches) or an investor (a round's
-/// matches).
+/// One match: a startup (a ticket's matches) or an investor (a round's matches).
 class MatchResult {
   const MatchResult({
     required this.id,
@@ -103,8 +73,6 @@ class MatchResult {
   /// Only the sector or only the stage misses; listed after the exact ones.
   final bool close;
 
-  /// Round matches: the investor's open ticket that fits (group 1), or null
-  /// when the match comes from their profile (group 2).
   final String? ticketId;
 
   /// Ticket matches: what the startup's round still needs (SAR).
@@ -113,16 +81,11 @@ class MatchResult {
   bool get viaTicket => ticketId != null;
 }
 
-// ----------------------------------------------------------------- score
-
 double? _overlap(Set<String> chosen, String? value) {
   if (chosen.isEmpty || value == null || value.isEmpty) return null;
   return (chosen.contains(value) ? 1.0 : 0.0) / math.sqrt(chosen.length);
 }
 
-/// A sector part: the main sector counts in full, another of the startup's
-/// sectors [otherSectorFactor] of that. [picks] is how many sectors were
-/// picked; null when there are none (or the startup has no sector).
 double? _sector(int picks, bool main, bool other, MatchStartup s) {
   if (picks == 0 || s.sector == null || s.sector!.isEmpty) return null;
   if (main) return 1 / math.sqrt(picks);
@@ -130,7 +93,7 @@ double? _sector(int picks, bool main, bool other, MatchStartup s) {
   return 0;
 }
 
-/// Per-part overlaps of a profile; null = blank, skipped by [weightedScore].
+/// Per-part overlaps of a profile; null = blank, skipped by weightedScore.
 Map<String, double?> scoreParts(MatchInvestor i, MatchStartup s) => {
   'sector': _sector(
     i.sectors.length,
@@ -142,8 +105,6 @@ Map<String, double?> scoreParts(MatchInvestor i, MatchStartup s) => {
   'model': _overlap(i.models, s.commerceModel),
 };
 
-/// Per-part overlaps of a ticket: sector and stage from [t], the commerce
-/// model from the investor's profile ([models]).
 Map<String, double?> ticketScoreParts(
   MatchTicket t,
   Set<String> models,
@@ -160,16 +121,13 @@ Map<String, double?> ticketScoreParts(
   'fit': roundFit(t, s),
 };
 
-/// How much of what the round still needs the ticket's maximum can cover:
-/// 1 when it covers all of it, 0.25 when it covers a quarter. Null when
-/// the startup isn't raising (the part is skipped).
 double? roundFit(MatchTicket t, MatchStartup s) {
   final left = s.remaining;
   if (left <= 0) return null;
   return math.min(1.0, t.amountMax / left);
 }
 
-/// "covers up to 7%" (what [roundFit] shows), "covers under 1%" below 1%.
+/// "covers up to 7%" (what roundFit shows), "covers under 1%" below 1%.
 String _covers(MatchTicket t, MatchStartup s) {
   final pct = ((roundFit(t, s) ?? 0) * 100).round();
   return pct < 1 ? 'covers under 1%' : 'covers up to $pct%';
@@ -187,8 +145,6 @@ double weightedScore(Map<String, double?> parts) {
 }
 
 int _percent(double x) => math.min(100, (x * 100).round());
-
-// ----------------------------------------------------------- explanation
 
 String _amount(int sar) {
   String short(double v) {
@@ -215,8 +171,7 @@ String _list(Iterable<String> items) {
 String _stage(String? v) => _stageLabel[v] ?? v ?? '';
 String _model(String? v) => _modelShort[v] ?? v ?? '';
 
-/// The sector row. [picks] are the investor's / ticket's sectors as
-/// labels; [whose] starts the note ("your ticket", "they invest in").
+/// The sector row.
 MatchRow _sectorRow(
   MatchStartup s, {
   required bool main,
@@ -371,8 +326,6 @@ List<MatchRow> profileRows(MatchInvestor i, MatchStartup s) {
   ];
 }
 
-// ----------------------------------------------------------------- order
-
 int _byScore(MatchResult a, MatchResult b) =>
     (b.score * 1e9).round().compareTo((a.score * 1e9).round());
 
@@ -390,11 +343,6 @@ List<MatchResult> _ordered(List<MatchResult> all) {
   return [...exact, ...close];
 }
 
-// --------------------------------------------------------------- tickets
-
-/// One ticket against one startup, or null when they don't match (the
-/// ticket isn't open, the startup isn't listed or raising, or more than the
-/// sector or the stage misses).
 MatchResult? matchTicket(MatchTicket t, Set<String> models, MatchStartup s) {
   if (!t.isOpen || !s.isListed || !s.isRaising) return null;
   final failed = failedTicketFilters(t, s);
@@ -412,9 +360,7 @@ MatchResult? matchTicket(MatchTicket t, Set<String> models, MatchStartup s) {
   );
 }
 
-/// A ticket's matches in the Wallet, best first: listed (public, not
-/// closed) startups that are raising. [models] are the investor's profile
-/// commerce models. All of them unless [limit] is given.
+/// A ticket's matches in the Wallet, best first: listed (public, not closed) startups that are raising.
 List<MatchResult> matchesForTicket(
   MatchTicket ticket,
   Set<String> models,
@@ -428,15 +374,7 @@ List<MatchResult> matchesForTicket(
   return limit == null ? out : out.take(limit).toList();
 }
 
-// ---------------------------------------------------------------- rounds
-
-/// The investors matched to a founder's open round, best first. [startup]
-/// carries the round (stage = the round type, fundingRequirement = its
-/// amount, raisedInRound = what it raised); it may be private. A closed
-/// startup, or one that isn't raising, gets nothing.
-///
-/// Group 1: investors with an open ticket that fits (their best ticket).
-/// Group 2: every other investor, on their profile. Each investor once.
+/// The investors matched to a founder's open round, best first.
 List<MatchResult> matchesForStartup(
   MatchStartup startup,
   List<MatchInvestor> investors, {

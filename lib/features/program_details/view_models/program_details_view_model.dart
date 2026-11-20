@@ -3,8 +3,7 @@ import 'package:flutter/foundation.dart';
 import '../../../helpers/app_session.dart';
 import '../../../models/program.dart';
 
-/// What the program details page shows for one [Program] (docs/05 C3).
-/// Guests never get a bookmark.
+/// What the program details page shows for one Program (docs/05 C3).
 class ProgramDetailsViewModel extends ChangeNotifier {
   ProgramDetailsViewModel({required this.program, AppSession? session})
     : _session = session ?? AppSession.instance;
@@ -12,7 +11,7 @@ class ProgramDetailsViewModel extends ChangeNotifier {
   final Program program;
   final AppSession _session;
 
-  /// `p-<id>`: the bookmark key.
+  /// p-{id}: the bookmark key.
   String get key => 'p-${program.id}';
 
   bool get showBookmark => _session.canBookmark;

@@ -1,8 +1,3 @@
-/// One pop-up waiting for a person (docs: Closing a Startup, Leaving and
-/// Deleting an Account): something that happened to a startup they are on,
-/// written to `users/{uid}/notices` by whoever made the change, so it reaches
-/// them even when the startup no longer exists, on whichever phone they use.
-/// Shown once, the next time the app opens, then deleted.
 class StartupNotice {
   const StartupNotice({
     this.id = '',
@@ -14,8 +9,6 @@ class StartupNotice {
     this.createdAt,
   });
 
-  /// The startup was closed (by its founder, or because he deleted his
-  /// account): to its team.
   static const closed = 'closed';
 
   /// The startup was deleted: to its team.
@@ -24,21 +17,17 @@ class StartupNotice {
   /// The startup was handed to the reader: they are its founder now.
   static const newFounder = 'newFounder';
 
-  /// The startup got a new founder ([person]): to the rest of its team.
+  /// The startup got a new founder (person): to the rest of its team.
   static const founderChanged = 'founderChanged';
 
-  /// The person the reader invited by email accepted ([person]); the reader
-  /// is no longer the founder ([stay]: what they are now).
   static const handedOver = 'handedOver';
 
-  /// The person ([person], an email) the reader invited to become the
-  /// founder declined.
   static const declined = 'declined';
 
   /// The founder removed the reader from the team.
   static const removed = 'removed';
 
-  /// A member ([person]) left the team: to its founder.
+  /// A member (person) left the team: to its founder.
   static const left = 'left';
 
   static const types = [
@@ -59,10 +48,10 @@ class StartupNotice {
   /// The name when it happened (a deleted startup can't be read any more).
   final String startupName;
 
-  /// Who it is about (a name, or an e-mail for [declined]); empty if none.
+  /// Who it is about (a name, or an e-mail for declined); empty if none.
   final String person;
 
-  /// For [handedOver]: `coFounder`, `member`, or null (left for good).
+  /// For handedOver: coFounder, member, or null (left for good).
   final String? stay;
   final DateTime? createdAt;
 

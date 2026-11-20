@@ -372,7 +372,6 @@ void main() {
           invitedByName: 'F',
         );
         expect(again.status, InvitationStatus.declined);
-        // Removing a declined card forgets it, so inviting starts fresh.
         await repo.cancel('s1', 'layan@gmail.com');
         expect(
           db.store['invitations']!.containsKey('s1~layan@gmail.com'),
@@ -403,7 +402,6 @@ void main() {
         who('m1', 'layan@gmail.com');
         await repo.accept(inv, fullName: 'Layan Alsaab');
         who('f1', 'f1@gmail.com');
-        // The founder's copy of the startup still shows the card as invited.
         final fixed = await repo.reconcileTeam(startup);
         final card = fixed!.firstWhere((m) => m.email == 'layan@gmail.com');
         expect(card.invited, isFalse);

@@ -36,7 +36,7 @@ Future<void> _settle(WidgetTester t) async {
   await t.pump(const Duration(milliseconds: 400));
 }
 
-/// The decoration of the first AnimatedContainer under [f] that has a border.
+/// The decoration of the first AnimatedContainer under f that has a border.
 BoxDecoration _borderDeco(WidgetTester t, Finder f) {
   for (final c in t.widgetList<AnimatedContainer>(
     find.descendant(of: f, matching: find.byType(AnimatedContainer)),
@@ -47,8 +47,7 @@ BoxDecoration _borderDeco(WidgetTester t, Finder f) {
   throw StateError('no bordered AnimatedContainer');
 }
 
-/// The decoration actually painted now (the AnimatedContainer widget only
-/// holds the target).
+/// The decoration actually painted now (the AnimatedContainer widget only holds the target).
 BoxDecoration _live(WidgetTester t, Finder animated) =>
     t
             .widget<DecoratedBox>(

@@ -8,8 +8,6 @@ import '../../../shared_ui/motion/motion.dart';
 import '../../../shared_ui/theme/app_colors.dart';
 import 'auth_decor.dart';
 
-/// The three page dots of the intro: 8 x 8 grey, the current one widens to 24
-/// and turns gold (green on the last page, [dark]); 260 ms easeOut.
 class IntroDots extends StatefulWidget {
   const IntroDots({
     super.key,
@@ -25,9 +23,7 @@ class IntroDots extends StatefulWidget {
   /// Green current dot (cream pages) instead of gold.
   final bool dark;
 
-  /// The page we are coming from. Each intro page builds its own dots, so a
-  /// new page starts them on the old page's dot and slides to [index]
-  /// (a plain rebuild would show the final state with no animation).
+  /// The page we are coming from.
   final int? fromIndex;
 
   @override
@@ -98,7 +94,7 @@ class IntroNextButton extends StatelessWidget {
   final Color background;
   final Color foreground;
 
-  /// Shadow tint: `#00000066` on green, `#1F3F2799` on cream.
+  /// Shadow tint: #00000066 on green, #1F3F2799 on cream.
   final Color shadowColor;
 
   @override
@@ -163,8 +159,6 @@ class IntroHouses extends StatelessWidget {
   }
 }
 
-/// Intro page 1 graphic: a floating 240 x 240 network (a gold circle on top
-/// joined to two moss-outlined circles, the gold triangle drawing itself).
 class IntroNetwork extends StatelessWidget {
   const IntroNetwork({super.key});
 
@@ -241,8 +235,7 @@ class _NetworkAbove extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter old) => false;
 }
 
-/// Intro page 2 graphic: four growing bars and a gold dashed trend line that
-/// draws itself (300 x 300).
+/// Intro page 2 graphic: four growing bars and a gold dashed trend line that draws itself (300 x 300).
 class IntroBars extends StatelessWidget {
   const IntroBars({super.key});
 
@@ -355,8 +348,6 @@ class _DashedPainter extends CustomPainter {
   bool shouldRepaint(_DashedPainter old) => old.progress != progress;
 }
 
-/// Intro page 3 graphic: three floating cards (programs, growing bars, AI
-/// bubble) and two sparkles (330 high, centered on a 412 px frame).
 class IntroCards extends StatelessWidget {
   const IntroCards({super.key});
 
@@ -545,8 +536,6 @@ class IntroCards extends StatelessWidget {
       ),
     );
 
-    // The artwork was drawn on a 412 px frame: keep it centered, and let it
-    // shrink to the screen width on narrower phones.
     return ExcludeSemantics(
       child: Center(
         child: SizedBox(

@@ -50,13 +50,6 @@ enum StartupSort {
   final String label;
 }
 
-/// State of the My Startups list (docs/05 D1): loads the founder's startups
-/// and publishes their ids to [AppSession] so Hub and Explore hide them.
-///
-/// The list shows the founder's own startups plus the startups they were
-/// added to as a team member (view only). INTERFACE ONLY for the second
-/// part: [teamStartups] defaults to the mockup list in
-/// the real memberships come from Firestore. Filtering and sorting happen here, in memory.
 class MyStartupsViewModel extends ChangeNotifier with SafeNotifier {
   MyStartupsViewModel({
     StartupRepository? repository,
@@ -69,10 +62,6 @@ class MyStartupsViewModel extends ChangeNotifier with SafeNotifier {
   /// Startups the user was added to as a team member (view only).
   final List<MyStartupEntry> teamStartups;
 
-  /// The user left [startupId] (co-founder / team member): it disappears from
-  /// the list. A real startup also drops the user's membership in Firestore
-  /// (only their own entry). The sample startups (ids starting `mock-`) stay
-  /// local. [alreadyLeft]: Manage already left it (only the list changes).
   Future<void> leave(String startupId, {bool alreadyLeft = false}) async {
     final entry = [
       ...teamStartups,
@@ -99,8 +88,6 @@ class MyStartupsViewModel extends ChangeNotifier with SafeNotifier {
     }
   }
 
-  /// Tells the session which startups the user belongs to as a member, so
-  /// Hub and For You do not list them.
   void _publishMemberIds() {
     AppSession.instance.setMemberRoles({
       for (final e in [...memberStartups, ...teamStartups])
@@ -111,8 +98,6 @@ class MyStartupsViewModel extends ChangeNotifier with SafeNotifier {
     });
   }
 
-  /// The startups the user belongs to for real (co-founder / team member),
-  /// read from Firestore.
   List<MyStartupEntry> memberStartups = const [];
 
   /// The founder's own startups (as loaded).
@@ -141,7 +126,7 @@ class MyStartupsViewModel extends ChangeNotifier with SafeNotifier {
     ...teamStartups,
   ];
 
-  /// The user's title in [e] (what its capsule says).
+  /// The user's title in e (what its capsule says).
   StartupRole titleOf(MyStartupEntry e) =>
       StartupRole.titleOf(e.startup, AppSession.instance.user?.uid) ?? e.role;
 
@@ -154,8 +139,6 @@ class MyStartupsViewModel extends ChangeNotifier with SafeNotifier {
       role != RoleFilter.all ||
       status != StatusFilter.all;
 
-  /// "All startups", the single active option ("Private", "Team member") or
-  /// "2 filters".
   String get filterLabel {
     final on = [
       if (visibility != VisibilityFilter.all) visibility.label,
@@ -191,7 +174,6 @@ class MyStartupsViewModel extends ChangeNotifier with SafeNotifier {
           ),
         );
     }
-    // Closed startups go under the active ones (each part keeps the sort).
     return [
       for (final e in list)
         if (!e.startup.isClosed) e,
@@ -217,8 +199,6 @@ class MyStartupsViewModel extends ChangeNotifier with SafeNotifier {
       case StatusFilter.closed:
         if (!e.startup.isClosed) return false;
     }
-    // "My role" filters on the title (the person who created a startup stays
-    // its Founder after handing it over).
     final title = titleOf(e);
     switch (role) {
       case RoleFilter.all:
@@ -274,12 +254,11 @@ class MyStartupsViewModel extends ChangeNotifier with SafeNotifier {
           ),
       ];
     } catch (_) {
-      // Memberships are an extra: the founder's own list still shows.
       memberStartups = const [];
     }
   }
 
-  /// Loads (or reloads) the list. Never throws.
+  /// Loads (or reloads) the list.
   Future<void> load() async {
     error = null;
     if (startups.isEmpty) isLoading = true;

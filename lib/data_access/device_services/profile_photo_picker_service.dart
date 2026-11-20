@@ -16,21 +16,16 @@ class ProfilePhotoException implements Exception {
   final ProfilePhotoFailure failure;
 }
 
-/// Picks a profile photo from the gallery, crops it to a square and
-/// compresses it. The only code (with the logo picker) that talks to
-/// image_picker / image_cropper. Tests replace [instance] with a fake.
+/// Picks a profile photo from the gallery, crops it to a square and compresses it.
 class ProfilePhotoPickerService {
   const ProfilePhotoPickerService();
 
   static ProfilePhotoPickerService instance = const ProfilePhotoPickerService();
 
-  // Small on purpose: the picture is saved INSIDE the Firestore document
-  // (no Firebase Storage), so it must be under ~100 KB.
   static const _outputSize = 256;
   static const _jpegQuality = 70;
 
-  /// Returns the cropped JPEG, or null when the user cancels. Throws
-  /// [ProfilePhotoException] when the image can't be used.
+  /// Returns the cropped JPEG, or null when the user cancels.
   Future<File?> pickSquarePhoto() async {
     try {
       final picked = await ImagePicker().pickImage(
@@ -64,8 +59,6 @@ class ProfilePhotoPickerService {
       if (cropped == null) return null;
 
       final file = File(cropped.path);
-      // Under ~100 KB (compressed again when it is not): it is saved inside
-      // the Firestore document.
       try {
         await ImageFit.bytesUnder(file);
       } on ImageTooLarge {

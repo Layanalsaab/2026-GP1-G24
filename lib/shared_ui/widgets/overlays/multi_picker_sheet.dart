@@ -12,11 +12,7 @@ import '../buttons/app_button.dart';
 import 'app_bottom_sheet.dart';
 import 'picker_sheet.dart';
 
-/// Opens a [MultiPickerSheet]. Every tick is reported at once through
-/// [onToggle] / [onOtherChanged], so the caller's state is always current,
-/// whether the sheet is closed with Done, by tapping outside or by dragging
-/// it away. [onUndoOther] runs when the sheet closes with "Other" ticked but
-/// its write-in blank (the caller unticks it).
+/// Opens a MultiPickerSheet.
 Future<void> showMultiPickerSheet(
   BuildContext context, {
   required String title,
@@ -36,7 +32,6 @@ Future<void> showMultiPickerSheet(
   bool allowBlankOther = false,
   String? otherHelper,
 }) {
-  // The same bottom sheet as the Sector / Stage / Commerce model pickers.
   return showAppBottomSheet<void>(
     context,
     builder: (_) => MultiPickerSheet(
@@ -60,9 +55,6 @@ Future<void> showMultiPickerSheet(
   );
 }
 
-/// Searchable multi-select sheet: a checkbox per row (22 px square, radius 6,
-/// 2 px `#8C918D` border; ticked = green fill and a white check that fades
-/// and scales in), an optional "Other" write-in and a Done button.
 class MultiPickerSheet extends StatefulWidget {
   const MultiPickerSheet({
     super.key,
@@ -98,12 +90,9 @@ class MultiPickerSheet extends StatefulWidget {
   final VoidCallback? onUndoOther;
   final int otherMax;
 
-  /// Other texts that mean a listed option (e.g. "B2B" -> its option): typing
-  /// one (and pausing) ticks that option and drops "Other".
+  /// Other texts that mean a listed option (e.g.
   final Map<String, String> alsoCountsAs;
 
-  /// A filter can look for "Other" with nothing typed (every item whose
-  /// value is not in the list); a form cannot, so it asks for the text.
   final bool allowBlankOther;
 
   /// A grey line under the write-in box.
@@ -121,23 +110,16 @@ class _MultiPickerSheetState extends State<MultiPickerSheet> {
   final TextEditingController _query = TextEditingController();
   bool _showError = false;
 
-  /// Waits for the typing to pause before the write-in is compared with the
-  /// options, so "Retail stores" can still be typed after "Retail".
   Timer? _pause;
   static const _pauseAfterTyping = Duration(milliseconds: 500);
 
   bool get _hasOther => widget.otherNoun != null;
 
-  /// Like the Sector / Stage / Commerce model pickers: only a list with a
-  /// search box is pinned tall; a short one fits its content and grows by the
-  /// "Other" write-in when that is ticked.
   bool get _tall => widget.searchHint != null;
 
   bool get _otherOpen => _hasOther && _selected.contains(widget.otherLabel);
   bool get _otherBlank => _other.text.trim().isEmpty;
 
-  /// The write-in names a listed option: that option is ticked, "Other" is
-  /// unticked and its text cleared, silently. Everything else stays picked.
   void _autoPick() {
     _pause?.cancel();
     if (!_otherOpen) return;

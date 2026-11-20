@@ -1,5 +1,3 @@
-// Pulling a page down reads its data again, so a change made elsewhere (a
-// teammate added you to a startup) shows without logging out.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';

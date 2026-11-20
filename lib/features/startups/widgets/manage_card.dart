@@ -3,8 +3,6 @@ import 'package:flutter/material.dart';
 import 'founder_ui.dart';
 import 'hover_lift_card.dart';
 
-/// The white card of the Manage startup panes (prototype `.mcard`): radius 20,
-/// padding 18, hairline border and the soft card shadow.
 class ManageCard extends StatelessWidget {
   const ManageCard({
     super.key,
@@ -13,8 +11,6 @@ class ManageCard extends StatelessWidget {
     this.onTap,
   });
 
-  /// When set the card is tappable: it lifts 2 px with a hover shadow under a
-  /// mouse and scales to .97 while pressed.
   final VoidCallback? onTap;
 
   final Widget child;
@@ -44,8 +40,7 @@ class ManageCard extends StatelessWidget {
   }
 }
 
-/// The title of a Dashboard card ("Activity", "Associated Investors"): 19 px
-/// on a 26 px line, bold. Every Dashboard card title uses this one style.
+/// The title of a Dashboard card ("Activity", "Associated Investors"): 19 px on a 26 px line, bold.
 class ManageCardTitle extends StatelessWidget {
   const ManageCardTitle(this.text, {super.key});
 
@@ -61,8 +56,6 @@ class ManageCardTitle extends StatelessWidget {
   );
 }
 
-/// The header at the top of a Manage tab: a bold 19 / 26 title with a small
-/// grey line under it (the style of "Funding rounds / All amounts in SAR").
 class ManageTabHeader extends StatelessWidget {
   const ManageTabHeader({super.key, required this.title, this.subtitle});
 
@@ -86,7 +79,7 @@ class ManageTabHeader extends StatelessWidget {
   );
 }
 
-/// A grey 14/20 line used inside a [ManageCard] for empty states.
+/// A grey 14/20 line used inside a ManageCard for empty states.
 class ManageEmptyText extends StatelessWidget {
   const ManageEmptyText(this.text, {super.key});
 

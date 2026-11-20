@@ -32,10 +32,6 @@ import '../widgets/ticket_info_sheet.dart';
 import '../widgets/profile_widgets.dart';
 import 'edit_account_screen.dart';
 
-/// The signed-in user's own profile (docs/05 C4, screenshots 40 and 40b):
-/// banner with back and "Edit profile", the head block, About, (investor)
-/// what I can bring / hope to gain, (founder) My startups, (investor)
-/// associations and Contact.
 class OwnProfileScreen extends StatefulWidget {
   const OwnProfileScreen({super.key, required this.user});
 
@@ -61,8 +57,6 @@ class _OwnProfileScreenState extends State<OwnProfileScreen> {
     _vm.reload();
   }
 
-  /// Pull down: a new invitation is accepted, then the profile and the
-  /// startups list are read again.
   Future<void> _refresh() async {
     await AppRouter.checkInvitations(context);
     await _vm.reload();
@@ -79,15 +73,11 @@ class _OwnProfileScreenState extends State<OwnProfileScreen> {
       context,
       EditProfileScreen(user: _vm.user),
     );
-    // The session holds the saved profile even if no result came back.
     final latest = updated ?? AppSession.instance.user;
     if (latest != null) _vm.updateUser(latest);
-    // A new name also changes my team cards, so read the startups again.
     await _vm.refreshStartups();
   }
 
-  /// My startups, as the same cards as the Hub (and as on a founder's
-  /// profile), each with my role there as a capsule at the top right.
   Widget _myStartups(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -200,8 +190,6 @@ class _OwnProfileScreenState extends State<OwnProfileScreen> {
                     city: u.city,
                     metaTail: _vm.joinedLabel,
                     tagsLabel: ProfileStrings.interestedIn,
-                    // The sectors are listed under Interests (investor and
-                    // founder alike): no line under the name.
                     tags: const [],
                     photoData: u.photoData,
                     linkedin: _vm.linkedin,
@@ -232,8 +220,6 @@ class _OwnProfileScreenState extends State<OwnProfileScreen> {
                             delay: stagger(),
                             child: ProfileText(about),
                           ),
-                        // On my own profile both are listed, each with a pill that
-                        // says who sees it (Public or Only you).
                         if (_vm.contactRows().isNotEmpty)
                           ProfileSection(
                             title: ProfileStrings.contact,
@@ -261,8 +247,6 @@ class _OwnProfileScreenState extends State<OwnProfileScreen> {
                               ],
                             ),
                           ),
-                        // The same sections as an investor's profile: the
-                        // sectors are listed here, not as a line under the name.
                         if (_vm.sectors.isNotEmpty)
                           ProfileSection(
                             title: ProfileStrings.founderInterests,

@@ -1,6 +1,3 @@
-/// Error messages shared by several forms, word for word from
-/// docs/06_forms_and_validation.md (note the curly apostrophe in "don’t" and
-/// "can’t", and the dash in the "Other" messages).
 class ValidationStrings {
   ValidationStrings._();
 
@@ -71,7 +68,6 @@ class ValidationStrings {
   static String otherSelect(String noun) =>
       'Tell us your other $noun — it can’t be blank.';
 
-  // ---- Add / Edit startup (docs/06 section 8) ----
   static const startupName = 'Please enter a startup name.';
   static const startupDescription = 'Please describe your startup.';
   static const startupSector = 'Select at least one sector.';
@@ -107,7 +103,6 @@ class ValidationStrings {
   static const partnerTypes = 'Select at least one partner type.';
   static const supportTypes = 'Select at least one support type.';
 
-  // ---- Valuation calculator ----
   static const calcFunding = 'Enter the amount you want to raise.';
   static const calcFundingMin = 'The amount must be at least SAR 1,000.';
   static const calcEquity = 'Enter a percentage above 0 and below 100.';

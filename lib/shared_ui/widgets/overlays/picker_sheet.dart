@@ -12,27 +12,18 @@ import '../../theme/app_text.dart';
 import '../buttons/app_button.dart';
 import 'app_bottom_sheet.dart';
 
-/// Result of a [PickerSheet].
+/// Result of a PickerSheet.
 class PickerResult {
   const PickerResult(this.value, {this.otherText});
 
   /// The chosen option label (the "Other" label itself when written in).
   final String value;
 
-  /// The write-in text when [value] is the "Other" option.
+  /// The write-in text when value is the "Other" option.
   final String? otherText;
 }
 
-/// Opens a [PickerSheet] and completes with the pick, or null when dismissed.
-///
-/// * [selected] / [otherText] pre-select the current value.
-/// * [searchHint] non-null shows the search field ("Search cities") and makes
-///   the sheet tall; [noResultsText] is shown when nothing matches.
-/// * [otherNoun] non-null enables the "Other" option with a write-in field
-///   (placeholder "Describe your other NOUN", blank error
-///   "Please type your NOUN — it can’t be blank.").
-/// * [onUndoOther] runs when the sheet closes with "Other" picked but blank,
-///   so the caller can undo that pick.
+/// Opens a PickerSheet and completes with the pick, or null when dismissed.
 Future<PickerResult?> showPickerSheet(
   BuildContext context, {
   required String title,
@@ -67,11 +58,6 @@ Future<PickerResult?> showPickerSheet(
   );
 }
 
-/// Searchable single-select picker (prototype `sheet.isList`): option rows
-/// (min 50, radius 12, 16 px; selected = moss100 fill, green 600 text and a
-/// Pop check), optional search field, optional "Other" write-in with an n/40
-/// counter and "Required"/error line, and a Done button while the write-in is
-/// open. Normally opened with [showPickerSheet].
 class PickerSheet extends StatefulWidget {
   const PickerSheet({
     super.key,
@@ -101,9 +87,7 @@ class PickerSheet extends StatefulWidget {
   final VoidCallback? onUndoOther;
   final bool tall;
 
-  /// Other texts that mean a listed option (e.g. "B2B" for "Business-to-
-  /// Business (B2B)") mapped to the option each stands for: typing one (and
-  /// pausing) picks that option, as if its row was tapped.
+  /// Other texts that mean a listed option (e.g.
   final Map<String, String> alsoCountsAs;
 
   @override
@@ -122,8 +106,6 @@ class _PickerSheetState extends State<PickerSheet> {
   bool get _hasOther => widget.otherNoun != null;
   bool get _otherOpen => _hasOther && _selected == widget.otherLabel;
 
-  /// Waits for the typing to pause before the write-in is compared with the
-  /// options, so a longer phrase can still be typed.
   Timer? _pause;
   static const _pauseAfterTyping = Duration(milliseconds: 500);
 
@@ -138,8 +120,6 @@ class _PickerSheetState extends State<PickerSheet> {
     return m == widget.otherLabel ? null : m;
   }
 
-  /// The write-in names a listed option: that option is picked (the sheet
-  /// closes with it, "Other" and its text are dropped), silently.
   void _autoPick() {
     _pause?.cancel();
     final match = _match;
@@ -166,7 +146,6 @@ class _PickerSheetState extends State<PickerSheet> {
   }
 
   void _done() {
-    // The write-in repeats a listed option: Done picks that option.
     final match = _match;
     if (match != null) {
       _committed = true;
@@ -187,16 +166,11 @@ class _PickerSheetState extends State<PickerSheet> {
     final q = _query.text.trim().toLowerCase();
     final shown = [
       for (final o in widget.options)
-        // The sheet adds its own "Other" row last, so a list that already
-        // ends in "Other" must not show it twice.
         if (!(_hasOther && o == widget.otherLabel) &&
             (q.isEmpty || o.toLowerCase().contains(q)))
           o,
     ];
     final all = [...shown, if (_hasOther) widget.otherLabel];
-    // Only a searchable (long) list is pinned tall. A short list, such as the
-    // commerce model, fits its content and grows by the write-in field when
-    // "Other" is picked, so there is never an empty gap under it.
     final tall = widget.tall || widget.searchHint != null;
     return PopScope(
       onPopInvokedWithResult: (didPop, _) {
@@ -409,9 +383,6 @@ class PickerSearchField extends StatelessWidget {
   }
 }
 
-/// Tiny private text field for the "Other" write-in: white, 1 px
-/// `#8C918D` border radius 12 (moss600 + ring on focus, red when [error]),
-/// helper row "Required" / error on the left and `n/max` on the right.
 class PickerOtherField extends StatefulWidget {
   const PickerOtherField({
     super.key,

@@ -1,7 +1,3 @@
-/// One import for the design-system pieces every founder-tools screen uses
-/// (theme, icons, motion, buttons, headers, forms, chips, cards, overlays).
-/// Re-exports with relative paths; when `lib/ui` is renamed to
-/// `lib/shared_ui` only this file's paths change.
 library;
 
 export '../../../shared_ui/theme/app_colors.dart';

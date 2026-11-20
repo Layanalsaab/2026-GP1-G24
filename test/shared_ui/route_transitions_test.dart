@@ -102,8 +102,6 @@ void main() {
   ) async {
     await _pumpApp(t);
     await push(t, RouteKind.forward, false);
-    // Covered from the first frame by the cream backdrop of the new route and
-    // not moving: its position never changes.
     expect(_x(t, _oldKey), 0);
     await t.pump(const Duration(milliseconds: 100));
     expect(_x(t, _oldKey), 0);
@@ -131,8 +129,6 @@ void main() {
     await t.pumpAndSettle();
     await t.tap(find.byKey(_oldKey));
     await t.pumpAndSettle();
-    // Pop from the new screen (the on-screen back button and the Android back
-    // gesture both do this).
     Navigator.of(t.element(find.byKey(_newKey))).pop();
     await t.pump();
     await t.pump(const Duration(milliseconds: 1));

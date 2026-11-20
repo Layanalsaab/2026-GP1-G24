@@ -2,13 +2,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 /// Small settings kept on the phone itself (not in Firebase).
 class AppSettingsRepository {
-  /// The app-wide instance. Tests replace it with a fake.
+  /// The app-wide instance.
   static AppSettingsRepository instance = AppSettingsRepository();
 
   static const _introSeenKey = 'intro_seen';
   static const _darkModeKey = 'dark_mode';
 
-  /// Whether the user switched Dark mode on (Settings). Off when unreadable.
+  /// Whether the user switched Dark mode on (Settings).
   Future<bool> isDarkMode() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -27,8 +27,6 @@ class AppSettingsRepository {
     }
   }
 
-  /// Whether the three intro screens have already been shown on this device.
-  /// If storage can't be read we show them again rather than fail.
   Future<bool> hasSeenIntro() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -43,7 +41,6 @@ class AppSettingsRepository {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool(_introSeenKey, true);
     } catch (_) {
-      // Not being able to remember just means the intros may show once more.
     }
   }
 }

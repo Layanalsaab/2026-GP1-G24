@@ -3,9 +3,6 @@ import 'package:flutter/material.dart';
 import '../../motion/motion.dart';
 import '../../theme/app_colors.dart';
 
-/// A tappable region that tints its background while pressed (the prototype's
-/// `.tr:active`, `.di:active` and `.srow` rows). No ripple. Under reduced
-/// motion the tint still shows but does not animate.
 class PressSurface extends StatefulWidget {
   const PressSurface({
     super.key,
@@ -25,12 +22,9 @@ class PressSurface extends StatefulWidget {
   final Color? pressedColor;
 
   /// Background while a mouse pointer hovers (null: no hover reaction).
-  /// Never triggers on touch.
   final Color? hoverColor;
   final BorderRadius? borderRadius;
 
-  /// Optional explicit accessibility label (otherwise the child's text is
-  /// merged).
   final String? semanticLabel;
   final bool? selected;
 

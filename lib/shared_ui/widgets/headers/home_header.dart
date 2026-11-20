@@ -10,42 +10,25 @@ import '../../theme/app_text.dart';
 import 'arch_background.dart';
 import 'header_buttons.dart';
 
-/// An Explore sub-tab: [label] plus the outline icon (stroke 2) that shows
-/// only while the tab is selected.
 class ExploreTab {
   const ExploreTab(this.label, this.icon);
 
   final String label;
 
-  /// Outline icon path from [AppIcons] (`tabLatest`, `tabTrending`,
-  /// `tabForYou`).
+  /// Outline icon path from AppIcons (tabLatest, tabTrending, tabForYou).
   final String icon;
 
   static const latest = ExploreTab('Latest', AppIcons.tabLatest);
   static const trending = ExploreTab('Trending', AppIcons.tabTrending);
   static const forYou = ExploreTab('For You', AppIcons.tabForYou);
 
-  /// Latest · Trending · For You, for investors and founders alike. (There is
-  /// no Matches tab: matching lives inside each ticket of the Investment
-  /// Wallet and inside each open round.) Guests only see Trending.
+  /// Latest · Trending · For You, for investors and founders alike.
   static const defaults = [latest, trending, forYou];
 
   /// The tabs of a founder or an investor (the same).
   static List<ExploreTab> forRole({required bool founder}) => defaults;
 }
 
-/// Home header (Hub / Explore / Support Channels): green, bottom radius 30,
-/// padding 14 16 60 (50 with Explore tabs), arches at 13 % filling the header.
-///
-/// Row (height 54): left = avatar with notification dot (or the guest
-/// "Sign up" pill when [guest]), center = [title] (21/700), right = 36 px logo.
-/// Pass [tabs] for the Explore sub-tab row (height 40, sliding gold 28 x 3
-/// indicator, icon only on the selected tab).
-///
-/// OVERLAP: the header reports a height [searchOverlap] (24) shorter than it
-/// paints, so the search bar placed right below it in a column already
-/// overlaps it by 24 with no negative margin. The search bar is 46 high
-/// ([searchBarHeight]); the list below starts 18 px under it.
 class HomeHeader extends StatelessWidget {
   const HomeHeader({
     super.key,
@@ -61,7 +44,7 @@ class HomeHeader extends StatelessWidget {
     this.onTabChanged,
   });
 
-  /// How far the search bar overlaps the header (`.below3` margin-top -24).
+  /// How far the search bar overlaps the header (.below3 margin-top -24).
   static const double searchOverlap = 24;
 
   final String title;
@@ -75,7 +58,7 @@ class HomeHeader extends StatelessWidget {
   /// Red dot on the avatar (pops in after 250 ms).
   final bool hasNotification;
 
-  /// Semantic label of the avatar, e.g. "Open menu, 4 new notifications".
+  /// Semantic label of the avatar, e.g.
   final String? menuLabel;
   final VoidCallback? onAvatarTap;
   final VoidCallback? onSignUp;
@@ -97,15 +80,10 @@ class HomeHeader extends StatelessWidget {
         children: [
           SizedBox(
             height: 54,
-            // The title takes what the avatar (or the Sign up pill) and the
-            // logo leave and shrinks to fit, so a long title such as
-            // "Start.sa Hub" never pushes the Sign up pill out of the row.
             child: LayoutBuilder(
               builder: (context, box) {
                 final side = guest ? 100.0 : 52.0;
                 final titleMax = (box.maxWidth - 2 * side).clamp(80.0, 240.0);
-                // The avatar (or Sign up pill) and the logo keep their own size
-                // at the two ends; the title sits between them.
                 return Stack(
                   alignment: Alignment.center,
                   children: [
@@ -152,7 +130,6 @@ class HomeHeader extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.only(top: 10),
               child: LayoutBuilder(
-                // The prototype row is 4 px wider than the content on each side.
                 builder: (context, c) => SizedBox(
                   height: 40,
                   child: OverflowBox(
@@ -229,8 +206,6 @@ class _HomeAvatar extends StatelessWidget {
   }
 }
 
-/// 8 px red dot with a 1.5 px green ring; scale .4 -> 1 and fade in over
-/// 400 ms easeOut after a 250 ms delay.
 class _NotificationDot extends StatefulWidget {
   const _NotificationDot();
 
@@ -290,11 +265,6 @@ class _NotificationDotState extends State<_NotificationDot>
   }
 }
 
-/// The Explore sub-tab row (For You · Trending · Matches): height 40, equal
-/// tabs, 15.5/600 (white 62 % / white, 200 ms). Only the selected tab shows
-/// its 18 px light-gold icon (width 0 -> 20 + 6 margin, opacity 200 ms, scale
-/// .6 -> 1 300 ms). A gold 28 x 3 indicator slides under the selected tab
-/// (300 ms easeOut). Normally used through [HomeHeader.tabs].
 class ExploreTabs extends StatelessWidget {
   const ExploreTabs({
     super.key,
@@ -328,8 +298,6 @@ class ExploreTabs extends StatelessWidget {
                   Motion.medium + const Duration(milliseconds: 40),
                 ),
                 curve: Motion.easeOut,
-                // One column wide (the tab row is a grid with one equal
-                // column per tab), so the line sits exactly under its tab.
                 child: FractionallySizedBox(
                   widthFactor: 1 / (n == 0 ? 1 : n),
                   child: Container(

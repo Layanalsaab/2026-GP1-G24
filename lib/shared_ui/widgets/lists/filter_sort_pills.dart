@@ -5,9 +5,6 @@ import '../../motion/motion.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text.dart';
 
-/// The two pills at the bottom of the Bookmarks / My Startups banner: filter
-/// (icon + label + chevron) and sort (icon + label + chevron), 8 px apart.
-/// Shared by both screens so they look identical.
 class FilterSortPills extends StatelessWidget {
   const FilterSortPills({
     super.key,
@@ -44,9 +41,7 @@ class FilterSortPills extends StatelessWidget {
   }
 }
 
-/// One header pill: height 28, radius 999, white, no border, soft shadow,
-/// 12/600 text and 13 px icons. [active] = light gold `#F3E6C4` with dark
-/// green `#1F3F27` text and icons. Press scale 0.96, colors animate 160 ms.
+/// One header pill: height 28, radius 999, white, no border, soft shadow, 12/600 text and 13 px icons.
 class HeaderPill extends StatelessWidget {
   const HeaderPill({
     super.key,

@@ -2,8 +2,6 @@ import '../app_constants/validation_strings.dart';
 import 'round_limits.dart';
 
 /// Pure validators for the Add / Edit startup steps (docs/06 section 8).
-/// Each returns the error message, or null when the value is valid. Inputs
-/// are the raw text from the fields.
 class StartupValidators {
   StartupValidators._();
 
@@ -13,15 +11,13 @@ class StartupValidators {
   static String? description(String v) =>
       v.trim().isEmpty ? ValidationStrings.startupDescription : null;
 
-  /// A required select: [message] when nothing is chosen.
+  /// A required select: message when nothing is chosen.
   static String? selected(Object? value, String message) =>
       value == null || (value is String && value.isEmpty) ? message : null;
 
   /// The earliest founded year accepted.
   static const minFoundedYear = 2000;
 
-  /// Required: four digits, from [minFoundedYear] up to the current year (no
-  /// future years). The upper limit follows [now] (today by default).
   static String? foundedYear(String value, {DateTime? now}) {
     final text = value.trim();
     if (text.isEmpty) return ValidationStrings.foundedRequired;
@@ -32,10 +28,6 @@ class StartupValidators {
         : ValidationStrings.foundedRange(minFoundedYear, max);
   }
 
-  /// A real web address: optional http:// or https:// (no other scheme),
-  /// optional www., one or more domain parts (letters, numbers, inner
-  /// hyphens) each followed by a dot, a top-level domain of 2+ letters, then
-  /// an optional port and path. No spaces.
   static final _website = RegExp(
     r'^(https?:\/\/)?(www\.)?([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,24}(:[0-9]{2,5})?(\/\S*)?$',
     caseSensitive: false,
@@ -50,8 +42,6 @@ class StartupValidators {
   static bool isWebsite(String value) {
     final text = value.trim();
     if (!_website.hasMatch(text)) return false;
-    // The ending must be a real top-level domain (.com, .sa, .org ...), not
-    // just any letters (.iii).
     var host = text.replaceFirst(
       RegExp(r'^https?:\/\/', caseSensitive: false),
       '',
@@ -60,8 +50,6 @@ class StartupValidators {
     return realTlds.contains(host.split('.').last);
   }
 
-  /// Top-level domains accepted in a website: the common generic ones and
-  /// every country code.
   static const Set<String> realTlds = {
     // generic
     'com', 'org', 'net', 'edu', 'gov', 'mil', 'int', 'info', 'biz', 'name',
@@ -100,11 +88,9 @@ class StartupValidators {
   };
 
   /// The trimmed address as saved, or null when it is not a valid website.
-  /// (Opening it adds https:// when there is no scheme.)
   static String? normalizeUrl(String value) =>
       isWebsite(value) ? value.trim() : null;
 
-  // ---- Step 2 ----
   static String? problem(String v) =>
       v.trim().isEmpty ? ValidationStrings.problem : null;
   static String? solution(String v) =>
@@ -121,9 +107,7 @@ class StartupValidators {
     return n <= 0 ? ValidationStrings.marketSizeZero : null;
   }
 
-  // ---- Step 4 ----
-
-  /// A money field's digits, or null when empty. "1,200,000" -> 1200000.
+  /// A money field's digits, or null when empty.
   static int? money(String v) {
     final digits = v.replaceAll(RegExp(r'[^0-9]'), '');
     if (digits.isEmpty) return null;
@@ -136,7 +120,7 @@ class StartupValidators {
   /// The least each of the three expected-revenue years can be (SAR).
   static const minExpectedRevenue = 1000;
 
-  /// All three years are required, each at least [minExpectedRevenue].
+  /// All three years are required, each at least minExpectedRevenue.
   static String? revenue(String y1, String y2, String y3) {
     final years = [money(y1), money(y2), money(y3)];
     if (years.any((v) => v == null)) return ValidationStrings.revenue;
@@ -145,7 +129,7 @@ class StartupValidators {
         : null;
   }
 
-  /// True when a year has a value under [minExpectedRevenue].
+  /// True when a year has a value under minExpectedRevenue.
   static bool revenueTooLow(String y1, String y2, String y3) => [
     money(y1),
     money(y2),
@@ -167,16 +151,12 @@ class StartupValidators {
   static String? revenueModel(String v) =>
       v.trim().isEmpty ? ValidationStrings.commerceModel : null;
 
-  /// "How much are you raising?": required, and inside the limits of the
-  /// round type ([stage]).
   static String? funding(String v) {
     final amount = money(v);
     if (amount == null) return ValidationStrings.funding;
     return RoundLimits.error(amount);
   }
 
-  /// "How much have you already raised in this round?": required (0 is
-  /// fine) and not more than the amount being raised.
   static String? raisedInRound(String raised, String funding) {
     final r = money(raised);
     if (r == null) return ValidationStrings.raisedEmpty;

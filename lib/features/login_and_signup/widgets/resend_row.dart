@@ -6,11 +6,7 @@ import '../../../shared_ui/motion/motion.dart';
 import '../../../shared_ui/theme/app_colors.dart';
 import '../../../shared_ui/theme/app_text.dart';
 
-/// "Didn’t get the email? Resend in 0:59": on the Verify step (inside the
-/// white card, under the password field) and in the Log in pop-up: a 1 px
-/// line (Verify only), then the centered row (14 px, padding 14 top, 18
-/// bottom). While the cooldown runs it is muted and not tappable; at 0:00
-/// it fades into a dark green semibold "Resend email".
+/// "Didn’t get the email?
 class ResendRow extends StatelessWidget {
   const ResendRow({
     super.key,
@@ -26,8 +22,7 @@ class ResendRow extends StatelessWidget {
   final bool busy;
   final VoidCallback onResend;
 
-  /// The 1 px line above the row (the Verify card). The Log in pop-up has
-  /// none.
+  /// The 1 px line above the row (the Verify card).
   final bool divider;
 
   static String _clock(int s) =>
@@ -42,8 +37,6 @@ class ResendRow extends StatelessWidget {
       children: [
         if (divider)
           Divider(height: 1, thickness: 1, color: AppColors.softDivider),
-        // The row's own padding counts as the button too (it looks the same,
-        // but a tap just above, below or beside the words still works).
         GestureDetector(
           key: const ValueKey('resend-area'),
           behavior: HitTestBehavior.opaque,

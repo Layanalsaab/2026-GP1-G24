@@ -55,7 +55,6 @@ void main() {
       PrototypeSeed.daftar.copyWith(isPublic: false),
     ]);
     await open(t, const []);
-    // The Hub card's own parts are there: name, sector, city, description.
     expect(find.text('Rafeeq Health'), findsOneWidget);
     expect(find.text('HealthTech'), findsOneWidget);
     expect(find.text('Riyadh'), findsWidgets);
@@ -75,13 +74,10 @@ void main() {
     t,
   ) async {
     repo.startups.add(PrototypeSeed.daftar.copyWith(isPublic: false));
-    // (A wide screen: the test font is much wider than Inter, so on a phone
-    // width the capsules would drop under the name, as designed.)
     await open(t, const [], width: 1000);
     final nameY = t.getTopLeft(find.text('Daftar')).dy;
     final role = find.byType(RoleTag);
     final priv = find.byType(PrivateTag);
-    // Same line as the name (the capsule is 20 high, the name line 23).
     expect(
       (t.getCenter(role).dy - t.getCenter(find.text('Daftar')).dy).abs(),
       lessThan(4),
@@ -116,7 +112,6 @@ void main() {
         addedAt: DateTime(2026, 10, 2),
       ),
     ]);
-    // Only the founder manages: a co-founder views, like a team member.
     expect(find.text('View'), findsNWidgets(2));
     expect(find.text('Manage'), findsNothing);
     expect(find.text('Team member'), findsOneWidget);
@@ -128,7 +123,6 @@ void main() {
     await open(t, const []);
     await t.tap(find.text('Rafeeq Health'));
     await t.pumpAndSettle();
-    // Manage has its tabs (the public page has Overview / Business / ...).
     expect(find.text('Dashboard'), findsWidgets);
     expect(find.text('Startup Ask'), findsWidgets);
   });

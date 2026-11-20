@@ -14,8 +14,7 @@ import '../view_models/signup_flow.dart';
 import '../widgets/investor_fields.dart';
 import '../widgets/auth_navigation.dart';
 
-/// /// Investor step 4 of 4, "Investment Interests". Finish saves every answer,
-/// clears the pending-onboarding state and opens the Hub.
+/// /// Investor step 4 of 4, "Investment Interests".
 class InvestorInterestsScreen extends StatelessWidget {
   const InvestorInterestsScreen({super.key, required this.viewModel});
 

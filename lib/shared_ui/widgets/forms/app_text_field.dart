@@ -7,22 +7,6 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_text.dart';
 import 'app_field.dart';
 
-/// The input box of the design system (`.inp`): min height 50, white, 1 px
-/// `#8C918D` border, radius 12, text 16/24 with padding 12 14. Focus: moss600
-/// border + 3 px ring; error: red border + ring; [valid]: moss600 border and a
-/// popping check at the right (never together with an error). Border/ring
-/// animate over 160 ms.
-///
-/// Two ways to feed it: a [controller] (owned by a view model; the field never
-/// disposes it), or [value] + [onChanged] (the field keeps its own
-/// controller and follows [value] when it changes from outside).
-///
-/// [prefix] ("+966", "SAR", "Other") shows before the text followed by a
-/// 1 x 24 divider; [suffix] ("%") shows after it behind a divider; [password]
-/// adds the 44 px show/hide eye. [multiline] makes a fixed [rows]-row
-/// textarea. The text is cut at [maxLength] (the counter lives in the
-/// surrounding [AppField] / [LabeledTextField]). [dense] is the 46 px money
-/// box of the trio rows.
 class AppTextField extends StatefulWidget {
   const AppTextField({
     super.key,
@@ -67,7 +51,7 @@ class AppTextField extends StatefulWidget {
   final ValueChanged<String>? onChanged;
   final ValueChanged<String>? onSubmitted;
 
-  /// Placeholder text (`#4F5751`).
+  /// Placeholder text (#4F5751).
   final String? hint;
 
   /// Screen-reader label (the visible label lives outside the box).
@@ -85,8 +69,6 @@ class AppTextField extends StatefulWidget {
   final String? suffix;
   final bool password;
 
-  /// Shows the "ok" check and the moss600 border (field has an ok rule and
-  /// its value is valid).
   final bool valid;
   final bool hasError;
   final bool enabled;
@@ -103,7 +85,7 @@ class AppTextField extends StatefulWidget {
   /// Counts something other than the characters (the phone: digits only).
   final int Function(String text)? counterOf;
 
-  /// The limit shown in the counter when it is not [maxLength] (phone: 9).
+  /// The limit shown in the counter when it is not maxLength (phone: 9).
   final int? counterMax;
 
   /// False hides the on-border counter (it is never shown on passwords).
@@ -112,8 +94,6 @@ class AppTextField extends StatefulWidget {
   /// Turns the counter red when 10 or fewer characters are left.
   final bool warnLow;
 
-  /// Told true when a paste or typing went past [maxLength] (the extra is
-  /// cut) and false on the next edit that stays within it.
   final ValueChanged<bool>? onOverflow;
 
   @override
@@ -374,9 +354,6 @@ class _AppTextFieldState extends State<AppTextField> {
               clipBehavior: Clip.none,
               children: [
                 box,
-                // "typed/max" sits on the bottom border, 12 px from the right
-                // edge, its background notching the line. Only while the
-                // field is focused.
                 Positioned(
                   right: 12,
                   bottom: -8,
@@ -420,8 +397,6 @@ class _AppTextFieldState extends State<AppTextField> {
   }
 }
 
-/// Cuts text at [max] characters (like a length limit) and reports through
-/// [onOverflow] whether the edit tried to go past it.
 class _MaxLengthFormatter extends TextInputFormatter {
   _MaxLengthFormatter(this.max, this.onOverflow);
 
@@ -434,12 +409,7 @@ class _MaxLengthFormatter extends TextInputFormatter {
     TextEditingValue newValue,
   ) {
     final over = newValue.text.characters.length > max;
-    // Told on every edit (not only when it changes): this formatter is made
-    // again on every rebuild, so it can't remember the last value, and the
-    // red "Maximum N characters" line must clear as soon as the text is
-    // back within the limit. The field ignores repeats of the same value.
     if (onOverflow != null) {
-      // Not during the framework's editing callback: tell the field after.
       WidgetsBinding.instance
         ..addPostFrameCallback((_) => onOverflow!(over))
         ..ensureVisualUpdate();
@@ -450,7 +420,7 @@ class _MaxLengthFormatter extends TextInputFormatter {
   }
 }
 
-/// Holds the "went past the limit" flag of one [LabeledTextField].
+/// Holds the "went past the limit" flag of one LabeledTextField.
 class _OverflowFlag extends StatefulWidget {
   const _OverflowFlag({required this.builder});
 
@@ -472,13 +442,6 @@ class _OverflowFlagState extends State<_OverflowFlag> {
   Widget build(BuildContext context) => widget.builder(context, _over, _set);
 }
 
-/// [AppField] + [AppTextField] in one widget for the common case: label,
-/// optional info tip, the input, error / hint and an automatic `n/max`
-/// counter (from the controller or [value]). Takes the input arguments of
-/// [AppTextField] (see there) plus the field arguments of [AppField].
-///
-/// The counter is shown when [maxLength] is set (set [counterFrom] to count
-/// something else, e.g. phone digits). Pass [valid] for the "ok" check.
 class LabeledTextField extends StatelessWidget {
   const LabeledTextField({
     super.key,
@@ -529,11 +492,9 @@ class LabeledTextField extends StatelessWidget {
   /// At the right end of the label row (the Private / Public switch).
   final Widget? labelTrailing;
 
-  /// A soft amber note (not an error) shown in the helper line when there is
-  /// no error, e.g. "Make sure your email domain is correct."
   final String? warning;
 
-  /// Makes the [error] tappable (e.g. "Did you mean name@gmail.com?").
+  /// Makes the error tappable (e.g.
   final VoidCallback? onWarningTap;
   final String? info;
   final bool? infoOpen;
@@ -544,8 +505,6 @@ class LabeledTextField extends StatelessWidget {
   final String? hint;
   final bool showCounter;
 
-  /// False: typing past [maxLength] just stops (no red "Maximum N characters"
-  /// line), e.g. the founded year.
   final bool showOverflowMessage;
 
   /// Computes the counted length from the text (default: its length).
@@ -580,7 +539,6 @@ class LabeledTextField extends StatelessWidget {
   }
 
   Widget _buildField(BuildContext context, bool over, ValueChanged<bool> set) {
-    // Going past the character limit (a long paste) is an error too.
     final shownError = (error != null && error!.isNotEmpty)
         ? error
         : (over && maxLength != null && showOverflowMessage

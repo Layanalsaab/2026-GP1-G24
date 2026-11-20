@@ -151,7 +151,6 @@ void main() {
     test('a draft saved before the swap reopens on the same step', () {
       final old = StartupStepsViewModel();
       addTearDown(old.dispose);
-      // Before the swap the Startup Ask was step 4 and the Team step 5.
       final draft = {...old.toDraft()}
         ..remove('order')
         ..['step'] = 4;
@@ -276,7 +275,6 @@ void main() {
       expect(vm.lookingFor, {LookingFor.funding});
       final saved = await vm.save();
       expect(saved, isNotNull);
-      // The one-line pitch is gone: the brief description is the only text.
       expect(
         repo.startups.single.description,
         'We help small shops accept card payments.',
@@ -609,8 +607,6 @@ void main() {
       // No count line under the title any more.
       expect(find.text('2 startups'), findsNothing);
       expect(find.text('Rafeeq Health'), findsOneWidget);
-      // The same card as the Hub: no "needs" line and no Public pill any more,
-      // a role capsule, and a "Private" capsule for the private one.
       expect(find.text('Raising SAR 500,000'), findsNothing);
       expect(find.text('Public'), findsNothing);
       expect(find.text('Founder'), findsNWidgets(2));
@@ -628,8 +624,6 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(find.text('Rafeeq Health'), findsOneWidget);
-      // Header: role label above the name, the tabs (Dashboard, EOI, the six
-      // steps of the form, Settings), eye + share icons.
       expect(find.text('FOUNDER'), findsOneWidget);
       for (final tab in [
         'Dashboard',
@@ -642,12 +636,10 @@ void main() {
       }
       expect(find.bySemanticsLabel('Preview profile'), findsOneWidget);
       expect(find.bySemanticsLabel('Share'), findsOneWidget);
-      // Dashboard: the two tiles, the calculator and the investors card.
       expect(find.text('Raising'), findsOneWidget);
       expect(find.text('Valuation'), findsOneWidget);
       expect(find.text('Valuation Calculator'), findsOneWidget);
       expect(find.text('Associated Investors'), findsOneWidget);
-      // Both card titles share one style (size, weight, line height).
       final activityStyle = tester
           .widget<Text>(find.text('Activity').first)
           .style;
@@ -665,7 +657,6 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('14'), findsOneWidget);
 
-      // The tab bar scrolls sideways: bring the tab into view, then tap it.
       Finder tab(String label) => find.descendant(
         of: find.byType(ScrollableHeaderTabBar),
         matching: find.text(label),
@@ -912,7 +903,6 @@ void main() {
       );
       await tester.tap(find.text('edit'));
       await tester.pumpAndSettle();
-      // Change something so the form is "dirty" (the back guard is on).
       final name = find.widgetWithText(TextField, 'Rafeeq Health');
       await tester.enterText(name, 'Rafeeq Health Plus');
       await tester.pump();

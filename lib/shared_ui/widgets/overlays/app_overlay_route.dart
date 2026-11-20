@@ -2,14 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../../motion/motion.dart';
 
-/// How the panel of an [AppOverlayRoute] enters.
+/// How the panel of an AppOverlayRoute enters.
 enum AppOverlayEntry { slideUp, slideLeft, fadeScale }
 
-/// A modal route with the prototype's two-layer overlay animation: a dim layer
-/// that fades ([dimDuration]) and a panel that slides up / in from the left /
-/// fades and scales ([duration], [curve]). Tapping outside the panel or the
-/// system back gesture pops it. Under reduced motion both layers use a 200 ms
-/// fade. Use [showAppOverlay] rather than building it directly.
 class AppOverlayRoute<T> extends PopupRoute<T> {
   AppOverlayRoute({
     required this.builder,
@@ -24,8 +19,6 @@ class AppOverlayRoute<T> extends PopupRoute<T> {
     this.dimCurve = Motion.easeOut,
   });
 
-  /// Curve of the dim fade (CSS `ease` for the side menu and the advanced
-  /// search sheet, easeOut for picker sheets).
   final Curve dimCurve;
 
   final WidgetBuilder builder;
@@ -63,8 +56,6 @@ class AppOverlayRoute<T> extends PopupRoute<T> {
     return Semantics(
       scopesRoute: true,
       explicitChildNodes: true,
-      // Text fields, ink and list tiles inside a sheet need a Material
-      // ancestor, and an overlay route has none of its own.
       child: Material(type: MaterialType.transparency, child: builder(context)),
     );
   }
@@ -129,7 +120,7 @@ class AppOverlayRoute<T> extends PopupRoute<T> {
   }
 }
 
-/// Pushes an [AppOverlayRoute] on the root navigator.
+/// Pushes an AppOverlayRoute on the root navigator.
 Future<T?> showAppOverlay<T>(
   BuildContext context, {
   required WidgetBuilder builder,

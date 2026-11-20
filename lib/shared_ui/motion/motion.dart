@@ -9,10 +9,6 @@ import 'motion_tokens.dart';
 export 'motion_tokens.dart';
 
 /// Motion tokens and reusable effects (docs/03_motion.md).
-///
-/// Every effect here honours reduced motion: with
-/// `MediaQuery.disableAnimations` on, movement becomes a 200 ms fade (or
-/// nothing at all for press/hover).
 class Motion {
   Motion._();
 
@@ -41,8 +37,6 @@ class Motion {
   static Duration dur(BuildContext context, Duration d) =>
       reduced(context) ? Duration.zero : d;
 
-  /// Stagger delay for list items: 40 ms x index (cards), 50 ms (My Startups),
-  /// 30 ms (drawer rows after a 90 ms lead). Off under reduced motion.
   static Duration stagger(
     BuildContext context,
     int index, {
@@ -56,8 +50,7 @@ class Motion {
   }
 }
 
-/// Plays [builder] once after [delay], driving a 0..1 animation. Shared by
-/// the one-shot effects below.
+/// Plays builder once after delay, driving a 0..1 animation.
 abstract class _OneShotState<T extends StatefulWidget> extends State<T>
     with SingleTickerProviderStateMixin {
   late final AnimationController controller;
@@ -100,7 +93,7 @@ abstract class _OneShotState<T extends StatefulWidget> extends State<T>
   }
 }
 
-/// opacity 0 -> 1 and translateY [offset] -> 0 (the prototype's `rise`).
+/// opacity 0 -> 1 and translateY offset -> 0 (the prototype's rise).
 class Rise extends StatefulWidget {
   const Rise({
     super.key,
@@ -115,7 +108,7 @@ class Rise extends StatefulWidget {
   final Duration duration;
   final double offset;
 
-  /// `cardIn`: 320 ms, 8 px. Used for list cards with a stagger.
+  /// cardIn: 320 ms, 8 px.
   const Rise.card({super.key, required this.child, this.delay = Duration.zero})
     : duration = const Duration(milliseconds: 320),
       offset = 8;
@@ -153,7 +146,7 @@ class _RiseState extends _OneShotState<Rise> {
   }
 }
 
-/// opacity 0 -> 1 (the prototype's `fade-in`, 500 ms).
+/// opacity 0 -> 1 (the prototype's fade-in, 500 ms).
 class FadeInOnce extends StatefulWidget {
   const FadeInOnce({
     super.key,
@@ -183,7 +176,7 @@ class _FadeInOnceState extends _OneShotState<FadeInOnce> {
   );
 }
 
-/// opacity 0 -> 1, scale .92 -> 1, translateY 8 -> 0 (`logo-in`, 700 ms).
+/// opacity 0 -> 1, scale .92 -> 1, translateY 8 -> 0 (logo-in, 700 ms).
 class LogoIn extends StatefulWidget {
   const LogoIn({super.key, required this.child});
 
@@ -225,8 +218,7 @@ class _LogoInState extends _OneShotState<LogoIn> {
   }
 }
 
-/// scale .7 -> 1.15 (at 60 %) -> 1 over 320 ms (`pop`). Plays when mounted,
-/// so wrap the thing that appears (a check icon, a filled bookmark).
+/// scale .7 -> 1.15 (at 60 %) -> 1 over 320 ms (pop).
 class Pop extends StatefulWidget {
   const Pop({super.key, required this.child});
 
@@ -261,7 +253,7 @@ class _PopState extends _OneShotState<Pop> {
   }
 }
 
-/// scaleY .08 -> 1 anchored at the bottom (`grow`, 520 ms). Bars and charts.
+/// scaleY .08 -> 1 anchored at the bottom (grow, 520 ms).
 class Grow extends StatefulWidget {
   const Grow({super.key, required this.child, this.delay = Duration.zero});
 
@@ -299,8 +291,6 @@ class _GrowState extends _OneShotState<Grow> {
   }
 }
 
-/// Looping effects: [Float] (translateY 0 -> -6 -> 0, 4 s) and [Twinkle]
-/// (opacity .35 <-> 1, scale .85 <-> 1, 2.4 s). Static under reduced motion.
 class Float extends StatefulWidget {
   const Float({super.key, required this.child, this.delay = Duration.zero});
 
@@ -406,14 +396,6 @@ class _TwinkleState extends State<Twinkle> with SingleTickerProviderStateMixin {
 
 double _cosTurns(double t) => math.cos(2 * math.pi * t);
 
-/// One wrapper for everything tappable (§0.4): scales to [scale] while
-/// pressed (140 ms, easeOut), optionally reacts to a mouse pointer
-/// ([hoverOffset] lift, [hoverColor] / [hoverDecoration] background), shows a
-/// 2 px moss600 focus outline (2 px offset) for keyboard users only, and does
-/// nothing when it has no action (disabled). No ripple, ever.
-///
-/// Use the [PressScale] constants for [scale]. Under reduced motion the press
-/// scale and hover lift are off (hover colors change instantly).
 class Pressable extends StatefulWidget {
   const Pressable({
     super.key,
@@ -436,23 +418,17 @@ class Pressable extends StatefulWidget {
   final double scale;
   final HitTestBehavior behavior;
 
-  /// Translation while the pointer hovers (cards lift `Offset(0, -2)`).
+  /// Translation while the pointer hovers (cards lift Offset(0, -2)).
   final Offset? hoverOffset;
 
-  /// Background painted behind the child while hovered (needs
-  /// [borderRadius] to match the child's shape).
   final Color? hoverColor;
 
-  /// Decoration applied while hovered (a shadow, a border, a ring), animated
-  /// over [hoverDuration].
   final BoxDecoration? hoverDecoration;
   final Duration hoverDuration;
 
-  /// Corner radius of the child's shape (for [hoverColor]).
+  /// Corner radius of the child's shape (for hoverColor).
   final BorderRadius? borderRadius;
 
-  /// Corner radius of the keyboard focus outline; defaults to [borderRadius]
-  /// or 12.
   final BorderRadius? focusRadius;
 
   bool get _hasHover =>
@@ -524,7 +500,6 @@ class _PressableState extends State<Pressable> {
       },
       child: FocusableActionDetector(
         enabled: enabled,
-        // Only true while the keyboard drives focus (never after a tap).
         onShowFocusHighlight: (v) {
           if (_focus != v && mounted) setState(() => _focus = v);
         },
@@ -548,7 +523,6 @@ class _PressableState extends State<Pressable> {
             duration: AppDur.press,
             curve: AppCurves.easeOut,
             child: Stack(
-              // Passthrough keeps the parent's constraints exactly as before.
               fit: StackFit.passthrough,
               clipBehavior: Clip.none,
               children: [
@@ -588,9 +562,6 @@ class _PressableState extends State<Pressable> {
   }
 }
 
-/// Draws an SVG [d] path progressively (`draw`, 1400 ms, easeInOut) by
-/// extracting a growing prefix of each path metric. Used for the splash
-/// arches, intro graphics and program-details circles.
 class DrawPath extends StatefulWidget {
   const DrawPath({
     super.key,
@@ -604,15 +575,15 @@ class DrawPath extends StatefulWidget {
     this.fillOpacity = 0,
   });
 
-  /// SVG path `d` string in [viewBox] coordinates.
+  /// SVG path d string in viewBox coordinates.
   final String pathData;
   final Color color;
   final double strokeWidth;
 
-  /// Size of the painted area. Null expands to the parent.
+  /// Size of the painted area.
   final Size? size;
 
-  /// The SVG viewBox the path was authored in (scaled to [size]).
+  /// The SVG viewBox the path was authored in (scaled to size).
   final Size? viewBox;
   final Duration delay;
   final Duration duration;
@@ -687,9 +658,6 @@ class _DrawPainter extends CustomPainter {
       old.progress != progress || old.color != color || old.path != path;
 }
 
-/// `cardIn`: a list card appears with opacity 0 -> 1 and translateY 8 -> 0
-/// over 320 ms, delayed 40 ms x [index] (§0.3). Off (instant) under reduced
-/// motion. The start state is shown during the delay.
 class CardIn extends StatelessWidget {
   const CardIn({super.key, required this.index, required this.child});
 
@@ -701,8 +669,6 @@ class CardIn extends StatelessWidget {
       Rise.card(delay: Motion.stagger(context, index), child: child);
 }
 
-/// `chipIn`: opacity 0 -> 1 and scale .94 -> 1 over 220 ms (§0.3), for a
-/// filter chip that has just appeared.
 class ChipIn extends StatefulWidget {
   const ChipIn({super.key, required this.child});
 

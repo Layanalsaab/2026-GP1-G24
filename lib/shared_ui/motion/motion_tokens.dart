@@ -29,13 +29,11 @@ abstract final class AppDur {
   static const reducedFade = Duration(milliseconds: 200);
 }
 
-/// The pressed scale of each kind of element (§0.4). Pass one of these as
-/// `Pressable(scale: ...)`.
+/// The pressed scale of each kind of element (§0.4).
 abstract final class PressScale {
   /// Buttons, pressable cards, select fields, pickers, "Add team member".
   static const button = 0.97;
 
-  /// 44 px icon buttons, back / close / eye, glass header buttons, info "i".
   static const icon = 0.92;
 
   /// Form chips, advanced-search option chips, filter pills.
@@ -50,8 +48,6 @@ abstract final class PressScale {
   /// The header avatar button and the search bar's filter button.
   static const avatar = 0.94;
 
-  /// Guest "Sign up" pill, My Startups "Add" pill, "Edit profile" pill and
-  /// the profile back button.
   static const pill = 0.95;
 
   /// Menu "View profile" pill and the LinkedIn pill.

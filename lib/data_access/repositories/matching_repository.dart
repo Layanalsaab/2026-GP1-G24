@@ -11,25 +11,6 @@ import '../../recommender/knowledge_filter.dart';
 import '../firebase_services/firestore_service.dart';
 
 /// Matching from the real Firestore data (lib/recommender has the rules).
-/// There is no Matches tab: matching lives in two places.
-///
-/// - Investor: each investment ticket of the Wallet against the listed
-///   startups ([publicStartups], [matchesForTicket]). Only `startups` where
-///   `isPublic == true` are read (the rules hide private ones anyway); the
-///   closed ones (`status == 'closed'`) are dropped here.
-/// - Founder: each open round of a startup against the `investors`
-///   collection and the open `tickets` ([investorsForStartup]).
-///
-/// The pools stay up to date by themselves: the public startups, the
-/// investors and the open tickets are watched with Firestore listeners,
-/// which send the whole list once and then only the documents that change
-/// (one read each). [changes] bumps after every change, so an open list is
-/// computed again at once (no extra reads). With `live: false` (tests) the
-/// pools are read once and kept for [_maxAge]; `refresh: true` reads them
-/// again.
-///
-/// Every method throws AuthException on failure (network, permission, ...),
-/// like the other repositories.
 class MatchingRepository {
   MatchingRepository({FirestoreService? firestore, this.live = true})
     : _firestore = firestore ?? FirestoreService();
@@ -37,14 +18,12 @@ class MatchingRepository {
   /// Watch the pools with listeners (the app) or read them once (tests).
   final bool live;
 
-  /// Bumps when a watched startup, investor or ticket changed (not on the
-  /// first load). The Wallet and the round's Matches listen.
   final ValueNotifier<int> changes = ValueNotifier<int>(0);
 
   /// How long the first answer of a listener may take.
   static const _firstAnswer = Duration(seconds: 15);
 
-  /// The app-wide instance. Tests replace it with a fake.
+  /// The app-wide instance.
   static MatchingRepository instance = MatchingRepository();
 
   static const _maxAge = Duration(minutes: 10);
@@ -58,16 +37,13 @@ class MatchingRepository {
   _LivePool? _liveInvestors;
   _LivePool? _liveTickets;
 
-  /// The startups and investors shown in matches, so a tapped card opens
-  /// the real profile.
   final Map<String, Startup> _shownStartups = {};
   final Map<String, InvestorProfile> _shownInvestors = {};
 
   Startup? startupById(String id) => _shownStartups[id];
   InvestorProfile? investorById(String id) => _shownInvestors[id];
 
-  /// Every listed startup: public (only those are read) and not closed. The
-  /// pool a ticket is matched against.
+  /// Every listed startup: public (only those are read) and not closed.
   Future<List<Startup>> publicStartups({bool refresh = false}) async {
     final docs = await _pool(
       refresh,
@@ -97,9 +73,6 @@ class MatchingRepository {
     return out;
   }
 
-  /// The matches of one [ticket] among [startups] (from [publicStartups]),
-  /// best first. [commerceModels] are the investor's profile commerce models
-  /// (labels), the 20% part of the score.
   static List<ranker.MatchResult> matchesForTicket(
     InvestmentTicket ticket,
     List<String> commerceModels,
@@ -113,11 +86,11 @@ class MatchingRepository {
     ]);
   }
 
-  /// A [Startup] as matching reads it (its stored values).
+  /// A Startup as matching reads it (its stored values).
   static MatchStartup matchStartupOf(Startup s) =>
       MatchStartup.fromMap(s.id, s.toMap());
 
-  /// An [InvestmentTicket] as matching reads it.
+  /// An InvestmentTicket as matching reads it.
   static MatchTicket matchTicketOf(InvestmentTicket t) =>
       MatchTicket.fromMap(t.id, {
         ...t.editableFields(),
@@ -125,17 +98,11 @@ class MatchingRepository {
         TicketFields.status: t.status.value,
       });
 
-  /// The investors matched to the founder's [startup] (public or private)
-  /// for its open round, best first: [startup] carries the round (stage =
-  /// the round type, fundingRequirement = its amount, raisedInRound = what
-  /// it raised). Investors with an open ticket that fits come first. A
-  /// closed startup gets none. The profiles are kept for [investorById].
   Future<List<ranker.MatchResult>> investorsForStartup(
     Startup startup, {
     bool refresh = false,
   }) async {
     if (startup.isClosed) return const [];
-    // Every investor profile has role "investor", so this reads them all.
     final docs = await _pool(
       refresh,
       () => _liveInvestors,
@@ -182,7 +149,7 @@ class MatchingRepository {
     return results;
   }
 
-  /// Forgets the loaded pools and stops the listeners (e.g. on sign-out).
+  /// Forgets the loaded pools and stops the listeners (e.g.
   void clear() {
     _liveStartups?.cancel();
     _liveInvestors?.cancel();
@@ -197,7 +164,7 @@ class MatchingRepository {
     _shownInvestors.clear();
   }
 
-  /// One pool's documents: watched ([live]) or read once and cached.
+  /// One pool's documents: watched (live) or read once and cached.
   Future<List<FirestoreDocument>> _pool(
     bool refresh,
     _LivePool? Function() liveNow,
@@ -210,8 +177,6 @@ class MatchingRepository {
       ? _watch(liveNow(), watch, keepLive)
       : _load(cachedNow(), refresh, read, keepCached);
 
-  /// The latest documents of a watched pool; starts the listener the first
-  /// time (or again after it failed) and waits for its first answer.
   Future<List<FirestoreDocument>> _watch(
     _LivePool? current,
     Stream<List<FirestoreDocument>> Function() watch,
@@ -252,9 +217,6 @@ class MatchingRepository {
   /// Longest bio shown whole on a card.
   static const cardBioMax = 120;
 
-  /// The bio on one card: whole when it is at most [cardBioMax] characters,
-  /// otherwise cut at a word and ended with "…" (so a cut text always shows
-  /// that there is more on the profile).
   static String cardPreview(String bio) {
     final flat = bio.replaceAll(RegExp(r'\s+'), ' ').trim();
     if (flat.length <= cardBioMax) return flat;
@@ -264,7 +226,7 @@ class MatchingRepository {
     return '${cut.replaceFirst(RegExp(r'[\s.,;:!?-]+$'), '')}…';
   }
 
-  /// An `investors/{id}` document as the profile founders see.
+  /// An investors/{id} document as the profile founders see.
   static InvestorProfile _profile(String id, Map<String, dynamic> d) {
     List<String> labels(Object? raw) => [
       if (raw is List)
@@ -290,7 +252,6 @@ class MatchingRepository {
       stages: labels(d[UserFields.preferredStages]),
       ticketRange: text(UserFields.ticketSize) ?? '',
       locations: [if (city.isNotEmpty) city],
-      // The card shows the start of the bio; the profile page shows it all.
       about: bio == null ? null : cardPreview(bio),
       bio: bio,
       linkedin: text(UserFields.linkedin),

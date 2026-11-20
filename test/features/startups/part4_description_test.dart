@@ -61,14 +61,12 @@ void main() {
     expect(vm.errorOf(StartupField.advantage), isNull);
 
     final boxes = find.byType(TextField);
-    // Tab into the problem field and out again without typing: still clean.
     await t.tap(boxes.at(0));
     await t.pump();
     await t.tap(boxes.at(1));
     await t.pump();
     expect(vm.errorOf(StartupField.problem), isNull);
 
-    // Type in the solution, empty it and leave: now it is required.
     await t.enterText(boxes.at(1), 'x');
     await t.enterText(boxes.at(1), '');
     expect(vm.errorOf(StartupField.solution), isNull, reason: 'still inside');

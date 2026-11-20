@@ -15,25 +15,18 @@ import '../../../shared_ui/theme/app_colors.dart';
 import '../../../shared_ui/theme/app_text.dart';
 import '../../../shared_ui/widgets/buttons/app_button.dart';
 
-/// Side effects shared by the startup, investor and program profiles: the
-/// bookmark, share and request / interest toggles with their exact toasts.
 class ProfileActions {
   ProfileActions._();
 
-  /// Share: opens the share sheet for the item behind [key] (`s-<id>`,
-  /// `i-<id>`, `p-<id>`); [title] is its name, used in the message.
   static void share(BuildContext context, String key, {String? title}) =>
       ShareLink.shareKey(context, key, title: title);
 
-  /// Toggles the bookmark under [key] (`s-<id>`, `i-<id>`, `p-<id>`).
+  /// Toggles the bookmark under key (s-{id}, i-{id}, p-{id}).
   static void toggleBookmark(BuildContext context, String key) {
     BookmarkRepository.instance.toggle(key);
   }
 }
 
-/// The pinned bottom bar of the startup and investor profiles (prototype
-/// `.pcta`): cream, top hairline, padding 12 16 20, one 52 px button. When
-/// [done] the button gets the "done" look (check icon, moss border).
 class ProfileCtaBar extends StatelessWidget {
   const ProfileCtaBar({
     super.key,
@@ -45,12 +38,10 @@ class ProfileCtaBar extends StatelessWidget {
 
   final String label;
 
-  /// Filled icon path shown while not [done].
+  /// Filled icon path shown while not done.
   final String icon;
   final bool done;
 
-  /// Null while requests are not built yet: the button looks the same and
-  /// does nothing (no message either).
   final VoidCallback? onPressed;
 
   @override
@@ -73,11 +64,6 @@ class ProfileCtaBar extends StatelessWidget {
   }
 }
 
-/// The head block of the own and investor profiles (prototype `.ptop`):
-/// avatar 96 (4 px `#F6F4EF` ring), [name] 24/30, [role]
-/// line, meta row ([city] + dot + [metaTail]), the caps label [tagsLabel]
-/// with [tags] chips and the optional LinkedIn pill. Sits directly under a
-/// `ProfileBanner` (which reports its 48 px overlap).
 class ProfileHead extends StatelessWidget {
   const ProfileHead({
     super.key,
@@ -209,8 +195,6 @@ class ProfileHead extends StatelessWidget {
             ),
           ),
           if (tags.isNotEmpty) ...[
-            // The sectors as plain text under the city line: a small target
-            // icon and "Interested in HealthTech, Fintech" (sectors bolder).
             const SizedBox(height: 8),
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -306,8 +290,6 @@ class _LinkedInPill extends StatelessWidget {
   }
 }
 
-/// A divided list of sections of the own / investor profile: the standard
-/// `.psecs` column (padding 0 16 32, gap 12).
 class ProfileSections extends StatelessWidget {
   const ProfileSections({super.key, required this.children});
 
@@ -330,8 +312,7 @@ class ProfileSections extends StatelessWidget {
   }
 }
 
-/// Big profile avatar entrance: opacity 0 -> 1 and scale .9 -> 1 over 450 ms
-/// easeOut. Under reduced motion it is a plain 200 ms fade.
+/// Big profile avatar entrance: opacity 0 -> 1 and scale .9 -> 1 over 450 ms easeOut.
 class _AvatarIn extends StatefulWidget {
   const _AvatarIn({required this.child});
 

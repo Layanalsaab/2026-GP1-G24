@@ -33,8 +33,6 @@ Finder _tab(String label) => find.descendant(
   matching: find.text(label),
 );
 
-/// Opens Manage startup on Rafeeq Health, then the step tab [tab] (the six
-/// steps of the form are tabs now; there is no Details tab any more).
 Future<void> _openStep(
   WidgetTester t,
   String tab, {
@@ -186,14 +184,12 @@ void main() {
   testWidgets('the two Finance boxes are the same height, label on top', (
     t,
   ) async {
-    // A narrow phone makes "Current company valuation" wrap to two lines.
     await _openStep(t, 'Finance and Growth', size: const Size(1080, 2400));
     Size box(String label) => t.getSize(
       find
           .ancestor(of: find.text(label), matching: find.byType(Container))
           .first,
     );
-    // Revenue and capital are in the same row: same height, labels on top.
     final revenue = box('Current financial year revenue');
     final capital = box('Current available capital');
     expect(revenue.height, capital.height);

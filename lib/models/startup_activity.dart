@@ -19,8 +19,6 @@ class ActivityFigure {
   final String delta;
 }
 
-/// Views, bookmarks and requests for one [ActivityRange], plus the chart
-/// series and its axis labels (docs/07 §6).
 class StartupActivity {
   const StartupActivity({
     required this.range,

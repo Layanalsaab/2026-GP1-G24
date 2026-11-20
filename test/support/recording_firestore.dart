@@ -1,12 +1,6 @@
 import 'package:startsa/data_access/firebase_services/firestore_service.dart';
 
-/// An in-memory Firestore that ALSO records every write the app makes, with
-/// who made it. The recording is replayed against the real security rules
-/// (tools/rules_tests/parity.test.mjs) to prove the app and the rules agree.
-///
-/// Special values are recorded as markers so they survive JSON:
-/// `{"\$ts":1}` server time, `{"\$del":1}` delete field,
-/// `{"\$union":[..]}` / `{"\$remove":[..]}` array changes.
+/// An in-memory Firestore that ALSO records every write the app makes, with who made it.
 class RecordingFirestore extends FirestoreService {
   /// Who is signed in: used to label each recorded write.
   String actorUid = 'u1';
@@ -69,8 +63,6 @@ class RecordingFirestore extends FirestoreService {
     if (v is DateTime) return {'\$date': v.toIso8601String()};
     return v;
   }
-
-  // ---- applying a write to the in-memory copy ----
 
   Object? _plain(Object? v) {
     if (v is _Marker) return v.name == '\$ts' ? DateTime.utc(2026, 1, 1) : null;

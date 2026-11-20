@@ -14,13 +14,9 @@ import '../widgets/role_card.dart';
 import 'login_screen.dart';
 import 'signup_screen.dart';
 
-/// Choose role (docs/05 A6): Founder (pre-selected) or Investor, then
-/// Continue to the sign-up form for that role.
 class ChooseRoleScreen extends StatefulWidget {
   const ChooseRoleScreen({super.key});
 
-  /// Pushes Choose role (Welcome's "Create account", the Log in footer and
-  /// the guest "Sign up" pill).
   static void open(BuildContext context) =>
       AppNav.push(context, const ChooseRoleScreen(), greenHeader: true);
 
@@ -67,8 +63,6 @@ class _ChooseRoleScreenState extends State<ChooseRoleScreen> {
                     onPressed: () => SignupScreen.open(context, _role),
                   ),
                 ),
-                // Somebody who already has an account (e.g. a guest who
-                // tapped Sign up) goes to Log in instead.
                 FooterLink.moss(
                   prefix: AuthStrings.haveAccount,
                   linkLabel: AuthStrings.logIn,

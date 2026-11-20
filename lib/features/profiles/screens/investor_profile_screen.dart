@@ -23,18 +23,11 @@ import '../widgets/send_ticket_request_sheet.dart';
 import '../widgets/ticket_info_sheet.dart';
 import '../widgets/profile_widgets.dart';
 
-/// Investor profile (docs/05 C2, screenshots 31 and 27e): banner with
-/// bookmark (not guests) and share, the head block, then the shared
-/// [InvestorProfileBody] (ticket, About, offer, background, interests,
-/// associations). The
-/// "Send investment request" bar is for founders only.
 class InvestorProfileScreen extends StatefulWidget {
   const InvestorProfileScreen({super.key, required this.investor, this.match});
 
   final InvestorProfile investor;
 
-  /// Opened from a round's matches: why this investor matched, shown at the
-  /// top. Null anywhere else.
   final MatchSummary? match;
 
   /// Opens the profile with the forward transition.
@@ -128,8 +121,6 @@ class _InvestorProfileScreenState extends State<InvestorProfileScreen> {
                           role: inv.title,
                           city: inv.city,
                           metaTail: _vm.associationCount,
-                          // The sectors are listed under Interests below: no
-                          // second "Invests in" line under the name.
                           tagsLabel: '',
                           tags: const [],
                           linkedin: _vm.linkedin,

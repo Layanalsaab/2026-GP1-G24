@@ -8,9 +8,7 @@ class FieldRule {
   final bool met;
 }
 
-/// Pure account-form validators, following docs/06 exactly. Each returns the
-/// error message, or null when the value is valid. No Flutter or Firebase
-/// imports, so they are trivial to unit test.
+/// Pure account-form validators, following docs/06 exactly.
 class Validators {
   Validators._();
 
@@ -26,22 +24,15 @@ class Validators {
 
   static final _emailPattern = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]{2,}$');
 
-  /// Hosts that count as LinkedIn: linkedin.com with any subdomain (www,
-  /// sa, ar, mwlite...) and the lnkd.in short links.
   static final _linkedinHost = RegExp(
     r'^([a-z0-9\-]+\.)*linkedin\.com$',
     caseSensitive: false,
   );
 
-  /// A word of a name: letters in any language, with an apostrophe, dot or
-  /// hyphen allowed inside, at least 2 characters (the original app rule for
-  /// which characters a name may hold).
   static final _nameWord = RegExp(
     r"^[\p{L}\p{M}][\p{L}\p{M}'’.\-]+$",
     unicode: true,
   );
-
-  // ------------------------------------------------------------ full name
 
   /// At least two words, each at least two letters.
   static bool isFullName(String? value) {
@@ -57,13 +48,9 @@ class Validators {
       ? ValidationStrings.nameNoNumbers
       : (isFullName(value) ? null : ValidationStrings.fullName);
 
-  /// True when [value] has a digit (names can't contain numbers).
+  /// True when value has a digit (names can't contain numbers).
   static bool hasDigit(String? value) => RegExp(r'\d').hasMatch(value ?? '');
 
-  // ---------------------------------------------------------------- email
-
-  /// The basic shape (name@domain.ext), and a domain that does not end with
-  /// the same word twice ("name@gmail.com.com" is a typo, not an address).
   static bool _wellFormed(String v) {
     if (!_emailPattern.hasMatch(v)) return false;
     final labels = v.substring(v.lastIndexOf('@') + 1).toLowerCase().split('.');
@@ -73,8 +60,6 @@ class Validators {
 
   static bool isEmail(String? value) => _wellFormed((value ?? '').trim());
 
-  /// Log in, verify and forgot-password: "Please enter your email address."
-  /// when empty, "Enter a valid email address" when malformed.
   static String? email(String? value) {
     final v = (value ?? '').trim();
     if (v.isEmpty) return ValidationStrings.emailRequired;
@@ -82,8 +67,7 @@ class Validators {
     return null;
   }
 
-  /// The email domains accepted at sign-up: the common providers. Anything
-  /// else must be a university address (see [_isUniversityDomain]).
+  /// The email domains accepted at sign-up: the common providers.
   static const _allowedDomains = {
     'gmail.com',
     'hotmail.com',
@@ -98,8 +82,6 @@ class Validators {
     'protonmail.com',
   };
 
-  /// University addresses: Saudi (`ksu.edu.sa`, `student.ksu.edu.sa`) and
-  /// other `.edu` / `.edu.xx` / `.ac.xx` domains with a real name before it.
   static final _universityDomain = RegExp(
     r'^([a-z0-9\-]+\.)+(edu|edu\.[a-z]{2}|ac\.[a-z]{2})$',
   );
@@ -107,10 +89,6 @@ class Validators {
   static bool _isUniversityDomain(String domain) =>
       _universityDomain.hasMatch(domain);
 
-  /// True when [value] is a well-formed email on an accepted domain (a common
-  /// provider ending in its real extension, or a university address). Sign-up
-  /// uses this; log in only needs a well-formed email so existing accounts
-  /// are never locked out.
   static bool isSignupEmail(String? value) {
     final v = (value ?? '').trim().toLowerCase();
     if (!_wellFormed(v)) return false;
@@ -118,8 +96,6 @@ class Validators {
     return _allowedDomains.contains(domain) || _isUniversityDomain(domain);
   }
 
-  /// Live (while typing) full-name message: shown as soon as something is
-  /// typed and it is not yet a first and last name.
   static String? fullNameLive(String? value) => hasDigit(value)
       ? ValidationStrings.nameNoNumbers
       : ((value ?? '').trim().isEmpty || isFullName(value)
@@ -136,9 +112,7 @@ class Validators {
   static String? linkedinLive(String? value) =>
       isLinkedin(value) ? null : ValidationStrings.linkedin;
 
-  // ---------------------------------------------------------------- phone
-
-  /// The digits of [value] (spaces and symbols removed), at most 9.
+  /// The digits of value (spaces and symbols removed), at most 9.
   static String phoneDigits(String? value) {
     final digits = (value ?? '').replaceAll(RegExp(r'[^0-9]'), '');
     return digits.length > phoneLength
@@ -152,8 +126,6 @@ class Validators {
     return d.length == phoneLength && d.startsWith('5');
   }
 
-  /// Sign-up: empty -> "Please enter your phone number.", wrong -> the
-  /// 9-digit message.
   static String? phone(String? value) {
     if (phoneDigits(value).isEmpty) return ValidationStrings.phoneRequired;
     return isPhone(value) ? null : ValidationStrings.phoneInvalid;
@@ -163,13 +135,7 @@ class Validators {
   static String? phoneEdit(String? value) =>
       isPhone(value) ? null : ValidationStrings.phoneEdit;
 
-  // ------------------------------------------------------------- linkedin
-
-  /// Optional: empty is fine. Accepts every LinkedIn profile format, English
-  /// or Arabic: with or without https:// and www., country subdomains
-  /// (sa., ar.), /in/NAME with Arabic letters or percent-encoded Arabic, a
-  /// trailing slash, query strings (?originalSubdomain=sa), mobile links
-  /// (linkedin.com/mwlite/in/...) and lnkd.in short links.
+  /// Optional: empty is fine.
   static bool isLinkedin(String? value) {
     final v = (value ?? '').trim();
     if (v.isEmpty) return true;
@@ -200,10 +166,6 @@ class Validators {
   static String? linkedin(String? value) =>
       isLinkedin(value) ? null : ValidationStrings.linkedin;
 
-  // ------------------------------------------------------------- password
-
-  /// The five live rules under the sign-up password field (8+ characters, one
-  /// uppercase, one lowercase, one number, one special character).
   static List<FieldRule> passwordRules(String? value) {
     final p = value ?? '';
     return [
@@ -226,19 +188,17 @@ class Validators {
   static bool confirmMatches(String? password, String? confirmation) =>
       (confirmation ?? '').isNotEmpty && confirmation == password;
 
-  // ----------------------------------------------------- selections / text
-
   static String? city(String? value) =>
       (value ?? '').trim().isEmpty ? ValidationStrings.city : null;
 
   static String? sectors(Iterable<String> selected) =>
       selected.isEmpty ? ValidationStrings.sectors : null;
 
-  /// Required free text: [message] when blank.
+  /// Required free text: message when blank.
   static String? requiredText(String? value, String message) =>
       (value ?? '').trim().isEmpty ? message : null;
 
-  /// The text typed after choosing "Other": required, at most [maxOther].
+  /// The text typed after choosing "Other": required, at most maxOther.
   static bool isOtherText(String? value) {
     final v = (value ?? '').trim();
     return v.isNotEmpty && v.length <= maxOther;

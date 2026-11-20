@@ -6,8 +6,6 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_metrics.dart';
 import '../../theme/app_text.dart';
 
-/// Tracks whether a mouse/trackpad pointer is over [builder]'s widget (never
-/// true for touch) and hands that to [builder].
 class _HoverBuilder extends StatefulWidget {
   const _HoverBuilder({required this.builder});
 
@@ -28,10 +26,6 @@ class _HoverBuilderState extends State<_HoverBuilder> {
   );
 }
 
-/// Form selection chip (docs/02 §8.6): 34 high, padding 0 16, radius 999,
-/// 13/500, soft (moss50 fill, moss600 text) or [selected] (moss600 fill, white
-/// text, a 16 px check that pops in, left padding 12, gap 6). Colors animate
-/// 180 ms; press scale 0.96.
 class AppChip extends StatelessWidget {
   const AppChip({
     super.key,
@@ -102,10 +96,6 @@ class AppChip extends StatelessWidget {
   }
 }
 
-/// Request / interest filter chip (`.fchip`): 34 high, padding 0 14, white
-/// with a 1 px `#E4E1DA` border and 13/600 grey text; selected = green fill,
-/// green border, white text. Named `AppFilterChip` to avoid Material's
-/// `FilterChip`.
 class AppFilterChip extends StatelessWidget {
   const AppFilterChip({
     super.key,
@@ -114,7 +104,7 @@ class AppFilterChip extends StatelessWidget {
     required this.onTap,
   });
 
-  /// e.g. "Pending · 1".
+  /// e.g.
   final String label;
   final bool selected;
   final VoidCallback? onTap;
@@ -165,9 +155,6 @@ class AppFilterChip extends StatelessWidget {
   }
 }
 
-/// Removable result chip of the home results row (`.xchip`): 30 high, white,
-/// 1 px `#CFD6D0` border, 12.5/600 green label and a 14 px x; enters with
-/// `chipIn` (opacity + scale .94 -> 1, 220 ms).
 class RemovableChip extends StatelessWidget {
   const RemovableChip({super.key, required this.label, required this.onRemove});
 
@@ -231,10 +218,6 @@ class RemovableChip extends StatelessWidget {
   }
 }
 
-/// Segmented control of N equal buttons (`.rng4`, activity range Today / 7D /
-/// 30D / 12M): mutedFill track radius 12 padding 3; buttons 34 high radius 9
-/// 13/600 grey; the selected one is white with green text and a soft shadow
-/// (180 ms).
 class RangeControl extends StatelessWidget {
   const RangeControl({
     super.key,

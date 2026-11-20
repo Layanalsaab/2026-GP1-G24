@@ -6,9 +6,7 @@ import '../../motion/motion.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text.dart';
 
-/// Inline round "i" button after a field label (28 x 28, moss600 icon 18,
-/// press 0.92). [InfoButton.light] is the 24 px light variant used on the
-/// green calculator result card.
+/// Inline round "i" button after a field label (28 x 28, moss600 icon 18, press 0.92).
 class InfoButton extends StatelessWidget {
   const InfoButton({
     super.key,
@@ -41,7 +39,6 @@ class InfoButton extends StatelessWidget {
       excludeSemantics: true,
       child: Pressable(
         scale: PressScale.icon,
-        // Pointer hover: moss50 (white 10 % on the green card), 160 ms.
         hoverColor: light ? const Color(0x1AFFFFFF) : AppColors.moss50,
         hoverDuration: AppDur.fast,
         borderRadius: BorderRadius.circular(box / 2),
@@ -62,10 +59,6 @@ class InfoButton extends StatelessWidget {
   }
 }
 
-/// The tip box that opens under a label (moss50 fill, moss100 border, radius
-/// 12, padding 10 12, 13/19 green). Enters with opacity 0 -> 1, translateY
-/// -4 -> 0 and scale .98 -> 1 from the top-left over 180 ms; leaves instantly
-/// (just remove it from the tree). Bottom margin 8 is included.
 class InfoTip extends StatelessWidget {
   const InfoTip(this.text, {super.key});
 
@@ -118,13 +111,11 @@ class InfoTip extends StatelessWidget {
   }
 }
 
-/// Field label (14/20/500 ink). A required field gets a red `*` (and a
-/// screen-reader "(required)"); the whole label turns red when [hasError].
-/// An inline [InfoButton] is added when [onInfoTap] is set.
+/// Field label (14/20/500 ink).
 class FieldLabel extends StatelessWidget {
   /// Words kept lower-case inside a title (unless they come first).
   static const _small = {
-    'a', 'an', 'the', 'and', 'or', 'but', 'nor', 'of', 'in', 'on', 'at', //
+    'a', 'an', 'the', 'and', 'or', 'but', 'nor', 'of', 'in', 'on', 'at',
     'to', 'for', 'by', 'with', 'as', 'per', 'vs',
   };
 
@@ -134,13 +125,8 @@ class FieldLabel extends StatelessWidget {
     'which sectors are you interested in?',
   };
 
-  /// "Which city are you in?" -> "Which City Are You in?". Every field name
-  /// is shown in title case: each word starts with a capital, except small
-  /// joining words; words that already have inner capitals or digits
-  /// (LinkedIn, TAM, Year 1) are left alone.
+  /// "Which city are you in?" -> "Which City Are You in?".
   static String titleCase(String text) {
-    // Labels of more than two words are shown as written (sentence case);
-    // one or two words are Title Case ("Full Name", "Phone Number").
     if (_sentenceCase.contains(text.trim().toLowerCase())) return text;
     if (text.trim().split(RegExp(r'\s+')).length > 2) return text;
     String cap(String w) {
@@ -174,8 +160,6 @@ class FieldLabel extends StatelessWidget {
   final bool required;
   final bool hasError;
 
-  /// Shows the label as written (only the first letter capital) instead of
-  /// Title Case.
   final bool sentenceCase;
 
   /// Shows the inline "i" button when non-null.
@@ -186,8 +170,6 @@ class FieldLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = hasError ? AppColors.error : AppColors.ink;
     final style = AppText.label.copyWith(color: color);
-    // The "i" is part of the text, so it always sits right after the last
-    // word of the question, even when the question wraps to two lines.
     final text = Text.rich(
       TextSpan(
         style: style,
@@ -230,13 +212,7 @@ class FieldLabel extends StatelessWidget {
   }
 }
 
-/// The helper row under a field. It is ALWAYS reserved: 4 px under the
-/// control, min height 18, empty or not, so the distance from one control to
-/// the next label is the same on every form (8 + 18 + 2 = 28 px).
-///
-/// Holds the error on the left (red, 14 px error icon, gap 4) or the hint
-/// (grey), and on the right the counter ("12/50") or a field link such as
-/// "Forgot password?" ([linkLabel] + [onLink]).
+/// The helper row under a field.
 class FieldHelperRow extends StatelessWidget {
   const FieldHelperRow({
     super.key,
@@ -275,15 +251,11 @@ class FieldHelperRow extends StatelessWidget {
     final hasLink = linkLabel != null;
     final hasWarning = !hasError && warning != null && warning!.isNotEmpty;
     return Padding(
-      // 8 px of air under the control; a line with a link ("Forgot password?")
-      // is taller so the 14/20 text is not cut off.
       padding: const EdgeInsets.only(top: 8),
       child: ConstrainedBox(
         constraints: BoxConstraints(minHeight: hasLink ? 28 : lineHeight),
         child: LayoutBuilder(
           builder: (context, box) {
-            // An error that would wrap only because of the counter keeps its
-            // one line: the counter steps aside while the error is showing.
             var showCounter = hasCounter && !hasLink;
             if (hasError && showCounter) {
               final scaler = MediaQuery.textScalerOf(context);
@@ -387,7 +359,6 @@ class FieldHelperRow extends StatelessWidget {
             child: GestureDetector(
               behavior: HitTestBehavior.opaque,
               onTap: onLink,
-              // The 14/20 link, centered in its 28 px line (also a bigger tap area).
               child: SizedBox(
                 height: 28,
                 child: Align(
@@ -407,17 +378,6 @@ class FieldHelperRow extends StatelessWidget {
   }
 }
 
-/// A form field wrapper: [label] (red `*` when [required]; red text when
-/// [error] is set), optional inline info "i" + [info] tip, optional
-/// [subLabel] ("Select all that apply · 3 selected"), the [child] control, an
-/// optional [below] block (password rules), the helper row ([error] / [hint]
-/// left, [counter] right) and an optional right-aligned link
-/// ("Forgot password?" via [linkLabel] + [onLink]).
-///
-/// Stack fields with [FormFieldColumn] (6 px gap after the always-reserved
-/// helper line = 28 px from one control to the next label). The info tip is
-/// controlled with [infoOpen] + [onInfoToggle] (so a screen can keep only one
-/// open); leave [infoOpen] null to let the field manage it itself.
 class AppField extends StatefulWidget {
   const AppField({
     super.key,
@@ -440,20 +400,19 @@ class AppField extends StatefulWidget {
     this.sentenceCase = false,
   });
 
-  /// Label as written, not Title Case (see [FieldLabel.sentenceCase]).
+  /// Label as written, not Title Case (see FieldLabel.sentenceCase).
   final bool sentenceCase;
 
-  /// Soft amber note (not an error), shown when there is no [error].
+  /// Soft amber note (not an error), shown when there is no error.
   final String? warning;
 
-  /// Makes the [error] line tappable.
+  /// Makes the error line tappable.
   final VoidCallback? onErrorTap;
 
   final Widget child;
   final String? label;
 
-  /// Shown at the right end of the label row (e.g. the Private / Public
-  /// pill). It may be taller than the label: the row stays 20 px high.
+  /// Shown at the right end of the label row (e.g.
   final Widget? labelTrailing;
   final bool required;
 
@@ -467,7 +426,7 @@ class AppField extends StatefulWidget {
   final String? error;
   final String? hint;
 
-  /// e.g. "4/50".
+  /// e.g.
   final String? counter;
   final Widget? below;
   final String? linkLabel;
@@ -478,8 +437,6 @@ class AppField extends StatefulWidget {
 }
 
 class _AppFieldState extends State<AppField> {
-  /// The self-managed field whose tip is open: only one tip is open at a
-  /// time, opening another closes this one.
   static _AppFieldState? _current;
 
   bool _localOpen = false;
@@ -531,10 +488,6 @@ class _AppFieldState extends State<AppField> {
               ),
             )
           else
-            // The trailing widget (the "Only you / Public" button, 32 px) is
-            // taller than the 20 px label line, so it hangs over it: the row
-            // stays 20 px high and the spacing between fields never changes.
-            // [HitSlop] lets the part that hangs out still take taps.
             HitSlop(
               bottom: 6,
               child: SizedBox(
@@ -558,8 +511,6 @@ class _AppFieldState extends State<AppField> {
                 ),
               ),
             ),
-          // Label -> control is always 8 px (the sub-text, when present,
-          // sits between them).
           SizedBox(height: widget.subLabel != null && !tipOpen ? 2 : 8),
         ],
         if (tipOpen) InfoTip(widget.info!),
@@ -581,17 +532,12 @@ class _AppFieldState extends State<AppField> {
         ),
       ],
     );
-    // The button on the label row hangs 6 px above the field: those taps too.
     return widget.labelTrailing == null
         ? column
         : HitSlop(top: 6, child: column);
   }
 }
 
-/// Lets taps just outside [child] (up to [top] px above and [bottom] px
-/// below) reach it, as if they landed on its edge. A child that hangs out of
-/// its box (a button taller than the label row) would otherwise only take
-/// taps inside the box. Size and layout are the child's.
 class HitSlop extends SingleChildRenderObjectWidget {
   const HitSlop({
     super.key,
@@ -638,9 +584,6 @@ class _RenderHitSlop extends RenderProxyBox {
   }
 }
 
-/// A column of fields: the form card padding `28 16 16` and a 6 px gap (the
-/// helper line of every [AppField] is always reserved, so control -> next
-/// label is always 28 px). Never add ad-hoc spacing between fields.
 class FormFieldColumn extends StatelessWidget {
   const FormFieldColumn({
     super.key,

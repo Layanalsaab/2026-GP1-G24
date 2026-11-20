@@ -16,15 +16,10 @@ import '../widgets/auth_decor.dart';
 import 'intro_screen.dart';
 import 'welcome_screen.dart';
 
-/// Splash (docs/05 A1): cream, three arches drawing in, the logo, "Start.sa",
-/// the tagline and a gold divider. Holds 2.6 s (or until tapped), meanwhile
-/// waiting for Firebase and looking for a saved session: a signed-in user
-/// goes to their home, a first-time visitor to the intro, everyone else to
-/// Welcome.
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key, this.firebaseReady});
 
-  /// Completes when Firebase has finished initializing. Null means ready.
+  /// Completes when Firebase has finished initializing.
   final Future<void>? firebaseReady;
 
   /// How long the splash holds before moving on.
@@ -54,7 +49,6 @@ class _SplashScreenState extends State<SplashScreen> {
     if (!mounted || _left) return;
     _left = true;
     if (result.user != null) {
-      // An invite link that opened the app is shown once the user is routed.
       unawaited(
         AppRouter.openAfterLogin(
           context,
@@ -77,7 +71,7 @@ class _SplashScreenState extends State<SplashScreen> {
       await widget.firebaseReady;
       user = await AuthRepository.instance.restoreSession();
     } catch (_) {
-      user = null; // Any problem restoring the session means "not signed in".
+      user = null;
     }
     return (user: user, introSeen: await seen);
   }

@@ -6,10 +6,6 @@ import '../../search/widgets/home_layout.dart';
 import '../../../app_constants/home_strings.dart';
 import '../../../shared_ui/widgets/lists/empty_state.dart';
 
-/// The Support Channels page (Figma 24, 26e, 27c): program cards (tag = type)
-/// filtered by the shell's search and advanced search (Type, Sector focus,
-/// Program length, City, Sort by). No switch. Rendered inside the shell's
-/// scroll view.
 class ProgramsScreen extends StatelessWidget {
   const ProgramsScreen({super.key, required this.viewModel});
 
@@ -18,7 +14,6 @@ class ProgramsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final vm = viewModel;
-    // No support channels exist yet: say so (no filter row, no "Clear all").
     if (vm.noSupportChannels) {
       return const HomeColumn(
         slots: [

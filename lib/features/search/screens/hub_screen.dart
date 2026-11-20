@@ -8,7 +8,6 @@ import '../widgets/home_layout.dart';
 
 /// Results row for the current search text and filters (shared by the pages).
 ResultsRow homeResultsRow(HomeViewModel vm, String title) {
-  // Only a search is not "filtering": just the count, no chip, no Clear all.
   if (vm.selectionCount == 0) return ResultsRow(title: title);
   return ResultsRow(
     title: title,
@@ -24,10 +23,6 @@ ResultsRow homeResultsRow(HomeViewModel vm, String title) {
   );
 }
 
-/// The Hub page (Figma 20-20e, 26, 27): the Startups | Investors switch and the
-/// cards of the selected side. While searching or filtering a results row
-/// ("N results" + removable chips) shows above the cards; nothing found shows
-/// the "No matches" state. Rendered inside the shell's scroll view.
 class HubScreen extends StatelessWidget {
   const HubScreen({super.key, required this.viewModel});
 

@@ -4,8 +4,7 @@ import '../../../shared_ui/motion/motion.dart';
 import '../../../shared_ui/theme/app_colors.dart';
 import '../../../shared_ui/theme/app_metrics.dart';
 
-/// Hover shadow of a base card: 0 2 4 #1F3F2712, 0 12 28 -6 #1F3F2729
-/// (spec section 3.2 / 10).
+/// Hover shadow of a base card: 0 2 4 #1F3F2712, 0 12 28 -6 #1F3F2729 (spec section 3.2 / 10).
 const List<BoxShadow> kCardHoverShadow = [
   BoxShadow(color: Color(0x121F3F27), offset: Offset(0, 2), blurRadius: 4),
   BoxShadow(
@@ -16,10 +15,6 @@ const List<BoxShadow> kCardHoverShadow = [
   ),
 ];
 
-/// A white tappable card that lifts 2 px, swaps to the hover shadow and shows
-/// a `#D9D4C9` border while a mouse pointer is over it (220 ms easeOut), and
-/// scales to .97 while pressed. Touch never hovers; reduced motion turns the
-/// lift, the scale and the animation off.
 class HoverLiftCard extends StatefulWidget {
   const HoverLiftCard({
     super.key,
@@ -39,7 +34,7 @@ class HoverLiftCard extends StatefulWidget {
   final double radius;
   final List<BoxShadow> baseShadow;
 
-  /// A permanent border (drawn in the layout, e.g. the draft card's gold).
+  /// A permanent border (drawn in the layout, e.g.
   final Border? border;
 
   /// Colour of the hover border (the theme's hover border when null).

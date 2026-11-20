@@ -33,8 +33,7 @@ class ForgotPasswordViewModel extends ChangeNotifier with SafeNotifier {
 
   bool get emailValid => Validators.isEmail(email.text);
 
-  /// Sends the reset link. Returns the email it was sent to, or null when
-  /// the email is invalid or sending failed ([formError]).
+  /// Sends the reset link.
   Future<String?> submit() async {
     if (isLoading) return null;
     attempted = true;

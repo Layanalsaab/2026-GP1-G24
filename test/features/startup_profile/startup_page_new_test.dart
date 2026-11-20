@@ -92,7 +92,6 @@ void main() {
   }
 
   Future<void> goTo(WidgetTester t, String tab) async {
-    // The six tabs scroll sideways: bring the one asked for into view.
     await t.ensureVisible(find.text(tab).first);
     await t.pumpAndSettle();
     await t.tap(find.text(tab).first);
@@ -114,7 +113,6 @@ void main() {
     await goTo(t, 'Finance and Growth');
     expect(find.text(FounderToolsStrings.revenueModelTitle), findsOneWidget);
     expect(find.text('Families pay per visit'), findsOneWidget);
-    // The step is called Finance and Growth, but there is no growth plan.
     expect(find.textContaining('Growth plan'), findsNothing);
     expect(find.textContaining('growth plan'), findsNothing);
   });
@@ -155,7 +153,6 @@ void main() {
     expect(find.text('Funding goal'), findsOneWidget);
     expect(find.text('SAR 200,000 raised'), findsOneWidget);
     expect(find.text('40%'), findsWidgets);
-    // The lead-investor line is gone, even though this startup saved one.
     expect(find.textContaining('lead investor'), findsNothing);
     await goTo(t, 'Finance and Growth');
     expect(find.text(FounderToolsStrings.revenueNowLabel), findsOneWidget);

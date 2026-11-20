@@ -4,18 +4,10 @@ import '../data_access/repositories/invitation_repository.dart';
 import '../models/app_user.dart';
 import '../models/invitation.dart';
 
-/// What happens to an account's pending invitations right after it is
-/// verified or logs in. The e-mail address is the link: invitations for the
-/// account's VERIFIED e-mail.
+/// What happens to an account's pending invitations right after it is verified or logs in.
 class InvitationClaimer {
   InvitationClaimer._();
 
-  /// A person who just created and verified their account joins every team
-  /// that invited that e-mail, at once. Returns the startup names.
-  ///
-  /// An invitation to take a startup over as its owner is not accepted here:
-  /// it is always asked (Accept / Decline), see
-  /// AppRouter.askOwnerInvitations.
   static Future<List<String>> acceptAll(
     AppUser user, {
     InvitationRepository? repository,
@@ -38,8 +30,6 @@ class InvitationClaimer {
     return joined;
   }
 
-  /// An investor can't join a team: whatever invited their e-mail is marked
-  /// "Declined" (the founder sees it on the card).
   static Future<void> declineAll({InvitationRepository? repository}) async {
     final repo = repository ?? InvitationRepository.instance;
     try {

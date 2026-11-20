@@ -8,21 +8,9 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_metrics.dart';
 import '../../theme/app_text.dart';
 
-/// The small bottom pop-up, used only for failures such as no internet (the
-/// green success toast of the prototype `.toast`, docs/02 §8.15): bottom 84, 16 px
-/// side margins, green, radius 14, gold circle check, 14/20 white text. Stays
-/// 2.4 s, enters with a fade + 16 px rise (300 ms), leaves with a 200 ms fade.
-/// A new toast replaces the current one and restarts the timer.
-///
-/// `AppToast.error(context, message)` from widgets, or
-/// `AppToast.errorGlobal(message)` from a view model after assigning
-/// [navigatorKey] to the app's `MaterialApp.navigatorKey`. [show] and
-/// [showGlobal] are switched off (confirmations show no pop-up).
 class AppToast {
   AppToast._();
 
-  /// Give this to `MaterialApp(navigatorKey: AppToast.navigatorKey)` so toasts
-  /// can be shown without a BuildContext.
   static final GlobalKey<NavigatorState> navigatorKey =
       GlobalKey<NavigatorState>();
 
@@ -32,31 +20,24 @@ class AppToast {
   static GlobalKey<_ToastViewState>? _viewKey;
   static Timer? _timer;
 
-  /// Shows [message] using the overlay of [context].
+  /// Shows message using the overlay of context.
   static void show(BuildContext context, String message) {
-    // Switched off: confirmations and field mistakes show no pop-up. Only
-    // [error] (network / server failures) does.
   }
 
-  /// Shows [message] through [navigatorKey] (no BuildContext needed).
+  /// Shows message through navigatorKey (no BuildContext needed).
   static void showGlobal(String message) {
-    // Switched off, see [show].
+    // Switched off, see show.
   }
 
-  /// Shows [message] as a small pop-up at the bottom, but ONLY for a real
-  /// failure (no internet, server or device error). Use this for those.
   static void error(BuildContext context, String message) {
     _present(Overlay.maybeOf(context, rootOverlay: true), message);
   }
 
-  /// A confirmation that is wanted on purpose ("Link copied" after the share
-  /// icon). Every other confirmation stays off ([show]); only the places that
-  /// call this one show a pop-up.
   static void confirm(BuildContext context, String message) {
     _present(Overlay.maybeOf(context, rootOverlay: true), message);
   }
 
-  /// [error] without a BuildContext.
+  /// error without a BuildContext.
   static void errorGlobal(String message) {
     _present(navigatorKey.currentState?.overlay, message);
   }

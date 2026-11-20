@@ -20,9 +20,7 @@ enum TicketStatus {
   }
 }
 
-/// An investor's investment ticket: a document of `tickets/{investorId}-T{n}`.
-/// It says which sectors and stages the investor wants to invest in and the
-/// range of one investment, and is matched against the open rounds.
+/// An investor's investment ticket: a document of tickets/{investorId}-T{n}.
 class InvestmentTicket {
   const InvestmentTicket({
     required this.id,
@@ -50,13 +48,13 @@ class InvestmentTicket {
   final int amountMax;
   final TicketStatus status;
 
-  /// The startup the ticket was used for (status [TicketStatus.used]).
+  /// The startup the ticket was used for (status TicketStatus.used).
   final String? startupId;
   final DateTime? createdAt;
 
   bool get isOpen => status == TicketStatus.open;
 
-  /// 3 for `abc-T3`; 0 when the id has no number.
+  /// 3 for abc-T3; 0 when the id has no number.
   int get number => numberOf(id);
 
   static int numberOf(String id) {
@@ -85,8 +83,6 @@ class InvestmentTicket {
     createdAt: createdAt,
   );
 
-  /// The fields written when the ticket is created or edited (the status,
-  /// `startupId` and `createdAt` are set by the repository).
   Map<String, Object?> editableFields() => {
     TicketFields.name: name,
     TicketFields.sectors: sectors,
@@ -127,8 +123,6 @@ class InvestmentTicket {
   }
 }
 
-/// A request an investor sent to a startup with one of their tickets: a
-/// document of `requests` that has a `ticketId`.
 class TicketRequest {
   const TicketRequest({
     required this.id,

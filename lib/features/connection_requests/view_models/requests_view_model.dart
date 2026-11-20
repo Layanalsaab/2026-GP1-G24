@@ -28,8 +28,6 @@ class RequestRow {
   }
 }
 
-/// State of Manage startup -> Requests (docs/05 D3): the Pending / Accepted /
-/// Declined filter and accept / decline. Follows [RequestRepository] changes.
 class RequestsViewModel extends ChangeNotifier with SafeNotifier {
   RequestsViewModel({
     required this.startupId,

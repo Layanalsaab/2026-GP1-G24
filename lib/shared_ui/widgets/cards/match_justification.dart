@@ -6,11 +6,6 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_metrics.dart';
 import '../../theme/app_text.dart';
 
-/// The match section at the top of a profile opened from a match: the
-/// headline ("86% match with your startup Daftar Pay"), an optional note,
-/// then one row per criterion with a thin bar on its left: moss green when
-/// it fits, gold when it differs ("Commerce model · B2C" then "they prefer
-/// B2B").
 class MatchJustification extends StatelessWidget {
   const MatchJustification({super.key, required this.summary});
 

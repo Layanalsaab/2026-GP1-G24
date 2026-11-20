@@ -133,7 +133,6 @@ void main() {
         final text = Uri.decodeFull(opened.single.toString());
         expect(text, startsWith(entry.value), reason: entry.key);
         expect(text, contains('https://start.sa/startup/abc'));
-        // LinkedIn and Facebook only take the link; the others carry the text.
         if (entry.key != 'LinkedIn' && entry.key != 'Facebook') {
           expect(text, contains('Look, I found Rafeeq Health on Start.sa.'));
           expect(text, contains('A startup I think you will like.'));
@@ -175,7 +174,6 @@ void main() {
         'Check out Rafeeq Health on Start.sa, a HealthTech startup from '
         'Riyadh! https://startsa-ea49e.web.app/startup/abc',
       );
-      // The mail subject is the share sheet's own ("Look what I found ...").
       expect(system.single.$2, 'Look what I found on Start.sa: Rafeeq Health');
     });
 

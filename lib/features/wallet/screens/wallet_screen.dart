@@ -10,9 +10,6 @@ import '../view_models/wallet_view_model.dart';
 import '../widgets/wallet_requests_tab.dart';
 import '../widgets/wallet_tickets_tab.dart';
 
-/// Side menu -> Investment Wallet (investor only): a green header like Manage
-/// startup with two tabs, Tickets and Requests (with the number of pending
-/// requests). Pull down to read everything again.
 class WalletScreen extends StatefulWidget {
   const WalletScreen({super.key, this.viewModel});
 
@@ -41,7 +38,6 @@ class _WalletScreenState extends State<WalletScreen> {
       final user = AppSession.instance.user;
       _vm = WalletViewModel(
         investorId: user?.uid ?? '',
-        // The profile's commerce models: the 20% part of a ticket's score.
         commerceModels: user?.investorCriteria?.commerceModels ?? const [],
       )..load();
     }

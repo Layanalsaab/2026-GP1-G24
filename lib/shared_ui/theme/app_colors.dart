@@ -1,34 +1,18 @@
 import 'package:flutter/material.dart';
 
 /// Every color in the Start.sa prototype (docs/02_design_system.md §1).
-/// CSS `#RRGGBBAA` values are written here as Flutter `0xAARRGGBB`.
-///
-/// Two palettes, light and dark. A color that changes with the theme is a
-/// getter that answers for the palette in use ([isDark], set by
-/// `ThemeController`); a color that is the same in both (the brand greens as
-/// backgrounds, the gold, white on green, the avatar hues) stays a constant.
-///
-/// Green appears twice on purpose: [green] and [moss600] are BACKGROUNDS
-/// (headers, bottom bar, primary buttons, toast) and keep their color in the
-/// dark theme; [greenText] and [mossText] are the same greens used as TEXT,
-/// icons and borders on a surface, and turn light in the dark theme.
 class AppColors {
   AppColors._();
-
-  // ------------------------------------------------------------- the mode
 
   static bool _dark = false;
 
   /// The dark palette is in use.
   static bool get isDark => _dark;
 
-  /// Switches the palette. Whoever calls it also rebuilds the screens
-  /// (`ThemeController` does).
+  /// Switches the palette.
   static void setDark(bool value) => _dark = value;
 
   static Color _p(int light, int dark) => Color(_dark ? dark : light);
-
-  // ------------------------------------------------- same in both themes
 
   /// Header / bottom bar / primary button green (a background).
   static const green = Color(0xFF1F3F27);
@@ -43,7 +27,6 @@ class AppColors {
   /// Guest "Sign up" and My Startups "Add" pill text.
   static const goldPillText = Color(0xFFF3E6C4);
 
-  /// Guest "Sign up" and My Startups "Add" pill border (rgba(227,207,155,.75)).
   static const goldPillBorder = Color(0xBFE3CF9B);
 
   /// Muted text on green (sublines, drawer role line, calculator labels).
@@ -55,9 +38,6 @@ class AppColors {
   /// Unselected header tab text on green.
   static const onGreenTab = Color(0xFFA9C0AE);
 
-  /// The red of a danger button (Delete, Leave, Close): a BACKGROUND with white
-  /// text, the same red in both themes ([error] is the red TEXT and turns
-  /// light in the dark theme).
   static const dangerFill = Color(0xFFB3261E);
 
   static const notifDot = Color(0xFFE5484D);
@@ -80,13 +60,11 @@ class AppColors {
   static const editPillFill = Color(0x14FFFFFF);
   static const editPillBorder = Color(0x4CFFFFFF);
 
-  /// White: text and icons on green, the switch knob. NOT a surface (use
-  /// [surface] for a card).
+  /// White: text and icons on green, the switch knob.
   static const white = Color(0xFFFFFFFF);
   static const onDark = white;
 
-  /// Avatar hue palette (`HUES` in the prototype). The hue for a name is
-  /// `hues[sum of the name's UTF-16 code units % 5]`.
+  /// Avatar hue palette (HUES in the prototype).
   static const hues = <Color>[
     Color(0xFF2F5D3A),
     Color(0xFF2B6A6E),
@@ -94,8 +72,6 @@ class AppColors {
     Color(0xFFA87A25),
     Color(0xFF6A4F7A),
   ];
-
-  // ------------------------------------------------ changes with the theme
 
   /// The page background.
   static Color get cream => _p(0xFFFAF8F4, 0xFF101411);
@@ -115,7 +91,6 @@ class AppColors {
   /// The button green as TEXT, an accent icon or a border on a surface.
   static Color get mossText => _p(0xFF2F5D3A, 0xFF86BB92);
 
-  /// Soft amber for non-blocking notes ("Make sure your email domain is correct.").
   static Color get warning => _p(0xFF9A5B00, 0xFFE8B04A);
   static Color get moss400 => _p(0xFF5E8A68, 0xFF7FAE8B);
   static Color get moss100 => _p(0xFFE6EFE7, 0xFF223228);
@@ -135,7 +110,6 @@ class AppColors {
   static Color get errorFill => _p(0xFFFBEAE9, 0xFF3F2220);
   static Color get scrim => _p(0x661C1F1D, 0xB3000000);
 
-  /// Card tag chip fill, match % pill, filter button active fill, "New" badge.
   static Color get mossChip => _p(0xFFEEF4EF, 0xFF1E2A22);
 
   static Color get metaText => _p(0xFF6B726C, 0xFF98A199);
@@ -143,8 +117,7 @@ class AppColors {
   static Color get paragraph => _p(0xFF3E4A41, 0xFFC5CCC6);
   static Color get placeholder => _p(0xFF4F5751, 0xFF8E978F);
 
-  /// Hint text. A touch lighter than the strong border in the dark theme, so
-  /// it stays readable (4.5:1) on a surface.
+  /// Hint text.
   static Color get hint => _p(0xFF8C918D, 0xFF8A938C);
   static Color get chevron => _p(0xFF9AA19B, 0xFF7B847D);
   static Color get segTrack => _p(0xFFE9E6DF, 0xFF2A332D);
@@ -173,9 +146,6 @@ class AppColors {
   static Color get sheetGrab => _p(0xFFD6D2C9, 0xFF3A443D);
   static Color get previewBar => gold100;
 
-  /// The gold notice box ("This startup is closed", "You no longer have a
-  /// startup"): fill, border, title, message and icon. One look for every
-  /// notice, in the app's gold (no blue).
   static Color get noticeFill => gold100;
   static Color get noticeBorder => _p(0xFFEBDDB5, 0xFF5A4C22);
   static Color get noticeTitle => _p(0xFF6A4E10, 0xFFECD08A);
@@ -186,10 +156,10 @@ class AppColors {
   static Color get introGrey => _p(0xFFE3E1DB, 0xFF2E3831);
   static Color get introSageBar => _p(0xFFC5CCC5, 0xFF4A5A4E);
 
-  /// Focus ring of inputs (`#2F5D3A26`).
+  /// Focus ring of inputs (#2F5D3A26).
   static Color get focusRing => _p(0x262F5D3A, 0x4086BB92);
 
-  /// Error ring of inputs (`#B3261E1F`).
+  /// Error ring of inputs (#B3261E1F).
   static Color get errorRing => _p(0x1FB3261E, 0x40F2A8A3);
 
   /// The toast: dark on a light page, light on a dark one.
@@ -227,32 +197,24 @@ class AppColors {
   /// Text and icon on the gold "preview" bar (green on light).
   static Color get previewBarText => _p(0xFF1F3F27, 0xFFECD08A);
 
-  // ----------------------------------------------------------------- avatar
-
-  /// Avatar tiles: light in the light theme, a dark moss gradient in the dark
-  /// one.
   static Color get tileMossTop => _p(0xFFEEF4EF, 0xFF24382A);
   static Color get tileMossBottom => _p(0xFFDFEAE1, 0xFF1C2D22);
   static Color get tileGoldTop => _p(0xFFFAF3E3, 0xFF3D3519);
   static Color get tileGoldBottom => _p(0xFFF2E6C9, 0xFF2F2913);
 
-  /// 10 % of [hue] mixed with white (a dark surface in the dark theme):
-  /// avatar fill.
   static Color avatarFill(Color hue) => _dark
       ? Color.lerp(const Color(0xFF1C2D22), hue, 0.22)!
       : Color.lerp(white, hue, 0.10)!;
 
-  /// 35 % of [hue] mixed with white: avatar inner ring.
+  /// 35 % of hue mixed with white: avatar inner ring.
   static Color avatarRing(Color hue) => _dark
       ? Color.lerp(const Color(0xFF1C2D22), hue, 0.55)!
       : Color.lerp(white, hue, 0.35)!;
 
-  /// The color of the initials in an avatar: the hue itself on light, a
-  /// brighter mix on dark.
   static Color avatarInk(Color hue) =>
       _dark ? Color.lerp(hue, white, 0.62)! : hue;
 
-  /// The hue for [name] (prototype rule).
+  /// The hue for name (prototype rule).
   static Color hueFor(String name) {
     var sum = 0;
     for (final unit in name.codeUnits) {

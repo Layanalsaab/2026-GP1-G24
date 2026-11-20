@@ -344,7 +344,6 @@ void main() {
         sara,
         repository: invites,
       );
-      // The team is joined; the owner invitation waits for Accept / Decline.
       expect(joined, ['Rafeeq Health']);
       expect(invites.accepted, hasLength(1));
       expect(invites.store['S2~sara@gmail.com']!.isPending, isTrue);
@@ -423,7 +422,6 @@ void main() {
         invitedByName: 'Fahad Alotaibi',
       );
       await pump(t, 'S1~sara@gmail.com');
-      // Somebody who has an account logs in first (the e-mail filled in).
       expect(find.byType(LoginScreen), findsOneWidget);
       expect(find.text('sara@gmail.com'), findsOneWidget);
     });
@@ -472,7 +470,6 @@ void main() {
         newUser: true,
       );
       await pump(t, 'S1~sara@gmail.com');
-      // No invitation page with "Log in": the sign-up form, e-mail filled in.
       expect(find.text('Log in'), findsNothing);
       expect(find.text('Create account'), findsNothing);
       expect(find.text('sara@gmail.com'), findsOneWidget);
@@ -537,8 +534,6 @@ void main() {
   });
 
   group('who may change the team after a hand-over', () {
-    // Noura created the startup, then left and named Layan its founder; Huda
-    // is a co-founder and Reem a member.
     Startup handedOver() => Startup.fromMap('S10', {
       'founderId': 'layan',
       'foundedBy': 'noura',
@@ -603,7 +598,6 @@ void main() {
       addTearDown(vm.dispose);
       expect(vm.canRemoveMember(card(vm, 'huda')), isTrue);
       expect(vm.canChangeCoFounder(card(vm, 'huda')), isTrue);
-      // The title follows control: whoever holds the startup is its Founder.
       expect(
         [
           for (final m in vm.team)

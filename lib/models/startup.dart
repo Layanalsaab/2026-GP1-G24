@@ -2,10 +2,7 @@ import '../app_constants/firestore_collections.dart';
 import 'startup_enums.dart';
 import 'team_member.dart';
 
-/// A founder's startup, stored in `startups/{id}`.
-///
-/// Plain Dart: no Firebase types. Timestamps arrive as [DateTime] because
-/// FirestoreService converts them when reading.
+/// A founder's startup, stored in startups/{id}.
 class Startup {
   const Startup({
     required this.id,
@@ -54,8 +51,7 @@ class Startup {
   final String founderId;
   final String name;
 
-  /// The brief description, stored in the `description` field. Required,
-  /// at most [descriptionMax] characters.
+  /// The brief description, stored in the description field.
   final String description;
   final Sector sector;
   final StartupStage stage;
@@ -65,28 +61,22 @@ class Startup {
   final String? websiteUrl;
   final Set<LookingFor> lookingFor;
 
-  /// In SAR. Only set when [lookingFor] contains [LookingFor.funding].
+  /// In SAR.
   final int? fundingRequirement;
 
-  /// What the founder typed when they chose "Other". Only kept (and only
-  /// meaningful) while the matching value is `other`.
+  /// What the founder typed when they chose "Other".
   final String? sectorOther;
 
-  /// The sectors picked after the main one ([sector]), as shown to people (the
-  /// typed text for "Other"). Empty for a startup with one sector.
   final List<String> otherSectors;
   final String? commerceModelOther;
 
-  /// The `founderId` of the sample (imported dataset) startups: a placeholder,
-  /// not an account. Their founder is the team card flagged as founder.
   static const datasetFounderId = 'crunchbase-dataset';
 
   /// The sector as shown to people: the typed text for "Other".
   String get sectorLabel =>
       _otherOr(sector == Sector.other, sectorOther, sector.label);
 
-  /// Every sector, the main one first (what the startup page lists). Cards and
-  /// headers show only [sectorLabel].
+  /// Every sector, the main one first (what the startup page lists).
   List<String> get sectorLabels => [
     sectorLabel,
     for (final o in otherSectors)
@@ -96,8 +86,6 @@ class Startup {
   /// The stage as shown to people.
   String get stageLabel => stage.label;
 
-  /// The commerce model as shown on cards and the profile ("B2C"), or the
-  /// typed text for "Other".
   String get commerceModelLabel => _otherOr(
     commerceModel == CommerceModel.other,
     commerceModelOther,
@@ -117,7 +105,6 @@ class Startup {
     return isOther && text.isNotEmpty ? text : null;
   }
 
-  /// A Firestore map of uid -> role as a plain map (anything else is ignored).
   static Map<String, String> _roles(Object? raw) => raw is Map
       ? {
           for (final e in raw.entries)
@@ -135,96 +122,67 @@ class Startup {
   /// False by default, so an unfinished profile is never exposed.
   final bool isPublic;
 
-  /// The logo as base64 text (a compressed square, under ~100 KB); null
-  /// when the startup has none (the initials show as the default picture).
   final String? logoData;
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
-  // ---- Step 2: Problem & solution (each at most [longTextMax]) ----
   final String problem;
   final String solution;
   final String customers;
   final String advantage;
 
-  // ---- Step 3: Market & team ----
-
-  /// Target market size in SAR per year. Optional.
+  /// Target market size in SAR per year.
   final int? marketSize;
   final List<TeamMember> team;
 
-  // ---- Step 4: Funding & goals (SAR) ----
   final int? capital;
   final int? revenueYear1;
   final int? revenueYear2;
   final int? revenueYear3;
 
-  /// Current company valuation. Required, 0 is allowed.
+  /// Current company valuation.
   final int? valuation;
 
   /// Revenue earned so far this financial year (0 allowed).
   final int? revenueThisYear;
 
-  /// Money lost each month: monthly costs minus monthly revenue (0 allowed).
   final int? monthlyBurn;
 
-  /// "Explain your revenue model": how the startup makes money (the stored
-  /// field is still called revenueModel).
   final String revenueModel;
 
   /// The part of the funding round already committed (0 allowed).
   final int? raisedInRound;
 
-  /// What kind of partner / support the startup looks for ("Other" is stored
-  /// as the text the founder typed).
   final List<String> partnerTypes;
   final List<String> supportTypes;
 
-  /// Co-founders and team members by uid: `'coFounder'` or `'member'`. The
-  /// founder is [founderId], never in this map.
+  /// Co-founders and team members by uid: 'coFounder' or 'member'.
   final Map<String, String> memberRoles;
 
-  /// The uids in [memberRoles] (what "My startups" queries on).
+  /// The uids in memberRoles (what "My startups" queries on).
   List<String> get memberIds => memberRoles.keys.toList();
 
-  /// The joined co-founders (stored as `coFounderIds` too, for the rules).
+  /// The joined co-founders (stored as coFounderIds too, for the rules).
   List<String> get coFounderIds => [
     for (final e in memberRoles.entries)
       if (e.value == 'coFounder') e.key,
   ];
 
-  // ---- Ownership (docs: Closing a Startup, Leaving and Deleting an Account)
-  //
-  // [founderId] is the OWNER and the "Founder": the one account with control
-  // (close, the visibility of a closed startup, the team, leaving by naming
-  // the next owner). When the founder hands the startup over, the new owner
-  // is its founder.
-
-  /// A closed startup: permanent, read only, kept in everyone's account. Only
-  /// its owner can still change whether it shows in the Hub.
+  /// A closed startup: permanent, read only, kept in everyone's account.
   final bool isClosed;
 
-  /// When it was closed (the banner's date, and the members' one-time
-  /// pop-up). Null on an active startup or one closed before it was stored.
   final DateTime? closedAt;
 
   /// A startup imported from the dataset (Crunchbase), not made in the app.
-  /// New startups are always false.
   final bool isArchived;
 
-  /// False once the owner deleted her account (her startups with a team are
-  /// closed, and nobody owns them any more).
   bool get hasOwner => founderId.isNotEmpty;
 
-  /// Listed in Explore, Matches, Trending, recommendations and search: public
-  /// and not closed.
   bool get isListed => isPublic && !isClosed;
 
-  /// Shown in the Hub: every public startup, a closed one with its Closed
-  /// tag.
   bool get isInHub => isPublic;
 
-  /// The name on [uid]'s team card ([fallback] when there is none).
+  /// The name on uid's team card (fallback when there is none).
   String nameOf(String uid, {String fallback = ''}) {
     for (final m in team) {
       if (m.uid == uid && m.name.trim().isNotEmpty) return m.name.trim();
@@ -238,8 +196,6 @@ class Startup {
   /// Longest "Who are your target customers?" answer.
   static const customersMax = 250;
 
-  /// Longest "What problem does your startup solve?" / "What is your
-  /// solution?" answer.
   static const problemMax = 350;
   static const solutionMax = 350;
 
@@ -256,27 +212,21 @@ class Startup {
   /// The brief description.
   String get briefDescription => description.trim();
 
-  /// The text for cards and lists: the brief description on one flowing
-  /// text (line breaks collapsed). The widgets clamp it to 2 lines.
   String get summary => briefDescription.replaceAll(RegExp(r'\s+'), ' ');
 
   /// Initials for the logo placeholder (Figma: "Rafeeq Health" -> "RH").
   String get initials => initialsOf(name);
 
-  /// First letter of the first two words, upper-cased; "?" for an empty name.
-  /// Static so the form can show initials while the name is being typed.
   static String initialsOf(String name) {
     final words = name.trim().split(RegExp(r'\s+')).where((w) => w.isNotEmpty);
     if (words.isEmpty) return '?';
-    // runes, not [0], so a word starting with a non-Latin letter stays whole.
     return words
         .take(2)
         .map((w) => String.fromCharCode(w.runes.first).toUpperCase())
         .join();
   }
 
-  /// The editable fields, as stored in Firestore. Timestamps are added by the
-  /// repository with server time, so they are not included here.
+  /// The editable fields, as stored in Firestore.
   Map<String, Object?> toMap() => {
     StartupFields.founderId: founderId,
     StartupFields.name: name,
@@ -296,15 +246,12 @@ class Startup {
     StartupFields.location: location.value,
     StartupFields.foundedYear: foundedYear,
     StartupFields.websiteUrl: websiteUrl,
-    // Stored in enum order so the same choices always produce the same list.
     StartupFields.lookingFor: [
       for (final item in LookingFor.values)
         if (lookingFor.contains(item)) item.value,
     ],
-    // Required (> 0) by the Funding & goals step, whatever is ticked.
     StartupFields.fundingRequirement: fundingRequirement,
     StartupFields.isPublic: isPublic,
-    // Only stored when there is one (removing the logo deletes the field).
     if (logoData != null) StartupFields.logoData: logoData,
     StartupFields.problem: problem,
     StartupFields.solution: solution,
@@ -333,8 +280,6 @@ class Startup {
     StartupFields.isArchived: isArchived,
   };
 
-  /// Returns null when a required field is missing or holds an unknown value,
-  /// so one malformed document never crashes the list.
   static Startup? fromMap(String id, Map<String, dynamic>? data) {
     if (data == null) return null;
     final sector = Sector.fromValue(data[StartupFields.sector]);
@@ -408,9 +353,7 @@ class Startup {
     );
   }
 
-  /// A copy with the given fields replaced. [clearLogo] removes the logo
-  /// (copyWith can't express that otherwise). [clearFunding] empties the
-  /// funding answers (amount, already raised): a closed round.
+  /// A copy with the given fields replaced.
   Startup copyWith({
     String? id,
     String? founderId,

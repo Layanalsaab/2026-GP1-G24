@@ -37,11 +37,7 @@ class Formatters {
   /// 1500000 -> "SAR 1,500,000".
   static String sar(int value) => '${StartupStrings.sar} ${thousands(value)}';
 
-  /// 2400000000 -> "2.4B", 600000000 -> "600M", 24000 -> "24K". One decimal
-  /// for B and M (a trailing ".0" is dropped), whole numbers for K. The
-  /// prototype's `shortMoney`: used in the market-size legend, revenue bars
-  /// and on cards. A value that rounds up to the next unit uses it
-  /// (999,999 -> "1M", not "1000K").
+  /// 2400000000 -> "2.4B", 600000000 -> "600M", 24000 -> "24K".
   static String shortMoney(int value) {
     String trim(double v) {
       final t = v.toStringAsFixed(1);

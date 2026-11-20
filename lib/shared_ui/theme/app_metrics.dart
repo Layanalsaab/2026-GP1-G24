@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 /// Spacing, radii, sizes and shadows (docs/02_design_system.md §3).
-/// All values are logical pixels at the 412 x 892 design frame.
 class AppSpace {
   AppSpace._();
 }
@@ -33,7 +32,7 @@ class AppSize {
   static const double avatarDropdown = 36;
 }
 
-/// Box shadows. Flutter's `blurRadius` equals the CSS blur radius.
+/// Box shadows.
 class AppShadow {
   AppShadow._();
 

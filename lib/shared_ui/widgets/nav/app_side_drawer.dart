@@ -12,12 +12,10 @@ import '../cards/pin_city.dart';
 import '../lists/press_surface.dart';
 import '../overlays/app_overlay_route.dart';
 
-/// Menu row hover background (`#EFECE5`).
+/// Menu row hover background (#EFECE5).
 Color get _menuHover => AppColors.menuHover;
 
-/// One row of the side drawer: a stroke [icon] path (e.g.
-/// [AppIcons.menuRocket]), a [label] and an optional gold count [badge]
-/// (hidden when null or 0).
+/// One row of the side drawer: a stroke icon path (e.g.
 class AppDrawerItem {
   const AppDrawerItem({
     required this.label,
@@ -30,15 +28,10 @@ class AppDrawerItem {
   final String icon;
   final int? badge;
 
-  /// Runs after the drawer has been closed. Null: a feature that is not
-  /// built yet; the row is shown but cannot be tapped.
+  /// Runs after the drawer has been closed.
   final VoidCallback? onTap;
 }
 
-/// Opens the side drawer over the current screen (dim fades 300 ms, panel
-/// slides in from the left 340 ms with [Motion.drawer]). It is a route, so
-/// Android back and a tap on the dim close it. Item taps, "View profile" and
-/// "Log out" close the drawer first and then call their callback.
 Future<void> openAppDrawer(
   BuildContext context, {
   required String name,
@@ -74,12 +67,6 @@ Future<void> openAppDrawer(
   );
 }
 
-/// The drawer panel (prototype `.dpanel`): 84 % wide (max 330), `#F6F4EF`,
-/// right corners 22, green header (padding 48 20 18, faint gold ring top-right,
-/// avatar 56 with gold border, name 18/700, [roleLine] such as
-/// "Founder · Riyadh", "View profile" outline pill), rows (min 48, 15.5/500,
-/// 22 px stroke icon) that slide in with a 90 ms + 30 ms x index stagger,
-/// and a divider + red Log out at the bottom. Use [openAppDrawer].
 class AppSideDrawer extends StatelessWidget {
   const AppSideDrawer({
     super.key,
@@ -271,7 +258,7 @@ class _Header extends StatelessWidget {
                     ),
                   )
                 else
-                  // "Founder · [pin] Riyadh": the pin takes the line's colour.
+                  // "Founder · pin Riyadh": the pin takes the line's colour.
                   Text.rich(
                     TextSpan(
                       children: [
@@ -415,8 +402,7 @@ class _DrawerRow extends StatelessWidget {
   }
 }
 
-/// Row entrance (`diIn`): fade + slide from x -10, 320 ms easeOut, delayed by
-/// 90 ms + 30 ms x [index]. Off under reduced motion.
+/// Row entrance (diIn): fade + slide from x -10, 320 ms easeOut, delayed by 90 ms + 30 ms x index.
 class _EntranceX extends StatefulWidget {
   const _EntranceX({required this.index, required this.child});
 

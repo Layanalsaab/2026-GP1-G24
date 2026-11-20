@@ -5,10 +5,6 @@ import '../../motion/motion.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text.dart';
 
-/// Sign-up profile photo picker: 92 px moss100 circle with a person icon (40)
-/// or, when [hasPhoto], a moss gradient circle with white initials (30/600,
-/// pops in), a 30 px moss600 camera badge with a 3 px cream ring at the
-/// bottom-right, and the label "Add profile photo" (14/600 moss600).
 class PhotoPickerPlaceholder extends StatelessWidget {
   const PhotoPickerPlaceholder({
     super.key,
@@ -141,10 +137,6 @@ class PhotoPickerPlaceholder extends StatelessWidget {
   }
 }
 
-/// Add-startup step 1 logo row (padding 20 16 0, gap 14): a 76 px tile (dashed
-/// 1.5 `#8C918D` placeholder with an image icon, radius 20; after upload a
-/// gold gradient tile with initials 26/700, pops in) next to "Startup logo"
-/// (15/500) and the link "Upload logo" / "Change logo" (14/600 moss600).
 class LogoPickerRow extends StatelessWidget {
   const LogoPickerRow({
     super.key,
@@ -159,8 +151,6 @@ class LogoPickerRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // The same square as the profile photo in Create your account: empty
-    // (dashed border, camera) until a logo is picked, then the picture.
     final tile = image != null
         ? Pop(
             child: Container(
@@ -230,12 +220,6 @@ class LogoPickerRow extends StatelessWidget {
   }
 }
 
-/// Founder sign-up profile photo row, the same design as the Add startup
-/// logo row (padding 20 16 0, gap 14): a 76 px square with radius 20 and a
-/// 1.5 dashed `#8C918D` border, white fill and a 26 px `#5B625D` camera, next
-/// to "Profile photo" (15/500) and the link "Upload photo" (14/600
-/// `#2F5D3A`). After a photo is picked the square shows it without a border
-/// and the link reads "Change photo". No toast.
 class ProfilePhotoRow extends StatelessWidget {
   const ProfilePhotoRow({super.key, required this.onTap, this.image});
 
@@ -317,8 +301,7 @@ class ProfilePhotoRow extends StatelessWidget {
   }
 }
 
-/// Dashed rounded-rectangle outline (also used by the "Add team member"
-/// button).
+/// Dashed rounded-rectangle outline (also used by the "Add team member" button).
 class DashedBorderPainter extends CustomPainter {
   DashedBorderPainter({
     required this.color,

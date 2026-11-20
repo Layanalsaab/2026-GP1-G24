@@ -6,16 +6,6 @@ import '../../../shared_ui/widgets/overlays/app_dialog.dart';
 import '../view_models/rounds_view_model.dart';
 import 'founder_ui.dart';
 
-/// The Add round / Edit round form: a light green box with the same three
-/// fields (Round type, How much are you raising?, How much have you already
-/// raised in this round?), the same limits, hints and errors.
-///
-/// [editing] false: "New round · Round N", buttons "Cancel" / "Add round",
-/// above the rounds table. [editing] true: "Edit round · Round N" with the
-/// current values, buttons "Cancel" / "Save changes", on the round page.
-///
-/// Save and Add go through the confirm dialog (only when the form is valid);
-/// Cancel with a changed value asks "Discard changes?".
 class RoundForm extends StatelessWidget {
   const RoundForm({super.key, required this.vm, this.editing = false});
 
@@ -34,8 +24,6 @@ class RoundForm extends StatelessWidget {
     }
   }
 
-  /// Cancel: with a changed value the "Discard changes?" dialog asks first;
-  /// with none the form just closes.
   Future<void> _cancel(BuildContext context) async {
     if (vm.formDirty) {
       final discard = await showDiscardDialog(

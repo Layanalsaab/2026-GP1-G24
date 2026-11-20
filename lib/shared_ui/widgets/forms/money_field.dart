@@ -5,9 +5,6 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_text.dart';
 import 'app_text_field.dart';
 
-/// Digits-only input formatter that shows thousands separators
-/// ("1200000" -> "1,200,000") and keeps at most [maxDigits] digits (13 for
-/// money fields, 12 in the calculator).
 class ThousandsFormatter extends TextInputFormatter {
   const ThousandsFormatter({this.maxDigits = 13});
 
@@ -61,9 +58,6 @@ class ThousandsFormatter extends TextInputFormatter {
   }
 }
 
-/// A money input: digits only, thousands separators, at most [maxDigits]
-/// (13) digits, optional prefix ("SAR" by default), placeholder "0".
-/// Wraps [AppTextField]; wrap it in an `AppField` for label / error.
 class MoneyField extends StatelessWidget {
   const MoneyField({
     super.key,
@@ -114,7 +108,7 @@ class MoneyField extends StatelessWidget {
   }
 }
 
-/// One cell of a [TrioField].
+/// One cell of a TrioField.
 class TrioEntry {
   const TrioEntry({
     required this.label,
@@ -132,19 +126,14 @@ class TrioEntry {
   final bool hasError;
 }
 
-/// How a [TrioField] arranges its cells.
+/// How a TrioField arranges its cells.
 enum TrioLayout {
-  /// Side by side with the label above each box (Year 1/2/3, Minimum/Maximum).
   row,
 
   /// One row per cell with the label inline on the left (TAM / SAM / SOM).
   stack,
 }
 
-/// 2 or 3 money boxes (docs/02, 06): expected revenue Year 1/2/3, round sizes
-/// Minimum/Maximum (both [TrioLayout.row], gap 8, label 12/600 grey above a 46
-/// px box with placeholder "0") and the stacked TAM / SAM / SOM rows (label
-/// 13 ink in a 40 px column, gap 12, boxes with the "SAR" prefix).
 class TrioField extends StatelessWidget {
   const TrioField({
     super.key,

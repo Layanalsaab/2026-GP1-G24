@@ -17,7 +17,6 @@ enum RequestStatus {
 }
 
 /// An investor's request to invest in a startup (Manage startup -> Requests).
-/// Accepting it makes the investor an "associated investor" of the startup.
 class ConnectionRequest {
   const ConnectionRequest({
     required this.id,

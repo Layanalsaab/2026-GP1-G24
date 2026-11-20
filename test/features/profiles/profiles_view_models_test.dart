@@ -95,7 +95,6 @@ void main() {
       ]);
       vm.selectTab(3);
       expect(vm.tab, 3);
-      // One sub-line under the name (the founded year is in the Overview).
       expect(vm.infoLine, 'HealthTech · Pre-seed · Riyadh');
       expect(vm.raising, 'SAR 500K');
       expect(vm.lookingFor, ['Funding', 'Talent']);

@@ -4,9 +4,6 @@ import '../../../helpers/picture_data.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text.dart';
 
-/// Initials rule (docs/02 §6): first letter of the first word plus the first
-/// letter of the last word; a single word gives its first two letters.
-/// Uppercase. Returns '' for an empty name.
 String appInitials(String? name) {
   final words = (name ?? '')
       .trim()
@@ -24,10 +21,6 @@ String appInitials(String? name) {
   return (first.characters.first + second).toUpperCase();
 }
 
-/// A picture that fills its avatar: the saved copy ([data], base64) when there
-/// is one, else the web link [url] (older photos). While it loads, and when
-/// there is none or it can't be shown, [fallback] (the default picture: the
-/// initials) shows.
 class _AvatarPicture extends StatelessWidget {
   const _AvatarPicture({this.data, this.url, required this.fallback});
 
@@ -67,16 +60,9 @@ class _AvatarPicture extends StatelessWidget {
   }
 }
 
-/// What a [HueAvatar] represents: startups and programs are rounded squares,
-/// investors are circles.
+/// What a HueAvatar represents: startups and programs are rounded squares, investors are circles.
 enum HueAvatarKind { startup, investor, program }
 
-/// The hue avatar (prototype `.av.avC`): fill = 10 % of the name's hue on
-/// white, text = the hue, inner ring 1.5 px = 35 % hue. Used on home cards,
-/// rails, trending rows, profile lists and dropdown options.
-///
-/// Common sizes: 58 (home card, font 18), 50 (trending, 15), 44 (lists, 15),
-/// 36 (dropdown, 12.5). [name] drives both the initials and the hue.
 class HueAvatar extends StatelessWidget {
   const HueAvatar({
     super.key,
@@ -92,8 +78,7 @@ class HueAvatar extends StatelessWidget {
   final HueAvatarKind kind;
   final double size;
 
-  /// The startup's logo or the person's photo. Without one (or when it can't
-  /// load) the initials show, as the default picture.
+  /// The startup's logo or the person's photo.
   final String? imageUrl;
 
   /// The saved copy of the picture (base64): shown first when there is one.
@@ -150,19 +135,16 @@ class HueAvatar extends StatelessWidget {
   }
 }
 
-/// Colour family of a [TileAvatar].
+/// Colour family of a TileAvatar.
 enum TileTone {
-  /// Gradient `#EEF4EF -> #DFEAE1`, moss600 text.
+  /// Gradient #EEF4EF -> #DFEAE1, moss600 text.
   moss,
 
-  /// Gradient `#FAF3E3 -> #F2E6C9`, `#7A5A12` text.
+  /// Gradient #FAF3E3 -> #F2E6C9, #7A5A12 text.
   gold,
 }
 
-/// The tile avatar (prototype `.avatar-tile`): a gradient tile with initials.
-/// Defaults to 46 px, radius 14, 15/700. Variants used by the prototype:
-/// profile header gold 60 / radius 17 / font 20; team member moss 40 / radius
-/// 12 / font 13; request rows 38 round; My Startups gold 48 / radius 14.
+/// The tile avatar (prototype .avatar-tile): a gradient tile with initials.
 class TileAvatar extends StatelessWidget {
   const TileAvatar({
     super.key,
@@ -177,23 +159,21 @@ class TileAvatar extends StatelessWidget {
     this.imageData,
   });
 
-  /// Initials to show (use [appInitials]).
+  /// Initials to show (use appInitials).
   final String initials;
   final TileTone tone;
   final double size;
 
-  /// Corner radius; defaults to 14. Ignored when [round].
+  /// Corner radius; defaults to 14.
   final double? radius;
 
-  /// Defaults to 15 at 46 px, scaled with [size].
+  /// Defaults to 15 at 46 px, scaled with size.
   final double? fontSize;
 
-  /// `t-round`: a circle.
+  /// t-round: a circle.
   final bool round;
   final List<BoxShadow>? shadows;
 
-  /// The startup's logo or the person's photo; without one the initials show
-  /// as the default picture.
   final String? imageUrl;
 
   /// The saved copy of the picture (base64): shown first when there is one.

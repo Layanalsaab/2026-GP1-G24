@@ -434,7 +434,6 @@ void main() {
       ..nextResendAt = DateTime.now().add(const Duration(seconds: 2));
     await _pump(t, VerifyEmailScreen(flow: flow, showDialogOnOpen: false));
     expect(find.textContaining('Resend in'), findsOneWidget);
-    // Real time passes (the countdown follows the clock); then a tick.
     await t.runAsync(() => Future<void>.delayed(const Duration(seconds: 3)));
     await t.pump(const Duration(seconds: 1));
     await t.pump(const Duration(milliseconds: 400));
@@ -462,7 +461,6 @@ void main() {
     await t.pump(const Duration(milliseconds: 300));
     expect(find.text('Enter a valid email'), findsOneWidget);
     expect(find.text('Enter your password'), findsNWidgets(2)); // hint + error
-    // The "fix the highlighted fields" pop-up shows, then goes away.
     expect(find.text('Please fix the highlighted fields'), findsOneWidget);
     await t.pump(const Duration(seconds: 3));
   });
@@ -472,7 +470,6 @@ void main() {
       ..email = 'sara@gmail.com';
     await _pump(t, VerifyEmailScreen(flow: flow));
     await t.pump(const Duration(milliseconds: 500));
-    // The dialog has one OK button; resending lives on the page itself.
     expect(find.text('Resend verification email'), findsNothing);
     expect(find.text('sara@gmail.com'), findsWidgets);
     await t.tap(find.text('OK'));
@@ -515,7 +512,6 @@ void main() {
     await t.tap(find.text('Next'));
     await t.pump(const Duration(milliseconds: 300));
     expect(find.text('Enter the minimum amount.'), findsOneWidget);
-    // No "led a round" question any more, so no "choose one" message.
     expect(find.text('Please choose one.'), findsNothing);
     await t.tap(find.text('1–3'));
     await t.pumpAndSettle();

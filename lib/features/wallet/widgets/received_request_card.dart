@@ -8,9 +8,6 @@ import '../../startups/widgets/founder_ui.dart';
 import '../../startups/widgets/manage_card.dart';
 import '../view_models/wallet_view_model.dart';
 
-/// A request a startup sent to one of the investor's tickets: "Request
-/// received", the startup, the amount and the day, its status, and (while it
-/// is pending) Decline / Accept.
 class ReceivedRequestCard extends StatelessWidget {
   const ReceivedRequestCard({
     super.key,
@@ -22,7 +19,6 @@ class ReceivedRequestCard extends StatelessWidget {
   final WalletViewModel vm;
   final ReceivedRequest request;
 
-  /// The Requests tab says which ticket it was for; the ticket page doesn't.
   final bool showTicket;
 
   Future<void> _answer(BuildContext context, bool accept) async {

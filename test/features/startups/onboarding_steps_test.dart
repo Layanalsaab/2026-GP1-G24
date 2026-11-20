@@ -203,7 +203,6 @@ void main() {
         );
         vm.funding.text = '1,000';
         expect(vm.errorOf(StartupField.funding), isNull, reason: stage.label);
-        // No range for the stage any more: a small or a huge amount is fine.
         vm.funding.text = '500,000';
         expect(vm.errorOf(StartupField.funding), isNull, reason: stage.label);
         vm.funding.text = '900,000,000';

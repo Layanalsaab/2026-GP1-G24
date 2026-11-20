@@ -610,9 +610,7 @@ void main() {
       expect(c.sectors, ['HealthTech', 'Fintech']);
       expect(c.stages, ['Seed']);
       expect(c.commerceModels, ['Business-to-Business (B2B)']);
-      // What they look for is what they said they hope to gain at sign-up.
       expect(c.lookFor, 'The team');
-      // The value they bring was saved at sign-up: not asked or touched here.
       expect(users.savedValueOffered, isNull);
       expect(updated.valueOffered, 'Mentoring');
     });

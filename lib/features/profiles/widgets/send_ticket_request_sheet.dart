@@ -17,9 +17,6 @@ import '../../../shared_ui/widgets/overlays/app_bottom_sheet.dart';
 import '../../../shared_ui/widgets/overlays/app_toast.dart';
 import '../../../shared_ui/widgets/overlays/picker_sheet.dart';
 
-/// A founder asks the owner of [ticket] to invest: pick one of her startups
-/// that is raising, say how much, send. The investor gets it as "Request
-/// received". Returns true when it was sent.
 Future<bool> showSendTicketRequestSheet(
   BuildContext context, {
   required InvestmentTicket ticket,
@@ -78,7 +75,7 @@ class _SendTicketRequestSheetState extends State<SendTicketRequestSheet> {
     super.dispose();
   }
 
-  /// What the open round of [s] still needs, in SAR (0: not raising).
+  /// What the open round of s still needs, in SAR (0: not raising).
   static int remainingOf(Startup s) {
     final need = s.fundingRequirement ?? 0;
     if (need <= 0) return 0;

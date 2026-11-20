@@ -2,8 +2,6 @@
 class Runway {
   Runway._();
 
-  /// Whole months of runway (at least 1), or null when it is not a number of
-  /// months (no burn, or no capital).
   static int? months(int? capital, int? burn) {
     if (capital == null || burn == null || burn <= 0 || capital <= 0) {
       return null;
@@ -12,9 +10,6 @@ class Runway {
     return m < 1 ? 1 : m;
   }
 
-  /// "About 6 months of runway", "About 1 month of runway",
-  /// "Cash-flow positive" (burn 0), "No runway left" (capital 0), or null
-  /// while the burn rate is empty.
   static String? label(int? capital, int? burn) {
     if (burn == null) return null;
     if (burn <= 0) return 'Cash-flow positive';
@@ -30,9 +25,6 @@ class Runway {
     return l.endsWith(' of runway') ? l.substring(0, l.length - 10) : l;
   }
 
-  /// The value of the calculated line under the burn rate field: "About 6
-  /// months", "Cash-flow positive" (burn 0), "No money left" (no capital), or
-  /// null while the burn rate is empty.
   static String? line(int? capital, int? burn) {
     final s = short(capital, burn);
     return s == 'No runway left' ? 'No money left' : s;

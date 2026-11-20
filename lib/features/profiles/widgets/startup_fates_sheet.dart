@@ -14,16 +14,6 @@ import '../../../shared_ui/widgets/cards/avatars.dart';
 import '../../../shared_ui/widgets/overlays/app_bottom_sheet.dart';
 import '../../../shared_ui/widgets/overlays/picker_sheet.dart';
 
-/// The first step of Delete Account for a founder (docs: Closing a Startup,
-/// Leaving and Deleting an Account): one bottom sheet listing every startup
-/// he holds ([owned]), each with **Close** / **Delete**, and a counter
-/// ("1 of 3 chosen · 2 left"). Under Close, a startup with a team shows its
-/// **Next founder** (the first co-founder, otherwise the first member, can be
-/// changed), who will decide whether it appears in the Hub. **Continue** only
-/// goes on once every startup has a choice; otherwise the missing ones turn
-/// red and he is asked again. [joinedCount]: the startups he only joined
-/// (he leaves them). Completes with the choices by startup id, or null when
-/// cancelled.
 Future<Map<String, StartupFate>?> showStartupFatesSheet(
   BuildContext context, {
   required List<Startup> owned,
@@ -178,8 +168,6 @@ class _StartupFatesSheetState extends State<StartupFatesSheet> {
   }
 }
 
-/// The next founder of [s] by default: its first co-founder on the team
-/// list, otherwise its first member (null when nobody joined).
 String? defaultNextFounder(Startup s) {
   final joined = s.memberRoles;
   if (joined.isEmpty) return null;
@@ -197,8 +185,6 @@ String? defaultNextFounder(Startup s) {
   return firstOf('coFounder') ?? firstOf('member') ?? joined.keys.first;
 }
 
-/// "1 of 3 chosen · 2 left": the gold notice colours; red with "Choose for
-/// 2 more startups" after Continue was tapped too early.
 class _Counter extends StatelessWidget {
   const _Counter({
     required this.chosen,
@@ -255,8 +241,6 @@ class _Counter extends StatelessWidget {
   }
 }
 
-/// One startup: its tile, name and who is on it, Close / Delete, and (Close
-/// with a team) its next founder.
 class _FateCard extends StatelessWidget {
   const _FateCard({
     required this.startup,
@@ -374,7 +358,7 @@ class _FateCard extends StatelessWidget {
   }
 }
 
-/// Close or Delete: a white 40 px button, filled with [color] once chosen.
+/// Close or Delete: a white 40 px button, filled with color once chosen.
 class _Choice extends StatelessWidget {
   const _Choice({
     required this.label,
@@ -422,8 +406,7 @@ class _Choice extends StatelessWidget {
   }
 }
 
-/// "Next founder: Sara Mouhamed ▾" and why it matters; tapping picks another
-/// person who joined.
+/// "Next founder: Sara Mouhamed ▾" and why it matters; tapping picks another person who joined.
 class _NextFounderRow extends StatelessWidget {
   const _NextFounderRow({required this.name, required this.onTap});
 

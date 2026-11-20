@@ -1,16 +1,7 @@
-/// Every fixed list used by a startup profile (Figma "Add Startup" /
-/// "Edit Startup"). Each value has:
-/// - [value]: the string stored in Firestore (never change it once shipped),
-/// - [label]: the text shown in the UI.
-///
-/// Older documents stored a previous set of values. Each `fromValue` still
-/// reads those (see the `_legacy` maps) and returns the nearest current
-/// value; new writes always use the current values.
 library;
 
 import '../app_constants/app_strings.dart';
 
-/// Shared lookup so each enum can turn a Firestore string back into a value.
 T? _fromValue<T extends Enum>(
   List<T> values,
   Object? raw,
@@ -55,7 +46,6 @@ enum Sector {
   final String value;
   final String label;
 
-  /// Stored values from before the current list: old value -> nearest sector.
   static const _legacy = {
     'ecommerce_retail': Sector.ecommerce,
     'logistics_transport': Sector.logistics,
@@ -67,7 +57,7 @@ enum Sector {
   static Sector? fromValue(Object? raw) =>
       _fromValue(values, raw, (e) => e.value, _legacy);
 
-  /// The sector with this display [label] ("HR Tech"), or null.
+  /// The sector with this display label ("HR Tech"), or null.
   static Sector? fromLabel(String label) {
     for (final item in values) {
       if (item.label == label) return item;
@@ -90,8 +80,6 @@ enum StartupStage {
   final String label;
 
   /// The stages a founder can pick (and investors can follow), in order.
-  /// [other] only exists so older startups still load: it is not offered, and
-  /// editing such a startup asks for a real stage.
   static const picks = [preSeed, seed, seriesA, seriesB, seriesC];
 
   static const _legacy = {
@@ -105,8 +93,6 @@ enum StartupStage {
       _fromValue(values, raw, (e) => e.value, _legacy);
 }
 
-/// The "Commerce model" field (called "business model" in older code and
-/// in the stored field name `commerceModel`).
 enum CommerceModel {
   b2g('b2g', 'Business-to-Government (B2G)', 'B2G'),
   b2b('b2b', 'Business-to-Business (B2B)', 'B2B'),
@@ -124,15 +110,13 @@ enum CommerceModel {
 
   final String value;
 
-  /// Full text for the dropdown, e.g. "Business-to-Consumer (B2C)".
+  /// Full text for the dropdown, e.g.
   final String label;
 
   /// Just the abbreviation, for cards and the profile ("B2C"; "Other").
   final String shortLabel;
 
-  /// The four commerce models that can be picked, in this order. The other
-  /// members only exist so older startups still load and show their saved
-  /// value; editing such a startup asks for one of these four.
+  /// The four commerce models that can be picked, in this order.
   static const picks = [b2b, b2c, b2g, other];
 
   static const _legacy = {'marketplace': CommerceModel.other};
@@ -141,13 +125,10 @@ enum CommerceModel {
       _fromValue(values, raw, (e) => e.value, _legacy);
 }
 
-/// A city. Not an enum: the list is the same city list the Create Account
-/// screen uses ([AppStrings.allCities]), so the two can never drift apart.
+/// A city.
 class StartupLocation {
   const StartupLocation._(this.value, this.label);
 
-  /// Stored string: the city name lower-cased with underscores
-  /// ("Al Khobar" -> "al_khobar").
   final String value;
   final String label;
 
@@ -160,17 +141,12 @@ class StartupLocation {
       StartupLocation._(_slug(city), city),
   ]);
 
-  /// A city that is not in the picker list (sample data such as "Qassim" or
-  /// "Al-Ula"). Display only: it can't be picked on a new startup.
   factory StartupLocation.custom(String label) =>
       StartupLocation._(_slug(label), label);
 
-  /// Only exists so old documents with city "other" still load. It is not in
-  /// [values], so it can't be picked on a new startup.
+  /// Only exists so old documents with city "other" still load.
   static const other = StartupLocation._('other', 'Other');
 
-  // Const handles for the cities the app refers to by name (samples, tests).
-  // Equality is by [value], so they equal the instances in [values].
   static const riyadh = StartupLocation._('riyadh', 'Riyadh');
   static const jeddah = StartupLocation._('jeddah', 'Jeddah');
   static const dammam = StartupLocation._('dammam', 'Dammam');
@@ -193,15 +169,12 @@ class StartupLocation {
     for (final item in values) {
       if (item.value == current) return item;
     }
-    // Cities that used to be pickable stay readable on old documents.
     if (const ['taif', 'unaizah', 'yanbu'].contains(current)) {
       return StartupLocation._(
         current,
         '${current[0].toUpperCase()}${current.substring(1)}',
       );
     }
-    // Imported dataset rows can hold a city that is not in the picker list
-    // ("qassim", "al_ula"): keep them readable instead of dropping the startup.
     if (RegExp(r'^[a-z0-9_]+$').hasMatch(current) && current.isNotEmpty) {
       final words = current.split('_').where((w) => w.isNotEmpty);
       return StartupLocation._(

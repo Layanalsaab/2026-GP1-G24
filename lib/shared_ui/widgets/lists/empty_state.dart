@@ -7,13 +7,6 @@ import '../../theme/app_metrics.dart';
 import '../../theme/app_text.dart';
 import '../buttons/app_button.dart';
 
-/// Plain empty state (prototype `.hempty`): a 64 circle `#EEF4EF` with an
-/// icon, a 16/700 title, a 14 `#6B726C` message and an optional small
-/// outline button. Padding 36 16, gap 6.
-///
-/// [EmptyState.noMatches] is the Hub/Explore "No matches" variant:
-/// "No matches" / "Try removing a filter or searching for something else." and
-/// a "Clear all" button.
 class EmptyState extends StatelessWidget {
   const EmptyState({
     super.key,
@@ -94,11 +87,7 @@ class EmptyState extends StatelessWidget {
   }
 }
 
-/// Illustrated empty card (prototype `.mempty`, e.g. My Startups empty):
-/// white card radius 20 (list-card shadow), padding 24 20, centered
-/// [illustration] (wrapped in [Float] unless [float] is false), title 20/700
-/// (ls -0.3), message 14/20 grey and an optional full-width primary button
-/// with a plus icon. The illustration itself is screen-specific.
+/// Illustrated empty card (prototype .mempty, e.g.
 class IllustratedEmptyCard extends StatelessWidget {
   const IllustratedEmptyCard({
     super.key,
@@ -118,7 +107,7 @@ class IllustratedEmptyCard extends StatelessWidget {
   final VoidCallback? onAction;
   final String? actionIcon;
 
-  /// Wrap [illustration] in the looping [Float] effect.
+  /// Wrap illustration in the looping Float effect.
   final bool float;
 
   @override
@@ -168,9 +157,6 @@ class IllustratedEmptyCard extends StatelessWidget {
   }
 }
 
-/// The guest "Join Start.sa" card (prototype `.gcta`): green, radius 18,
-/// padding 18 16, "Join Start.sa" 16/700, 13.5/20 `#CFE0D3` copy and a white
-/// "Sign up" button (46 high, radius 13, 15/700 green).
 class GuestJoinCard extends StatelessWidget {
   const GuestJoinCard({super.key, required this.onSignUp});
 

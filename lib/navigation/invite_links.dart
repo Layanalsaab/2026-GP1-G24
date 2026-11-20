@@ -8,14 +8,7 @@ import '../features/startups/screens/invite_screen.dart';
 import '../shared_ui/widgets/overlays/app_toast.dart';
 import 'share_links.dart';
 
-/// The "Open Start.sa" link of an invitation e-mail
-/// (`https://<site>/invite?i=<invitation id>`). Android opens the app for it
-/// when the app is installed; the app shows the invite screen. The links
-/// people share (a startup or an investor, see [ShareLinks]) arrive the same
-/// way.
-///
-/// A link that arrives while the app is still starting (the splash) is kept
-/// and opened by [appReady], once the first real screen is up.
+/// The "Open Start.sa" link of an invitation e-mail (https://{site}/invite?i={invitation id}).
 class InviteLinks {
   InviteLinks._();
 
@@ -24,8 +17,6 @@ class InviteLinks {
   static bool _ready = false;
   static StreamSubscription<Uri>? _subscription;
 
-  /// Starts listening for links (the one that launched the app, and later
-  /// ones). Safe to call more than once.
   static Future<void> init() async {
     if (_subscription != null) return;
     try {

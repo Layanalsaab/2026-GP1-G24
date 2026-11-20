@@ -61,8 +61,6 @@ Future<void> _toLeave(WidgetTester t) async {
   await t.pumpAndSettle();
 }
 
-/// Test-only memberships (they used to be built-in sample data): Naql as
-/// co-founder, Mizan Learn as team member.
 final _teamStartups = [
   MyStartupEntry(
     startup: PrototypeSeed.naql,
@@ -345,7 +343,6 @@ void main() {
       // His card in the sheet (his team card is behind it).
       await t.tap(find.text('Faisal Alkhaldi').last);
       await t.pumpAndSettle();
-      // Then his own role: stay as a co-founder, a team member, or leave.
       expect(find.text('Your role after the handover'), findsOneWidget);
       expect(find.text('Stay as a team member'), findsOneWidget);
       await t.tap(find.text('Leave for good'));

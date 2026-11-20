@@ -1,10 +1,4 @@
 /// For You: a content-based recommender that adapts to bookmarks.
-///
-/// Every startup and investor is described by the same three attributes the
-/// matching uses (sector, stage, commerce model). A person's "taste" starts
-/// as their onboarding answers and moves toward what they bookmark: recent
-/// bookmarks count more, old ones fade, and more bookmarks mean more pull.
-/// It is separate from Matches and never changes its order or its percent.
 library;
 
 import 'dart:math' as math;
@@ -26,26 +20,19 @@ const Map<String, double> groupWeights = {
 /// A startup's other sectors count the same as its main one.
 const double otherSectorWeight = 1;
 
-/// A bookmark counts half as much after this many days, but never less than
-/// [oldestBookmarkWeight]: past bookmarks keep counting.
 const double halfLifeDays = 90;
 const double oldestBookmarkWeight = 0.4;
 
 /// The most the bookmarks can pull the taste away from the onboarding answers.
 const double maxLearnedShare = 0.6;
 
-/// How fast the pull grows: with this many fresh bookmarks it is half of the
-/// maximum.
+/// How fast the pull grows: with this many fresh bookmarks it is half of the maximum.
 const double _halfPullBookmarks = 2;
 
 const int defaultLimit = 20;
 
-/// An open ticket counts this much more than a bookmark when it shapes the
-/// taste: it is what the investor wants right now.
 const double ticketStrength = 1.5;
 
-/// Added to a score when an investor's open ticket takes the startup's amount
-/// and also its sector and stage, or only its amount.
 const double ticketFitBonus = 0.3;
 const double ticketAmountBonus = 0.1;
 
@@ -65,8 +52,6 @@ class Features {
 
   bool get isEmpty => groups.values.every((v) => v.isEmpty);
 }
-
-// ---------------------------------------------------------------- features
 
 Vec _clean(Vec v) => v..remove('other');
 
@@ -125,8 +110,6 @@ Features combine(Iterable<Features> all) {
   return Features(sum);
 }
 
-// ------------------------------------------------------------------- maths
-
 Vec _unit(Vec v) {
   final norm = math.sqrt(v.values.fold<double>(0, (a, w) => a + w * w));
   return norm == 0
@@ -157,10 +140,7 @@ double similarity(Features a, Features b) {
   return used == 0 ? 0 : total / used;
 }
 
-// ------------------------------------------------------------------- taste
-
-/// Something the person bookmarked (or an open ticket), and when. [strength]
-/// is how much more than a bookmark it counts.
+/// Something the person bookmarked (or an open ticket), and when.
 class Signal {
   const Signal(this.features, this.at, {this.strength = 1});
 
@@ -175,7 +155,7 @@ class Taste {
   /// The person's onboarding answers pulled toward their bookmarks.
   final Features features;
 
-  /// 0 = only the onboarding answers, up to [maxLearnedShare].
+  /// 0 = only the onboarding answers, up to maxLearnedShare.
   final double learnedShare;
   final List<Signal> signals;
 
@@ -228,8 +208,6 @@ class Taste {
   }
 }
 
-// --------------------------------------------------------------- recommend
-
 class Candidate<T> {
   const Candidate(this.item, this.name, this.features, this.mainSector);
 
@@ -246,20 +224,13 @@ class Pick<T> {
   final double score;
 }
 
-/// The best [limit] candidates for [taste]; see [recommendBest].
+/// The best limit candidates for taste; see recommendBest.
 List<Pick<T>> recommend<T>(
   Taste taste,
   List<Candidate<T>> candidates, {
   int limit = defaultLimit,
 }) => recommendBest([taste], candidates, limit: limit);
 
-/// The best [limit] candidates for several tastes (a founder's startups, one
-/// taste each). A candidate is scored against every taste it is [allowed] for
-/// and keeps only its best score, so a person with two different startups
-/// gets good picks for both. Equal best scores: the candidate that fits more
-/// of the tastes goes first, then the name. Candidates nothing fits are left
-/// out. The last [exploreSlots] places go to the best ones from a sector not
-/// already in the list, so it isn't all the same.
 List<Pick<T>> recommendBest<T>(
   List<Taste> tastes,
   List<Candidate<T>> candidates, {
@@ -315,8 +286,6 @@ int? _raising(Startup s) {
   return s.seeksFunding && need > 0 ? need : null;
 }
 
-/// True when one of the [tickets] takes the startup's amount, sector and
-/// stage (a ticket with no sector or no stage chosen takes any).
 bool ticketFits(Startup s, Iterable<InvestmentTicket> tickets) {
   final need = _raising(s);
   if (need == null) return false;
@@ -330,8 +299,6 @@ bool ticketFits(Startup s, Iterable<InvestmentTicket> tickets) {
   );
 }
 
-/// What the investor's open tickets add to a startup's score: a full fit
-/// counts most, an amount that is only inside a ticket's range a little.
 double ticketBonus(Startup s, Iterable<InvestmentTicket> tickets) {
   final need = _raising(s);
   if (need == null || tickets.isEmpty) return 0;
@@ -339,9 +306,6 @@ double ticketBonus(Startup s, Iterable<InvestmentTicket> tickets) {
   return tickets.any((t) => _inRange(t, need)) ? ticketAmountBonus : 0;
 }
 
-/// The amount check: the onboarding answers (see [sizesFit]) still count, and
-/// an open ticket that takes the startup's amount, sector and stage (see
-/// [ticketFits]) also makes it fit.
 bool amountFits(
   Startup s, {
   Iterable<InvestmentTicket> tickets = const [],
@@ -357,9 +321,7 @@ bool amountFits(
     ) ||
     ticketFits(s, tickets);
 
-/// The onboarding amount check of the matching. It only fails when the
-/// startup is raising and its amount is outside what the investor takes; an
-/// answer that is missing is not checked.
+/// The onboarding amount check of the matching.
 bool sizesFit(Startup s, {String? ticketBand, int? roundMin, int? roundMax}) {
   final need = s.fundingRequirement ?? 0;
   if (!s.seeksFunding || need <= 0) return true;

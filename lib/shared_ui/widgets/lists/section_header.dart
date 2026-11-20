@@ -3,10 +3,6 @@ import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text.dart';
 
-/// A home section header (prototype `.shd2`): title 16/700 (ls -0.1) on the
-/// left and, on the right, either a "See all" link (13/600 moss600, via
-/// [onSeeAll]) or any [trailing] widget (e.g. the Trending range dropdown).
-/// Has a 2 px side inset like the prototype.
 class SectionHeader extends StatelessWidget {
   const SectionHeader({
     super.key,

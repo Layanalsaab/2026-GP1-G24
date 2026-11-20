@@ -7,15 +7,13 @@ import '../../../models/team_member.dart';
 import '../../../shared_ui/theme/app_colors.dart';
 import '../../../shared_ui/theme/app_text.dart';
 
-/// The role tag next to a startup name: height 20, radius 999, 11 px
-/// semibold, padding 0 8. Founder = gold, Co-founder = blue, Team member =
-/// green. (Invited = transparent with a dashed grey border: [RoleTag.invited].)
+/// The role tag next to a startup name: height 20, radius 999, 11 px semibold, padding 0 8.
 class RoleTag extends StatelessWidget {
   const RoleTag(this.role, {super.key, this.label})
     : invited = false,
       warn = false;
 
-  /// "Invited": transparent, 1 px dashed `#B9BDB8` border, grey text.
+  /// "Invited": transparent, 1 px dashed #B9BDB8 border, grey text.
   const RoleTag.invited({super.key, this.label, this.warn = false})
     : role = null,
       invited = true;
@@ -29,16 +27,13 @@ class RoleTag extends StatelessWidget {
   /// The dashed tag in red ("Declined").
   final bool warn;
 
-  /// The capsule of [uid] in [startup]: their title (Founder, Co-founder or
-  /// Team member). [fallback] is used when [uid] has no role there
-  /// (samples).
   static RoleTag forStartup(
     Startup startup,
     String? uid, {
     required StartupRole fallback,
   }) => RoleTag(StartupRole.titleOf(startup, uid) ?? fallback);
 
-  /// The words of [forStartup] (the eyebrow above the name in Manage).
+  /// The words of forStartup (the eyebrow above the name in Manage).
   static String labelFor(
     Startup startup,
     String? uid, {
@@ -59,8 +54,6 @@ class RoleTag extends StatelessWidget {
         excludeSemantics: true,
         child: CustomPaint(
           painter: _DashedPillPainter(),
-          // No `alignment` on the Container: that would stretch it to the
-          // full width. The Center only centres the text vertically.
           child: Container(
             height: 20,
             padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -112,9 +105,6 @@ class RoleTag extends StatelessWidget {
   }
 }
 
-/// The small muted-grey "Private" capsule shown next to the role capsule on
-/// My Startups when the startup is private. Same size and type as [RoleTag]
-/// (height 20, radius 999, 11 px semibold, padding 0 8); it hugs its text.
 class PrivateTag extends StatelessWidget {
   const PrivateTag({super.key});
 
@@ -123,8 +113,7 @@ class PrivateTag extends StatelessWidget {
       const GreyTag(FounderToolsStrings.privatePill);
 }
 
-/// A muted-grey capsule with the size and type of [RoleTag]: "Private",
-/// "Closed".
+/// A muted-grey capsule with the size and type of RoleTag: "Private", "Closed".
 class GreyTag extends StatelessWidget {
   const GreyTag(this.label, {super.key});
 
@@ -184,11 +173,6 @@ class _DashedPillPainter extends CustomPainter {
   bool shouldRepaint(_DashedPillPainter old) => false;
 }
 
-/// The tag capsules of one team member, the same everywhere a team is shown
-/// (Startup Team step, Manage -> Details, startup page Team tab): the role
-/// tag (Founder / Co-founder / Member, prefixed "You · " on my own card), and
-/// for an invited person a dashed "Invited" tag next to it (never on the
-/// founder).
 List<Widget> teamTagsOf(
   TeamMember member, {
   required bool isYou,
@@ -196,10 +180,6 @@ List<Widget> teamTagsOf(
   String? ownerId,
 }) {
   final you = isYou ? 'You · ' : '';
-  // The founder is whoever holds the startup now ([ownerId]); a card that
-  // isn't linked to an account yet goes by its own flag.
-  // The sample startups' owner is a placeholder, not an account: their
-  // founder is the card flagged as founder.
   final linked = (member.uid ?? '').isNotEmpty;
   final hasOwner =
       ownerId != null &&

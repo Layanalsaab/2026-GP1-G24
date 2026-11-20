@@ -11,7 +11,7 @@ import 'package:startsa/helpers/app_session.dart';
 import 'package:startsa/shared_ui/theme/app_theme.dart';
 import 'package:startsa/shared_ui/widgets/cards/home_card.dart';
 
-/// Startups served as documents for [DiscoveryRepository.refresh].
+/// Startups served as documents for DiscoveryRepository.refresh.
 class _Docs extends FirestoreService {
   _Docs(this.startups);
 
@@ -144,7 +144,6 @@ void main() {
     expect(find.text('Top 30 trending'), findsOneWidget);
     expect(find.text('Last 7 days'), findsOneWidget);
     expect(find.byType(HomeCard), findsWidgets);
-    // Only the rank: no growth numbers, no "more views", no (i) button.
     expect(find.text('#1'), findsOneWidget);
     expect(find.textContaining('%'), findsNothing);
     expect(find.textContaining('more views'), findsNothing);

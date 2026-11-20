@@ -5,10 +5,6 @@ import '../../../shared_ui/icons/app_icons.dart';
 import '../../../shared_ui/theme/app_colors.dart';
 import '../../../shared_ui/theme/app_text.dart';
 
-/// The pieces of the "Contact Information" section, shared by the investor's
-/// own profile, a founder's own profile and an investor seen by someone else,
-/// so the three look and read the same.
-
 /// The intro line of the section on your own profile.
 class ContactIntro extends StatelessWidget {
   const ContactIntro({super.key});
@@ -25,9 +21,6 @@ class ContactIntro extends StatelessWidget {
   }
 }
 
-/// Your own email or phone: the label, the value, a note saying who sees it
-/// ("Shown on your profile" / "Private. Only you can see your email") and a
-/// Public / Only you tag at the end.
 class OwnContactRow extends StatelessWidget {
   const OwnContactRow({
     super.key,
@@ -39,7 +32,7 @@ class OwnContactRow extends StatelessWidget {
     this.showDivider = false,
   });
 
-  /// A filled [AppIcons] path (mail, phone).
+  /// A filled AppIcons path (mail, phone).
   final String icon;
 
   /// "Email" / "Phone".
@@ -51,7 +44,7 @@ class OwnContactRow extends StatelessWidget {
   final bool isPublic;
   final bool showDivider;
 
-  /// "Shown on your profile" or "Private. Only you can see your email".
+  /// "Shown on your profile" or "Private.
   static String note({required bool isPublic, required String noun}) => isPublic
       ? ProfileStrings.contactShown
       : ProfileStrings.contactPrivateNote(noun);
@@ -108,8 +101,6 @@ class PublicContactRow extends StatelessWidget {
   }
 }
 
-/// Someone else's detail that is private: "Email is private" with no value,
-/// and a lock with the "Private" tag at the end.
 class PrivateContactRow extends StatelessWidget {
   const PrivateContactRow({
     super.key,
@@ -143,8 +134,6 @@ class PrivateContactRow extends StatelessWidget {
   }
 }
 
-/// The small "Public" / "Only you" tag at the end of one of your own rows:
-/// height 22, 12 px semibold; Public in moss, Only you in grey.
 class ContactVisibilityPill extends StatelessWidget {
   const ContactVisibilityPill({super.key, required this.isPublic});
 

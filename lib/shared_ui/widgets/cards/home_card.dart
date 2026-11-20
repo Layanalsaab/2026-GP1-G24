@@ -9,20 +9,6 @@ import '../../theme/app_text.dart';
 import 'avatars.dart';
 import 'pills.dart';
 
-/// The home card (prototype `hc1 v3`, docs/05 §B2): used on Hub, results,
-/// Matches, Recommended and Support Channels.
-///
-/// White, radius 20, padding 20. Top row: [HueAvatar] 58, name (18/700), tag
-/// chip + pin + [city], then the share and (optionally) bookmark buttons. Then
-/// the [body] line (15.5/23), the optional match row and a chevron at the
-/// bottom-right.
-///
-/// * [onBookmark] null hides the bookmark button (guests can never bookmark).
-///   [bookmarked] draws the filled `#A87A25` icon with a Pop.
-/// * [matchPercent] + [matchReason] show the "92% match" row (Matches tab).
-/// * [index] staggers the cardIn entrance by 40 ms x index. To replay the
-///   stagger when the list content changes, give the list/cards a new key.
-/// * Press scales to 0.985.
 class HomeCard extends StatelessWidget {
   const HomeCard({
     super.key,
@@ -64,12 +50,10 @@ class HomeCard extends StatelessWidget {
   final VoidCallback? onBookmark;
   final bool bookmarked;
 
-  /// e.g. 92 -> "92% match".
+  /// e.g.
   final int? matchPercent;
   final String? matchReason;
 
-  /// Replaces "N% match" in the same pill: "Joined 2 days ago" (Latest) or
-  /// "#1" (Trending), with an optional grey [highlightReason].
   final String? highlight;
   final String? highlightReason;
 
@@ -79,17 +63,11 @@ class HomeCard extends StatelessWidget {
   /// Set false to skip the cardIn entrance.
   final bool animate;
 
-  /// Lines of [body] before the ellipsis (a startup's brief description
-  /// stops at 2).
   final int bodyMaxLines;
 
-  /// Optional small capsules next to the name (the role, "Private"). They
-  /// sit on the name's line while they fit and drop under it when they don't.
-  /// Hub cards don't use them.
+  /// Optional small capsules next to the name (the role, "Private").
   final List<Widget> badges;
 
-  /// Optional text button at the bottom right, in front of the chevron
-  /// ("Manage" / "View" on My Startups). Hub cards don't use it.
   final String? actionLabel;
 
   /// The startup's logo or the person's photo (the initials when none).
@@ -140,16 +118,12 @@ class HomeCard extends StatelessWidget {
                             badges: badges,
                           ),
                         ),
-                        // Space reserved for the absolutely placed actions
-                        // (the prototype pulls them out with negative margins).
                         if (showActions) const SizedBox(width: 63),
                       ],
                     ),
                     const SizedBox(height: 12),
                     Padding(
                       padding: const EdgeInsets.only(right: 20),
-                      // A long description stops at [bodyMaxLines] lines with
-                      // "..."; the profile (tap the card) shows all of it.
                       child: Text(
                         body,
                         style: AppText.cardBody,
@@ -274,7 +248,7 @@ class HomeCard extends StatelessWidget {
   }
 }
 
-/// Name + (tag chip, pin, city) column shared by [HomeCard] and [RailCard].
+/// Name + (tag chip, pin, city) column shared by HomeCard and RailCard.
 class _NameBlock extends StatelessWidget {
   const _NameBlock({
     required this.name,
@@ -297,8 +271,6 @@ class _NameBlock extends StatelessWidget {
         if (badges.isEmpty)
           _FitName(name)
         else
-          // The capsules sit right after the name; when they do not fit on
-          // its line they drop under it (never squeeze the name away).
           Wrap(
             spacing: 8,
             runSpacing: 4,
@@ -318,10 +290,7 @@ class _NameBlock extends StatelessWidget {
   }
 }
 
-/// The card name on ONE line. A long name shrinks its font (down to 72 %)
-/// instead of wrapping, so every card has the same height; only a name that
-/// is still too long at that size is cut with "...". The line keeps its 23 px
-/// height at any size.
+/// The card name on ONE line.
 class _FitName extends StatelessWidget {
   const _FitName(this.name);
 
@@ -387,8 +356,6 @@ class _MatchPill extends StatelessWidget {
   }
 }
 
-/// The chevron nudges 2 px to the right while the card is hovered (200 ms
-/// easeOut; not under reduced motion).
 class _CardChevron extends StatelessWidget {
   const _CardChevron({this.hover = false});
 
@@ -413,10 +380,6 @@ class _CardChevron extends StatelessWidget {
   }
 }
 
-/// Shared hover/press wrapper of [HomeCard] and [RailCard]: press .985, and on
-/// a mouse pointer lift -2 + shadow `0 18 30 -20 rgba(31,63,39,.55)` + ring
-/// `0 0 0 1.5 #CFDCD2` over 200 ms easeOut. [builder] gets the hover flag (for
-/// the chevron).
 class _HoverCard extends StatefulWidget {
   const _HoverCard({required this.onTap, required this.builder});
 
@@ -469,8 +432,7 @@ class _HoverCardState extends State<_HoverCard> {
   }
 }
 
-/// 36 x 38 icon button on a home card (share / bookmark). Press scale 0.90,
-/// hover fill `#F3F1EC` (200 ms).
+/// 36 x 38 icon button on a home card (share / bookmark).
 class _CardAction extends StatelessWidget {
   const _CardAction({
     required this.child,
@@ -504,12 +466,7 @@ class _CardAction extends StatelessWidget {
   }
 }
 
-/// The "New on Start.sa" rail card (prototype `hc1 v3 rcard`).
-///
-/// Same look as [HomeCard] but with a static "New" badge instead of the
-/// share/bookmark actions, a body clamped to 2 lines (min height 46) and a
-/// "Joined ..." line in gold. No entrance animation. Press scale 0.985.
-/// Put these in a [SnapRail] (which gives them their width of screen - 60).
+/// The "New on Start.sa" rail card (prototype hc1 v3 rcard).
 class RailCard extends StatelessWidget {
   const RailCard({
     super.key,
@@ -529,7 +486,7 @@ class RailCard extends StatelessWidget {
   final String city;
   final String body;
 
-  /// e.g. "Joined today", "Joined 2 days ago".
+  /// e.g.
   final String joined;
   final HueAvatarKind kind;
   final VoidCallback? onTap;
@@ -643,12 +600,6 @@ class _NewBadge extends StatelessWidget {
   }
 }
 
-/// Horizontal rail of snapping cards (prototype `.rail`): padding 2 16 10,
-/// gap 12, every item [peek] px narrower than the rail (screen - 60 at the
-/// default) and snapping to the start with a 16 px inset.
-///
-/// Place it full-bleed (outside the 16 px page padding of the list): it adds
-/// its own side padding. Children are given their width.
 class SnapRail extends StatelessWidget {
   const SnapRail({
     super.key,
@@ -693,7 +644,7 @@ class SnapRail extends StatelessWidget {
   }
 }
 
-/// `scroll-snap-type: x mandatory`: settles on multiples of [extent].
+/// scroll-snap-type: x mandatory: settles on multiples of extent.
 class _SnapPhysics extends ScrollPhysics {
   const _SnapPhysics({super.parent, required this.extent});
 

@@ -191,7 +191,6 @@ void main() {
         [for (final t in ExploreTab.defaults) t.label],
         ['Latest', 'Trending', 'For You'],
       );
-      // Founders and investors have the same tabs; there is no Matches tab.
       expect(ExploreTab.forRole(founder: true), ExploreTab.defaults);
       expect(ExploreTab.forRole(founder: false), ExploreTab.defaults);
       final m = vm(SessionRole.investor);
@@ -359,7 +358,7 @@ void main() {
   });
 }
 
-/// Startups served as documents (the `isPublic == true` query).
+/// Startups served as documents (the isPublic == true query).
 class _Docs extends FirestoreService {
   _Docs(this.startups);
 

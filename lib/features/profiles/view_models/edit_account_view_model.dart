@@ -19,12 +19,6 @@ import '../../../models/investor_criteria.dart';
 import '../../login_and_signup/view_models/investor_onboarding_view_model.dart';
 import '../../../models/startup_enums.dart';
 
-/// Logic of Edit profile (docs/05 C5, docs/06 section 7): holds the form
-/// values, validates them with the shared rules and saves them.
-///
-/// The email is shown but cannot be changed here (changing the login email
-/// needs re-authentication and a new verification email), so it is not part
-/// of the form values.
 class EditAccountViewModel extends ChangeNotifier with SafeNotifier {
   EditAccountViewModel({
     required this.user,
@@ -42,8 +36,6 @@ class EditAccountViewModel extends ChangeNotifier with SafeNotifier {
        gain = user.gain,
        city = user.city {
     if (user.isInvestor) {
-      // Every sign-up answer, however the investor got here (fresh sign-up,
-      // log in, straight from the profile): a missing set reads as empty.
       criteria = InvestorOnboardingViewModel(
         user: user,
         userRepository: _users,
@@ -70,7 +62,7 @@ class EditAccountViewModel extends ChangeNotifier with SafeNotifier {
     _baseline = _signature();
   }
 
-  /// The form as it opened, to compare with (see [hasChanges]).
+  /// The form as it opened, to compare with (see hasChanges).
   late final String _baseline;
 
   String _signature() => jsonEncode({
@@ -88,8 +80,6 @@ class EditAccountViewModel extends ChangeNotifier with SafeNotifier {
     'criteria': criteria?.buildCriteria(lookFor: gain).toFields(),
   });
 
-  /// True when a value differs from how the form opened (typing something
-  /// and typing it back is no change). A new or removed photo counts.
   bool get hasChanges =>
       newPhoto != null || removePhoto || _signature() != _baseline;
 
@@ -102,8 +92,6 @@ class EditAccountViewModel extends ChangeNotifier with SafeNotifier {
   /// The investor's background and interests (null for founders).
   InvestorOnboardingViewModel? criteria;
 
-  /// A save that gets no answer (no connection) fails after this long
-  /// instead of keeping the screen busy forever.
   static const _saveLimit = Duration(seconds: 20);
 
   /// True once anything was changed (the discard dialog asks only then).
@@ -149,7 +137,6 @@ class EditAccountViewModel extends ChangeNotifier with SafeNotifier {
   bool get hasPhoto =>
       newPhoto != null || (!removePhoto && (user.photoData ?? '').isNotEmpty);
 
-  /// True after the first Save attempt: errors then update as the user types.
   bool attempted = false;
 
   /// Shown when saving fails for a reason that is not about one field.
@@ -157,7 +144,6 @@ class EditAccountViewModel extends ChangeNotifier with SafeNotifier {
 
   List<String> get _chosen => [...sectors, if (otherSelected) otherLabel];
 
-  // ---- Field errors (shown once a Save was attempted) ----
   String? get fullNameError =>
       Validators.fullNameLive(fullName) ??
       (attempted ? Validators.fullName(fullName) : null);
@@ -219,7 +205,7 @@ class EditAccountViewModel extends ChangeNotifier with SafeNotifier {
   void setEmailPublic(bool v) => _set(() => emailPublic = v);
   void setPhonePublic(bool v) => _set(() => phonePublic = v);
 
-  /// Chips: toggles [label]; "Other" opens / closes the write-in.
+  /// Chips: toggles label; "Other" opens / closes the write-in.
   void toggleSector(String label) => _set(() {
     if (label == otherLabel) {
       otherSelected = !otherSelected;
@@ -246,9 +232,7 @@ class EditAccountViewModel extends ChangeNotifier with SafeNotifier {
     notifyListeners();
   }
 
-  /// Validates and saves. Returns the updated user, or null when the form is
-  /// invalid (errors are then shown; see [attempted]) or saving failed
-  /// ([formError]).
+  /// Validates and saves.
   Future<AppUser?> submit() async {
     if (isLoading) return null;
     attempted = true;
@@ -341,8 +325,6 @@ class EditAccountViewModel extends ChangeNotifier with SafeNotifier {
         emailPublic: emailPublic,
         phonePublic: phonePublic,
       );
-      // Teams find me by e-mail with my current name, and my public profile
-      // (name, photo, city, bio, sectors, public contact) stays up to date.
       unawaited(TeamLookup.instance.publish(updated, emailVerified: true));
       return updated;
     } on AuthException catch (e) {

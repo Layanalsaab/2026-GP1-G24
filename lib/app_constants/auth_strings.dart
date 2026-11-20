@@ -1,6 +1,3 @@
-/// Copy for the launch, intro, welcome, role, sign-up, verify, investor
-/// onboarding, log-in and forgot-password screens, word for word from
-/// docs/05_screens.md section A and docs/06 (curly quotes included).
 class AuthStrings {
   AuthStrings._();
 

@@ -4,12 +4,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/investor_criteria.dart';
 
-/// The investor's unfinished answers (steps 3 and 4), kept on the phone per
-/// account so they survive closing the app: a verified investor who comes
-/// back is sent to the first step that is still incomplete, with every earlier
-/// answer filled in. Cleared when Finish is tapped on the last step.
 class InvestorDraftStore {
-  /// The app-wide instance. Tests replace it with a fake.
+  /// The app-wide instance.
   static InvestorDraftStore instance = InvestorDraftStore();
 
   static String _key(String uid) => 'investor_draft_$uid';

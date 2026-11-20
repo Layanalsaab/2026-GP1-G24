@@ -2,9 +2,6 @@ import '../recommender/content_ranker.dart';
 
 export '../recommender/content_ranker.dart' show MatchResult, MatchRow;
 
-/// Why a profile came up as a match, shown at its top when it is opened
-/// from a match (a ticket's startups, a round's investors). Opened from
-/// anywhere else (Hub, Search), a profile has no summary.
 class MatchSummary {
   const MatchSummary({
     required this.percent,
@@ -34,8 +31,6 @@ class MatchSummary {
 
   final int percent;
 
-  /// What the profile matches: "your startup Daftar Pay", "your ticket
-  /// “Ticket 1”".
   final String target;
 
   /// One row per criterion (sector, stage, commerce model, amount).

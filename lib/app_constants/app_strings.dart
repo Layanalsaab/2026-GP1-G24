@@ -23,8 +23,6 @@ class AppStrings {
   static const profileMissing =
       "We couldn't find your account details. Please contact support.";
 
-  /// The full city list of the Create Account city picker (Figma "City
-  /// dropdown"), in alphabetical order.
   static const allCities = [
     'Abha',
     'Al Ahsa',
