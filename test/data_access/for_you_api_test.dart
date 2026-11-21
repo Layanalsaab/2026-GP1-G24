@@ -111,4 +111,47 @@ void main() {
       isFalse,
     );
   });
+
+  group('refreshProfileText', () {
+    test('a synchronous or asynchronous throw never escapes', () async {
+      await runZonedGuarded(() async {
+        _Fake(sync: true).refreshProfileText(HomeItemKind.startup, 's');
+        _Fake(sync: false).refreshProfileText(HomeItemKind.startup, 's');
+        await Future<void>.delayed(Duration.zero);
+      }, (e, _) => fail('unhandled: $e'));
+    });
+
+    test('disabled makes no call', () async {
+      final f = _Fake(enabled: false);
+      f.refreshProfileText(HomeItemKind.investor, 'u');
+      await Future<void>.delayed(Duration.zero);
+      expect(f.calls, 0);
+    });
+
+    test('enabled makes one call', () async {
+      final f = _Fake();
+      f.refreshProfileText(HomeItemKind.investor, 'u');
+      await Future<void>.delayed(Duration.zero);
+      expect(f.calls, 1);
+    });
+  });
+}
+
+class _Fake implements ForYouSource {
+  _Fake({this.enabled = true, this.sync});
+  @override
+  final bool enabled;
+  final bool? sync;
+  int calls = 0;
+
+  @override
+  Future<List<ForYouPick>?> forYou() async => null;
+
+  @override
+  Future<bool> profileText(HomeItemKind kind, String id) {
+    calls++;
+    if (sync == true) throw StateError('boom');
+    if (sync == false) return Future.error(StateError('boom'));
+    return Future.value(true);
+  }
 }

@@ -43,19 +43,6 @@ class StartupRepository {
   final FundingRoundRepository? _roundsOverride;
   final ForYouSource _forYou;
 
-  /// Asks the server to re-encode this startup's text. Fire and forget: a
-  /// failure is logged and never reaches the save.
-  void _refreshText(String id) {
-    if (!_forYou.enabled) return;
-    unawaited(() async {
-      try {
-        await _forYou.profileText(HomeItemKind.startup, id);
-      } catch (e) {
-        debugPrint('profile-text refresh failed: $e');
-      }
-    }());
-  }
-
   /// Read when used, so a test can replace FundingRoundRepository.instance.
   FundingRoundRepository get _rounds =>
       _roundsOverride ?? FundingRoundRepository.instance;
@@ -418,7 +405,7 @@ class StartupRepository {
     } catch (_) {
       rethrow;
     }
-    _refreshText(id);
+    _forYou.refreshProfileText(HomeItemKind.startup, id);
     changes.value++;
     _refreshMyProfile();
     return toSave;
@@ -455,7 +442,7 @@ class StartupRepository {
       ]);
     }
 
-    _refreshText(startup.id);
+    _forYou.refreshProfileText(HomeItemKind.startup, startup.id);
     changes.value++;
     _refreshMyProfile();
     _showInDirectory(updated);

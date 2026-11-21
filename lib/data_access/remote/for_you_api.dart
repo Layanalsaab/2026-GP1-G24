@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
@@ -28,6 +29,22 @@ abstract class ForYouSource {
 
   /// Asks the server to rebuild the profile text of one item; true on success.
   Future<bool> profileText(HomeItemKind kind, String id);
+}
+
+/// Background refresh after a profile edit.
+extension ForYouProfileRefresh on ForYouSource {
+  /// Asks the server to re-encode one profile. Fire and forget: nothing is
+  /// awaited by the caller, and a failure is logged, never thrown.
+  void refreshProfileText(HomeItemKind kind, String id) {
+    unawaited(() async {
+      try {
+        if (!enabled) return;
+        await profileText(kind, id);
+      } catch (e) {
+        debugPrint('profile-text refresh failed: $e');
+      }
+    }());
+  }
 }
 
 /// Talks to the For You server over HTTP. Every failure is logged and treated
