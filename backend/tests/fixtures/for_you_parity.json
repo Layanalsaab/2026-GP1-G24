@@ -1,0 +1,219 @@
+{
+  "now": "2026-11-21T09:00:00Z",
+  "limit": 5,
+  "base": {
+    "sector": [
+      "fintech",
+      "ai",
+      "saas"
+    ],
+    "stage": [
+      "seed",
+      "series_a"
+    ],
+    "model": [
+      "b2b",
+      "b2c"
+    ]
+  },
+  "likes": [
+    {
+      "groups": {
+        "sector": [
+          "healthtech",
+          "ai"
+        ],
+        "stage": [
+          "seed"
+        ],
+        "model": [
+          "b2b"
+        ]
+      },
+      "at": "2026-10-07T09:00:00Z",
+      "strength": 1.0
+    },
+    {
+      "groups": {
+        "sector": [
+          "logistics"
+        ],
+        "stage": [
+          "series_b"
+        ],
+        "model": [
+          "b2c"
+        ]
+      },
+      "at": "2026-05-05T09:00:00Z",
+      "strength": 1.0
+    },
+    {
+      "groups": {
+        "sector": [
+          "fintech",
+          "logistics"
+        ],
+        "stage": [
+          "seed"
+        ],
+        "model": []
+      },
+      "at": "2026-11-10T03:30:00Z",
+      "strength": 1.5
+    }
+  ],
+  "candidates": [
+    {
+      "id": "c1",
+      "name": "Payly",
+      "mainSector": "fintech",
+      "groups": {
+        "sector": [
+          "fintech"
+        ],
+        "stage": [
+          "seed"
+        ],
+        "model": [
+          "b2b"
+        ]
+      }
+    },
+    {
+      "id": "c2",
+      "name": "MediBook",
+      "mainSector": "healthtech",
+      "groups": {
+        "sector": [
+          "healthtech",
+          "ai"
+        ],
+        "stage": [
+          "seed"
+        ],
+        "model": [
+          "b2c"
+        ]
+      }
+    },
+    {
+      "id": "c3",
+      "name": "Shiply",
+      "mainSector": "logistics",
+      "groups": {
+        "sector": [
+          "logistics"
+        ],
+        "stage": [
+          "series_b"
+        ],
+        "model": [
+          "b2b"
+        ]
+      }
+    },
+    {
+      "id": "c4",
+      "name": "Learnly",
+      "mainSector": "edtech",
+      "groups": {
+        "sector": [
+          "edtech"
+        ],
+        "stage": [
+          "pre_seed"
+        ],
+        "model": [
+          "b2c"
+        ]
+      }
+    },
+    {
+      "id": "c5",
+      "name": "CloudOps",
+      "mainSector": "saas",
+      "groups": {
+        "sector": [
+          "saas",
+          "ai"
+        ],
+        "stage": [
+          "series_a"
+        ],
+        "model": []
+      }
+    },
+    {
+      "id": "c6",
+      "name": "Farmly",
+      "mainSector": "agritech",
+      "groups": {
+        "sector": [
+          "agritech"
+        ],
+        "stage": [
+          "series_c"
+        ],
+        "model": [
+          "g2c"
+        ]
+      }
+    },
+    {
+      "id": "c7",
+      "name": "Coinly",
+      "mainSector": "fintech",
+      "groups": {
+        "sector": [
+          "fintech"
+        ],
+        "stage": [
+          "seed"
+        ],
+        "model": [
+          "b2b"
+        ]
+      }
+    },
+    {
+      "id": "c8",
+      "name": "GreenGrid",
+      "mainSector": "energy",
+      "groups": {
+        "sector": [
+          "energy",
+          "logistics"
+        ],
+        "stage": [
+          "seed"
+        ],
+        "model": [
+          "b2b"
+        ]
+      }
+    }
+  ],
+  "expected": [
+    {
+      "id": "c7",
+      "score": 0.7401293935992173
+    },
+    {
+      "id": "c1",
+      "score": 0.7401293935992173
+    },
+    {
+      "id": "c2",
+      "score": 0.6281846099644455
+    },
+    {
+      "id": "c5",
+      "score": 0.6190891433970171
+    },
+    {
+      "id": "c8",
+      "score": 0.5343115331541055
+    }
+  ]
+}
