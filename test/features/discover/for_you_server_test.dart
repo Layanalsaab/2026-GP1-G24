@@ -66,6 +66,15 @@ class _MemoryFirestore extends FirestoreService {
   Future<void> deleteDocument(String collection, String id) async {
     store[collection]?.remove(id);
   }
+
+  @override
+  Future<List<FirestoreDocument>> listCollection(
+    String collection, {
+    int limit = 100,
+  }) async => [
+    for (final e in (store[collection] ?? {}).entries)
+      (id: e.key, data: Map<String, dynamic>.from(e.value)),
+  ];
 }
 
 /// A saved-list store whose reads finish when the test says so.
@@ -424,6 +433,28 @@ void main() {
       m.selectExploreTab(1);
       m.selectExploreTab(2);
       expect(ids(m), ['c', 'a']);
+    },
+  );
+
+  test(
+    'reloading unchanged bookmarks and Not interested asks nothing',
+    () async {
+      marks.toggle('s-b');
+      await hidden.add('s-c');
+      await pumpEventQueue(); // The bookmark write lands.
+      final server = FakeForYou()..then = [s('a')];
+      final m = vm(server);
+      await pumpEventQueue();
+      openForYou(m);
+      expect(ids(m), ['a']);
+      final before = server.calls;
+      // Both reloads find the same documents (a new but equal set).
+      await marks.load('u1');
+      await hidden.load('u1');
+      await pumpEventQueue();
+      expect(marks.keys.value, {'s-b'});
+      expect(hidden.keys.value, {'s-c'});
+      expect(server.calls, before);
     },
   );
 

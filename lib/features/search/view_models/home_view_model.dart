@@ -415,8 +415,11 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
   /// sign-out) or a change made elsewhere redraws the list. One change also
   /// asks the server again once things have been quiet for a while.
   void _onTasteChanged(Set<String> before, Set<String> now) {
-    final bulk =
-        now.difference(before).length > 1 || before.difference(now).length > 1;
+    final added = now.difference(before).length;
+    final removed = before.difference(now).length;
+    // A reload that found the same keys (a new but equal set): nothing to do.
+    if (added == 0 && removed == 0) return;
+    final bulk = added > 1 || removed > 1;
     if (bulk || !_onForYou) {
       _forYou = null;
       if (bulk) notifyListeners();
