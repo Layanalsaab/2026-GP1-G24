@@ -54,32 +54,39 @@ class Features {
   bool get isEmpty => groups.values.every((v) => v.isEmpty);
 }
 
-/// What an "Other" answer counts as: the written text ("other:spacetech"), an existing
-/// option when the text repeats one, or "other" when nothing was written (as the backend does).
-String _written(String? text, Map<String, String> options) {
+/// What an "Other" answer counts as: the written text ("other:spacetech"), or an existing
+/// option when the text repeats one (as the backend does). The app always asks for a name,
+/// so nothing written gives no value (only old imported data can lack one).
+String? _written(String? text, Map<String, String> options) {
   final t = (text ?? '').trim();
   final key = t.isEmpty ? '' : OtherCheck.key(t);
-  if (key.isEmpty || key == 'other') return 'other';
+  if (key.isEmpty || key == 'other') return null;
   for (final e in options.entries) {
     if (e.key != 'Other' && OtherCheck.key(e.key) == key) return e.value;
   }
   return 'other:$key';
 }
 
-String _sectorOf(String label, [String? written]) => label == 'Other'
+String? _sectorOf(String label, [String? written]) => label == 'Other'
     ? _written(written, sectorValue)
     : sectorValue[label] ?? _written(label, sectorValue);
 
-String _writtenModel(String? text) =>
-    _modelOf((text ?? '').trim()) ?? _written(text, modelValue);
+String? _writtenModel(String? text) {
+  final known = _modelOf((text ?? '').trim());
+  return known != null && known != 'other' ? known : _written(text, modelValue);
+}
 
-String _modelAnswer(String label, [String? written]) =>
-    label == 'Other' ? _writtenModel(written) : _modelOf(label) ?? _writtenModel(label);
+String? _modelAnswer(String label, [String? written]) => label == 'Other'
+    ? _writtenModel(written)
+    : _modelOf(label) ?? _writtenModel(label);
 
-Vec _stages(Iterable<String> labels) => {
+/// The answers that give a value, each counted once.
+Vec _ones(Iterable<String?> values) => {for (final v in values) ?v: 1.0};
+
+Vec _stages(Iterable<String> labels) => _ones([
   for (final l in labels)
-    if (stageValue[l] != null) stageValue[l]!: 1.0,
-};
+    if (stageValue[l] != 'other') stageValue[l],
+]);
 
 String? _modelOf(String label) {
   final known = modelValue[label];
@@ -94,36 +101,37 @@ Features startupFeatures(Startup s) {
   final main = s.sector.value == 'other'
       ? _written(s.sectorOther, sectorValue)
       : s.sector.value;
-  final sectors = <String, double>{main: 1};
+  final sectors = <String, double>{?main: 1};
   for (final label in s.otherSectors) {
-    sectors.putIfAbsent(_sectorOf(label), () => otherSectorWeight);
+    final value = _sectorOf(label);
+    if (value != null) sectors.putIfAbsent(value, () => otherSectorWeight);
   }
   final model = s.commerceModel.value == 'other'
       ? _writtenModel(s.commerceModelOther)
       : s.commerceModel.value;
   return Features({
     'sector': sectors,
-    'stage': {s.stage.value: 1},
-    'model': {model: 1},
+    'stage': _ones([if (s.stage.value != 'other') s.stage.value]),
+    'model': _ones([model]),
   });
 }
 
 Features investorFeatures(InvestorProfile i) => Features({
-  'sector': {for (final l in i.sectors) _sectorOf(l): 1.0},
+  'sector': _ones(i.sectors.map(_sectorOf)),
   'stage': _stages(i.stages),
-  'model': {for (final l in i.commerceModels) _modelAnswer(l): 1.0},
+  'model': _ones(i.commerceModels.map(_modelAnswer)),
 });
 
 Features criteriaFeatures(InvestorCriteria c) => Features({
-  'sector': {for (final l in c.sectors) _sectorOf(l, c.sectorsOther): 1.0},
+  'sector': _ones([for (final l in c.sectors) _sectorOf(l, c.sectorsOther)]),
   'stage': _stages(c.stages),
-  'model': {
-    for (final l in c.commerceModels) _modelAnswer(l, c.commerceModelsOther): 1.0,
-  },
+  'model': _ones([
+    for (final l in c.commerceModels) _modelAnswer(l, c.commerceModelsOther),
+  ]),
 });
 
 Features ticketFeatures(InvestmentTicket t) => Features({
-  'sector': {for (final l in t.sectors) _sectorOf(l): 1.0},
+  'sector': _ones(t.sectors.map(_sectorOf)),
   'stage': _stages(t.stages),
   'model': <String, double>{},
 });

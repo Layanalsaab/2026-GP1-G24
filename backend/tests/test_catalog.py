@@ -53,6 +53,7 @@ def test_typed_token_is_what_was_written():
     assert typed_token("Space tech", "sector") == "other:spacetech"
     assert typed_token("space-techs", "sector") == "other:spacetech"
     assert typed_token("Fin tech", "sector") == "fintech"  # repeats an existing option
-    assert typed_token("", "sector") == "other" and typed_token(None, "model") == "other"
-    assert typed_token("other", "sector") == "other" and typed_token("Others", "model") == "other"
+    # the app always asks for a name; nothing written (or just "other") gives no value
+    assert typed_token("", "sector") is None and typed_token(None, "model") is None
+    assert typed_token("other", "sector") is None and typed_token("Others", "model") is None
     assert typed_token("B2B", "model") == "b2b" and typed_token("Subscriptions", "model") == "other:subscription"

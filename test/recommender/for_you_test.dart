@@ -25,7 +25,7 @@ Candidate<String> _c(String name, Features f, String? sector) =>
 
 void main() {
   group('features', () {
-    test('a startup: all sectors count the same; "Other" with nothing written is its own value', () {
+    test('a startup: all sectors count the same; an unnamed "Other" is left out', () {
       final s = PrototypeSeed.rafeeq.copyWith(
         sector: Sector.healthtech,
         otherSectors: ['Fintech', 'Other'],
@@ -33,7 +33,7 @@ void main() {
         commerceModel: CommerceModel.b2b,
       );
       final f = startupFeatures(s);
-      expect(f.groups['sector'], {'healthtech': 1.0, 'fintech': 1.0, 'other': 1.0});
+      expect(f.groups['sector'], {'healthtech': 1.0, 'fintech': 1.0});
       expect(f.groups['stage'], {'seed': 1.0});
       expect(f.groups['model'], {'b2b': 1.0});
     });
@@ -79,7 +79,7 @@ void main() {
           commerceModels: ['Business-to-Business (B2B)'],
         ),
       );
-      expect(f.groups['sector'], {'fintech': 1.0, 'hr_tech': 1.0, 'other': 1.0});
+      expect(f.groups['sector'], {'fintech': 1.0, 'hr_tech': 1.0});
       expect(f.groups['stage'], {'seed': 1.0});
       expect(f.groups['model'], {'b2b': 1.0});
       final written = criteriaFeatures(

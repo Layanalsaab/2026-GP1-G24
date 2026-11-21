@@ -153,16 +153,17 @@ _SECTOR_KEYS = {other_key(label): value for label, value in _SECTOR_VALUE.items(
 _MODEL_KEYS = {other_key(label): value for label, value in _MODEL_VALUE.items()}
 
 
-def typed_token(text: object, group: str) -> str:
-    """What an "Other" answer counts as: the written text ("other:spacetech"), an existing
-    option when the text repeats one ("Fin tech" -> "fintech"), or "other" when nothing was written."""
+def typed_token(text: object, group: str) -> str | None:
+    """What an "Other" answer counts as: the written text ("other:spacetech"), or an existing
+    option when the text repeats one ("Fin tech" -> "fintech"). The app always asks for a name,
+    so nothing written gives no value (only old imported data can lack one)."""
     if group == "model":
         known = model_value(text if isinstance(text, str) else None)
         if known:
             return known
     key = other_key(text)
     if not key or key == "other":
-        return "other"
+        return None
     known_keys = _SECTOR_KEYS if group == "sector" else _MODEL_KEYS if group == "model" else {}
     return known_keys.get(key) or f"other:{key}"
 

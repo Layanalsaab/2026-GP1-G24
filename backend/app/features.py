@@ -26,12 +26,8 @@ GroupVectors = dict[str, np.ndarray]
 Values = dict[str, list[str | None]]
 
 LABEL_GROUPS: tuple[str, ...] = ("sector", "stage", "model")
-# "other" is a value of its own; written-in answers ("other:spacetech") are added per request.
-BASE_VOCAB: dict[str, tuple[str, ...]] = {
-    "sector": SECTORS + ("other",),
-    "stage": STAGES + ("other",),
-    "model": MODELS + ("other",),
-}
+# The app's options; written-in "Other" answers ("other:spacetech") are added per request.
+BASE_VOCAB: dict[str, tuple[str, ...]] = {"sector": SECTORS, "stage": STAGES, "model": MODELS}
 
 # Any of these fields at the top of users/{uid} means the answers are stored there
 # (InvestorCriteria.fromFields in the app); otherwise the nested investorCriteria map is used.
@@ -49,8 +45,7 @@ _TOP_LEVEL_CRITERIA = (
 class Encoder:
     """Binary vectors per label group with scikit-learn's MultiLabelBinarizer.
 
-    The vocabulary is the app's fixed options plus "other" plus every written-in answer the
-    request contains, so a taste and its candidates are always encoded with the same columns.
+    The vocabulary is the app's fixed options plus every written-in answer the request contains, so a taste and its candidates are always encoded with the same columns.
     """
 
     def __init__(self, extra: dict[str, set[str]] | None = None):
@@ -112,7 +107,7 @@ def parseable_startup(doc: dict) -> bool:
     )
 
 
-def sector_answer(label: str, written: object = None) -> str:
+def sector_answer(label: str, written: object = None) -> str | None:
     """An answer from the sector list: "Other" counts as what was written; a written-in entry as itself."""
     if label == "Other":
         return typed_token(written, "sector")
@@ -120,10 +115,10 @@ def sector_answer(label: str, written: object = None) -> str:
 
 
 def _stage_of(label: str) -> str | None:
-    return "other" if label == "Other" else stage_value(label)
+    return stage_value(label)  # the app offers no "Other" stage
 
 
-def _model_of(label: str, written: object = None) -> str:
+def _model_of(label: str, written: object = None) -> str | None:
     if label == "Other":
         return typed_token(written, "model")
     return model_value(label) or typed_token(label, "model")
@@ -136,20 +131,25 @@ def startup_values(doc: dict) -> Values:
     model = stored_model(doc.get("commerceModel"))
     if model == "other":
         model = typed_token(doc.get("commerceModelOther"), "model")
-    return {
+    stage = stored_stage(doc.get("stage"))
+    return _present({
         "sector": [sector] + [sector_answer(l) for l in _strings(doc.get("otherSectors"))],
-        "stage": [stored_stage(doc.get("stage"))],
+        "stage": [None if stage == "other" else stage],
         "model": [model],
-    }
+    })
+
+
+def _present(values: Values) -> Values:
+    return {g: [v for v in vs if v] for g, vs in values.items()}
 
 
 def _label_values(sectors: list[str], stages: list[str], models: list[str],
                   sectors_written: object = None, models_written: object = None) -> Values:
-    return {
+    return _present({
         "sector": [sector_answer(l, sectors_written) for l in sectors],
         "stage": [_stage_of(l) for l in stages],
         "model": [_model_of(l, models_written) for l in models],
-    }
+    })
 
 
 def investor_values(doc: dict) -> Values:
@@ -176,11 +176,11 @@ def criteria_values(user_doc: dict) -> Values:
 
 
 def ticket_values(doc: dict) -> Values:
-    return {
+    return _present({
         "sector": [sector_answer(l) for l in _strings(doc.get("sectors"))],
         "stage": [_stage_of(l) for l in _strings(doc.get("stages"))],
         "model": [],
-    }
+    })
 
 
 def startup_groups(doc: dict) -> GroupVectors:

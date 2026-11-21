@@ -16,9 +16,9 @@ from app.features import (
 )
 
 
-def test_startup_counts_other_sectors_and_keeps_other_as_a_value():
+def test_startup_counts_other_sectors_and_leaves_out_an_unnamed_other():
     g = startup_groups({"sector": "fintech", "otherSectors": ["AI", "Other"], "stage": "seed", "commerceModel": "b2b"})
-    assert g["sector"].sum() == 3 and g["sector"][SECTORS.index("ai")] == 1
+    assert g["sector"].sum() == 2 and g["sector"][SECTORS.index("ai")] == 1
     assert g["stage"][STAGES.index("seed")] == 1 and g["model"][MODELS.index("b2b")] == 1
 
 
@@ -32,7 +32,7 @@ def test_unknown_values_give_empty_groups():
 def test_investor_labels():
     g = investor_groups({"preferredSectors": ["HR Tech", "Other"], "preferredStages": ["Series A"],
                          "preferredCommerceModels": ["Business-to-Consumer (B2C)"]})
-    assert g["sector"][SECTORS.index("hr_tech")] == 1 and g["sector"].sum() == 2  # "Other" counts too
+    assert g["sector"][SECTORS.index("hr_tech")] == 1 and g["sector"].sum() == 1  # unnamed "Other" left out
     assert g["stage"][STAGES.index("series_a")] == 1 and g["model"][MODELS.index("b2c")] == 1
 
 
@@ -54,8 +54,7 @@ def test_criteria_amounts():
 def test_legacy_values_are_read_like_the_app():
     g = startup_groups({"sector": "software_cloud", "otherSectors": ["AI"], "stage": "mvp", "commerceModel": "marketplace"})
     assert g["sector"][SECTORS.index("saas")] == 1 and g["sector"].sum() == 2
-    assert g["stage"][STAGES.index("pre_seed")] == 1
-    assert g["model"].sum() == 1 and g["model"][len(MODELS)] == 1  # "marketplace" is read as "Other": its own value
+    assert g["stage"][STAGES.index("pre_seed")] == 1 and g["model"].sum() == 0  # "marketplace" = unnamed Other
 
 
 def test_parseable_startup_matches_the_app():
@@ -87,11 +86,9 @@ def test_written_other_counts_as_what_was_written():
     assert v == {"sector": ["other:spacetech", "ai", "other:drone"], "stage": ["seed"], "model": ["other:subscription"]}
 
 
-def test_other_with_nothing_written_is_its_own_value():
-    v = startup_values({"sector": "other", "stage": "seed", "commerceModel": "b2b"})
-    assert v["sector"] == ["other"]
-    g = startup_groups({"sector": "other", "stage": "seed", "commerceModel": "b2b"})
-    assert g["sector"].sum() == 1  # not an empty group any more
+def test_other_with_nothing_written_is_left_out():
+    # The app requires a name; only imported data lacks one, and that data will be corrected.
+    assert startup_values({"sector": "other", "stage": "seed", "commerceModel": "b2b"})["sector"] == []
 
 
 def test_investor_written_other_top_level_and_nested():
@@ -106,4 +103,4 @@ def test_investor_written_other_top_level_and_nested():
 
 def test_ticket_written_sectors():
     assert ticket_values({"sectors": ["Space tech", "Logistics", "Other"], "stages": ["Seed"]}) == {
-        "sector": ["other:spacetech", "logistics", "other"], "stage": ["seed"], "model": []}
+        "sector": ["other:spacetech", "logistics"], "stage": ["seed"], "model": []}
