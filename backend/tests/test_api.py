@@ -1,3 +1,5 @@
+import threading
+import time
 from datetime import datetime, timezone
 
 import numpy as np
@@ -6,12 +8,13 @@ from fastapi.testclient import TestClient
 
 from app.data import DataStore
 from app.embeddings import MODEL_NAME, fingerprint
-from app.main import create_app
+from app.main import Once, create_app
 from tests.fakes import FakeSource
 
 NOW = datetime(2026, 11, 21, 9, 0, tzinfo=timezone.utc)
 PAYLY = {"name": "Payly", "isPublic": True, "founderId": "f1", "sector": "fintech", "stage": "seed",
-         "commerceModel": "b2b", "lookingFor": ["funding"], "fundingRequirement": 1_000_000, "description": "Payroll for clinics"}
+         "commerceModel": "b2b", "location": "riyadh", "lookingFor": ["funding"], "fundingRequirement": 1_000_000,
+         "description": "Payroll for clinics"}
 
 
 class StubEmbedder:
@@ -117,3 +120,40 @@ def test_profile_text_updates_the_cached_snapshot():
     snap = store.snapshot()
     assert snap.startups["s1"]["description"] == "Payroll and HR for clinics"
     assert snap.vectors["s-s1"]["fingerprint"] == fingerprint(edited, "startup")
+
+
+def test_auth_service_failure_is_503_not_sign_in_again():
+    def broken(token):
+        raise RuntimeError("could not fetch Google's public keys")
+
+    store = DataStore(FakeSource({"users/inv1": {"role": "investor"}}), clock=lambda: NOW)
+    client = TestClient(create_app(store, broken, StubEmbedder, clock=lambda: NOW))
+    response = client.post("/for-you", headers=auth("inv1"))
+    assert response.status_code == 503 and response.json()["detail"]
+
+
+def test_startup_hook_runs_when_the_server_starts():
+    calls = []
+    store = DataStore(FakeSource(), clock=lambda: NOW)
+    app = create_app(store, verify, StubEmbedder, clock=lambda: NOW, on_startup=lambda: calls.append("ready"))
+    with TestClient(app):
+        pass
+    assert calls == ["ready"]
+
+
+def test_once_builds_a_single_instance_under_concurrent_calls():
+    built = []
+
+    def slow():
+        time.sleep(0.05)
+        built.append(1)
+        return object()
+
+    once = Once(slow)
+    results = []
+    threads = [threading.Thread(target=lambda: results.append(once.get())) for _ in range(3)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+    assert len(built) == 1 and len({id(r) for r in results}) == 1

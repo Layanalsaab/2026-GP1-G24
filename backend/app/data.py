@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import json
 import os
-from dataclasses import dataclass
+import threading
+from dataclasses import dataclass, replace
 from datetime import datetime, timedelta, timezone
 from typing import Callable, Protocol
 
@@ -97,33 +98,43 @@ class DataStore:
         self._ttl = ttl
         self._clock = clock
         self._snapshot: Snapshot | None = None
+        self._lock = threading.Lock()  # requests run in a thread pool
 
     def snapshot(self) -> Snapshot:
-        now = self._clock()
-        if self._snapshot is not None and now - self._snapshot.loaded_at < self._ttl:
+        with self._lock:
+            now = self._clock()
+            if self._snapshot is not None and now - self._snapshot.loaded_at < self._ttl:
+                return self._snapshot
+            self._snapshot = Snapshot(
+                startups=_docs(self.source.stream("startups", "isPublic", "==", True)),
+                investors=_docs(self.source.stream("investors")),
+                tickets=list(_docs(self.source.stream("tickets", "status", "==", "open")).values()),
+                vectors=_docs(self.source.stream("vectors")),
+                loaded_at=now,
+            )
             return self._snapshot
-        self._snapshot = Snapshot(
-            startups=_docs(self.source.stream("startups", "isPublic", "==", True)),
-            investors=_docs(self.source.stream("investors")),
-            tickets=list(_docs(self.source.stream("tickets", "status", "==", "open")).values()),
-            vectors=_docs(self.source.stream("vectors")),
-            loaded_at=now,
-        )
-        return self._snapshot
 
     def remember_profile(self, kind: str, doc_id: str, doc: dict, vector_doc: dict | None) -> None:
-        """After an edit, put the new text and vector into the cached snapshot so they count at once."""
-        snap = self._snapshot
-        if snap is None:
-            return
-        docs = snap.startups if kind == "startup" else snap.investors
-        if kind != "startup" or doc.get("isPublic") is True:
-            docs[doc_id] = doc
-        key = f"{'s' if kind == 'startup' else 'i'}-{doc_id}"
-        if vector_doc is None:
-            snap.vectors.pop(key, None)
-        else:
-            snap.vectors[key] = vector_doc
+        """After an edit, put the new text and vector into the cached snapshot so they count at once.
+
+        Builds new dictionaries instead of changing the cached ones, so a request that is
+        reading the old snapshot in another thread is never disturbed.
+        """
+        with self._lock:
+            snap = self._snapshot
+            if snap is None:
+                return
+            group = "startups" if kind == "startup" else "investors"
+            docs = dict(getattr(snap, group))
+            if kind != "startup" or doc.get("isPublic") is True:
+                docs[doc_id] = doc
+            vectors = dict(snap.vectors)
+            key = f"{'s' if kind == 'startup' else 'i'}-{doc_id}"
+            if vector_doc is None:
+                vectors.pop(key, None)
+            else:
+                vectors[key] = vector_doc
+            self._snapshot = replace(snap, **{group: docs}, vectors=vectors)
 
     def _dated(self, collection: str, now: datetime) -> dict[str, datetime]:
         return {key: _as_time(data.get("createdAt"), now) for key, data in _docs(self.source.stream(collection)).items()}

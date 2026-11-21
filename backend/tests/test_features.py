@@ -3,6 +3,7 @@ from app.features import (
     criteria_amounts,
     criteria_groups,
     investor_groups,
+    parseable_startup,
     startup_groups,
     ticket_groups,
 )
@@ -41,3 +42,18 @@ def test_ticket_has_no_model():
 def test_criteria_amounts():
     assert criteria_amounts({"ticketSize": "SAR 1M – 5M", "roundSizeMin": 1_000_000}) == ("SAR 1M – 5M", 1_000_000, None)
     assert criteria_amounts({"investorCriteria": {"ticketBand": "Other", "roundMax": 9}}) == ("Other", None, 9)
+
+
+def test_legacy_values_are_read_like_the_app():
+    g = startup_groups({"sector": "software_cloud", "otherSectors": ["AI"], "stage": "mvp", "commerceModel": "marketplace"})
+    assert g["sector"][SECTORS.index("saas")] == 1 and g["sector"].sum() == 2
+    assert g["stage"][STAGES.index("pre_seed")] == 1 and g["model"].sum() == 0
+
+
+def test_parseable_startup_matches_the_app():
+    ok = {"name": "Payly", "founderId": "f1", "sector": "fintech", "stage": "seed", "commerceModel": "b2b", "location": "riyadh"}
+    assert parseable_startup(ok)
+    assert parseable_startup({**ok, "sector": "hrtech", "stage": "growth", "location": "khobar"})
+    for broken in ({"sector": "space"}, {"stage": None}, {"commerceModel": "b2x"}, {"location": "Riyadh City"},
+                   {"location": None}, {"founderId": None}, {"name": 7}):
+        assert not parseable_startup({**ok, **broken}), broken

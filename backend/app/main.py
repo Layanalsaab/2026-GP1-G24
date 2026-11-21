@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+import logging
 import os
+import threading
+from contextlib import asynccontextmanager
 from datetime import datetime
-from typing import Callable, Literal
+from typing import Callable, Generic, Literal, TypeVar
 
 from fastapi import Depends, FastAPI, Header, HTTPException
 from pydantic import BaseModel, Field
@@ -12,6 +15,25 @@ from pydantic import BaseModel, Field
 from .data import DataStore, FirestoreSource, utc_now
 from .embeddings import MODEL_NAME, Embedder, fingerprint, profile_texts
 from .recommend import for_you
+
+log = logging.getLogger("startsa.for_you")
+T = TypeVar("T")
+
+
+class Once(Generic[T]):
+    """Builds a value the first time it is asked for, once, even when requests arrive together."""
+
+    def __init__(self, factory: Callable[[], T]):
+        self._factory = factory
+        self._value: T | None = None
+        self._lock = threading.Lock()
+
+    def get(self) -> T:
+        if self._value is None:
+            with self._lock:
+                if self._value is None:
+                    self._value = self._factory()
+        return self._value
 
 
 class ForYouItem(BaseModel):
@@ -46,22 +68,29 @@ def create_app(
     verify_token: Callable[[str], dict],
     embedder: Callable[[], Embedder],
     clock: Callable[[], datetime] = utc_now,
+    on_startup: Callable[[], None] | None = None,
 ) -> FastAPI:
-    app = FastAPI(title="Start.sa For You")
-    loaded: dict[str, Embedder] = {}
+    """verify_token returns the token's claims and raises ValueError for a token that isn't valid."""
 
-    def get_embedder() -> Embedder:
-        if "model" not in loaded:
-            loaded["model"] = embedder()
-        return loaded["model"]
+    @asynccontextmanager
+    async def lifespan(_: FastAPI):
+        if on_startup is not None:
+            on_startup()
+        yield
+
+    app = FastAPI(title="Start.sa For You", lifespan=lifespan)
+    model = Once(embedder)
 
     def current_uid(authorization: str | None = Header(default=None)) -> str:
         if not authorization or not authorization.startswith("Bearer "):
             raise HTTPException(status_code=401, detail="Sign in again")
         try:
             claims = verify_token(authorization[len("Bearer "):].strip())
-        except Exception:
+        except ValueError:
             raise HTTPException(status_code=401, detail="Sign in again")
+        except Exception:
+            log.exception("Checking a login token failed")
+            raise HTTPException(status_code=503, detail="Recommendations are unavailable right now. Try again later.")
         uid = claims.get("uid") if isinstance(claims, dict) else None
         if not isinstance(uid, str) or not uid:
             raise HTTPException(status_code=401, detail="Sign in again")
@@ -102,7 +131,7 @@ def create_app(
         existing = store.source.get(path)
         if existing and existing.get("model") == MODEL_NAME and existing.get("fingerprint") == current:
             return ProfileTextResponse(updated=False)
-        vector = get_embedder().profile_vector(texts)
+        vector = model.get().profile_vector(texts)
         vector_doc = {"vector": [float(x) for x in vector], "model": MODEL_NAME, "fingerprint": current}
         store.source.set(path, vector_doc)
         store.remember_profile(request.kind, request.id, doc, vector_doc)
@@ -113,30 +142,29 @@ def create_app(
 
 # --- the production app: Firestore and Firebase Auth are set up on the first request ---
 
-_store: DataStore | None = None
-
-
-def _production_store() -> DataStore:
-    global _store
-    if _store is None:
-        _store = DataStore(FirestoreSource.from_env())
-    return _store
+_store = Once(lambda: DataStore(FirestoreSource.from_env()))
 
 
 class _LazyStore:
     def __getattr__(self, name: str):
-        return getattr(_production_store(), name)
+        return getattr(_store.get(), name)
 
 
 def _verify_firebase_token(token: str) -> dict:
-    _production_store()  # initialises firebase_admin with the service account
+    _store.get()  # initialises firebase_admin with the service account
     from firebase_admin import auth
 
-    return auth.verify_id_token(token)
+    try:
+        return auth.verify_id_token(token)
+    except (auth.InvalidIdTokenError, auth.UserDisabledError) as error:  # includes expired and revoked tokens
+        raise ValueError(str(error)) from error
 
 
+# Connecting at start-up makes a missing or broken FIREBASE_SERVICE_ACCOUNT_JSON fail the deploy
+# instead of answering every request with an error.
 app = create_app(
     _LazyStore(),  # type: ignore[arg-type]
     _verify_firebase_token,
     lambda: Embedder(cache_dir=os.environ.get("MODEL_CACHE_DIR")),
+    on_startup=lambda: _store.get(),
 )

@@ -6,7 +6,7 @@ from datetime import datetime
 
 import numpy as np
 
-from .catalog import sector_value
+from .catalog import sector_value, stored_sector
 from .data import Snapshot, UserContext, _as_time
 from .embeddings import DIM, MODEL_NAME, fingerprint
 from .features import (
@@ -15,6 +15,7 @@ from .features import (
     criteria_amounts,
     criteria_groups,
     investor_groups,
+    parseable_startup,
     startup_groups,
     ticket_groups,
 )
@@ -33,7 +34,10 @@ def fresh_vector(key: str, doc: dict, kind: str, snap: Snapshot) -> np.ndarray |
     vector = stored.get("vector")
     if not isinstance(vector, list) or len(vector) != DIM:
         return None
-    return np.asarray(vector, dtype=float)
+    if not all(isinstance(x, (int, float)) and not isinstance(x, bool) for x in vector):
+        return None
+    array = np.asarray(vector, dtype=float)
+    return array if np.isfinite(array).all() else None
 
 
 def _with_text(groups: GroupVectors, vector: np.ndarray | None) -> GroupVectors:
@@ -48,15 +52,21 @@ def _rows(items: list[GroupVectors]) -> dict[str, np.ndarray]:
 
 
 def _listed_startup(doc: dict) -> bool:
-    return isinstance(doc.get("name"), str) and doc.get("isPublic") is True and doc.get("status") != "closed"
+    """Shown in the app: loadable by Startup.fromMap, public and not closed."""
+    return parseable_startup(doc) and doc.get("isPublic") is True and doc.get("status") != "closed"
+
+
+def _listed_investor(doc: dict) -> bool:
+    return isinstance(doc.get("fullName"), str) and bool(doc["fullName"].strip())
 
 
 def _signals(keys: dict[str, datetime], prefix: str, docs: dict[str, dict], kind: str, snap: Snapshot) -> list[Signal]:
     build = startup_groups if kind == "startup" else investor_groups
+    listed = _listed_startup if kind == "startup" else _listed_investor
     out = []
     for key, at in keys.items():
         doc = docs.get(key[len(prefix):]) if key.startswith(prefix) else None
-        if doc is not None:
+        if doc is not None and listed(doc):
             out.append(Signal(_with_text(build(doc), fresh_vector(key, doc, kind, snap)), at))
     return out
 
@@ -94,7 +104,7 @@ def _for_investor(ctx: UserContext, snap: Snapshot, now: datetime, limit: int) -
     scores = score_candidates(taste, _rows(items))[None, :]
     bonus = np.array([[ticket_bonus(d, tickets) for d in docs]])
     return recommend_best(
-        ids, [d["name"] for d in docs], [d.get("sector") for d in docs],
+        ids, [d["name"] for d in docs], [stored_sector(d.get("sector")) for d in docs],
         scores, np.ones_like(scores, dtype=bool), bonus, limit=limit,
     )
 
@@ -108,7 +118,7 @@ def _for_founder(ctx: UserContext, snap: Snapshot, now: datetime, limit: int) ->
 
     ids = [
         iid for iid, doc in snap.investors.items()
-        if isinstance(doc.get("fullName"), str) and doc["fullName"].strip()
+        if _listed_investor(doc)
         and f"i-{iid}" not in ctx.bookmarks
         and f"i-{iid}" not in ctx.dislikes
     ]

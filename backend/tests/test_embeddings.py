@@ -33,8 +33,13 @@ def test_vector_shape_and_length():
 
 @pytest.mark.parity
 def test_matches_sentence_transformers():
+    # This test is the gate for using FastEmbed, so a missing package must fail it, not skip it.
+    try:
+        from sentence_transformers import SentenceTransformer
+    except ModuleNotFoundError:
+        pytest.fail("sentence-transformers is needed for the parity test: pip install -r requirements-dev.txt")
     # CPU: PyTorch's Apple-GPU backend aborts on some Macs, and the server never uses PyTorch anyway.
-    st = pytest.importorskip("sentence_transformers").SentenceTransformer(MODEL_NAME, device="cpu")
+    st = SentenceTransformer(MODEL_NAME, device="cpu")
     texts = ["Payroll software for SMEs", "Crypto wallet", "Clinic appointment booking", "Logistics for e-commerce", "Solar panels for farms"]
     ours = np.stack([Embedder().profile_vector([t]) for t in texts])
     ref = st.encode(texts, normalize_embeddings=True)

@@ -6,7 +6,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from .catalog import sector_label, stage_label, ticket_min
+from .catalog import finite_int, sector_label, stage_label, stored_sector, stored_stage, ticket_min
 
 TICKET_FIT_BONUS = 0.3
 TICKET_AMOUNT_BONUS = 0.1
@@ -20,8 +20,7 @@ class Pick:
     score: float
 
 
-def _int(raw: object) -> int | None:
-    return int(raw) if isinstance(raw, (int, float)) and not isinstance(raw, bool) else None
+_int = finite_int
 
 
 def _strings(raw: object) -> list[str]:
@@ -55,7 +54,7 @@ def sizes_fit(startup: dict, ticket_band: str | None, round_min: int | None, rou
 
 def _sector_labels(startup: dict) -> set[str]:
     labels = set(_strings(startup.get("otherSectors")))
-    sector = startup.get("sector")
+    sector = stored_sector(startup.get("sector"))
     if sector == "other":
         labels.add("Other")
         typed = startup.get("sectorOther")
@@ -76,7 +75,7 @@ def ticket_fits(startup: dict, tickets: list[dict]) -> bool:
     if need <= 0:
         return False
     sectors = _sector_labels(startup)
-    stage = stage_label(startup.get("stage"))
+    stage = stage_label(stored_stage(startup.get("stage")))
     for ticket in tickets:
         wanted_sectors = _strings(ticket.get("sectors"))
         wanted_stages = _strings(ticket.get("stages"))

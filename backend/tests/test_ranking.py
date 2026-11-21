@@ -75,3 +75,13 @@ def test_explore_places():
 def test_zero_scores_are_dropped():
     assert recommend_best(["a"], ["A"], [None], scores=np.zeros((1, 1)),
                           allowed=np.ones((1, 1), bool), bonus=np.full((1, 1), 0.3)) == []
+
+
+def test_legacy_sector_and_stage_match_ticket_labels():
+    legacy = {**RAISING, "sector": "software_cloud", "stage": "early_revenue"}
+    assert ticket_fits(legacy, [{"amountMin": 0, "amountMax": 600_000, "sectors": ["SaaS"], "stages": ["Seed"]}])
+
+
+def test_non_finite_amounts_do_not_crash():
+    assert remaining({**RAISING, "fundingRequirement": float("nan")}) == 0
+    assert ticket_bonus(RAISING, [{"amountMin": float("inf"), "amountMax": 600_000, "sectors": [], "stages": []}]) == 0.0

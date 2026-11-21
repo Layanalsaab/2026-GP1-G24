@@ -30,7 +30,7 @@ def build_docs() -> dict[str, dict]:
     }
     for k in range(1000):
         doc = {"name": f"Startup {k}", "isPublic": True, "founderId": "f1" if k == 0 else f"f{k}",
-               "sector": SECTORS[k % 8], "stage": STAGES[k % 4], "commerceModel": "b2b",
+               "sector": SECTORS[k % 8], "stage": STAGES[k % 4], "commerceModel": "b2b", "location": "riyadh",
                "lookingFor": ["funding"], "fundingRequirement": 1_000_000,
                "description": f"Startup number {k} building software for {SECTORS[k % 8]} customers"}
         docs[f"startups/s{k}"] = doc

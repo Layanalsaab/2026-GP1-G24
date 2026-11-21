@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 import re
 
 # Label shown in the app -> value stored in Firestore ("Other" is dropped everywhere).
@@ -69,6 +70,55 @@ MODELS: tuple[str, ...] = tuple(_MODEL_VALUE.values())
 _SECTOR_LABEL = {v: k for k, v in _SECTOR_VALUE.items()}
 _STAGE_LABEL = {v: k for k, v in _STAGE_VALUE.items()}
 _BRACKETS = re.compile(r"\(([^)]+)\)")
+
+
+# Old stored values the app still reads (lib/models/startup_enums.dart `_legacy`).
+_LEGACY_SECTOR = {
+    "ecommerce_retail": "ecommerce",
+    "logistics_transport": "logistics",
+    "food_beverage": "foodtech",
+    "software_cloud": "saas",
+    "hrtech": "hr_tech",
+}
+_LEGACY_STAGE = {"idea": "pre_seed", "mvp": "pre_seed", "early_revenue": "seed", "growth": "series_a"}
+_LEGACY_MODEL = {"marketplace": "other"}
+_LEGACY_LOCATION = {"khobar": "al_khobar", "mecca": "makkah", "medina": "madinah"}
+_SLUG = re.compile(r"[a-z0-9_]+")
+
+
+def _stored(raw: object, current: tuple[str, ...], legacy: dict[str, str]) -> str | None:
+    if not isinstance(raw, str):
+        return None
+    if raw in current or raw == "other":
+        return raw
+    return legacy.get(raw)
+
+
+def stored_sector(raw: object) -> str | None:
+    """A startup's stored sector as the app reads it (legacy values mapped); None if unreadable."""
+    return _stored(raw, SECTORS, _LEGACY_SECTOR)
+
+
+def stored_stage(raw: object) -> str | None:
+    return _stored(raw, STAGES, _LEGACY_STAGE)
+
+
+def stored_model(raw: object) -> str | None:
+    return _stored(raw, MODELS, _LEGACY_MODEL)
+
+
+def location_ok(raw: object) -> bool:
+    """StartupLocation.fromValue accepts "other", known cities and any lowercase slug."""
+    if not isinstance(raw, str):
+        return False
+    return raw == "other" or bool(_SLUG.fullmatch(_LEGACY_LOCATION.get(raw, raw)))
+
+
+def finite_int(raw: object) -> int | None:
+    """A whole number from Firestore; None for text, booleans, NaN or infinity."""
+    if isinstance(raw, bool) or not isinstance(raw, (int, float)) or not math.isfinite(raw):
+        return None
+    return int(raw)
 
 
 def sector_value(label: str | None) -> str | None:

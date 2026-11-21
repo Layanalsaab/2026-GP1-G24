@@ -12,7 +12,8 @@ NOW = datetime(2026, 11, 21, 9, 0, tzinfo=timezone.utc)
 
 def startup(name, sector, stage, model="b2b", **extra):
     return {"name": name, "isPublic": True, "founderId": "someone", "sector": sector, "stage": stage,
-            "commerceModel": model, "lookingFor": ["funding"], "fundingRequirement": 1_000_000, "raisedInRound": 0, **extra}
+            "commerceModel": model, "location": "riyadh", "lookingFor": ["funding"], "fundingRequirement": 1_000_000,
+            "raisedInRound": 0, **extra}
 
 
 def snap(startups=None, investors=None, tickets=None, vectors=None) -> Snapshot:
@@ -101,3 +102,30 @@ def test_founder_amount_filter_and_best_taste():
     ctx = UserContext("f1", "founder", {"role": "founder"}, {}, {}, own)
     picks = for_you(ctx, snap(investors=investors), NOW)
     assert [p.id for p in picks] == ["ok"] and picks[0].score == pytest.approx(1.0)
+
+
+def test_unparseable_startups_are_never_recommended():
+    s = snap({"fin": startup("Payly", "fintech", "seed"), "broken": startup("Broken", "space", "seed"),
+              "nowhere": startup("Nowhere", "fintech", "seed", location=None)})
+    assert [p.id for p in for_you(investor_ctx(FINTECH_SEED), s, NOW)] == ["fin"]
+
+
+def test_legacy_values_score_like_the_app():
+    s = snap({"legacy": startup("CloudCo", "software_cloud", "mvp", "b2b")})
+    ctx = investor_ctx({**FINTECH_SEED, "preferredCommerceModels": ["B2B"]})
+    assert for_you(ctx, s, NOW)[0].score == pytest.approx(0.18 / 0.88)  # saas / pre-seed: only the model matches
+
+
+def test_closed_bookmarks_do_not_shape_the_taste():
+    s = snap({"fin": startup("Payly", "fintech", "seed"), "ai": startup("Botly", "ai", "seed"),
+              "gone": startup("Gone", "ai", "seed", status="closed")})
+    plain = for_you(investor_ctx(FINTECH_SEED), s, NOW)
+    with_closed = for_you(investor_ctx(FINTECH_SEED, bookmarks={"s-gone": NOW}), s, NOW)
+    assert [(p.id, p.score) for p in with_closed] == [(p.id, p.score) for p in plain]
+
+
+def test_bad_numbers_and_vectors_do_not_crash():
+    fin = startup("Payly", "fintech", "seed", fundingRequirement=float("nan"), description="Payroll")
+    s = snap({"fin": fin}, vectors={"s-fin": {"vector": [None] * 384, "model": MODEL_NAME,
+                                              "fingerprint": fingerprint(fin, "startup")}})
+    assert [p.id for p in for_you(investor_ctx(FINTECH_SEED), s, NOW)] == ["fin"]

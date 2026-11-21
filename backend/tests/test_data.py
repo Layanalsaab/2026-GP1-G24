@@ -1,3 +1,5 @@
+import threading
+import time
 from datetime import datetime, timedelta, timezone
 
 from app.data import DataStore
@@ -74,3 +76,30 @@ def test_documents_with_bad_types_are_skipped():
     ctx = store.user_context("f1")
     assert ctx.bookmarks["s-s4"] == T0
     assert ctx.bookmarks["s-s5"] == datetime(2026, 11, 1, 8, 0, tzinfo=timezone.utc)
+
+
+class SlowSource(FakeSource):
+    def stream(self, *args, **kwargs):
+        time.sleep(0.05)
+        return super().stream(*args, **kwargs)
+
+
+def test_snapshot_loads_once_when_two_requests_arrive_together():
+    source = SlowSource(seeded().docs)
+    store = DataStore(source, clock=Clock(T0))
+    threads = [threading.Thread(target=store.snapshot) for _ in range(2)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+    assert source.stream_calls == 4
+
+
+def test_remember_profile_leaves_a_snapshot_in_use_unchanged():
+    store = DataStore(seeded(), clock=Clock(T0))
+    before = store.snapshot()
+    store.remember_profile("startup", "new", {"name": "New", "isPublic": True},
+                           {"vector": [0.0] * 384, "model": "m", "fingerprint": "f"})
+    assert "new" not in before.startups and "s-new" not in before.vectors
+    after = store.snapshot()
+    assert "new" in after.startups and "s-new" in after.vectors

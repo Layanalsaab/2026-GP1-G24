@@ -7,7 +7,19 @@ from typing import Iterable
 import numpy as np
 from sklearn.preprocessing import MultiLabelBinarizer
 
-from .catalog import MODELS, SECTORS, STAGES, model_value, sector_value, stage_value
+from .catalog import (
+    MODELS,
+    SECTORS,
+    STAGES,
+    finite_int,
+    location_ok,
+    model_value,
+    sector_value,
+    stage_value,
+    stored_model,
+    stored_sector,
+    stored_stage,
+)
 
 GroupVectors = dict[str, np.ndarray]
 
@@ -46,16 +58,27 @@ def _text(raw: object) -> str | None:
     return raw if isinstance(raw, str) else None
 
 
-def _int(raw: object) -> int | None:
-    return int(raw) if isinstance(raw, (int, float)) and not isinstance(raw, bool) else None
+_int = finite_int
+
+
+def parseable_startup(doc: dict) -> bool:
+    """True when the app's Startup.fromMap would load this document (otherwise it is never shown)."""
+    return (
+        stored_sector(doc.get("sector")) is not None
+        and stored_stage(doc.get("stage")) is not None
+        and stored_model(doc.get("commerceModel")) is not None
+        and location_ok(doc.get("location"))
+        and isinstance(doc.get("founderId"), str)
+        and isinstance(doc.get("name"), str)
+    )
 
 
 def startup_groups(doc: dict) -> GroupVectors:
-    sectors = [_text(doc.get("sector"))] + [sector_value(l) for l in _strings(doc.get("otherSectors"))]
+    sectors = [stored_sector(doc.get("sector"))] + [sector_value(l) for l in _strings(doc.get("otherSectors"))]
     return encode({
         "sector": sectors,
-        "stage": [_text(doc.get("stage"))],
-        "model": [_text(doc.get("commerceModel"))],
+        "stage": [stored_stage(doc.get("stage"))],
+        "model": [stored_model(doc.get("commerceModel"))],
     })
 
 
