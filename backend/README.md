@@ -78,8 +78,7 @@ Without `--dart-define=FOR_YOU_API_URL=...` the app uses its built-in Dart ranki
 If the server is asleep or unreachable, For You shows the list saved on the phone, then the Dart list.
 The first request after a sleep can take about a minute on Render Free.
 
-`android/app/src/main/AndroidManifest.xml` does not set `usesCleartextTraffic` and there is no network security config,
-so Android 9 and later may refuse a plain `http://` address. If the app cannot reach a local server, use the deployed `https://` address instead.
+A local `http://` address works in debug builds (`flutter run` is a debug build by default). Release builds only allow `https://`, so they need the deployed `https://<service>.onrender.com` address.
 
 ### Check it works
 
