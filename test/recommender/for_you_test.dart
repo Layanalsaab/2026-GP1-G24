@@ -639,13 +639,13 @@ void main() {
       );
       addTearDown(vm.dispose);
       vm.selectTab(HomeTab.explore);
-      vm.selectExploreTab(0);
+      vm.selectExploreTab(2); // For You
       final before = [for (final i in vm.recommended) i.id];
       marks.toggle('s-${before.first}');
       // Still on For You: nothing moves, the card stays.
       expect([for (final i in vm.recommended) i.id], before);
       vm.selectExploreTab(1);
-      vm.selectExploreTab(0);
+      vm.selectExploreTab(2);
       expect(vm.recommended.any((i) => i.id == before.first), isFalse);
     });
   });
