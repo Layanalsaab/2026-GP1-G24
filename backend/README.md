@@ -52,6 +52,42 @@ export FIREBASE_SERVICE_ACCOUNT_JSON="$(cat /path/to/service-account.json)"
 
 The service account only needs the **Cloud Datastore User** role. Open http://127.0.0.1:8000/docs to try the endpoints.
 
+## Connecting the app
+
+Start the server on the Mac (set `FIREBASE_SERVICE_ACCOUNT_JSON` first, as described in "Running the server locally"). `--host 0.0.0.0` lets a phone on the same Wi-Fi reach it:
+
+```bash
+.venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000
+```
+
+Then run the app from the repository root with the server's address:
+
+```bash
+flutter run --dart-define=FOR_YOU_API_URL=http://10.0.2.2:8000
+```
+
+| Where the app runs | Address |
+|---|---|
+| Android emulator | `http://10.0.2.2:8000` |
+| iOS simulator | `http://localhost:8000` |
+| Real phone on the same Wi-Fi | `http://<the Mac's network address>:8000` |
+| After deploying | `https://<service>.onrender.com` |
+
+Without `--dart-define=FOR_YOU_API_URL=...` the app uses its built-in Dart ranking and never calls the server.
+
+If the server is asleep or unreachable, For You shows the list saved on the phone, then the Dart list.
+The first request after a sleep can take about a minute on Render Free.
+
+`android/app/src/main/AndroidManifest.xml` does not set `usesCleartextTraffic` and there is no network security config,
+so Android 9 and later may refuse a plain `http://` address. If the app cannot reach a local server, use the deployed `https://` address instead.
+
+### Check it works
+
+- Open For You: the server log shows `POST /for-you 200`.
+- Tap the ✕ on a card: it disappears, and Undo brings it back.
+- Edit a startup's description: the server log shows `POST /profile-text 200`.
+- Stop the server and reopen For You: the saved list still shows.
+
 ## One-time vector backfill
 
 Encodes every public startup and every investor whose text vector is missing or out of date.
