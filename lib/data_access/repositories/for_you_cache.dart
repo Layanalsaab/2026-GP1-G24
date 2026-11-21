@@ -30,4 +30,14 @@ class ForYouCache {
       debugPrint('ForYouCache.write failed: $e');
     }
   }
+
+  /// Forgets uid's list (account deletion); a storage failure is only logged.
+  Future<void> remove(String uid) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_key(uid));
+    } catch (e) {
+      debugPrint('ForYouCache.remove failed: $e');
+    }
+  }
 }

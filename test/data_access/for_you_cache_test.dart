@@ -20,4 +20,14 @@ void main() {
   test('nothing saved reads as empty', () async {
     expect(await ForYouCache().read('u1'), isEmpty);
   });
+
+  test('a removed list reads as empty; other users keep theirs', () async {
+    final cache = ForYouCache();
+    await cache.write('u1', ['s-a']);
+    await cache.write('u2', ['i-b']);
+    await cache.remove('u1');
+    expect(await cache.read('u1'), isEmpty);
+    expect(await cache.read('u2'), ['i-b']);
+    await cache.remove('nobody'); // Nothing saved: no error.
+  });
 }
