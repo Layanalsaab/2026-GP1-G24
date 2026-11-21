@@ -1,21 +1,41 @@
+import 'dart:async';
 import 'dart:io';
+
+import 'package:flutter/foundation.dart';
 
 import '../../app_constants/firestore_collections.dart';
 import '../../models/app_user.dart';
 import '../../models/auth_failure.dart';
+import '../../models/home_item.dart';
 import '../../models/investor_criteria.dart';
 import '../firebase_services/firestore_service.dart';
 import '../device_services/image_fit.dart';
+import '../remote/for_you_api.dart';
 
 /// Reads and writes the users collection (document id = Auth UID).
 class UserRepository {
-  UserRepository({FirestoreService? firestore})
-    : _firestore = firestore ?? FirestoreService();
+  UserRepository({FirestoreService? firestore, ForYouSource? forYou})
+    : _firestore = firestore ?? FirestoreService(),
+      _forYou = forYou ?? ForYouApi.instance;
 
   /// The app-wide instance.
   static UserRepository instance = UserRepository();
 
   final FirestoreService _firestore;
+  final ForYouSource _forYou;
+
+  /// Asks the server to re-encode this investor's text. Fire and forget: a
+  /// failure is logged and never reaches the save.
+  void _refreshText(String uid) {
+    if (!_forYou.enabled) return;
+    unawaited(() async {
+      try {
+        await _forYou.profileText(HomeItemKind.investor, uid);
+      } catch (e) {
+        debugPrint('profile-text refresh failed: $e');
+      }
+    }());
+  }
 
   /// Creates the users/{uid} document.
   Future<void> createProfile({
@@ -172,8 +192,8 @@ class UserRepository {
             keep(UserFields.createdAt) ?? _firestore.serverTimestamp(),
       };
       await _firestore.setDocument(FirestoreCollections.investors, uid, doc);
-    } catch (_) {
-    }
+      _refreshText(uid);
+    } catch (_) {}
   }
 
   /// Marks a founder's onboarding as finished (after their first startup).
