@@ -111,6 +111,20 @@ class DataStore:
         )
         return self._snapshot
 
+    def remember_profile(self, kind: str, doc_id: str, doc: dict, vector_doc: dict | None) -> None:
+        """After an edit, put the new text and vector into the cached snapshot so they count at once."""
+        snap = self._snapshot
+        if snap is None:
+            return
+        docs = snap.startups if kind == "startup" else snap.investors
+        if kind != "startup" or doc.get("isPublic") is True:
+            docs[doc_id] = doc
+        key = f"{'s' if kind == 'startup' else 'i'}-{doc_id}"
+        if vector_doc is None:
+            snap.vectors.pop(key, None)
+        else:
+            snap.vectors[key] = vector_doc
+
     def _dated(self, collection: str, now: datetime) -> dict[str, datetime]:
         return {key: _as_time(data.get("createdAt"), now) for key, data in _docs(self.source.stream(collection)).items()}
 
