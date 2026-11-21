@@ -19,14 +19,19 @@ from .catalog import (
     stored_model,
     stored_sector,
     stored_stage,
+    typed_token,
 )
 
 GroupVectors = dict[str, np.ndarray]
+Values = dict[str, list[str | None]]
 
-VOCAB: dict[str, tuple[str, ...]] = {"sector": SECTORS, "stage": STAGES, "model": MODELS}
 LABEL_GROUPS: tuple[str, ...] = ("sector", "stage", "model")
-
-_BINARIZERS = {g: MultiLabelBinarizer(classes=list(v)).fit([list(v)]) for g, v in VOCAB.items()}
+# "other" is a value of its own; written-in answers ("other:spacetech") are added per request.
+BASE_VOCAB: dict[str, tuple[str, ...]] = {
+    "sector": SECTORS + ("other",),
+    "stage": STAGES + ("other",),
+    "model": MODELS + ("other",),
+}
 
 # Any of these fields at the top of users/{uid} means the answers are stored there
 # (InvestorCriteria.fromFields in the app); otherwise the nested investorCriteria map is used.
@@ -41,22 +46,47 @@ _TOP_LEVEL_CRITERIA = (
 )
 
 
-def encode(values: dict[str, Iterable[str | None]]) -> GroupVectors:
-    """One binary vector per label group; values outside the vocabulary are ignored."""
-    out: GroupVectors = {}
-    for group, binarizer in _BINARIZERS.items():
-        known = {v for v in values.get(group, ()) if v in VOCAB[group]}
-        out[group] = binarizer.transform([sorted(known)])[0].astype(float)
-    return out
+class Encoder:
+    """Binary vectors per label group with scikit-learn's MultiLabelBinarizer.
+
+    The vocabulary is the app's fixed options plus "other" plus every written-in answer the
+    request contains, so a taste and its candidates are always encoded with the same columns.
+    """
+
+    def __init__(self, extra: dict[str, set[str]] | None = None):
+        extra = extra or {}
+        self.classes = {
+            g: list(BASE_VOCAB[g]) + sorted(set(extra.get(g, ())) - set(BASE_VOCAB[g])) for g in LABEL_GROUPS
+        }
+        self._known = {g: set(c) for g, c in self.classes.items()}
+        self._binarizers = {g: MultiLabelBinarizer(classes=c).fit([c]) for g, c in self.classes.items()}
+
+    @classmethod
+    def covering(cls, values: Iterable[Values]) -> "Encoder":
+        extra: dict[str, set[str]] = {g: set() for g in LABEL_GROUPS}
+        for item in values:
+            for g in LABEL_GROUPS:
+                extra[g].update(v for v in item.get(g, ()) if isinstance(v, str))
+        return cls(extra)
+
+    def _known_values(self, item: Values, group: str) -> list[str]:
+        return sorted({v for v in item.get(group, ()) if v in self._known[group]})
+
+    def encode(self, item: Values) -> GroupVectors:
+        return {g: b.transform([self._known_values(item, g)])[0].astype(float) for g, b in self._binarizers.items()}
+
+    def encode_many(self, items: list[Values]) -> dict[str, np.ndarray]:
+        if not items:
+            return {g: np.zeros((0, len(c))) for g, c in self.classes.items()}
+        return {g: b.transform([self._known_values(i, g) for i in items]).astype(float) for g, b in self._binarizers.items()}
 
 
-def encode_many(values: list[dict[str, Iterable[str | None]]]) -> dict[str, np.ndarray]:
-    """Like encode, for many documents in one call per group: an (n × vocabulary) matrix each."""
-    out: dict[str, np.ndarray] = {}
-    for group, binarizer in _BINARIZERS.items():
-        known = [sorted({v for v in item.get(group, ()) if v in VOCAB[group]}) for item in values]
-        out[group] = binarizer.transform(known).astype(float) if values else np.zeros((0, len(VOCAB[group])))
-    return out
+def encode(values: Values) -> GroupVectors:
+    return Encoder.covering([values]).encode(values)
+
+
+def encode_many(values: list[Values]) -> dict[str, np.ndarray]:
+    return Encoder.covering(values).encode_many(values)
 
 
 def _strings(raw: object) -> list[str]:
@@ -82,48 +112,91 @@ def parseable_startup(doc: dict) -> bool:
     )
 
 
-def _startup_values(doc: dict) -> dict[str, list[str | None]]:
+def sector_answer(label: str, written: object = None) -> str:
+    """An answer from the sector list: "Other" counts as what was written; a written-in entry as itself."""
+    if label == "Other":
+        return typed_token(written, "sector")
+    return sector_value(label) or typed_token(label, "sector")
+
+
+def _stage_of(label: str) -> str | None:
+    return "other" if label == "Other" else stage_value(label)
+
+
+def _model_of(label: str, written: object = None) -> str:
+    if label == "Other":
+        return typed_token(written, "model")
+    return model_value(label) or typed_token(label, "model")
+
+
+def startup_values(doc: dict) -> Values:
+    sector = stored_sector(doc.get("sector"))
+    if sector == "other":
+        sector = typed_token(doc.get("sectorOther"), "sector")
+    model = stored_model(doc.get("commerceModel"))
+    if model == "other":
+        model = typed_token(doc.get("commerceModelOther"), "model")
     return {
-        "sector": [stored_sector(doc.get("sector"))] + [sector_value(l) for l in _strings(doc.get("otherSectors"))],
+        "sector": [sector] + [sector_answer(l) for l in _strings(doc.get("otherSectors"))],
         "stage": [stored_stage(doc.get("stage"))],
-        "model": [stored_model(doc.get("commerceModel"))],
+        "model": [model],
     }
 
 
-def _label_values(sectors: list[str], stages: list[str], models: list[str]) -> dict[str, list[str | None]]:
+def _label_values(sectors: list[str], stages: list[str], models: list[str],
+                  sectors_written: object = None, models_written: object = None) -> Values:
     return {
-        "sector": [sector_value(l) for l in sectors],
-        "stage": [stage_value(l) for l in stages],
-        "model": [model_value(l) for l in models],
+        "sector": [sector_answer(l, sectors_written) for l in sectors],
+        "stage": [_stage_of(l) for l in stages],
+        "model": [_model_of(l, models_written) for l in models],
     }
 
 
-def _investor_values(doc: dict) -> dict[str, list[str | None]]:
+def investor_values(doc: dict) -> Values:
     return _label_values(
         _strings(doc.get("preferredSectors")),
         _strings(doc.get("preferredStages")),
         _strings(doc.get("preferredCommerceModels")),
+        doc.get("sectorsOther"),
+        doc.get("preferredCommerceModelsOther"),
     )
 
 
+def criteria_values(user_doc: dict) -> Values:
+    nested = _nested(user_doc)
+    if nested is None:
+        return investor_values(user_doc)
+    return _label_values(
+        _strings(nested.get("sectors")),
+        _strings(nested.get("stages")),
+        _strings(nested.get("commerceModels")),
+        nested.get("sectorsOther"),
+        nested.get("commerceModelsOther"),
+    )
+
+
+def ticket_values(doc: dict) -> Values:
+    return {
+        "sector": [sector_answer(l) for l in _strings(doc.get("sectors"))],
+        "stage": [_stage_of(l) for l in _strings(doc.get("stages"))],
+        "model": [],
+    }
+
+
 def startup_groups(doc: dict) -> GroupVectors:
-    return encode(_startup_values(doc))
+    return encode(startup_values(doc))
 
 
 def startup_rows(docs: list[dict]) -> dict[str, np.ndarray]:
-    return encode_many([_startup_values(d) for d in docs])
-
-
-def _from_labels(sectors: list[str], stages: list[str], models: list[str]) -> GroupVectors:
-    return encode(_label_values(sectors, stages, models))
+    return encode_many([startup_values(d) for d in docs])
 
 
 def investor_groups(doc: dict) -> GroupVectors:
-    return encode(_investor_values(doc))
+    return encode(investor_values(doc))
 
 
 def investor_rows(docs: list[dict]) -> dict[str, np.ndarray]:
-    return encode_many([_investor_values(d) for d in docs])
+    return encode_many([investor_values(d) for d in docs])
 
 
 def _nested(user_doc: dict) -> dict | None:
@@ -134,14 +207,7 @@ def _nested(user_doc: dict) -> dict | None:
 
 
 def criteria_groups(user_doc: dict) -> GroupVectors:
-    nested = _nested(user_doc)
-    if nested is None:
-        return investor_groups(user_doc)
-    return _from_labels(
-        _strings(nested.get("sectors")),
-        _strings(nested.get("stages")),
-        _strings(nested.get("commerceModels")),
-    )
+    return encode(criteria_values(user_doc))
 
 
 def criteria_amounts(user_doc: dict) -> tuple[str | None, int | None, int | None]:
@@ -152,4 +218,4 @@ def criteria_amounts(user_doc: dict) -> tuple[str | None, int | None, int | None
 
 
 def ticket_groups(doc: dict) -> GroupVectors:
-    return _from_labels(_strings(doc.get("sectors")), _strings(doc.get("stages")), [])
+    return encode(ticket_values(doc))

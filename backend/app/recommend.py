@@ -6,24 +6,27 @@ from datetime import datetime
 
 import numpy as np
 
-from .catalog import finite_int, sector_value, stored_sector
+from .catalog import finite_int
 from .data import Snapshot, UserContext, _as_time
 from .embeddings import DIM, MODEL_NAME, fingerprint
 from .features import (
+    Encoder,
     GroupVectors,
+    Values,
     criteria_amounts,
-    criteria_groups,
-    investor_groups,
-    investor_rows,
+    criteria_values,
+    investor_values,
     parseable_startup,
-    startup_groups,
-    startup_rows,
-    ticket_groups,
+    sector_answer,
+    startup_values,
+    ticket_values,
 )
-from .vector_store import unpack
 from .ranking import DEFAULT_LIMIT, Pick, amount_fits, recommend_best, ticket_bonus
 from .scoring import score_candidates
 from .taste import TICKET_STRENGTH, Signal, build_taste
+from .vector_store import unpack
+
+Part = tuple[Values, "np.ndarray | None", datetime]
 
 
 def fresh_vector(key: str, doc: dict, kind: str, snap: Snapshot) -> np.ndarray | None:
@@ -57,11 +60,11 @@ def valid_ticket(ticket: dict) -> bool:
 
 
 def investor_main_sector(doc: dict) -> str | None:
-    """sectorValue[first preferred sector] in the app ("Other" -> "other")."""
+    """The investor's first sector, as For You groups sectors for the other-sector places."""
     sectors = doc.get("preferredSectors")
     if not isinstance(sectors, list) or not sectors or not isinstance(sectors[0], str):
         return None
-    return "other" if sectors[0] == "Other" else sector_value(sectors[0])
+    return sector_answer(sectors[0], doc.get("sectorsOther"))
 
 
 def _listed_startup(doc: dict) -> bool:
@@ -73,15 +76,19 @@ def _listed_investor(doc: dict) -> bool:
     return isinstance(doc.get("fullName"), str) and bool(doc["fullName"].strip())
 
 
-def _signals(keys: dict[str, datetime], prefix: str, docs: dict[str, dict], kind: str, snap: Snapshot) -> list[Signal]:
-    build = startup_groups if kind == "startup" else investor_groups
+def _parts(keys: dict[str, datetime], prefix: str, docs: dict[str, dict], kind: str, snap: Snapshot) -> list[Part]:
+    values_of = startup_values if kind == "startup" else investor_values
     listed = _listed_startup if kind == "startup" else _listed_investor
-    out = []
+    out: list[Part] = []
     for key, at in keys.items():
         doc = docs.get(key[len(prefix):]) if key.startswith(prefix) else None
         if doc is not None and listed(doc):
-            out.append(Signal(_with_text(build(doc), fresh_vector(key, doc, kind, snap)), at))
+            out.append((values_of(doc), fresh_vector(key, doc, kind, snap), at))
     return out
+
+
+def _signals(parts: list[Part], encoder: Encoder, strength: float = 1.0) -> list[Signal]:
+    return [Signal(_with_text(encoder.encode(values), vector), at, strength) for values, vector, at in parts]
 
 
 def for_you(ctx: UserContext, snap: Snapshot, now: datetime, limit: int = DEFAULT_LIMIT) -> list[Pick]:
@@ -92,15 +99,6 @@ def for_you(ctx: UserContext, snap: Snapshot, now: datetime, limit: int = DEFAUL
 
 def _for_investor(ctx: UserContext, snap: Snapshot, now: datetime, limit: int) -> list[Pick]:
     tickets = [t for t in snap.tickets if t.get("investorId") == ctx.uid and valid_ticket(t)]
-    base = criteria_groups(ctx.user_doc)
-    own_profile = snap.investors.get(ctx.uid)
-    if own_profile is not None:
-        base = _with_text(base, fresh_vector(f"i-{ctx.uid}", own_profile, "investor", snap))
-    likes = _signals(ctx.bookmarks, "s-", snap.startups, "startup", snap)
-    likes += [Signal(ticket_groups(t), _as_time(t.get("createdAt"), now), TICKET_STRENGTH) for t in tickets]
-    dislikes = _signals(ctx.dislikes, "s-", snap.startups, "startup", snap)
-    taste = build_taste(base, likes, dislikes, now)
-
     band, round_min, round_max = criteria_amounts(ctx.user_doc)
     ids = [
         sid for sid, doc in snap.startups.items()
@@ -113,22 +111,33 @@ def _for_investor(ctx: UserContext, snap: Snapshot, now: datetime, limit: int) -
     if not ids:
         return []
     docs = [snap.startups[sid] for sid in ids]
-    rows = _with_text_rows(startup_rows(docs), [fresh_vector(f"s-{sid}", d, "startup", snap) for sid, d in zip(ids, docs)])
+    candidates = [startup_values(d) for d in docs]
+
+    base_values = criteria_values(ctx.user_doc)
+    own_profile = snap.investors.get(ctx.uid)
+    base_text = fresh_vector(f"i-{ctx.uid}", own_profile, "investor", snap) if own_profile is not None else None
+    likes = _parts(ctx.bookmarks, "s-", snap.startups, "startup", snap)
+    ticket_likes: list[Part] = [(ticket_values(t), None, _as_time(t.get("createdAt"), now)) for t in tickets]
+    dislikes = _parts(ctx.dislikes, "s-", snap.startups, "startup", snap)
+
+    # One vocabulary for the taste and the candidates, written-in answers included.
+    encoder = Encoder.covering([base_values, *candidates, *(p[0] for p in likes + ticket_likes + dislikes)])
+    taste = build_taste(
+        _with_text(encoder.encode(base_values), base_text),
+        _signals(likes, encoder) + _signals(ticket_likes, encoder, TICKET_STRENGTH),
+        _signals(dislikes, encoder),
+        now,
+    )
+    rows = _with_text_rows(encoder.encode_many(candidates), [fresh_vector(f"s-{sid}", d, "startup", snap) for sid, d in zip(ids, docs)])
     scores = score_candidates(taste, rows)[None, :]
     bonus = np.array([[ticket_bonus(d, tickets) for d in docs]])
     return recommend_best(
-        ids, [d["name"] for d in docs], [stored_sector(d.get("sector")) for d in docs],
+        ids, [d["name"] for d in docs], [v["sector"][0] if v["sector"] else None for v in candidates],
         scores, np.ones_like(scores, dtype=bool), bonus, limit=limit,
     )
 
 
 def _for_founder(ctx: UserContext, snap: Snapshot, now: datetime, limit: int) -> list[Pick]:
-    likes = _signals(ctx.bookmarks, "i-", snap.investors, "investor", snap)
-    dislikes = _signals(ctx.dislikes, "i-", snap.investors, "investor", snap)
-    own = list(ctx.own_startups.items())
-    bases = [_with_text(startup_groups(doc), fresh_vector(f"s-{sid}", doc, "startup", snap)) for sid, doc in own] or [{}]
-    tastes = [build_taste(base, likes, dislikes, now) for base in bases]
-
     ids = [
         iid for iid, doc in snap.investors.items()
         if _listed_investor(doc)
@@ -138,7 +147,22 @@ def _for_founder(ctx: UserContext, snap: Snapshot, now: datetime, limit: int) ->
     if not ids:
         return []
     docs = [snap.investors[iid] for iid in ids]
-    rows = _with_text_rows(investor_rows(docs), [fresh_vector(f"i-{iid}", d, "investor", snap) for iid, d in zip(ids, docs)])
+    candidates = [investor_values(d) for d in docs]
+
+    own = list(ctx.own_startups.items())
+    own_values = [startup_values(doc) for _, doc in own]
+    likes = _parts(ctx.bookmarks, "i-", snap.investors, "investor", snap)
+    dislikes = _parts(ctx.dislikes, "i-", snap.investors, "investor", snap)
+
+    encoder = Encoder.covering([*own_values, *candidates, *(p[0] for p in likes + dislikes)])
+    bases = [
+        _with_text(encoder.encode(values), fresh_vector(f"s-{sid}", doc, "startup", snap))
+        for (sid, doc), values in zip(own, own_values)
+    ] or [{}]
+    like_signals, dislike_signals = _signals(likes, encoder), _signals(dislikes, encoder)
+    tastes = [build_taste(base, like_signals, dislike_signals, now) for base in bases]
+
+    rows = _with_text_rows(encoder.encode_many(candidates), [fresh_vector(f"i-{iid}", d, "investor", snap) for iid, d in zip(ids, docs)])
     scores = np.stack([score_candidates(taste, rows) for taste in tastes])
 
     tickets_of: dict[str, list[dict]] = {}

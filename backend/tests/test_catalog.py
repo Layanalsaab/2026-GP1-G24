@@ -3,11 +3,13 @@ from app.catalog import (
     SECTORS,
     STAGES,
     model_value,
+    other_key,
     sector_label,
     sector_value,
     stage_label,
     stage_value,
     ticket_min,
+    typed_token,
 )
 
 
@@ -39,3 +41,18 @@ def test_ticket_min():
     assert ticket_min("SAR 100K – 500K") == 100_000
     assert ticket_min("Over SAR 5M") == 5_000_000
     assert ticket_min("Other") is None and ticket_min(None) is None
+
+
+def test_other_key_matches_the_apps_other_check():
+    assert other_key("Space-Tech's ") == "spacetech"
+    assert other_key("Drones") == "drone" and other_key("s") == "s" and other_key("  ") == ""
+    assert other_key("ذكاء اصطناعي") == "ذكاءاصطناعي"
+
+
+def test_typed_token_is_what_was_written():
+    assert typed_token("Space tech", "sector") == "other:spacetech"
+    assert typed_token("space-techs", "sector") == "other:spacetech"
+    assert typed_token("Fin tech", "sector") == "fintech"  # repeats an existing option
+    assert typed_token("", "sector") == "other" and typed_token(None, "model") == "other"
+    assert typed_token("other", "sector") == "other" and typed_token("Others", "model") == "other"
+    assert typed_token("B2B", "model") == "b2b" and typed_token("Subscriptions", "model") == "other:subscription"

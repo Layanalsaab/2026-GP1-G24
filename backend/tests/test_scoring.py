@@ -54,7 +54,7 @@ def test_text_minmax_and_missing_vectors():
     # three candidates with text cosines 0.2, 0.5, 0.8 and one with no vector; label groups identical (cosine 1)
     s = score_candidates(text_taste(), text_candidates())
     assert s[:3] == pytest.approx([(0.88 + 0.15 * x) / 1.03 for x in (0.0, 0.5, 1.0)])
-    assert s[3] == pytest.approx(1.0)
+    assert s[3] == pytest.approx((0.88 + 0.15 * 0.5) / 1.03)  # no vector: neutral text score
 
 
 def test_equal_text_cosines_give_no_text_signal():

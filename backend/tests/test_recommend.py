@@ -149,3 +149,22 @@ def test_investor_main_sector_matches_the_app():
     assert investor_main_sector({"preferredSectors": ["Other", "Fintech"]}) == "other"
     assert investor_main_sector({"preferredSectors": ["Fintech"]}) == "fintech"
     assert investor_main_sector({"preferredSectors": []}) is None and investor_main_sector({}) is None
+
+
+
+def test_other_with_nothing_written_gets_no_free_pass():
+    s = snap({"fin": startup("Payly", "fintech", "seed"), "plain": startup("Plain", "other", "seed"),
+              "health": startup("MediBook", "healthtech", "seed")})
+    ctx = investor_ctx({**FINTECH_SEED, "preferredCommerceModels": ["B2B"]})
+    scores = {p.id: p.score for p in for_you(ctx, s, NOW)}
+    assert scores["fin"] == pytest.approx(1.0)
+    assert scores["plain"] == pytest.approx(0.47 / 0.88) == pytest.approx(scores["health"])
+
+
+def test_written_other_matches_the_same_written_sector():
+    s = snap({"space": startup("Orbit", "other", "seed", sectorOther="space-tech"),
+              "fin": startup("Payly", "fintech", "seed")})
+    ctx = investor_ctx({"preferredSectors": ["Other"], "sectorsOther": "Space Tech", "preferredStages": ["Seed"]})
+    picks = for_you(ctx, s, NOW)
+    assert picks[0].id == "space" and picks[0].score == pytest.approx(1.0)
+    assert picks[1].id == "fin" and picks[1].score == pytest.approx(0.29 / 0.70)

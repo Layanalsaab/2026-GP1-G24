@@ -3,6 +3,7 @@ library;
 
 import 'dart:math' as math;
 
+import '../helpers/other_check.dart';
 import '../models/investment_ticket.dart';
 import '../models/investor_criteria.dart';
 import '../models/investor_profile.dart';
@@ -53,7 +54,32 @@ class Features {
   bool get isEmpty => groups.values.every((v) => v.isEmpty);
 }
 
-Vec _clean(Vec v) => v..remove('other');
+/// What an "Other" answer counts as: the written text ("other:spacetech"), an existing
+/// option when the text repeats one, or "other" when nothing was written (as the backend does).
+String _written(String? text, Map<String, String> options) {
+  final t = (text ?? '').trim();
+  final key = t.isEmpty ? '' : OtherCheck.key(t);
+  if (key.isEmpty || key == 'other') return 'other';
+  for (final e in options.entries) {
+    if (e.key != 'Other' && OtherCheck.key(e.key) == key) return e.value;
+  }
+  return 'other:$key';
+}
+
+String _sectorOf(String label, [String? written]) => label == 'Other'
+    ? _written(written, sectorValue)
+    : sectorValue[label] ?? _written(label, sectorValue);
+
+String _writtenModel(String? text) =>
+    _modelOf((text ?? '').trim()) ?? _written(text, modelValue);
+
+String _modelAnswer(String label, [String? written]) =>
+    label == 'Other' ? _writtenModel(written) : _modelOf(label) ?? _writtenModel(label);
+
+Vec _stages(Iterable<String> labels) => {
+  for (final l in labels)
+    if (stageValue[l] != null) stageValue[l]!: 1.0,
+};
 
 String? _modelOf(String label) {
   final known = modelValue[label];
@@ -63,39 +89,42 @@ String? _modelOf(String label) {
   return modelValue.containsValue(value) ? value : null;
 }
 
-Vec _ones(Iterable<String> labels, String? Function(String) toValue) => _clean({
-  for (final l in labels)
-    if (toValue(l) != null) toValue(l)!: 1.0,
-});
-
+/// A startup: "Other" counts as what the founder wrote ("other" when nothing was written).
 Features startupFeatures(Startup s) {
-  final sectors = <String, double>{s.sector.value: 1};
+  final main = s.sector.value == 'other'
+      ? _written(s.sectorOther, sectorValue)
+      : s.sector.value;
+  final sectors = <String, double>{main: 1};
   for (final label in s.otherSectors) {
-    final v = sectorValue[label];
-    if (v != null) sectors.putIfAbsent(v, () => otherSectorWeight);
+    sectors.putIfAbsent(_sectorOf(label), () => otherSectorWeight);
   }
+  final model = s.commerceModel.value == 'other'
+      ? _writtenModel(s.commerceModelOther)
+      : s.commerceModel.value;
   return Features({
-    'sector': _clean(sectors),
-    'stage': _clean({s.stage.value: 1}),
-    'model': _clean({s.commerceModel.value: 1}),
+    'sector': sectors,
+    'stage': {s.stage.value: 1},
+    'model': {model: 1},
   });
 }
 
 Features investorFeatures(InvestorProfile i) => Features({
-  'sector': _ones(i.sectors, (l) => sectorValue[l]),
-  'stage': _ones(i.stages, (l) => stageValue[l]),
-  'model': _ones(i.commerceModels, _modelOf),
+  'sector': {for (final l in i.sectors) _sectorOf(l): 1.0},
+  'stage': _stages(i.stages),
+  'model': {for (final l in i.commerceModels) _modelAnswer(l): 1.0},
 });
 
 Features criteriaFeatures(InvestorCriteria c) => Features({
-  'sector': _ones(c.sectors, (l) => sectorValue[l]),
-  'stage': _ones(c.stages, (l) => stageValue[l]),
-  'model': _ones(c.commerceModels, _modelOf),
+  'sector': {for (final l in c.sectors) _sectorOf(l, c.sectorsOther): 1.0},
+  'stage': _stages(c.stages),
+  'model': {
+    for (final l in c.commerceModels) _modelAnswer(l, c.commerceModelsOther): 1.0,
+  },
 });
 
 Features ticketFeatures(InvestmentTicket t) => Features({
-  'sector': _ones(t.sectors, (l) => sectorValue[l]),
-  'stage': _ones(t.stages, (l) => stageValue[l]),
+  'sector': {for (final l in t.sectors) _sectorOf(l): 1.0},
+  'stage': _stages(t.stages),
   'model': <String, double>{},
 });
 

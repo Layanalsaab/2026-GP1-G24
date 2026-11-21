@@ -141,6 +141,32 @@ def model_value(label: str | None) -> str | None:
     return value if value in MODELS else None
 
 
+def other_key(text: object) -> str:
+    """OtherCheck._key in the app: lower case, letters and digits only, a final "s" dropped."""
+    if not isinstance(text, str):
+        return ""
+    key = "".join(ch for ch in text.lower() if ch.isalnum())
+    return key[:-1] if len(key) > 1 and key.endswith("s") else key
+
+
+_SECTOR_KEYS = {other_key(label): value for label, value in _SECTOR_VALUE.items()}
+_MODEL_KEYS = {other_key(label): value for label, value in _MODEL_VALUE.items()}
+
+
+def typed_token(text: object, group: str) -> str:
+    """What an "Other" answer counts as: the written text ("other:spacetech"), an existing
+    option when the text repeats one ("Fin tech" -> "fintech"), or "other" when nothing was written."""
+    if group == "model":
+        known = model_value(text if isinstance(text, str) else None)
+        if known:
+            return known
+    key = other_key(text)
+    if not key or key == "other":
+        return "other"
+    known_keys = _SECTOR_KEYS if group == "sector" else _MODEL_KEYS if group == "model" else {}
+    return known_keys.get(key) or f"other:{key}"
+
+
 def sector_label(value: str | None) -> str | None:
     return _SECTOR_LABEL.get(value) if isinstance(value, str) else None
 

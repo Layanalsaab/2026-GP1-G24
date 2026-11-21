@@ -29,9 +29,12 @@ def score_candidates(taste: Taste, candidates: dict[str, np.ndarray]) -> np.ndar
             spread = cosines[present].max() - cosines[present].min()
             if spread < 1e-9:  # one candidate or all equal: text tells them apart by nothing
                 continue
-            rescaled = np.zeros(n)
+            # A candidate without a text vector gets a neutral 0.5: unknown is neither good nor bad.
+            rescaled = np.full(n, 0.5)
             rescaled[present] = minmax_scale(cosines[present])
-            cosines = rescaled
+            numerator += weight * rescaled
+            denominator += weight
+            continue
         numerator += weight * cosines * present
         denominator += weight * present
     return np.divide(numerator, denominator, out=np.zeros(n), where=denominator > 0)
