@@ -26,6 +26,9 @@ def score_candidates(taste: Taste, candidates: dict[str, np.ndarray]) -> np.ndar
             continue
         cosines = cosine_similarity(wanted.reshape(1, -1), rows)[0]
         if group == "text":
+            spread = cosines[present].max() - cosines[present].min()
+            if spread < 1e-9:  # one candidate or all equal: text tells them apart by nothing
+                continue
             rescaled = np.zeros(n)
             rescaled[present] = minmax_scale(cosines[present])
             cosines = rescaled

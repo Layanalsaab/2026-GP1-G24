@@ -1,3 +1,4 @@
+import logging
 import threading
 import time
 from datetime import datetime, timezone
@@ -9,6 +10,7 @@ from fastapi.testclient import TestClient
 from app.data import DataStore
 from app.embeddings import MODEL_NAME, fingerprint
 from app.main import Once, create_app
+from app.vector_store import pack, read, unpack, write
 from tests.fakes import FakeSource
 
 NOW = datetime(2026, 11, 21, 9, 0, tzinfo=timezone.utc)
@@ -41,9 +43,9 @@ def make(docs=None):
         "investors/inv1": {"fullName": "Nora"},
         "startups/s1": dict(PAYLY),
         "startups/s2": {"name": "Quiet", "isPublic": True, "founderId": "f1", "sector": "ai", "stage": "seed"},
-        "vectors/s-s2": {"vector": [0.0] * 384, "model": MODEL_NAME, "fingerprint": "old"},
         **(docs or {}),
     })
+    write(source, "s-s2", {"v": pack([0.0] * 384), "model": MODEL_NAME, "fingerprint": "old"})
     store = DataStore(source, clock=lambda: NOW)
     embedder = StubEmbedder()
     client = TestClient(create_app(store, verify, lambda: embedder, clock=lambda: NOW))
@@ -90,9 +92,9 @@ def test_profile_text_owner_writes_then_skips_unchanged():
     client, source, _, embedder = make()
     first = client.post("/profile-text", headers=auth("f1"), json={"kind": "startup", "id": "s1"})
     assert first.status_code == 200 and first.json() == {"updated": True}
-    stored = source.docs["vectors/s-s1"]
+    stored = read(source, "s-s1")
     assert stored["model"] == MODEL_NAME and stored["fingerprint"] == fingerprint(PAYLY, "startup")
-    assert len(stored["vector"]) == 384 and stored["vector"][0] == 1.0
+    assert unpack(stored["v"])[0] == pytest.approx(1.0)
     second = client.post("/profile-text", headers=auth("f1"), json={"kind": "startup", "id": "s1"})
     assert second.json() == {"updated": False} and embedder.calls == 1
 
@@ -108,7 +110,7 @@ def test_profile_text_not_owner_is_403_and_unknown_is_404():
 def test_profile_text_with_empty_texts_deletes_the_vector():
     client, source, *_ = make()
     response = client.post("/profile-text", headers=auth("f1"), json={"kind": "startup", "id": "s2"})
-    assert response.json() == {"updated": True} and "vectors/s-s2" not in source.docs
+    assert response.json() == {"updated": True} and read(source, "s-s2") is None
 
 
 def test_profile_text_updates_the_cached_snapshot():
@@ -157,3 +159,23 @@ def test_once_builds_a_single_instance_under_concurrent_calls():
     for t in threads:
         t.join()
     assert len(built) == 1 and len({id(r) for r in results}) == 1
+
+
+def test_profile_text_rejects_bad_ids():
+    client, *_ = make()
+    for bad in ("a/b", "..", ".", "x" * 300):
+        response = client.post("/profile-text", headers=auth("f1"), json={"kind": "startup", "id": bad})
+        assert response.status_code == 422, bad
+
+
+def test_unexpected_errors_are_logged_and_answered_as_json(caplog):
+    class BrokenStore(DataStore):
+        def snapshot(self):
+            raise RuntimeError("Firestore is down")
+
+    store = BrokenStore(FakeSource({"users/inv1": {"role": "investor"}}), clock=lambda: NOW)
+    client = TestClient(create_app(store, verify, StubEmbedder, clock=lambda: NOW), raise_server_exceptions=False)
+    with caplog.at_level(logging.ERROR, logger="startsa.for_you"):
+        response = client.post("/for-you", headers=auth("inv1"))
+    assert response.status_code == 500 and response.json()["detail"]
+    assert any("Firestore is down" in (r.exc_text or "") or "Firestore is down" in str(r.exc_info) for r in caplog.records)

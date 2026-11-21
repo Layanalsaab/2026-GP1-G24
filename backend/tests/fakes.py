@@ -9,6 +9,7 @@ class FakeSource:
     def __init__(self, docs: dict[str, dict] | None = None):
         self.docs: dict[str, dict] = dict(docs or {})
         self.stream_calls = 0
+        self.docs_read = 0
 
     def stream(self, collection: str, field: str | None = None, op: str | None = None, value: object = None) -> list[tuple[str, dict]]:
         self.stream_calls += 1
@@ -24,9 +25,11 @@ class FakeSource:
                 if op == "array-contains" and not (isinstance(current, list) and value in current):
                     continue
             out.append((path[len(prefix):], dict(data)))
+        self.docs_read += len(out)
         return out
 
     def get(self, path: str) -> dict | None:
+        self.docs_read += 1
         data = self.docs.get(path)
         return dict(data) if data is not None else None
 
@@ -35,3 +38,10 @@ class FakeSource:
 
     def delete(self, path: str) -> None:
         self.docs.pop(path, None)
+
+    def merge(self, path: str, data: dict) -> None:
+        self.docs.setdefault(path, {}).update(data)
+
+    def delete_field(self, path: str, field: str) -> None:
+        if path in self.docs:
+            self.docs[path].pop(field, None)

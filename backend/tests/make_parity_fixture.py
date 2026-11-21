@@ -22,7 +22,7 @@ FIXTURE = Path(__file__).parent / "fixtures" / "for_you_parity.json"
 
 SCENARIO = {
     "now": "2026-11-21T09:00:00Z",
-    "limit": 5,
+    "limit": 6,
     "base": {"sector": ["fintech", "ai", "saas"], "stage": ["seed", "series_a"], "model": ["b2b", "b2c"]},
     "likes": [
         # a bookmark 45 days old
@@ -41,6 +41,10 @@ SCENARIO = {
         {"id": "c6", "name": "Farmly", "mainSector": "agritech", "groups": {"sector": ["agritech"], "stage": ["series_c"], "model": ["g2c"]}},
         {"id": "c7", "name": "Coinly", "mainSector": "fintech", "groups": {"sector": ["fintech"], "stage": ["seed"], "model": ["b2b"]}},
         {"id": "c8", "name": "GreenGrid", "mainSector": "energy", "groups": {"sector": ["energy", "logistics"], "stage": ["seed"], "model": ["b2b"]}},
+        # left over after the first 3 places but its sector is already listed: the other-sector places must skip it
+        {"id": "c9", "name": "Fundly", "mainSector": "fintech", "groups": {"sector": ["fintech"], "stage": ["seed"], "model": ["d2c"]}},
+        # no main sector (null), which counts as a sector not yet in the list
+        {"id": "c10", "name": "Nameless Sector", "mainSector": None, "groups": {"sector": ["ai"], "stage": ["series_a"], "model": ["b2c"]}},
     ],
 }
 

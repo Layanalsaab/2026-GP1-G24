@@ -1,6 +1,6 @@
 {
   "now": "2026-11-21T09:00:00Z",
-  "limit": 5,
+  "limit": 6,
   "base": {
     "sector": [
       "fintech",
@@ -192,6 +192,38 @@
           "b2b"
         ]
       }
+    },
+    {
+      "id": "c9",
+      "name": "Fundly",
+      "mainSector": "fintech",
+      "groups": {
+        "sector": [
+          "fintech"
+        ],
+        "stage": [
+          "seed"
+        ],
+        "model": [
+          "d2c"
+        ]
+      }
+    },
+    {
+      "id": "c10",
+      "name": "Nameless Sector",
+      "mainSector": null,
+      "groups": {
+        "sector": [
+          "ai"
+        ],
+        "stage": [
+          "series_a"
+        ],
+        "model": [
+          "b2c"
+        ]
+      }
     }
   ],
   "expected": [
@@ -210,6 +242,10 @@
     {
       "id": "c5",
       "score": 0.6190891433970171
+    },
+    {
+      "id": "c10",
+      "score": 0.5526133330593931
     },
     {
       "id": "c8",

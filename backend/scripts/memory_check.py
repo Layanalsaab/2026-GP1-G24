@@ -21,9 +21,11 @@ def peak_mb() -> float:
     return peak / (1024 * 1024) if sys.platform == "darwin" else peak / 1024  # bytes on macOS, KB on Linux
 
 
-def build_docs() -> dict[str, dict]:
+def build_docs() -> tuple[dict[str, dict], dict[str, dict]]:
     from app.embeddings import MODEL_NAME, fingerprint
+    from app.vector_store import pack
 
+    vectors: dict[str, dict] = {}
     docs: dict[str, dict] = {
         "users/inv1": {"role": "investor", "preferredSectors": ["Fintech", "AI"], "preferredStages": ["Seed"]},
         "users/f1": {"role": "founder"},
@@ -34,15 +36,15 @@ def build_docs() -> dict[str, dict]:
                "lookingFor": ["funding"], "fundingRequirement": 1_000_000,
                "description": f"Startup number {k} building software for {SECTORS[k % 8]} customers"}
         docs[f"startups/s{k}"] = doc
-        docs[f"vectors/s-s{k}"] = {"vector": [((k + j) % 7) / 7 for j in range(384)], "model": MODEL_NAME,
-                                   "fingerprint": fingerprint(doc, "startup")}
+        vectors[f"s-s{k}"] = {"v": pack([((k + j) % 7) / 7 for j in range(384)]), "model": MODEL_NAME,
+                              "fingerprint": fingerprint(doc, "startup")}
     for k in range(100):
         doc = {"fullName": f"Investor {k}", "preferredSectors": ["Fintech"], "preferredStages": ["Seed"],
                "bio": f"Angel investor number {k}"}
         docs[f"investors/i{k}"] = doc
-        docs[f"vectors/i-i{k}"] = {"vector": [((k * j) % 5) / 5 for j in range(384)], "model": MODEL_NAME,
-                                   "fingerprint": fingerprint(doc, "investor")}
-    return docs
+        vectors[f"i-i{k}"] = {"v": pack([((k * j) % 5) / 5 for j in range(384)]), "model": MODEL_NAME,
+                              "fingerprint": fingerprint(doc, "investor")}
+    return docs, vectors
 
 
 def main() -> int:
@@ -55,7 +57,13 @@ def main() -> int:
     from app.main import create_app
     from tests.fakes import FakeSource
 
-    store = DataStore(FakeSource(build_docs()))
+    from app.vector_store import write
+
+    docs, vectors = build_docs()
+    source = FakeSource(docs)
+    for key, entry in vectors.items():
+        write(source, key, entry)
+    store = DataStore(source)
     client = TestClient(create_app(store, lambda token: {"uid": token}, Embedder,
                                    clock=lambda: datetime.now(timezone.utc)))
     items = client.post("/for-you", headers={"Authorization": "Bearer inv1"}).json()["items"]

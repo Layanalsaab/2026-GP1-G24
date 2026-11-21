@@ -25,6 +25,10 @@ class Source(Protocol):
 
     def delete(self, path: str) -> None: ...
 
+    def merge(self, path: str, data: dict) -> None: ...
+
+    def delete_field(self, path: str, field: str) -> None: ...
+
 
 class FirestoreSource:
     """The real Firestore, through firebase-admin."""
@@ -62,6 +66,15 @@ class FirestoreSource:
     def delete(self, path: str) -> None:
         self._db.document(path).delete()
 
+    def merge(self, path: str, data: dict) -> None:
+        """Writes only the given fields; field names are taken literally (no dotted paths)."""
+        self._db.document(path).set(data, merge=True)
+
+    def delete_field(self, path: str, field: str) -> None:
+        from firebase_admin import firestore
+
+        self._db.document(path).set({field: firestore.DELETE_FIELD}, merge=True)
+
 
 @dataclass
 class Snapshot:
@@ -88,6 +101,12 @@ def _as_time(raw: object, fallback: datetime) -> datetime:
     return raw if raw.tzinfo is not None else raw.replace(tzinfo=timezone.utc)
 
 
+def load_vectors(source: Source) -> dict[str, dict]:
+    from .vector_store import load_all
+
+    return load_all(source)
+
+
 def _docs(rows: list[tuple[str, dict]]) -> dict[str, dict]:
     return {doc_id: data for doc_id, data in rows if isinstance(data, dict)}
 
@@ -109,7 +128,7 @@ class DataStore:
                 startups=_docs(self.source.stream("startups", "isPublic", "==", True)),
                 investors=_docs(self.source.stream("investors")),
                 tickets=list(_docs(self.source.stream("tickets", "status", "==", "open")).values()),
-                vectors=_docs(self.source.stream("vectors")),
+                vectors=load_vectors(self.source),
                 loaded_at=now,
             )
             return self._snapshot
@@ -128,6 +147,8 @@ class DataStore:
             docs = dict(getattr(snap, group))
             if kind != "startup" or doc.get("isPublic") is True:
                 docs[doc_id] = doc
+            else:
+                docs.pop(doc_id, None)  # made private: stop recommending it now
             vectors = dict(snap.vectors)
             key = f"{'s' if kind == 'startup' else 'i'}-{doc_id}"
             if vector_doc is None:
@@ -138,6 +159,12 @@ class DataStore:
 
     def _dated(self, collection: str, now: datetime) -> dict[str, datetime]:
         return {key: _as_time(data.get("createdAt"), now) for key, data in _docs(self.source.stream(collection)).items()}
+
+    def role_of(self, uid: str) -> str | None:
+        """"founder" or "investor" from users/{uid} (one read), or None."""
+        user = self.source.get(f"users/{uid}")
+        role = user.get("role") if isinstance(user, dict) else None
+        return role if role in ROLES else None
 
     def user_context(self, uid: str) -> UserContext | None:
         user = self.source.get(f"users/{uid}")

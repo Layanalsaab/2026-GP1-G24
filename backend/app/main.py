@@ -9,12 +9,14 @@ from contextlib import asynccontextmanager
 from datetime import datetime
 from typing import Callable, Generic, Literal, TypeVar
 
-from fastapi import Depends, FastAPI, Header, HTTPException
-from pydantic import BaseModel, Field
+from fastapi import Depends, FastAPI, Header, HTTPException, Request
+from fastapi.responses import JSONResponse
+from pydantic import BaseModel, Field, field_validator
 
 from .data import DataStore, FirestoreSource, utc_now
 from .embeddings import MODEL_NAME, Embedder, fingerprint, profile_texts
 from .recommend import for_you
+from .vector_store import pack, read, remove, write
 
 log = logging.getLogger("startsa.for_you")
 T = TypeVar("T")
@@ -49,7 +51,14 @@ class ForYouResponse(BaseModel):
 
 class ProfileTextRequest(BaseModel):
     kind: Literal["startup", "investor"]
-    id: str = Field(min_length=1)
+    id: str = Field(min_length=1, max_length=200, pattern=r"^[^/]+$")
+
+    @field_validator("id")
+    @classmethod
+    def not_a_path(cls, value: str) -> str:
+        if value in (".", ".."):
+            raise ValueError("not a document id")
+        return value
 
 
 class ProfileTextResponse(BaseModel):
@@ -80,6 +89,11 @@ def create_app(
 
     app = FastAPI(title="Start.sa For You", lifespan=lifespan)
     model = Once(embedder)
+
+    @app.exception_handler(Exception)
+    async def unexpected(request: Request, error: Exception) -> JSONResponse:
+        log.error("%s %s failed", request.method, request.url.path, exc_info=error)
+        return JSONResponse(status_code=500, content={"detail": "Something went wrong. Try again later."})
 
     def current_uid(authorization: str | None = Header(default=None)) -> str:
         if not authorization or not authorization.startswith("Bearer "):
@@ -112,7 +126,7 @@ def create_app(
 
     @app.post("/profile-text", response_model=ProfileTextResponse)
     def profile_text(request: ProfileTextRequest, uid: str = Depends(current_uid)) -> ProfileTextResponse:
-        if store.user_context(uid) is None:
+        if store.role_of(uid) is None:
             raise HTTPException(status_code=403, detail="This account has no founder or investor profile")
         collection = "startups" if request.kind == "startup" else "investors"
         doc = store.source.get(f"{collection}/{request.id}")
@@ -121,20 +135,19 @@ def create_app(
         if not _owns(uid, request.kind, request.id, doc):
             raise HTTPException(status_code=403, detail="You can only update your own profile")
 
-        path = f"vectors/{'s' if request.kind == 'startup' else 'i'}-{request.id}"
+        key = f"{'s' if request.kind == 'startup' else 'i'}-{request.id}"
         texts = profile_texts(doc, request.kind)
         current = fingerprint(doc, request.kind)
         if not texts:
-            store.source.delete(path)
+            remove(store.source, key)
             store.remember_profile(request.kind, request.id, doc, None)
             return ProfileTextResponse(updated=True)
-        existing = store.source.get(path)
+        existing = read(store.source, key)
         if existing and existing.get("model") == MODEL_NAME and existing.get("fingerprint") == current:
             return ProfileTextResponse(updated=False)
-        vector = model.get().profile_vector(texts)
-        vector_doc = {"vector": [float(x) for x in vector], "model": MODEL_NAME, "fingerprint": current}
-        store.source.set(path, vector_doc)
-        store.remember_profile(request.kind, request.id, doc, vector_doc)
+        entry = {"v": pack(model.get().profile_vector(texts)), "model": MODEL_NAME, "fingerprint": current}
+        write(store.source, key, entry)
+        store.remember_profile(request.kind, request.id, doc, entry)
         return ProfileTextResponse(updated=True)
 
     return app
@@ -159,6 +172,8 @@ def _verify_firebase_token(token: str) -> dict:
     except (auth.InvalidIdTokenError, auth.UserDisabledError) as error:  # includes expired and revoked tokens
         raise ValueError(str(error)) from error
 
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 
 # Connecting at start-up makes a missing or broken FIREBASE_SERVICE_ACCOUNT_JSON fail the deploy
 # instead of answering every request with an error.

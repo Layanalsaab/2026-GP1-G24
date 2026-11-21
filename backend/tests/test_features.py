@@ -1,10 +1,14 @@
+import numpy as np
+
 from app.catalog import MODELS, SECTORS, STAGES
 from app.features import (
     criteria_amounts,
     criteria_groups,
     investor_groups,
+    investor_rows,
     parseable_startup,
     startup_groups,
+    startup_rows,
     ticket_groups,
 )
 
@@ -57,3 +61,16 @@ def test_parseable_startup_matches_the_app():
     for broken in ({"sector": "space"}, {"stage": None}, {"commerceModel": "b2x"}, {"location": "Riyadh City"},
                    {"location": None}, {"founderId": None}, {"name": 7}):
         assert not parseable_startup({**ok, **broken}), broken
+
+
+def test_rows_for_many_documents_match_one_by_one():
+    startups = [{"sector": "fintech", "otherSectors": ["AI"], "stage": "seed", "commerceModel": "b2b"},
+                {"sector": "software_cloud", "stage": "mvp", "commerceModel": "marketplace"},
+                {"sector": 5}]
+    rows = startup_rows(startups)
+    for g in ("sector", "stage", "model"):
+        assert np.array_equal(rows[g], np.stack([startup_groups(d)[g] for d in startups]))
+    investors = [{"preferredSectors": ["HR Tech"], "preferredStages": ["Seed"], "preferredCommerceModels": ["B2C"]}, {}]
+    irows = investor_rows(investors)
+    for g in ("sector", "stage", "model"):
+        assert np.array_equal(irows[g], np.stack([investor_groups(d)[g] for d in investors]))

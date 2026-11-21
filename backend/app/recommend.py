@@ -6,19 +6,21 @@ from datetime import datetime
 
 import numpy as np
 
-from .catalog import sector_value, stored_sector
+from .catalog import finite_int, sector_value, stored_sector
 from .data import Snapshot, UserContext, _as_time
 from .embeddings import DIM, MODEL_NAME, fingerprint
 from .features import (
-    LABEL_GROUPS,
     GroupVectors,
     criteria_amounts,
     criteria_groups,
     investor_groups,
+    investor_rows,
     parseable_startup,
     startup_groups,
+    startup_rows,
     ticket_groups,
 )
+from .vector_store import unpack
 from .ranking import DEFAULT_LIMIT, Pick, amount_fits, recommend_best, ticket_bonus
 from .scoring import score_candidates
 from .taste import TICKET_STRENGTH, Signal, build_taste
@@ -31,24 +33,35 @@ def fresh_vector(key: str, doc: dict, kind: str, snap: Snapshot) -> np.ndarray |
         return None
     if stored.get("fingerprint") != fingerprint(doc, kind):
         return None
-    vector = stored.get("vector")
-    if not isinstance(vector, list) or len(vector) != DIM:
-        return None
-    if not all(isinstance(x, (int, float)) and not isinstance(x, bool) for x in vector):
-        return None
-    array = np.asarray(vector, dtype=float)
-    return array if np.isfinite(array).all() else None
+    return unpack(stored.get("v"))
 
 
 def _with_text(groups: GroupVectors, vector: np.ndarray | None) -> GroupVectors:
     return {**groups, "text": vector} if vector is not None else groups
 
 
-def _rows(items: list[GroupVectors]) -> dict[str, np.ndarray]:
-    rows = {g: np.stack([item[g] for item in items]) for g in LABEL_GROUPS}
-    if any("text" in item for item in items):
-        rows["text"] = np.stack([item.get("text", np.zeros(DIM)) for item in items])
+def _with_text_rows(rows: dict[str, np.ndarray], vectors: list[np.ndarray | None]) -> dict[str, np.ndarray]:
+    if any(v is not None for v in vectors):
+        rows = {**rows, "text": np.stack([v if v is not None else np.zeros(DIM) for v in vectors])}
     return rows
+
+
+def valid_ticket(ticket: dict) -> bool:
+    """InvestmentTicket.fromMap in the app drops tickets without these."""
+    return (
+        isinstance(ticket.get("investorId"), str)
+        and isinstance(ticket.get("name"), str)
+        and finite_int(ticket.get("amountMin")) is not None
+        and finite_int(ticket.get("amountMax")) is not None
+    )
+
+
+def investor_main_sector(doc: dict) -> str | None:
+    """sectorValue[first preferred sector] in the app ("Other" -> "other")."""
+    sectors = doc.get("preferredSectors")
+    if not isinstance(sectors, list) or not sectors or not isinstance(sectors[0], str):
+        return None
+    return "other" if sectors[0] == "Other" else sector_value(sectors[0])
 
 
 def _listed_startup(doc: dict) -> bool:
@@ -78,7 +91,7 @@ def for_you(ctx: UserContext, snap: Snapshot, now: datetime, limit: int = DEFAUL
 
 
 def _for_investor(ctx: UserContext, snap: Snapshot, now: datetime, limit: int) -> list[Pick]:
-    tickets = [t for t in snap.tickets if t.get("investorId") == ctx.uid]
+    tickets = [t for t in snap.tickets if t.get("investorId") == ctx.uid and valid_ticket(t)]
     base = criteria_groups(ctx.user_doc)
     own_profile = snap.investors.get(ctx.uid)
     if own_profile is not None:
@@ -100,8 +113,8 @@ def _for_investor(ctx: UserContext, snap: Snapshot, now: datetime, limit: int) -
     if not ids:
         return []
     docs = [snap.startups[sid] for sid in ids]
-    items = [_with_text(startup_groups(d), fresh_vector(f"s-{sid}", d, "startup", snap)) for sid, d in zip(ids, docs)]
-    scores = score_candidates(taste, _rows(items))[None, :]
+    rows = _with_text_rows(startup_rows(docs), [fresh_vector(f"s-{sid}", d, "startup", snap) for sid, d in zip(ids, docs)])
+    scores = score_candidates(taste, rows)[None, :]
     bonus = np.array([[ticket_bonus(d, tickets) for d in docs]])
     return recommend_best(
         ids, [d["name"] for d in docs], [stored_sector(d.get("sector")) for d in docs],
@@ -125,13 +138,13 @@ def _for_founder(ctx: UserContext, snap: Snapshot, now: datetime, limit: int) ->
     if not ids:
         return []
     docs = [snap.investors[iid] for iid in ids]
-    items = [_with_text(investor_groups(d), fresh_vector(f"i-{iid}", d, "investor", snap)) for iid, d in zip(ids, docs)]
-    rows = _rows(items)
+    rows = _with_text_rows(investor_rows(docs), [fresh_vector(f"i-{iid}", d, "investor", snap) for iid, d in zip(ids, docs)])
     scores = np.stack([score_candidates(taste, rows) for taste in tastes])
 
     tickets_of: dict[str, list[dict]] = {}
     for ticket in snap.tickets:
-        tickets_of.setdefault(ticket.get("investorId"), []).append(ticket)
+        if valid_ticket(ticket):
+            tickets_of.setdefault(ticket["investorId"], []).append(ticket)
     allowed = np.ones_like(scores, dtype=bool)
     bonus = np.zeros_like(scores)
     for t, (_, startup) in enumerate(own):
@@ -140,11 +153,7 @@ def _for_founder(ctx: UserContext, snap: Snapshot, now: datetime, limit: int) ->
             allowed[t, k] = amount_fits(startup, theirs, *criteria_amounts(doc))
             bonus[t, k] = ticket_bonus(startup, theirs)
 
-    def main_sector(doc: dict) -> str | None:
-        sectors = doc.get("preferredSectors")
-        return sector_value(sectors[0]) if isinstance(sectors, list) and sectors and isinstance(sectors[0], str) else None
-
     return recommend_best(
-        ids, [d["fullName"] for d in docs], [main_sector(d) for d in docs],
+        ids, [d["fullName"] for d in docs], [investor_main_sector(d) for d in docs],
         scores, allowed, bonus, limit=limit,
     )

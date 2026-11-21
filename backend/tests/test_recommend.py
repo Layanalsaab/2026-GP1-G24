@@ -5,7 +5,8 @@ import pytest
 
 from app.data import Snapshot, UserContext
 from app.embeddings import MODEL_NAME, fingerprint
-from app.recommend import for_you
+from app.recommend import for_you, investor_main_sector
+from app.vector_store import pack
 
 NOW = datetime(2026, 11, 21, 9, 0, tzinfo=timezone.utc)
 
@@ -70,10 +71,10 @@ def test_stale_vector_is_ignored():
     fin = startup("Payly", "fintech", "seed", description="Payroll")
     health = startup("MediBook", "healthtech", "seed", "b2c", description="Clinic booking")
     base_vectors = {
-        "i-inv1": {"vector": [1.0] + [0.0] * 383, "model": MODEL_NAME, "fingerprint": fingerprint(bio, "investor")},
-        "s-health": {"vector": [0.6, 0.8] + [0.0] * 382, "model": MODEL_NAME, "fingerprint": fingerprint(health, "startup")},
+        "i-inv1": {"v": pack([1.0] + [0.0] * 383), "model": MODEL_NAME, "fingerprint": fingerprint(bio, "investor")},
+        "s-health": {"v": pack([0.6, 0.8] + [0.0] * 382), "model": MODEL_NAME, "fingerprint": fingerprint(health, "startup")},
     }
-    stale = {"vector": [1.0] + [0.0] * 383, "model": MODEL_NAME, "fingerprint": "an older text"}
+    stale = {"v": pack([1.0] + [0.0] * 383), "model": MODEL_NAME, "fingerprint": "an older text"}
     with_stale = snap({"fin": fin, "health": health}, {"inv1": bio}, vectors={**base_vectors, "s-fin": stale})
     without = snap({"fin": fin, "health": health}, {"inv1": bio}, vectors=base_vectors)
     a = for_you(investor_ctx(FINTECH_SEED), with_stale, NOW)
@@ -83,7 +84,7 @@ def test_stale_vector_is_ignored():
 
 def test_open_ticket_adds_the_bonus():
     s = snap({"fin": startup("Payly", "fintech", "seed")},
-             tickets=[{"investorId": "inv1", "status": "open", "amountMin": 100_000, "amountMax": 2_000_000,
+             tickets=[{"investorId": "inv1", "name": "T1", "status": "open", "amountMin": 100_000, "amountMax": 2_000_000,
                        "sectors": ["Fintech"], "stages": ["Seed"], "createdAt": NOW}])
     picks = for_you(investor_ctx(FINTECH_SEED), s, NOW)
     assert picks[0].id == "fin" and picks[0].score == pytest.approx(1.3)
@@ -126,6 +127,25 @@ def test_closed_bookmarks_do_not_shape_the_taste():
 
 def test_bad_numbers_and_vectors_do_not_crash():
     fin = startup("Payly", "fintech", "seed", fundingRequirement=float("nan"), description="Payroll")
-    s = snap({"fin": fin}, vectors={"s-fin": {"vector": [None] * 384, "model": MODEL_NAME,
+    s = snap({"fin": fin}, vectors={"s-fin": {"v": b"broken", "model": MODEL_NAME,
                                               "fingerprint": fingerprint(fin, "startup")}})
     assert [p.id for p in for_you(investor_ctx(FINTECH_SEED), s, NOW)] == ["fin"]
+
+
+def test_malformed_tickets_are_ignored():
+    good = [{"investorId": "inv1", "name": "T1", "status": "open", "amountMin": 100_000, "amountMax": 2_000_000,
+             "sectors": ["Fintech"], "stages": ["Seed"], "createdAt": NOW}]
+    bad = [{"investorId": "inv1", "status": "open", "amountMin": "lots", "amountMax": 2_000_000,  # no name, text amount
+            "sectors": ["HealthTech"], "stages": ["Series B"], "createdAt": NOW}]
+    s_plain = snap({"fin": startup("Payly", "fintech", "seed")})
+    s_bad = snap({"fin": startup("Payly", "fintech", "seed")}, tickets=bad)
+    plain = for_you(investor_ctx(FINTECH_SEED), s_plain, NOW)
+    assert [(p.id, p.score) for p in for_you(investor_ctx(FINTECH_SEED), s_bad, NOW)] == [(p.id, p.score) for p in plain]
+    with_good = for_you(investor_ctx(FINTECH_SEED), snap({"fin": startup("Payly", "fintech", "seed")}, tickets=good), NOW)
+    assert with_good[0].score == pytest.approx(1.3)
+
+
+def test_investor_main_sector_matches_the_app():
+    assert investor_main_sector({"preferredSectors": ["Other", "Fintech"]}) == "other"
+    assert investor_main_sector({"preferredSectors": ["Fintech"]}) == "fintech"
+    assert investor_main_sector({"preferredSectors": []}) is None and investor_main_sector({}) is None

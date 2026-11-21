@@ -3,6 +3,7 @@ import time
 from datetime import datetime, timedelta, timezone
 
 from app.data import DataStore
+from app.vector_store import pack, write
 from tests.fakes import FakeSource
 
 T0 = datetime(2026, 11, 21, 9, 0, tzinfo=timezone.utc)
@@ -16,7 +17,7 @@ class Clock:
         return self.now
 
 
-def seeded() -> FakeSource:
+def _seeded() -> FakeSource:
     return FakeSource({
         "startups/s1": {"name": "Payly", "isPublic": True, "founderId": "f1", "sector": "fintech"},
         "startups/s2": {"name": "Hidden", "isPublic": False, "founderId": "f1", "memberIds": ["u9"]},
@@ -24,12 +25,17 @@ def seeded() -> FakeSource:
         "investors/i1": {"fullName": "Nora", "preferredSectors": ["Fintech"]},
         "tickets/i1-T1": {"investorId": "i1", "status": "open", "amountMin": 1, "amountMax": 2},
         "tickets/i1-T2": {"investorId": "i1", "status": "closed", "amountMin": 1, "amountMax": 2},
-        "vectors/s-s1": {"vector": [0.0] * 384, "model": "m", "fingerprint": "abc"},
         "users/f1": {"role": "founder"},
         "users/f1/bookmarks/i-i1": {"type": "i", "targetId": "i1", "createdAt": T0 - timedelta(days=3)},
         "users/f1/notInterested/i-i2": {"type": "i", "targetId": "i2", "createdAt": T0 - timedelta(days=1)},
         "users/x1": {"fullName": "No role"},
     })
+
+
+def seeded() -> FakeSource:
+    source = _seeded()
+    write(source, "s-s1", {"v": pack([0.0] * 384), "model": "m", "fingerprint": "abc"})
+    return source
 
 
 def test_snapshot_is_cached_for_30_minutes():
@@ -103,3 +109,28 @@ def test_remember_profile_leaves_a_snapshot_in_use_unchanged():
     assert "new" not in before.startups and "s-new" not in before.vectors
     after = store.snapshot()
     assert "new" in after.startups and "s-new" in after.vectors
+
+
+def test_snapshot_reads_few_documents_for_many_vectors():
+    source = seeded()
+    for k in range(300):
+        write(source, f"s-x{k}", {"v": pack([0.0] * 384), "model": "m", "fingerprint": str(k)})
+    source.docs_read = 0
+    snap = DataStore(source, clock=Clock(T0)).snapshot()
+    assert len(snap.vectors) == 301
+    assert source.docs_read <= len(snap.startups) + len(snap.investors) + 2 + 16  # 2 tickets (open + closed) read
+
+
+def test_remember_profile_drops_a_startup_made_private():
+    store = DataStore(seeded(), clock=Clock(T0))
+    store.snapshot()
+    store.remember_profile("startup", "s1", {"name": "Payly", "isPublic": False}, None)
+    assert "s1" not in store.snapshot().startups
+
+
+def test_role_of_reads_one_document():
+    source = seeded()
+    store = DataStore(source, clock=Clock(T0))
+    source.docs_read = 0
+    assert store.role_of("f1") == "founder" and source.docs_read == 1
+    assert store.role_of("x1") is None and store.role_of("missing") is None

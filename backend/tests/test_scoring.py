@@ -57,8 +57,14 @@ def test_text_minmax_and_missing_vectors():
     assert s[3] == pytest.approx(1.0)
 
 
-def test_equal_text_cosines_do_not_produce_nan():
-    assert not np.isnan(score_candidates(text_taste(), same_text_candidates())).any()
+def test_equal_text_cosines_give_no_text_signal():
+    s = score_candidates(text_taste(), same_text_candidates())
+    assert not np.isnan(s).any() and s == pytest.approx([1.0, 1.0])  # labels only, no penalty
+
+
+def test_a_single_text_candidate_is_not_penalised():
+    one_text = {**_rows(2), "text": np.array([[0.6, 0.8], [0.0, 0.0]])}
+    assert score_candidates(text_taste(), one_text) == pytest.approx([1.0, 1.0])
 
 
 def test_empty_taste_scores_zero():

@@ -6,8 +6,9 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+COPY requirements.txt constraints.txt ./
+# constraints.txt pins every package exactly, so a rebuild cannot change the vectors or memory use
+RUN pip install --no-cache-dir -r requirements.txt -c constraints.txt
 
 COPY app ./app
 COPY scripts ./scripts

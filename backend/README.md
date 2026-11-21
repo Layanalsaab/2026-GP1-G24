@@ -19,8 +19,12 @@ Every request except `/health` needs `Authorization: Bearer <Firebase ID token>`
 brew install python@3.12
 cd backend
 python3.12 -m venv .venv
-.venv/bin/pip install -r requirements-dev.txt
+.venv/bin/pip install -r requirements-dev.txt -c constraints.txt
 ```
+
+`requirements.txt` lists the six packages the server uses; `constraints.txt` pins every package
+(including their dependencies) to the exact versions that were tested. After an intentional upgrade,
+regenerate it from a clean environment: `pip install -r requirements.txt && pip freeze > constraints.txt`.
 
 ## Tests
 
@@ -50,13 +54,15 @@ The service account only needs the **Cloud Datastore User** role. Open http://12
 
 ## One-time vector backfill
 
-Encodes every public startup and every investor whose text vector is missing or out of date:
+Encodes every public startup and every investor whose text vector is missing or out of date.
+Vectors are stored compactly in 16 documents (`vectorChunks/c00` … `c15`), so loading all of them
+costs 16 Firestore reads:
 
 ```bash
 .venv/bin/python -m scripts.backfill_vectors
 ```
 
-It prints `{"written": n, "unchanged": n, "deleted": n}` and is safe to run again.
+It prints `{"written": n, "unchanged": n, "deleted": n, "failed": n}` and is safe to run again.
 
 ## Memory check
 

@@ -50,6 +50,15 @@ def encode(values: dict[str, Iterable[str | None]]) -> GroupVectors:
     return out
 
 
+def encode_many(values: list[dict[str, Iterable[str | None]]]) -> dict[str, np.ndarray]:
+    """Like encode, for many documents in one call per group: an (n × vocabulary) matrix each."""
+    out: dict[str, np.ndarray] = {}
+    for group, binarizer in _BINARIZERS.items():
+        known = [sorted({v for v in item.get(group, ()) if v in VOCAB[group]}) for item in values]
+        out[group] = binarizer.transform(known).astype(float) if values else np.zeros((0, len(VOCAB[group])))
+    return out
+
+
 def _strings(raw: object) -> list[str]:
     return [v.strip() for v in raw if isinstance(v, str)] if isinstance(raw, list) else []
 
@@ -73,29 +82,48 @@ def parseable_startup(doc: dict) -> bool:
     )
 
 
-def startup_groups(doc: dict) -> GroupVectors:
-    sectors = [stored_sector(doc.get("sector"))] + [sector_value(l) for l in _strings(doc.get("otherSectors"))]
-    return encode({
-        "sector": sectors,
+def _startup_values(doc: dict) -> dict[str, list[str | None]]:
+    return {
+        "sector": [stored_sector(doc.get("sector"))] + [sector_value(l) for l in _strings(doc.get("otherSectors"))],
         "stage": [stored_stage(doc.get("stage"))],
         "model": [stored_model(doc.get("commerceModel"))],
-    })
+    }
 
 
-def _from_labels(sectors: list[str], stages: list[str], models: list[str]) -> GroupVectors:
-    return encode({
+def _label_values(sectors: list[str], stages: list[str], models: list[str]) -> dict[str, list[str | None]]:
+    return {
         "sector": [sector_value(l) for l in sectors],
         "stage": [stage_value(l) for l in stages],
         "model": [model_value(l) for l in models],
-    })
+    }
 
 
-def investor_groups(doc: dict) -> GroupVectors:
-    return _from_labels(
+def _investor_values(doc: dict) -> dict[str, list[str | None]]:
+    return _label_values(
         _strings(doc.get("preferredSectors")),
         _strings(doc.get("preferredStages")),
         _strings(doc.get("preferredCommerceModels")),
     )
+
+
+def startup_groups(doc: dict) -> GroupVectors:
+    return encode(_startup_values(doc))
+
+
+def startup_rows(docs: list[dict]) -> dict[str, np.ndarray]:
+    return encode_many([_startup_values(d) for d in docs])
+
+
+def _from_labels(sectors: list[str], stages: list[str], models: list[str]) -> GroupVectors:
+    return encode(_label_values(sectors, stages, models))
+
+
+def investor_groups(doc: dict) -> GroupVectors:
+    return encode(_investor_values(doc))
+
+
+def investor_rows(docs: list[dict]) -> dict[str, np.ndarray]:
+    return encode_many([_investor_values(d) for d in docs])
 
 
 def _nested(user_doc: dict) -> dict | None:
