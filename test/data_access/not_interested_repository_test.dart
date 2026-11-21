@@ -25,9 +25,14 @@ class _MemoryFirestore extends FirestoreService {
     (store[collection] ??= {})[id] = data;
   }
 
+  /// When true, every deleteDocument fails.
+  bool failDeletes = false;
+
   @override
-  Future<void> deleteDocument(String collection, String id) async =>
-      store[collection]?.remove(id);
+  Future<void> deleteDocument(String collection, String id) async {
+    if (failDeletes) throw Exception('offline');
+    store[collection]?.remove(id);
+  }
 
   @override
   Future<Map<String, dynamic>?> getDocument(
@@ -97,6 +102,14 @@ void main() {
     db.failWrites = true;
     await repo.add('s-x');
     expect(repo.keys.value, isEmpty);
+  });
+
+  test('a failed delete puts the key back', () async {
+    await repo.add('s-x');
+    db.failDeletes = true;
+    await repo.remove('s-x');
+    expect(repo.keys.value, {'s-x'});
+    expect(db.store[path]!.containsKey('s-x'), isTrue);
   });
 
   test('load reads saved keys and clear forgets them', () async {
