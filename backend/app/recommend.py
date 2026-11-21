@@ -149,7 +149,13 @@ def _for_founder(ctx: UserContext, snap: Snapshot, now: datetime, limit: int) ->
     docs = [snap.investors[iid] for iid in ids]
     candidates = [investor_values(d) for d in docs]
 
-    own = list(ctx.own_startups.items())
+    # Like the app, a startup the founder closed is not a base (all closed:
+    # ranked as a founder with no startup). Startups joined as a team member
+    # are kept as they are.
+    own = [
+        (sid, doc) for sid, doc in ctx.own_startups.items()
+        if not (doc.get("founderId") == ctx.uid and doc.get("status") == "closed")
+    ]
     own_values = [startup_values(doc) for _, doc in own]
     likes = _parts(ctx.bookmarks, "i-", snap.investors, "investor", snap)
     dislikes = _parts(ctx.dislikes, "i-", snap.investors, "investor", snap)

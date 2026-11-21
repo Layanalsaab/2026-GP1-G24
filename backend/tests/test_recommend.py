@@ -105,6 +105,32 @@ def test_founder_amount_filter_and_best_taste():
     assert [p.id for p in picks] == ["ok"] and picks[0].score == pytest.approx(1.0)
 
 
+ANGELS = {
+    "fin": {"fullName": "Fintech Angel", "preferredSectors": ["Fintech"], "preferredStages": ["Seed"]},
+    "health": {"fullName": "Health Angel", "preferredSectors": ["HealthTech"], "preferredStages": ["Seed"]},
+}
+
+
+def founder_ctx(own) -> UserContext:
+    return UserContext("f1", "founder", {"role": "founder"}, {}, {}, own)
+
+
+def test_founder_closed_startup_is_not_a_base():
+    open_one = startup("Payly", "fintech", "seed", founderId="f1")
+    closed = startup("MediBook", "healthtech", "seed", "b2c", founderId="f1", status="closed")
+    picks = for_you(founder_ctx({"open": open_one, "gone": closed}), snap(investors=ANGELS), NOW)
+    only_open = for_you(founder_ctx({"open": open_one}), snap(investors=ANGELS), NOW)
+    assert picks[0].id == "fin"
+    assert [(p.id, p.score) for p in picks] == [(p.id, p.score) for p in only_open]
+
+
+def test_founder_with_only_closed_startups_ranks_like_one_with_none():
+    closed = startup("MediBook", "healthtech", "seed", "b2c", founderId="f1", status="closed")
+    picks = for_you(founder_ctx({"gone": closed}), snap(investors=ANGELS), NOW)
+    none = for_you(founder_ctx({}), snap(investors=ANGELS), NOW)
+    assert [(p.id, p.score) for p in picks] == [(p.id, p.score) for p in none]
+
+
 def test_unparseable_startups_are_never_recommended():
     s = snap({"fin": startup("Payly", "fintech", "seed"), "broken": startup("Broken", "space", "seed"),
               "nowhere": startup("Nowhere", "fintech", "seed", location=None)})
