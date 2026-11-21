@@ -118,10 +118,16 @@ def founder_ctx(own) -> UserContext:
 def test_founder_closed_startup_is_not_a_base():
     open_one = startup("Payly", "fintech", "seed", founderId="f1")
     closed = startup("MediBook", "healthtech", "seed", "b2c", founderId="f1", status="closed")
-    picks = for_you(founder_ctx({"open": open_one, "gone": closed}), snap(investors=ANGELS), NOW)
-    only_open = for_you(founder_ctx({"open": open_one}), snap(investors=ANGELS), NOW)
-    assert picks[0].id == "fin"
-    assert [(p.id, p.score) for p in picks] == [(p.id, p.score) for p in only_open]
+    joined_closed = startup("CareHub", "healthtech", "seed", "b2c", memberIds=["f1"], status="closed")
+    joined_open = startup("CareHub", "healthtech", "seed", "b2c", memberIds=["f1"])
+    only_open = [(p.id, p.score) for p in for_you(founder_ctx({"open": open_one}), snap(investors=ANGELS), NOW)]
+    for own in ({"open": open_one, "gone": closed}, {"open": open_one, "joined": joined_closed}):
+        picks = for_you(founder_ctx(own), snap(investors=ANGELS), NOW)
+        assert picks[0].id == "fin"
+        assert [(p.id, p.score) for p in picks] == only_open
+    # An open startup joined as a team member is still a base.
+    with_joined = for_you(founder_ctx({"open": open_one, "joined": joined_open}), snap(investors=ANGELS), NOW)
+    assert dict((p.id, p.score) for p in with_joined)["health"] == pytest.approx(1.0)
 
 
 def test_founder_with_only_closed_startups_ranks_like_one_with_none():
