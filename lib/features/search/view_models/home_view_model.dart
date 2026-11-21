@@ -347,18 +347,19 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
       _serverKeys = _waitingKeys;
       _waitingKeys = null;
     }
-    final saved = _savedKeys ?? const [];
-    final keys = _serverKeys ?? (saved.isEmpty ? null : saved);
-    if (keys == null) {
-      return [
-        for (final it in _computeForYou())
-          if (!_notInterested.contains(it.bookmarkKey)) it,
+    final keys = _serverKeys ?? _savedKeys;
+    if (keys != null) {
+      final marks = _bookmarks.keys.value;
+      final items = [
+        for (final k in keys)
+          if (!marks.contains(k) && !_notInterested.contains(k)) ?_itemOf(k),
       ];
+      if (items.isNotEmpty) return items;
     }
-    final marks = _bookmarks.keys.value;
+    // No list, or nothing in it to show: the app's own ranking.
     return [
-      for (final k in keys)
-        if (!marks.contains(k) && !_notInterested.contains(k)) ?_itemOf(k),
+      for (final it in _computeForYou())
+        if (!_notInterested.contains(it.bookmarkKey)) it,
     ];
   }
 
@@ -444,7 +445,7 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
 
   Future<void>? _request;
   bool _askAgain = false;
-  bool _nextAnswerAtOnce = false;
+  bool _answerAtOnce = false;
   Timer? _quietTimer;
   bool _closed = false;
 
@@ -460,9 +461,11 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
     _hiddenAt.clear();
     _quietTimer?.cancel();
     _quietTimer = null;
+    _answerAtOnce = false;
     if (!_serverOn) return;
     unawaited(_readSaved(user!.uid));
-    unawaited(refreshForYou());
+    // A request still running is for the last user: ask again after it.
+    unawaited(_ask(atOnce: true, again: true));
   }
 
   Future<void> _readSaved(String uid) async {
@@ -475,25 +478,29 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
     }
   }
 
-  /// Asks the server for a new list; its answer shows at once. One request
-  /// runs at a time: a call during it asks again once it is done.
-  Future<void> refreshForYou() => _ask(atOnce: true);
+  /// Asks the server for a new list; its answer shows at once. A request
+  /// already running is joined (the server reads Firestore itself, so a
+  /// directory reload or profile edit changes nothing it sees).
+  Future<void> refreshForYou() => _ask(atOnce: true, again: false);
 
   void _askWhenQuiet() {
     if (!_serverOn) return;
     _quietTimer?.cancel();
     _quietTimer = Timer(_quietTime, () {
       _quietTimer = null;
-      unawaited(_ask(atOnce: false));
+      unawaited(_ask(atOnce: false, again: true));
     });
   }
 
-  Future<void> _ask({required bool atOnce}) {
+  /// One request at a time. During one, a call with again asks once more when
+  /// it is done; any other call just waits for it. atOnce: the next answer
+  /// shows at once, even while For You is open.
+  Future<void> _ask({required bool atOnce, required bool again}) {
     if (!_serverOn) return Future.value();
-    if (atOnce) _nextAnswerAtOnce = true;
+    if (atOnce) _answerAtOnce = true;
     final running = _request;
     if (running != null) {
-      _askAgain = true;
+      if (again) _askAgain = true;
       return running;
     }
     return _request = _askUntilDone();
@@ -513,11 +520,12 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
   Future<void> _askOnce() async {
     final uid = user?.uid;
     if (uid == null || !_serverOn) return;
-    final atOnce = _nextAnswerAtOnce;
-    _nextAnswerAtOnce = false;
     final picks = await _server.forYou();
-    // No answer, closed, or another user signed in meanwhile.
-    if (picks == null || _closed || uid != user?.uid) return;
+    // Closed, or another user signed in meanwhile: dropped.
+    if (_closed || uid != user?.uid) return;
+    final atOnce = _answerAtOnce;
+    _answerAtOnce = false;
+    if (picks == null) return; // No answer: the list shown stays.
     final keys = [for (final p in picks) p.key];
     unawaited(_cache.write(uid, keys));
     if (!atOnce && _onForYou) {

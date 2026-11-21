@@ -146,6 +146,9 @@ void main() {
   List<String> dartList(String uid) => [
     for (final i in DiscoveryRepository.instance.recommendedStartups(
       investorId: uid,
+      bookmarks: {
+        for (final k in marks.keys.value) k: marks.savedAt(k) ?? DateTime.now(),
+      },
     ))
       i.id,
   ];
@@ -189,6 +192,61 @@ void main() {
       final m = vm(FakeForYou([null]));
       await pumpEventQueue();
       expect(ids(m), dartList('u1'));
+      expect(ids(m), isNotEmpty);
+    },
+  );
+
+  test('an empty server answer shows the Dart list', () async {
+    final m = vm(FakeForYou([<ForYouPick>[]]));
+    await pumpEventQueue();
+    expect(ids(m), dartList('u1'));
+    expect(ids(m), isNotEmpty);
+  });
+
+  test('a server list with nothing to show gives the Dart list', () async {
+    marks.toggle('s-saved');
+    final m = vm(
+      FakeForYou([
+        [s('saved'), s('ghost')],
+      ]),
+    );
+    await pumpEventQueue();
+    expect(ids(m), dartList('u1'));
+    expect(ids(m), isNotEmpty);
+  });
+
+  test('a saved list with nothing to show gives the Dart list', () async {
+    SharedPreferences.setMockInitialValues({
+      'forYou.lastList.u1': ['s-ghost'],
+    });
+    final m = vm(FakeForYou([Completer<List<ForYouPick>?>().future]));
+    await pumpEventQueue();
+    expect(ids(m), dartList('u1'));
+    expect(ids(m), isNotEmpty);
+  });
+
+  test(
+    'hiding the last card leaves For You empty until it is redrawn',
+    () async {
+      final m = vm(
+        FakeForYou([
+          [s('a')],
+        ])..then = null,
+      );
+      await pumpEventQueue();
+      openForYou(m);
+      expect(ids(m), ['a']);
+      m.hideForYou(m.recommended.single);
+      expect(ids(m), isEmpty);
+      await pumpEventQueue();
+      expect(ids(m), isEmpty);
+      m.selectExploreTab(1);
+      m.selectExploreTab(2);
+      // The Dart list, without the hidden card.
+      expect(ids(m), [
+        for (final id in dartList('u1'))
+          if (id != 'a') id,
+      ]);
       expect(ids(m), isNotEmpty);
     },
   );
@@ -399,25 +457,61 @@ void main() {
   });
 
   test(
-    'one request at a time: a call while one runs asks again once',
+    'a bookmark change during a request asks again once, after it',
     () async {
       final first = Completer<List<ForYouPick>?>();
       final server = FakeForYou([first.future])..then = [s('c')];
       final m = vm(server);
       await pumpEventQueue();
       expect(server.calls, 1);
-      final again = m.refreshForYou();
-      unawaited(m.refreshForYou());
+      marks.toggle('s-b');
+      await pumpEventQueue();
+      marks.toggle('s-b');
       await pumpEventQueue();
       expect(server.calls, 1);
       first.complete([s('a')]);
-      await again;
-      expect(server.calls, 2);
       await pumpEventQueue();
       expect(server.calls, 2);
       expect(ids(m), ['c']);
     },
   );
+
+  test('pulling to refresh joins a request already running', () async {
+    final first = Completer<List<ForYouPick>?>();
+    final server = FakeForYou([first.future])..then = [s('c')];
+    final m = vm(server);
+    await pumpEventQueue();
+    expect(server.calls, 1);
+    await m.refreshDirectory();
+    first.complete([s('a')]);
+    await pumpEventQueue();
+    expect(server.calls, 1);
+    expect(ids(m), ['a']);
+  });
+
+  test('a profile change joins a request already running', () async {
+    final first = Completer<List<ForYouPick>?>();
+    final server = FakeForYou([first.future])..then = [s('c')];
+    final m = vm(server);
+    await pumpEventQueue();
+    m.setUser(investor('u1')); // Same user, edited profile.
+    first.complete([s('a')]);
+    await pumpEventQueue();
+    expect(server.calls, 1);
+    expect(ids(m), ['a']);
+  });
+
+  test('a new user during a request is asked for once it is done', () async {
+    final first = Completer<List<ForYouPick>?>();
+    final server = FakeForYou([first.future])..then = [s('c')];
+    final m = vm(server, uid: 'u2');
+    await pumpEventQueue();
+    m.setUser(investor('u1'));
+    first.complete([s('a')]);
+    await pumpEventQueue();
+    expect(server.calls, 2);
+    expect(ids(m), ['c']);
+  });
 
   test('quick changes send one request', () {
     fakeAsync((async) {
