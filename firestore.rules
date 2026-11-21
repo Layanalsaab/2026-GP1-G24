@@ -52,6 +52,11 @@ service cloud.firestore {
         allow read, write: if request.auth != null && request.auth.uid == uid;
       }
 
+      // "Not interested" (hidden from For You): owner only, same keys as bookmarks.
+      match /notInterested/{itemKey} {
+        allow read, write: if request.auth != null && request.auth.uid == uid;
+      }
+
       // The notice inbox (lib/data_access/repositories/notice_repository.dart):
       // the one-time pop-ups about the person's startups. They read and
       // remove their own. Someone writes one only about a startup they are on
@@ -913,6 +918,11 @@ service cloud.firestore {
       // Deleting an account removes its tickets.
       allow delete: if request.auth != null
         && resource.data.investorId == request.auth.uid;
+    }
+
+    // For You vectors: written and read only by the For You server (Admin SDK).
+    match /vectorChunks/{chunk} {
+      allow read, write: if false;
     }
   }
 }

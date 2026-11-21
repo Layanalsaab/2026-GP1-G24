@@ -6,7 +6,8 @@
     "test": "firebase emulators:exec --only firestore --project demo-inv \"node invitations.test.mjs\"",
     "parity": "firebase emulators:exec --only firestore --project demo-parity \"node parity.test.mjs\"",
     "wallet": "firebase emulators:exec --only firestore --project demo-wallet \"node wallet.test.mjs\"",
-    "ticketrequests": "firebase emulators:exec --only firestore --project demo-ticketrequests \"node ticketrequests.test.mjs\""
+    "ticketrequests": "firebase emulators:exec --only firestore --project demo-ticketrequests \"node ticketrequests.test.mjs\"",
+    "foryou": "firebase emulators:exec --only firestore --project demo-foryou \"node foryou.test.mjs\""
   },
   "dependencies": {
     "@firebase/rules-unit-testing": "^5.0.0",

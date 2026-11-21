@@ -6,6 +6,7 @@ import '../../models/app_user.dart';
 import '../../models/auth_failure.dart';
 import '../firebase_services/auth_service.dart';
 import 'bookmark_repository.dart';
+import 'not_interested_repository.dart';
 import 'invitation_repository.dart';
 import 'notice_repository.dart';
 import 'startup_repository.dart';
@@ -268,6 +269,7 @@ class AuthRepository {
     await TeamLookup.instance.remove(uid: account.uid, email: account.email);
     try {
       await BookmarkRepository.instance.deleteAll(account.uid);
+      await NotInterestedRepository.instance.deleteAll(account.uid);
     } catch (_) {
       // Carry on: the account itself must still be removed.
     }

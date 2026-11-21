@@ -35,3 +35,12 @@ the existing request without a ticket is unchanged.
 
     cd tools/rules_tests
     npm run wallet
+
+## For You (`npm run foryou`)
+
+Tests the `users/{uid}/notInterested` rules (the owner reads, writes and deletes
+their own items; nobody else, and not signed out) and that `vectorChunks` has no
+client access at all (the For You server uses the Admin SDK).
+
+    cd tools/rules_tests
+    npm run foryou

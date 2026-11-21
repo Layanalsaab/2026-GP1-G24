@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import '../app_constants/account_strings.dart';
 import '../app_constants/home_strings.dart';
 import '../data_access/repositories/bookmark_repository.dart';
+import '../data_access/repositories/not_interested_repository.dart';
 import '../data_access/repositories/startup_repository.dart';
 import '../features/bookmarks/screens/bookmarks_screen.dart';
 import '../features/explore_startups/screens/explore_screen.dart';
@@ -70,7 +71,10 @@ class _MainScreenState extends State<MainScreen> {
     await AppRouter.checkInvitations(context);
     if (!mounted) return;
     final uid = _session.user?.uid;
-    if (uid != null) unawaited(BookmarkRepository.instance.load(uid));
+    if (uid != null) {
+      unawaited(BookmarkRepository.instance.load(uid));
+      unawaited(NotInterestedRepository.instance.load(uid));
+    }
     await Future.wait([
       _vm.refreshDirectory(),
       if (_session.isFounder) _loadOwnStartups(),

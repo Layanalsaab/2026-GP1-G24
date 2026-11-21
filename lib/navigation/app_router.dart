@@ -6,6 +6,7 @@ import '../app_constants/app_strings.dart';
 import '../data_access/repositories/app_settings_repository.dart';
 import '../data_access/repositories/auth_repository.dart';
 import '../data_access/repositories/bookmark_repository.dart';
+import '../data_access/repositories/not_interested_repository.dart';
 import '../data_access/repositories/interest_repository.dart';
 import '../data_access/repositories/invitation_repository.dart';
 import '../data_access/repositories/team_lookup.dart';
@@ -56,6 +57,7 @@ class AppRouter {
   }) async {
     AppSession.instance.signIn(user);
     unawaited(BookmarkRepository.instance.load(user.uid));
+    unawaited(NotInterestedRepository.instance.load(user.uid));
     // Teams can find this account by e-mail from now on.
     unawaited(TeamLookup.instance.publish(user, emailVerified: true));
     // Invitations to a team waiting for this e-mail.
@@ -221,6 +223,7 @@ class AppRouter {
     }
     SignupFlow.current = null;
     BookmarkRepository.instance.clear();
+    NotInterestedRepository.instance.clear();
     RequestRepository.instance.clear();
     InterestRepository.instance.clear();
     AppSession.instance.signOut();
