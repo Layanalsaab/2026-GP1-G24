@@ -80,6 +80,8 @@ The first request after a sleep can take about a minute on Render Free.
 
 A local `http://` address works in debug builds (`flutter run` is a debug build by default). Release builds only allow `https://`, so they need the deployed `https://<service>.onrender.com` address.
 
+Deploy `firestore.rules` (it has the `notInterested` rule) with `firebase deploy --only firestore:rules` from the repository root before any app build with the ✕ reaches users. Otherwise the Not interested writes are denied, the keys are put back, and hidden cards reappear.
+
 ### Check it works
 
 - Open For You: the server log shows `POST /for-you 200`.
