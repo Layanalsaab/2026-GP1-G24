@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:startsa/data_access/firebase_services/auth_service.dart';
 import 'package:startsa/data_access/firebase_services/firestore_service.dart';
@@ -96,6 +97,9 @@ class _FakeForYou implements ForYouSource {
         throw StateError('boom');
     }
   }
+
+  @override
+  final ValueListenable<int> profileTextDone = ValueNotifier<int>(0);
 }
 
 void main() {

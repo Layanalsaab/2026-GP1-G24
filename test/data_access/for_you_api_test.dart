@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -105,6 +106,32 @@ void main() {
     expect(await _api(denied).profileText(HomeItemKind.startup, 's1'), isFalse);
   });
 
+  test('profileTextDone counts every finished call, success or failure; '
+      'none when there is no address', () async {
+    final ok = _api(
+      MockClient((_) async => http.Response('{"updated": true}', 200)),
+    );
+    expect(ok.profileTextDone.value, 0);
+    expect(await ok.profileText(HomeItemKind.startup, 's1'), isTrue);
+    expect(ok.profileTextDone.value, 1);
+    await ok.profileText(HomeItemKind.investor, 'u1');
+    expect(ok.profileTextDone.value, 2);
+
+    for (final client in [
+      MockClient((_) async => http.Response('no', 500)),
+      MockClient((_) async => throw http.ClientException('down')),
+      MockClient((_) => Completer<http.Response>().future),
+    ]) {
+      final failed = _api(client, timeout: const Duration(milliseconds: 50));
+      expect(await failed.profileText(HomeItemKind.startup, 's1'), isFalse);
+      expect(failed.profileTextDone.value, 1);
+    }
+
+    final off = _api(_failIfCalled(), base: '');
+    expect(await off.profileText(HomeItemKind.startup, 's1'), isFalse);
+    expect(off.profileTextDone.value, 0);
+  });
+
   test('profileText for a program sends nothing', () async {
     expect(
       await _api(_failIfCalled()).profileText(HomeItemKind.program, 'p'),
@@ -154,4 +181,7 @@ class _Fake implements ForYouSource {
     if (sync == false) return Future.error(StateError('boom'));
     return Future.value(true);
   }
+
+  @override
+  final ValueListenable<int> profileTextDone = ValueNotifier<int>(0);
 }

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:fake_async/fake_async.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:startsa/data_access/firebase_services/firestore_service.dart';
@@ -43,6 +44,12 @@ class FakeForYou implements ForYouSource {
 
   @override
   Future<bool> profileText(HomeItemKind kind, String id) async => true;
+
+  /// Bumped by the test: a profile text was rebuilt.
+  final ValueNotifier<int> done = ValueNotifier<int>(0);
+
+  @override
+  ValueListenable<int> get profileTextDone => done;
 }
 
 /// Firestore kept in a map: collection path -> document id -> data.
@@ -520,17 +527,61 @@ void main() {
     expect(ids(m), ['a']);
   });
 
-  test('a profile change joins a request already running', () async {
-    final first = Completer<List<ForYouPick>?>();
-    final server = FakeForYou([first.future])..then = [s('c')];
+  test('the same user with a new profile object asks nothing', () async {
+    final server = FakeForYou([
+      [s('a')],
+    ])..then = [s('c')];
     final m = vm(server);
     await pumpEventQueue();
-    m.setUser(investor('u1')); // Same user, edited profile.
-    first.complete([s('a')]);
+    expect(server.calls, 1);
+    var notified = 0;
+    m.addListener(() => notified++);
+    m.setUser(investor('u1')); // Same user, e.g. the Account screen reloaded.
     await pumpEventQueue();
     expect(server.calls, 1);
+    expect(notified, 1);
     expect(ids(m), ['a']);
   });
+
+  test('a rebuilt profile text asks again; the answer shows at once', () async {
+    final server = FakeForYou([
+      [s('a'), s('b')],
+      [s('c')],
+    ])..then = null;
+    final m = vm(server);
+    await pumpEventQueue();
+    openForYou(m);
+    expect(ids(m), ['a', 'b']);
+    server.done.value++;
+    await pumpEventQueue();
+    expect(server.calls, 2);
+    expect(ids(m), ['c']);
+  });
+
+  test(
+    'a profile text rebuilt during a request asks again once, after it',
+    () async {
+      final first = Completer<List<ForYouPick>?>();
+      final second = Completer<List<ForYouPick>?>();
+      final server = FakeForYou([first.future, second.future])..then = null;
+      final m = vm(server);
+      await pumpEventQueue();
+      openForYou(m);
+      expect(server.calls, 1);
+      server.done.value++;
+      await pumpEventQueue();
+      expect(server.calls, 1);
+      first.complete([s('a')]);
+      await pumpEventQueue();
+      expect(server.calls, 2);
+      expect(ids(m), ['a']);
+      // The answer asked for after the edit shows at once, For You open.
+      second.complete([s('c')]);
+      await pumpEventQueue();
+      expect(ids(m), ['c']);
+      expect(server.calls, 2);
+    },
+  );
 
   test('a new user during a request is asked for once it is done', () async {
     final first = Completer<List<ForYouPick>?>();

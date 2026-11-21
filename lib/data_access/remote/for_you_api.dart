@@ -29,6 +29,11 @@ abstract class ForYouSource {
 
   /// Asks the server to rebuild the profile text of one item; true on success.
   Future<bool> profileText(HomeItemKind kind, String id);
+
+  /// Goes up by one each time a [profileText] call to the server finishes,
+  /// whether it worked or not (For You is then asked again: the server reads
+  /// the user's own profile fresh either way).
+  ValueListenable<int> get profileTextDone;
 }
 
 /// Background refresh after a profile edit.
@@ -67,6 +72,7 @@ class ForYouApi implements ForYouSource {
   final http.Client _client;
   final Future<String?> Function() _idToken;
   final String _baseUrl;
+  final ValueNotifier<int> _profileTextDone = ValueNotifier<int>(0);
 
   /// How long to wait for the server (it can take about a minute to wake).
   final Duration timeout;
@@ -107,8 +113,11 @@ class ForYouApi implements ForYouSource {
   }
 
   @override
+  ValueListenable<int> get profileTextDone => _profileTextDone;
+
+  @override
   Future<bool> profileText(HomeItemKind kind, String id) async {
-    if (kind == HomeItemKind.program) return false;
+    if (kind == HomeItemKind.program || !enabled) return false;
     try {
       final response = await _post(
         '/profile-text',
@@ -118,6 +127,8 @@ class ForYouApi implements ForYouSource {
     } catch (e) {
       debugPrint('For You server: $e');
       return false;
+    } finally {
+      _profileTextDone.value++;
     }
   }
 

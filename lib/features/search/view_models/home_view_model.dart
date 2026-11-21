@@ -60,6 +60,7 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
     _bookmarks.keys.addListener(_onBookmarks);
     _seenNotInterested = {..._notInterested.keys.value};
     _notInterested.keys.addListener(_onNotInterested);
+    _server.profileTextDone.addListener(_onProfileTextDone);
     _startForYou();
   }
 
@@ -86,16 +87,15 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
   /// The signed-in user.
   AppUser? user;
 
+  /// A new user starts For You over. The same user (an edited or just
+  /// reloaded profile) only redraws: the server is asked again once an edit's
+  /// profile text has been rebuilt (see [_onProfileTextDone]).
   void setUser(AppUser? value) {
     if (identical(value, user)) return;
     final newUid = value?.uid != user?.uid;
     user = value;
     _forYou = null;
-    if (newUid) {
-      _startForYou();
-    } else {
-      unawaited(refreshForYou());
-    }
+    if (newUid) _startForYou();
     notifyListeners();
   }
 
@@ -449,6 +449,10 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
   Future<void>? _request;
   bool _askAgain = false;
   bool _answerAtOnce = false;
+
+  /// The answer of the request asked again (after the running one) shows at
+  /// once.
+  bool _againAtOnce = false;
   Timer? _quietTimer;
   bool _closed = false;
 
@@ -465,6 +469,7 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
     _quietTimer?.cancel();
     _quietTimer = null;
     _answerAtOnce = false;
+    _againAtOnce = false;
     if (!_serverOn) return;
     unawaited(_readSaved(user!.uid));
     // A request still running is for the last user: ask again after it.
@@ -483,8 +488,16 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
 
   /// Asks the server for a new list; its answer shows at once. A request
   /// already running is joined (the server reads Firestore itself, so a
-  /// directory reload or profile edit changes nothing it sees).
+  /// directory reload changes nothing it sees). A profile edit is not asked
+  /// for here: a same-user [setUser] sends nothing, and the server is asked
+  /// again when the edit's profile text is rebuilt ([_onProfileTextDone]).
   Future<void> refreshForYou() => _ask(atOnce: true, again: false);
+
+  /// A `/profile-text` call finished (a profile was edited on another
+  /// screen): ask again now, or once the running request is done. The answer
+  /// shows at once (nothing jumps under the user's finger: the edit happened
+  /// elsewhere).
+  void _onProfileTextDone() => unawaited(_ask(atOnce: true, again: true));
 
   void _askWhenQuiet() {
     if (!_serverOn) return;
@@ -496,16 +509,22 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
   }
 
   /// One request at a time. During one, a call with again asks once more when
-  /// it is done; any other call just waits for it. atOnce: the next answer
-  /// shows at once, even while For You is open.
+  /// it is done; any other call just waits for it. atOnce: the answer of the
+  /// request this call is served by (the one asked again, or the running one
+  /// it joined) shows at once, even while For You is open.
   Future<void> _ask({required bool atOnce, required bool again}) {
     if (!_serverOn) return Future.value();
-    if (atOnce) _answerAtOnce = true;
     final running = _request;
     if (running != null) {
-      if (again) _askAgain = true;
+      if (again) {
+        _askAgain = true;
+        if (atOnce) _againAtOnce = true;
+      } else if (atOnce) {
+        _answerAtOnce = true;
+      }
       return running;
     }
+    if (atOnce) _answerAtOnce = true;
     return _request = _askUntilDone();
   }
 
@@ -514,6 +533,10 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
       do {
         _askAgain = false;
         await _askOnce();
+        if (_againAtOnce) {
+          _againAtOnce = false;
+          _answerAtOnce = true;
+        }
       } while (_askAgain && !_closed);
     } finally {
       _request = null;
@@ -607,6 +630,7 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
     _discovery.changes.removeListener(_onDiscovery);
     _bookmarks.keys.removeListener(_onBookmarks);
     _notInterested.keys.removeListener(_onNotInterested);
+    _server.profileTextDone.removeListener(_onProfileTextDone);
     searchController.dispose();
     super.dispose();
   }

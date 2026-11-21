@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -37,6 +38,9 @@ class _FakeForYou implements ForYouSource {
 
   @override
   Future<bool> profileText(HomeItemKind kind, String id) async => true;
+
+  @override
+  final ValueListenable<int> profileTextDone = ValueNotifier<int>(0);
 }
 
 class _MemoryFirestore extends FirestoreService {
