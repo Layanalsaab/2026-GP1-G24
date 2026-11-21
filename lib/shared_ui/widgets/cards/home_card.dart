@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../app_constants/home_strings.dart';
 import '../../icons/app_icons.dart';
 import '../../motion/motion.dart';
 import '../../theme/app_colors.dart';
@@ -20,6 +21,7 @@ class HomeCard extends StatelessWidget {
     this.onTap,
     this.onShare,
     this.onBookmark,
+    this.onNotInterested,
     this.bookmarked = false,
     this.matchPercent,
     this.matchReason,
@@ -48,6 +50,9 @@ class HomeCard extends StatelessWidget {
 
   /// Null hides the bookmark button.
   final VoidCallback? onBookmark;
+
+  /// The ✕ "Not interested" (For You only): null hides it.
+  final VoidCallback? onNotInterested;
   final bool bookmarked;
 
   /// e.g.
@@ -78,7 +83,12 @@ class HomeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final showActions = onShare != null || onBookmark != null;
+    final showActions =
+        onShare != null || onBookmark != null || onNotInterested != null;
+    final actionCount =
+        (onShare != null ? 1 : 0) +
+        (onBookmark != null ? 1 : 0) +
+        (onNotInterested != null ? 1 : 0);
     final card = _HoverCard(
       onTap: onTap,
       builder: (context, hover) => Semantics(
@@ -118,7 +128,8 @@ class HomeCard extends StatelessWidget {
                             badges: badges,
                           ),
                         ),
-                        if (showActions) const SizedBox(width: 63),
+                        if (showActions)
+                          SizedBox(width: actionCount > 2 ? 99 : 63),
                       ],
                     ),
                     const SizedBox(height: 12),
@@ -228,6 +239,16 @@ class HomeCard extends StatelessWidget {
                                   color: AppColors.grey,
                                   key: ValueKey('bm-off'),
                                 ),
+                        ),
+                      if (onNotInterested != null)
+                        _CardAction(
+                          label: HomeStrings.notInterested,
+                          onTap: onNotInterested,
+                          child: AppIcon.filled(
+                            AppIcons.close,
+                            size: 19,
+                            color: AppColors.grey,
+                          ),
                         ),
                     ],
                   ),

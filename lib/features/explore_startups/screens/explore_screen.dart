@@ -4,6 +4,8 @@ import '../../../app_constants/home_strings.dart';
 import '../../../data_access/repositories/interaction_repository.dart';
 import '../../../models/latest_range.dart';
 import '../../../shared_ui/icons/app_icons.dart';
+import '../../../models/home_item.dart';
+import '../../../shared_ui/theme/app_colors.dart';
 import '../../../shared_ui/theme/app_text.dart';
 import '../../../shared_ui/widgets/forms/app_field.dart';
 import '../../../shared_ui/widgets/lists/empty_state.dart';
@@ -83,13 +85,38 @@ class ExploreScreen extends StatelessWidget {
   }
 
   /// For You: the recommended list only.
-  List<HomeSlot> _forYou(HomeViewModel vm) => [
+  List<HomeSlot> _forYou(BuildContext context, HomeViewModel vm) => [
     _heading(
       _InfoHeading(title: vm.recommendedTitle, info: vm.recommendedInfo),
       bottom: 0,
     ),
-    cardsSlot(vm.recommended, showMatch: true, scope: vm.paneKey),
+    cardsSlot(
+      vm.recommended,
+      showMatch: true,
+      scope: vm.paneKey,
+      onNotInterested: (item) => _hide(context, vm, item),
+    ),
   ];
+
+  /// The ✕: the card leaves For You at once; the message offers Undo (only
+  /// the latest hide can be undone, so a new message replaces the old one).
+  void _hide(BuildContext context, HomeViewModel vm, HomeItem item) {
+    vm.hideForYou(item);
+    final messenger = ScaffoldMessenger.of(context)..hideCurrentSnackBar();
+    messenger.showSnackBar(
+      SnackBar(
+        backgroundColor: AppColors.toastFill,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        content: Text(HomeStrings.hiddenFromForYou, style: AppText.toast),
+        action: SnackBarAction(
+          label: HomeStrings.undo,
+          textColor: AppColors.gold,
+          onPressed: () => vm.undoHideForYou(item),
+        ),
+      ),
+    );
+  }
 
   List<HomeSlot> _trending(HomeViewModel vm) {
     final items = vm.trending;
@@ -124,7 +151,7 @@ class ExploreScreen extends StatelessWidget {
         case 1:
           slots = _trending(vm);
         default:
-          slots = _forYou(vm);
+          slots = _forYou(context, vm);
       }
     }
     return HomeColumn(slots: slots);
