@@ -1,0 +1,76 @@
+from datetime import datetime, timedelta, timezone
+
+from app.data import DataStore
+from tests.fakes import FakeSource
+
+T0 = datetime(2026, 11, 21, 9, 0, tzinfo=timezone.utc)
+
+
+class Clock:
+    def __init__(self, now: datetime):
+        self.now = now
+
+    def __call__(self) -> datetime:
+        return self.now
+
+
+def seeded() -> FakeSource:
+    return FakeSource({
+        "startups/s1": {"name": "Payly", "isPublic": True, "founderId": "f1", "sector": "fintech"},
+        "startups/s2": {"name": "Hidden", "isPublic": False, "founderId": "f1", "memberIds": ["u9"]},
+        "startups/s3": {"name": "Shared", "isPublic": True, "founderId": "f2", "memberIds": ["f1"]},
+        "investors/i1": {"fullName": "Nora", "preferredSectors": ["Fintech"]},
+        "tickets/i1-T1": {"investorId": "i1", "status": "open", "amountMin": 1, "amountMax": 2},
+        "tickets/i1-T2": {"investorId": "i1", "status": "closed", "amountMin": 1, "amountMax": 2},
+        "vectors/s-s1": {"vector": [0.0] * 384, "model": "m", "fingerprint": "abc"},
+        "users/f1": {"role": "founder"},
+        "users/f1/bookmarks/i-i1": {"type": "i", "targetId": "i1", "createdAt": T0 - timedelta(days=3)},
+        "users/f1/notInterested/i-i2": {"type": "i", "targetId": "i2", "createdAt": T0 - timedelta(days=1)},
+        "users/x1": {"fullName": "No role"},
+    })
+
+
+def test_snapshot_is_cached_for_30_minutes():
+    source, clock = seeded(), Clock(T0)
+    store = DataStore(source, clock=clock)
+    store.snapshot()
+    reads = source.stream_calls
+    clock.now = T0 + timedelta(minutes=29)
+    store.snapshot()
+    assert source.stream_calls == reads
+    clock.now = T0 + timedelta(minutes=31)
+    assert store.snapshot().loaded_at == T0 + timedelta(minutes=31)
+    assert source.stream_calls == 2 * reads
+
+
+def test_snapshot_keeps_public_startups_and_open_tickets():
+    snap = DataStore(seeded(), clock=Clock(T0)).snapshot()
+    assert set(snap.startups) == {"s1", "s3"}
+    assert [t["investorId"] for t in snap.tickets] == ["i1"] and snap.tickets[0]["status"] == "open"
+    assert set(snap.investors) == {"i1"} and set(snap.vectors) == {"s-s1"}
+
+
+def test_user_context_reads_bookmarks_dislikes_and_own_startups():
+    ctx = DataStore(seeded(), clock=Clock(T0)).user_context("f1")
+    assert ctx.role == "founder" and ctx.uid == "f1"
+    assert ctx.bookmarks == {"i-i1": T0 - timedelta(days=3)}
+    assert ctx.dislikes == {"i-i2": T0 - timedelta(days=1)}
+    assert set(ctx.own_startups) == {"s1", "s2", "s3"}  # founder of s1, s2; member of s3
+
+
+def test_user_without_role_has_no_context():
+    store = DataStore(seeded(), clock=Clock(T0))
+    assert store.user_context("x1") is None
+    assert store.user_context("missing") is None
+
+
+def test_documents_with_bad_types_are_skipped():
+    source = seeded()
+    source.docs["startups/s4"] = {"name": "Odd", "isPublic": True, "sector": 5}
+    source.docs["users/f1/bookmarks/s-s4"] = {"createdAt": "yesterday"}
+    source.docs["users/f1/bookmarks/s-s5"] = {"createdAt": datetime(2026, 11, 1, 8, 0)}  # no timezone
+    store = DataStore(source, clock=Clock(T0))
+    assert "s4" in store.snapshot().startups
+    ctx = store.user_context("f1")
+    assert ctx.bookmarks["s-s4"] == T0
+    assert ctx.bookmarks["s-s5"] == datetime(2026, 11, 1, 8, 0, tzinfo=timezone.utc)
