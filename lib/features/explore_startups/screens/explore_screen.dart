@@ -100,11 +100,14 @@ class ExploreScreen extends StatelessWidget {
 
   /// The ✕: the card leaves For You at once; the message offers Undo (only
   /// the latest hide can be undone, so a new message replaces the old one).
+  /// It goes away on its own after the usual 4 seconds.
   void _hide(BuildContext context, HomeViewModel vm, HomeItem item) {
     vm.hideForYou(item);
     final messenger = ScaffoldMessenger.of(context)..hideCurrentSnackBar();
     messenger.showSnackBar(
       SnackBar(
+        // A SnackBar with an action stays until dismissed unless told not to.
+        persist: false,
         backgroundColor: AppColors.toastFill,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),

@@ -211,6 +211,8 @@ class AppRouter {
     String? email,
     bool signup = false,
   }) async {
+    // Taken before the wait: the message lives above every screen.
+    final messenger = ScaffoldMessenger.maybeOf(context);
     if (!AppSession.instance.isGuest) {
       try {
         await AuthRepository.instance.signOut();
@@ -227,6 +229,9 @@ class AppRouter {
     RequestRepository.instance.clear();
     InterestRepository.instance.clear();
     AppSession.instance.signOut();
+    // A message such as "Hidden from For You · Undo" must not follow the user
+    // to the next screen.
+    messenger?.hideCurrentSnackBar();
     if (!context.mounted) return;
     if (toLogin) {
       // Back transition to the Log in screen (the stack is cleared).

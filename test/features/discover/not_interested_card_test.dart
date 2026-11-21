@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -5,17 +7,22 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:startsa/data_access/firebase_services/firestore_service.dart';
 import 'package:startsa/data_access/mock_data/prototype_seed.dart';
 import 'package:startsa/data_access/remote/for_you_api.dart';
+import 'package:startsa/data_access/repositories/auth_repository.dart';
 import 'package:startsa/data_access/repositories/bookmark_repository.dart';
 import 'package:startsa/data_access/repositories/discovery_repository.dart';
 import 'package:startsa/data_access/repositories/for_you_cache.dart';
 import 'package:startsa/data_access/repositories/not_interested_repository.dart';
 import 'package:startsa/features/explore_startups/screens/explore_screen.dart';
+import 'package:startsa/features/login_and_signup/screens/welcome_screen.dart';
 import 'package:startsa/features/search/view_models/home_view_model.dart';
 import 'package:startsa/features/search/widgets/home_layout.dart';
 import 'package:startsa/helpers/app_session.dart';
 import 'package:startsa/models/app_user.dart';
 import 'package:startsa/models/home_item.dart';
+import 'package:startsa/navigation/app_router.dart';
 import 'package:startsa/shared_ui/theme/app_theme.dart';
+
+import '../../support/fakes.dart';
 
 class _FakeForYou implements ForYouSource {
   _FakeForYou(this.picks);
@@ -201,5 +208,35 @@ void main() {
     await t.tap(find.text('Undo'));
     await t.pumpAndSettle();
     expect(ids(vm), ['b', 'c']);
+  });
+
+  testWidgets('the message goes away on its own', (t) async {
+    final vm = await pumpForYou(t, ['a', 'b', 'c']);
+    await t.tap(find.bySemanticsLabel('Not interested').at(0));
+    await t.pumpAndSettle();
+    expect(find.text('Hidden from For You'), findsOneWidget);
+
+    await t.pump(const Duration(seconds: 5));
+    await t.pumpAndSettle();
+    expect(find.text('Hidden from For You'), findsNothing);
+    expect(ids(vm), ['b', 'c']);
+  });
+
+  testWidgets('logging out takes the message away', (t) async {
+    AuthRepository.instance = FakeAuthRepository();
+    await pumpForYou(t, ['a', 'b', 'c']);
+    await t.tap(find.bySemanticsLabel('Not interested').at(0));
+    await t.pumpAndSettle();
+    expect(find.text('Hidden from For You'), findsOneWidget);
+
+    unawaited(AppRouter.logOut(t.element(find.byType(ExploreScreen))));
+    // Within the message's own 4 seconds.
+    await t.pump();
+    await t.pump();
+    await t.pump(const Duration(milliseconds: 600));
+    await t.pump(const Duration(milliseconds: 600));
+    expect(find.byType(WelcomeScreen), findsOneWidget);
+    expect(find.text('Hidden from For You'), findsNothing);
+    await t.pump(const Duration(seconds: 3));
   });
 }
