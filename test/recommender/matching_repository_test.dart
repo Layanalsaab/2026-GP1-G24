@@ -201,7 +201,7 @@ void main() {
     // ANG-3's profile doesn't fit, but their open ticket does.
     expect(r.map((m) => m.id), ['ANG-3', 'ANG-1', 'ANG-2']);
     expect(r[0].ticketId, 'ANG-3-T1');
-    expect(r[1].percent, 88);
+    expect(r[1].percent, 100); // sector and one of the two stages met; no models
     expect(r[1].ticketId, isNull);
     expect(r[2].close, isTrue);
     expect(firestore.queries, ['investors.role', 'tickets.status']);

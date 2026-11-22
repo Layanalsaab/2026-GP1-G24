@@ -81,15 +81,17 @@ class MatchResult {
   bool get viaTicket => ticketId != null;
 }
 
+/// Met (1) or not met (0); null = blank, skipped by weightedScore.
 double? _overlap(Set<String> chosen, String? value) {
   if (chosen.isEmpty || value == null || value.isEmpty) return null;
-  return (chosen.contains(value) ? 1.0 : 0.0) / math.sqrt(chosen.length);
+  return chosen.contains(value) ? 1.0 : 0.0;
 }
 
+/// Met (1), partly met through another sector (0.5) or not met (0).
 double? _sector(int picks, bool main, bool other, MatchStartup s) {
   if (picks == 0 || s.sector == null || s.sector!.isEmpty) return null;
-  if (main) return 1 / math.sqrt(picks);
-  if (other) return otherSectorFactor / math.sqrt(picks);
+  if (main) return 1;
+  if (other) return otherSectorFactor;
   return 0;
 }
 

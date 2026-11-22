@@ -275,18 +275,20 @@ def is_close_for_ticket(t: Ticket, s: Startup) -> bool:
 
 
 def _overlap(chosen: frozenset[str], value: str | None) -> float | None:
+    """Met (1) or not met (0); None = blank, skipped."""
     if not chosen or not value:
         return None
-    return (1.0 if value in chosen else 0.0) / math.sqrt(len(chosen))
+    return 1.0 if value in chosen else 0.0
 
 
 def _sector(picks: int, main: bool, other: bool, s: Startup) -> float | None:
+    """Met (1), partly met through another sector (0.5) or not met (0)."""
     if picks == 0 or not s.sector:
         return None
     if main:
-        return 1 / math.sqrt(picks)
+        return 1.0
     if other:
-        return OTHER_SECTOR_FACTOR / math.sqrt(picks)
+        return OTHER_SECTOR_FACTOR
     return 0.0
 
 

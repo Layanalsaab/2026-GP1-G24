@@ -30,6 +30,42 @@ def _same(got: list[dict], want: list[dict], who: str) -> None:
         assert g["score"] == pytest.approx(w["score"], abs=1e-8), f"score, {who} #{n}"
 
 
+def _startup(**over) -> dict:
+    return {
+        "id": "s1", "name": "Acme", "sector": "fintech", "stage": "seed", "commerceModel": "b2b",
+        "lookingFor": ["funding"], "fundingRequirement": 2_000_000, "raisedInRound": 0, "isPublic": True,
+        **over,
+    }
+
+
+def _investor(**over) -> dict:
+    return {
+        "id": "i1", "fullName": "Sara Example", "preferredSectors": ["Fintech"], "preferredStages": ["Seed"],
+        "preferredCommerceModels": ["Business-to-Business (B2B)"], "ticketSize": "SAR 100K – 500K", **over,
+    }
+
+
+def _ticket(**over) -> dict:
+    return {
+        "id": "i1-T1", "investorId": "i1", "name": "Ticket 1", "sectors": ["Fintech"], "stages": ["Seed"],
+        "amountMin": 100_000, "amountMax": 500_000, "status": "open", **over,
+    }
+
+
+def test_reference_matches_criterion_satisfaction():
+    wide = _investor(
+        preferredSectors=["Fintech", "AI", "SaaS"],
+        preferredStages=["Seed", "Series A"],
+        preferredCommerceModels=["Business-to-Business (B2B)", "Business-to-Consumer (B2C)"],
+    )
+    (a,) = matches_for_startup(_startup(), [wide], [])
+    assert (a["percent"], a["close"]) == (100, False)  # worked example A
+    (b,) = matches_for_startup(_startup(stage="series_b", commerceModel="b2c"), [wide], [])
+    assert (b["percent"], b["close"]) == (67, True)  # worked example B
+    (c,) = matches_for_ticket(_ticket(), {"b2b"}, [_startup(fundingRequirement=1_000_000)])
+    assert c["percent"] == 94  # worked example C
+
+
 def test_reference_reproduces_the_committed_fixture(fixture):
     investors = {i["id"]: i for i in fixture["investors"]}
     startups = {s["id"]: s for s in fixture["startups"]}

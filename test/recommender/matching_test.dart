@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:io';
-import 'dart:math' as math;
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:startsa/recommender/content_ranker.dart';
@@ -134,13 +133,13 @@ void main() {
       final t = ticket({
         'sectors': ['Fintech', 'AI'],
       });
-      // A ticket's weights add up to 1.0.
-      final expected = 0.41 / math.sqrt(2) + 0.29 + 0.18 + 0.12 * 0.25;
+      // A ticket's weights add up to 1.0; the main sector is one of the picks.
+      const expected = 0.41 + 0.29 + 0.18 + 0.12 * 0.25;
       expect(
         matchesForTicket(t, b2b, [startup()]).single.percent,
         (expected * 100).round(),
       );
-      expect(matchesForTicket(t, b2b, [startup()]).single.percent, 79);
+      expect(matchesForTicket(t, b2b, [startup()]).single.percent, 91);
       // No commerce models in the profile: that part is skipped.
       expect(
         matchesForTicket(ticket(), const {}, [startup()]).single.percent,
@@ -323,6 +322,107 @@ void main() {
         ids(matchesForStartup(startup({'wantsLeadInvestor': true}), pool)),
         ['a', 'z'],
       );
+    });
+  });
+
+  group('criterion satisfaction (PDF 1.9)', () {
+    const sectors = ['Fintech', 'AI', 'SaaS', 'EdTech', 'Media'];
+    const stages = ['Seed', 'Pre-seed', 'Series A', 'Series B', 'Series C'];
+    const models = [
+      'Business-to-Business (B2B)',
+      'Business-to-Consumer (B2C)',
+      'Direct-to-Consumer (D2C)',
+    ];
+
+    test('an investor open to many options who fits fully scores 100', () {
+      for (final (s, st, m) in [(1, 1, 1), (1, 3, 1), (3, 2, 2), (5, 5, 3)]) {
+        final i = investor({
+          'preferredSectors': sectors.take(s).toList(),
+          'preferredStages': stages.take(st).toList(),
+          'preferredCommerceModels': models.take(m).toList(),
+        });
+        expect(
+          matchesForStartup(startup(), [i]).single.percent,
+          100,
+          reason: 'picks $s, $st, $m',
+        );
+      }
+    });
+
+    MatchInvestor wide() => investor({
+      'preferredSectors': ['Fintech', 'AI', 'SaaS'],
+      'preferredStages': ['Seed', 'Series A'],
+      'preferredCommerceModels': [models[0], models[1]],
+    });
+
+    test('worked example A: an exact match scores 100', () {
+      final m = matchesForStartup(startup(), [wide()]).single;
+      expect(m.close, isFalse);
+      expect(m.percent, 100);
+    });
+
+    test('worked example B: stage misses, close match at 67', () {
+      final s = startup({'stage': 'series_b', 'commerceModel': 'b2c'});
+      final m = matchesForStartup(s, [wide()]).single;
+      expect(m.close, isTrue);
+      expect(m.percent, 67);
+    });
+
+    test('worked example C: one pick each, ticket covers half, 94', () {
+      final s = startup({'fundingRequirement': 1000000});
+      expect(matchesForTicket(ticket(), b2b, [s]).single.percent, 94);
+    });
+
+    test('sector outweighs stage', () {
+      // Both investors picked 3 sectors, 1 stage and B2B.
+      final sectorFits = investor({
+        'id': 'p',
+        'fullName': 'Zz sector fits',
+        'preferredSectors': ['Fintech', 'AI', 'SaaS'],
+        'preferredStages': ['Series A'],
+      });
+      final stageFits = investor({
+        'id': 'q',
+        'fullName': 'Aa stage fits',
+        'preferredSectors': ['AI', 'SaaS', 'Media'],
+        'preferredStages': ['Seed'],
+      });
+      final r = matchesForStartup(startup(), [stageFits, sectorFits]);
+      expect(ids(r), ['p', 'q']);
+      expect([for (final m in r) m.percent], [67, 53]);
+      expect([for (final m in r) m.close], [true, true]);
+    });
+
+    test('exact matches stay before close matches', () {
+      final exact = investor({
+        'id': 'e',
+        'fullName': 'Zz exact',
+        'preferredCommerceModels': [models[1]],
+      });
+      final close = investor({
+        'id': 'c',
+        'fullName': 'Aa close',
+        'preferredStages': ['Series A'],
+      });
+      final r = matchesForStartup(startup(), [close, exact]);
+      expect(ids(r), ['e', 'c']);
+      expect([for (final m in r) m.percent], [80, 67]);
+      // A close ticket match can even score higher than an exact one.
+      final exactStartup = startup({
+        'id': 'x',
+        'name': 'Zz exact',
+        'fundingRequirement': 100000000,
+      });
+      final closeStartup = startup({
+        'id': 'y',
+        'name': 'Aa close',
+        'stage': 'series_a',
+        'commerceModel': 'b2c',
+        'fundingRequirement': 400000,
+      });
+      final t = matchesForTicket(ticket(), {'b2c'}, [closeStartup, exactStartup]);
+      expect(ids(t), ['x', 'y']);
+      expect([for (final m in t) m.percent], [70, 71]);
     });
   });
 
