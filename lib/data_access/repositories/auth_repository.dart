@@ -247,12 +247,15 @@ class AuthRepository {
   }) async {
     final account = _auth.currentAccount;
     if (account == null) throw const AuthException(AuthFailure.unknown);
+    // Confirm the user's password.
     if (password != null) {
       await _auth.reauthenticate(account.email, password);
     } else if (!_auth.signedInRecently) {
       throw const AuthException(AuthFailure.requiresRecentLogin);
     }
+    // Delete the investor's tickets and requests.
     await _removeInvestorData(account.uid);
+    // Close or delete the founder's startups.
     await StartupRepository.instance.settleMineBeforeDeletion(fates);
     try {
       final invitations = InvitationRepository.instance;
@@ -264,10 +267,7 @@ class AuthRepository {
     }
     // Nobody can find or open a person who no longer exists.
     await TeamLookup.instance.remove(uid: account.uid, email: account.email);
-    // Each list on its own: a failure must not leave the other's documents
-    // behind (nobody can clean them up once the account is gone). Carry on
-    // either way: the account itself must still be removed. Memory is
-    // cleared in any case, so the next account on this phone starts empty.
+    // Delete bookmarks.
     try {
       await BookmarkRepository.instance.deleteAll(account.uid);
     } catch (_) {
@@ -281,7 +281,7 @@ class AuthRepository {
       NotInterestedRepository.instance.clear();
     }
     await ForYouCache.instance.remove(account.uid);
-    // The notice inbox lives under the user document too.
+    // Delete the profile, then the account, then sign out.
     await NoticeRepository.instance.clearMine();
     await _users.deleteProfile(account.uid);
     await _auth.deleteCurrentAccount();
