@@ -461,8 +461,14 @@ List<MatchResult> matchesForStartup(
       ),
     );
   }
+  // Exact matches first (open tickets, then profiles), then the close ones in
+  // the same order: a close match is listed after every exact one (PDF 1.4).
+  final byTicket = _ordered(viaTicket);
+  final byProfile = _ordered(viaProfile);
   return [
-    ..._ordered(viaTicket),
-    ..._ordered(viaProfile),
+    for (final m in byTicket) if (!m.close) m,
+    for (final m in byProfile) if (!m.close) m,
+    for (final m in byTicket) if (m.close) m,
+    for (final m in byProfile) if (m.close) m,
   ].take(limit).toList();
 }

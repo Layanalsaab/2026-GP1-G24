@@ -446,4 +446,7 @@ def matches_for_startup(startup: dict, investors: list[dict], tickets: list[dict
             continue
         score = weighted_score(score_parts(i, s))
         via_profile.append(_Result(i.id, i.name, score, not exact, activity=i.activity, picks=i.picks))
-    return [r.out() for r in (_ordered(via_ticket) + _ordered(via_profile))[:limit]]
+    # Exact (tickets, then profiles), then close in the same order: close after every exact (PDF 1.4).
+    by_ticket, by_profile = _ordered(via_ticket), _ordered(via_profile)
+    tiers = [r for close in (False, True) for group in (by_ticket, by_profile) for r in group if r.close == close]
+    return [r.out() for r in tiers[:limit]]

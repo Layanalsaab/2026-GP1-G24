@@ -499,6 +499,24 @@ void main() {
       expect(ids(r), ['i1', 'i2']);
     });
 
+    test('a close ticket match comes after every exact match (PDF 1.4)', () {
+      final r = matchesForStartup(
+        startup(),
+        [
+          investor({'id': 'p', 'fullName': 'Zz exact profile'}),
+          investor({'id': 'e', 'fullName': 'Zz exact ticket'}),
+          investor({'id': 'c', 'fullName': 'Aa close ticket'}),
+        ],
+        tickets: [
+          covering('e-T1', 'e'),
+          ticket({'id': 'c-T1', 'investorId': 'c', 'stages': ['Series A']}),
+        ],
+      );
+      expect(ids(r), ['e', 'p', 'c']);
+      expect([for (final m in r) m.close], [false, false, true]);
+      expect([for (final m in r) m.ticketId], ['e-T1', null, 'c-T1']);
+    });
+
     test('the best ticket per investor is deterministic', () {
       final r = matchesForStartup(
         startup(),

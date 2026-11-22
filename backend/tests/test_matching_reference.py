@@ -85,6 +85,12 @@ def test_reference_tie_breakers():
              _investor(id="z", fullName="Zz")]
     assert ids(matches_for_startup(_startup(), picks, [])) == ["z", "a"]  # fewer picks
 
+    tiers = [_investor(id="p", fullName="Zz exact profile"), _investor(id="e", fullName="Zz exact ticket"),
+             _investor(id="c", fullName="Aa close ticket")]
+    tier_tickets = [_ticket(id="e-T1", investorId="e", **covering),
+                    _ticket(id="c-T1", investorId="c", stages=["Series A"])]
+    assert ids(matches_for_startup(_startup(), tiers, tier_tickets)) == ["e", "p", "c"]  # close after every exact
+
     two = [_ticket(id="i1-T2", **covering), _ticket(id="i1-T1", **covering)]
     (best,) = matches_for_startup(_startup(), [_investor()], two)
     assert best["ticketId"] == "i1-T1"  # deterministic best ticket
