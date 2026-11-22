@@ -1,6 +1,7 @@
-"""Encode every public startup and every investor that has no up-to-date text vector.
+"""Encode every public startup and every investor that has no up-to-date text vector, and remove
+the vectors of profiles that are gone (deleted, made private, or with no text left).
 
-Run once after setting FIREBASE_SERVICE_ACCOUNT_JSON (see README):
+Run once after setting FIREBASE_SERVICE_ACCOUNT_JSON (see README); safe to run again:
     .venv/bin/python -m scripts.backfill_vectors
 """
 
@@ -41,6 +42,12 @@ def backfill(source: Source, embedder: Embedder) -> dict[str, int]:
         except Exception:
             log.exception("Could not encode %s", key)
             counts["failed"] += 1
+    # Vectors whose profile is no longer a public startup or an investor: the app deleted the
+    # document (or made the startup private) without telling the server.
+    listed = {f"{prefix}-{doc_id}" for _, prefix, (doc_id, _) in profiles}
+    for key in sorted(set(stored) - listed):
+        remove(source, key)
+        counts["deleted"] += 1
     return counts
 
 

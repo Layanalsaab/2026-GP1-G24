@@ -91,7 +91,10 @@ Deploy `firestore.rules` (it has the `notInterested` rule) with `firebase deploy
 
 ## One-time vector backfill
 
-Encodes every public startup and every investor whose text vector is missing or out of date.
+Encodes every public startup and every investor whose text vector is missing or out of date, and
+removes the vectors of profiles that are gone (a deleted startup or account, a startup made private,
+or a profile with no text left). The app deletes documents without telling the server, so run it now
+and then, for example before a demo.
 Vectors are stored compactly in 16 documents (`vectorChunks/c00` … `c15`), so loading all of them
 costs 16 Firestore reads:
 
@@ -99,7 +102,8 @@ costs 16 Firestore reads:
 .venv/bin/python -m scripts.backfill_vectors
 ```
 
-It prints `{"written": n, "unchanged": n, "deleted": n, "failed": n}` and is safe to run again.
+It prints `{"written": n, "unchanged": n, "deleted": n, "failed": n}` (`deleted` = vectors removed)
+and is safe to run again.
 
 ## Memory check
 

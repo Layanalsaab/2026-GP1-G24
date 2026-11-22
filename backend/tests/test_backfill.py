@@ -34,6 +34,26 @@ def test_backfill_writes_then_skips():
 
 
 
+def test_backfill_removes_vectors_of_profiles_that_are_gone():
+    source = FakeSource({
+        "startups/kept": {"name": "Payly", "isPublic": True, "description": "Payroll for clinics"},
+        "startups/private": {"name": "Hidden", "isPublic": False, "description": "Now private"},
+        "investors/kept": {"fullName": "Nora", "bio": "Angel investor in health"},
+    })
+    backfill(source, StubEmbedder())  # vectors for the two listed profiles
+    old = {"v": pack([0.0] * 384), "model": MODEL_NAME, "fingerprint": "x"}
+    write(source, "s-deleted", old)  # the startup was deleted
+    write(source, "s-private", old)  # the startup was made private
+    write(source, "i-deleted", old)  # the investor deleted their account
+
+    assert backfill(source, StubEmbedder()) == {"written": 0, "unchanged": 2, "deleted": 3, "failed": 0}
+    assert read(source, "s-deleted") is None
+    assert read(source, "s-private") is None
+    assert read(source, "i-deleted") is None
+    assert read(source, "s-kept") is not None and read(source, "i-kept") is not None
+    assert backfill(source, StubEmbedder())["deleted"] == 0  # nothing left to remove
+
+
 def test_backfill_keeps_going_when_one_profile_fails():
     class Flaky(StubEmbedder):
         def profile_vector(self, texts):
