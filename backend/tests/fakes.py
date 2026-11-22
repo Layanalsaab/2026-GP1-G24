@@ -4,6 +4,15 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
+from google.cloud.firestore_v1.base_query import FieldFilter
+
+
+def _check_operator(field: str, op: str | None, value: object) -> None:
+    """Fail like the real client does on an operator it does not know (e.g. the JavaScript spelling
+    "array-contains"): FirestoreSource builds the same FieldFilter, and turning it into a request
+    is where the Python client checks the operator."""
+    FieldFilter(field, op, value)._to_pb()
+
 
 class FakeSource:
     def __init__(self, docs: dict[str, dict] | None = None):
@@ -13,6 +22,8 @@ class FakeSource:
 
     def stream(self, collection: str, field: str | None = None, op: str | None = None, value: object = None) -> list[tuple[str, dict]]:
         self.stream_calls += 1
+        if field is not None:
+            _check_operator(field, op, value)
         prefix = collection.rstrip("/") + "/"
         out = []
         for path, data in self.docs.items():
@@ -22,7 +33,7 @@ class FakeSource:
                 current = data.get(field)
                 if op == "==" and current != value:
                     continue
-                if op == "array-contains" and not (isinstance(current, list) and value in current):
+                if op == "array_contains" and not (isinstance(current, list) and value in current):
                     continue
             out.append((path[len(prefix):], dict(data)))
         self.docs_read += len(out)

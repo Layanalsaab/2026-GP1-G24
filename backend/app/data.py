@@ -172,7 +172,8 @@ class DataStore:
             return None
         now = self._clock()
         own = _docs(self.source.stream("startups", "founderId", "==", uid))
-        own.update(_docs(self.source.stream("startups", "memberIds", "array-contains", uid)))
+        # The Python client spells it array_contains ("array-contains" is the JavaScript/Dart spelling).
+        own.update(_docs(self.source.stream("startups", "memberIds", "array_contains", uid)))
         return UserContext(
             uid=uid,
             role=user["role"],
