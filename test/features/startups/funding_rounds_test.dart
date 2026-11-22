@@ -109,7 +109,7 @@ void main() {
       raised: 65625000,
       start: DateTime(2024, 5, 1),
       investors: [
-        const RoundInvestor(name: 'Lead Fund', isLead: true),
+        const RoundInvestor(name: 'Lead Fund'),
         for (var i = 1; i <= 6; i++)
           RoundInvestor(name: 'A Very Long Investor Name Number $i'),
       ],
@@ -122,7 +122,7 @@ void main() {
         ),
       ),
     );
-    expect(find.text('Lead Fund · Lead'), findsOneWidget);
+    expect(find.text('Lead Fund'), findsOneWidget);
     expect(find.text('A Very Long Investor Name Number 2'), findsOneWidget);
     expect(find.text('A Very Long Investor Name Number 3'), findsNothing);
     expect(find.text('+4 more'), findsOneWidget);

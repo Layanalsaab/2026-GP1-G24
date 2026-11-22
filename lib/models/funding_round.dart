@@ -1,28 +1,17 @@
 import '../app_constants/firestore_collections.dart';
 import 'startup_enums.dart';
 
-/// One investor of a funding round, as stored in the round document: {name, investorId, isLead}.
+/// One investor of a funding round, as stored in the round document: {name, investorId}.
 class RoundInvestor {
-  const RoundInvestor({
-    required this.name,
-    this.investorId,
-    this.isLead = false,
-  });
+  const RoundInvestor({required this.name, this.investorId});
 
   final String name;
 
   final String? investorId;
 
-  /// The lead investor of the round ("· Lead").
-  final bool isLead;
-
   bool get hasProfile => (investorId ?? '').isNotEmpty;
 
-  Map<String, Object?> toMap() => {
-    'name': name,
-    'investorId': investorId,
-    'isLead': isLead,
-  };
+  Map<String, Object?> toMap() => {'name': name, 'investorId': investorId};
 
   /// Null for an entry without a name.
   static RoundInvestor? fromMap(Object? raw) {
@@ -33,7 +22,6 @@ class RoundInvestor {
     return RoundInvestor(
       name: name.trim(),
       investorId: id is String && id.isNotEmpty ? id : null,
-      isLead: raw['isLead'] == true,
     );
   }
 }
@@ -148,16 +136,9 @@ class FundingRound {
     final end = d[FundingRoundFields.endDate];
     final raised = d[FundingRoundFields.raised];
     final rawInvestors = d[FundingRoundFields.investors];
-    final all = [
+    final investors = [
       if (rawInvestors is List)
         for (final raw in rawInvestors) ?RoundInvestor.fromMap(raw),
-    ];
-    // The lead first, then the others in stored order.
-    final investors = [
-      for (final i in all)
-        if (i.isLead) i,
-      for (final i in all)
-        if (!i.isLead) i,
     ];
     final number = d[FundingRoundFields.number];
     final other = d[FundingRoundFields.stageOther];

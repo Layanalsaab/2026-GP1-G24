@@ -611,39 +611,27 @@ class _InvestorLink extends StatelessWidget {
       constraints: const BoxConstraints(minHeight: _RoundRow.line),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 1),
-        child: Text.rich(
-          TextSpan(
-            text: investor.name,
-            style: AppText.sans(
-              size: 14,
-              height: 20,
-              weight: linked ? FontWeight.w600 : FontWeight.w400,
-              color: linked ? AppColors.mossText : AppColors.grey,
-            ).copyWith(decoration: TextDecoration.none),
-            children: [
-              if (investor.isLead)
-                TextSpan(
-                  text: ' · Lead',
-                  style: AppText.sans(
-                    size: 12.5,
-                    weight: FontWeight.w600,
-                    color: AppColors.tagGoldText,
-                  ),
-                ),
-            ],
-          ),
+        child: Text(
+          investor.name,
+          style: AppText.sans(
+            size: 14,
+            height: 20,
+            weight: linked ? FontWeight.w600 : FontWeight.w400,
+            color: linked ? AppColors.mossText : AppColors.grey,
+          ).copyWith(decoration: TextDecoration.none),
         ),
       ),
     );
-    final label = investor.isLead
-        ? '${investor.name}, lead investor'
-        : investor.name;
     if (!linked) {
-      return Semantics(label: label, excludeSemantics: true, child: line);
+      return Semantics(
+        label: investor.name,
+        excludeSemantics: true,
+        child: line,
+      );
     }
     return Semantics(
       button: true,
-      label: label,
+      label: investor.name,
       excludeSemantics: true,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,

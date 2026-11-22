@@ -126,18 +126,17 @@ void main() {
           raised: 2194000,
           start: DateTime(2023, 11, 25),
           investors: [
-            {'name': 'Angel One', 'investorId': null, 'isLead': false},
-            {'name': 'Fund Two', 'investorId': 'inv-2', 'isLead': true},
+            {'name': 'Angel One', 'investorId': null},
+            {'name': 'Fund Two', 'investorId': 'inv-2'},
           ],
         ),
       )!;
       expect(r.isOpen, isTrue);
       expect(r.type, StartupStage.seed);
       expect(r.amount, 2925000);
-      expect(r.investors.first.name, 'Fund Two');
-      expect(r.investors.first.isLead, isTrue);
-      expect(r.investors.first.hasProfile, isTrue);
-      expect(r.investors.last.hasProfile, isFalse);
+      expect(r.investors.first.name, 'Angel One');
+      expect(r.investors.first.hasProfile, isFalse);
+      expect(r.investors.last.hasProfile, isTrue);
     });
 
     test('an undisclosed amount is not shown', () {
@@ -178,7 +177,7 @@ void main() {
         raised: 500000,
         start: now,
         investors: const [
-          RoundInvestor(name: 'Fund Two', investorId: 'inv-2', isLead: true),
+          RoundInvestor(name: 'Fund Two', investorId: 'inv-2'),
           RoundInvestor(name: 'Angel One'),
         ],
       ).toMap('s1');
@@ -284,8 +283,6 @@ void main() {
             amount: 500000,
             start: DateTime(2026, 8),
           ),
-          // Rafeeq wants a lead investor.
-          'wantsLeadInvestor': true,
         },
       };
       expect(await repo.writesFor('s1', raising(), now: now), isEmpty);

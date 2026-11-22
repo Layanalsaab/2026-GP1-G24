@@ -187,8 +187,7 @@ void main() {
       expect(find.text('Seed'), findsOneWidget);
       expect(find.text('Aug 2026 – now'), findsOneWidget);
       expect(find.text('Jan – Jun 2026'), findsOneWidget);
-      // The lead investor of the round says so.
-      expect(find.text('Ahmad Hassan · Lead'), findsOneWidget);
+      expect(find.text('Ahmad Hassan'), findsOneWidget);
       expect(find.text('Layan Alsaab'), findsOneWidget);
     });
 
@@ -496,7 +495,10 @@ void main() {
         ),
         findsOneWidget,
       );
-      expect(find.text('Sector · HealthTech', findRichText: true), findsOneWidget);
+      expect(
+        find.text('Sector · HealthTech', findRichText: true),
+        findsOneWidget,
+      );
       expect(find.text('Stage · Seed', findRichText: true), findsOneWidget);
     });
 

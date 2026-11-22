@@ -746,9 +746,7 @@ class PrototypeSeed {
       amount: 500000,
       raised: 200000,
       start: DateTime(2026, 8, 1),
-      investors: [
-        RoundInvestor(name: ahmad.name, investorId: ahmad.id, isLead: true),
-      ],
+      investors: [RoundInvestor(name: ahmad.name, investorId: ahmad.id)],
     ),
     FundingRound(
       number: 1,
