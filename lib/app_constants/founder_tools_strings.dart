@@ -552,11 +552,4 @@ class FounderToolsStrings {
   static const discardEditTitle = 'Discard changes?';
   static const discardEditMessage =
       'If you go back now, your changes will be lost.';
-  static const draftBadge = 'Draft';
-  static const draftContinue = 'Continue editing';
-  static const untitledStartup = 'Untitled startup';
-  static const discardDraftTitle = 'Discard this draft?';
-  static const discardDraftMessage =
-      'The details you entered for this draft will be deleted.';
-  static const draftDiscarded = 'Draft discarded';
 }

@@ -57,10 +57,14 @@ class ExploreScreen extends StatelessWidget {
 
   List<HomeSlot> _latest(HomeViewModel vm) {
     final items = vm.latest;
+    final investors = vm.latestSwitch == 1;
     return [
+      _switch('latest', vm.latestSwitch, vm.setLatestSwitch),
       _heading(
         SectionHeader(
-          title: HomeStrings.newestStartups,
+          title: investors
+              ? HomeStrings.newestInvestors
+              : HomeStrings.newestStartups,
           trailing: RangeDropdown(
             options: [for (final r in LatestRange.values) r.label],
             selectedIndex: vm.latestRange.index,
@@ -70,10 +74,14 @@ class ExploreScreen extends StatelessWidget {
         bottom: 0,
       ),
       if (items.isEmpty)
-        const HomeSlot(
+        HomeSlot(
           EmptyState(
-            title: HomeStrings.noNewStartupsTitle,
-            message: HomeStrings.noNewStartupsMessage,
+            title: investors
+                ? HomeStrings.noNewInvestorsTitle
+                : HomeStrings.noNewStartupsTitle,
+            message: investors
+                ? HomeStrings.noNewInvestorsMessage
+                : HomeStrings.noNewStartupsMessage,
             icon: AppIcons.target,
           ),
         )

@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../../app_constants/founder_tools_strings.dart';
-import '../../../data_access/repositories/startup_draft_repository.dart';
 import '../../../helpers/app_session.dart';
 import '../../../models/list_entries.dart';
 import '../../../models/startup.dart';
@@ -13,7 +12,6 @@ import '../../../shared_ui/widgets/lists/filter_sort_pills.dart';
 import '../../../navigation/app_router.dart';
 import '../view_models/my_startups_view_model.dart';
 import '../widgets/startup_filter_sheet.dart';
-import '../widgets/draft_card.dart';
 import '../widgets/founder_ui.dart';
 import '../../../models/home_item.dart';
 import '../../search/widgets/home_layout.dart';
@@ -39,14 +37,10 @@ class _MyStartupsScreenState extends State<MyStartupsScreen> {
     teamStartups: widget.teamStartups,
   );
 
-  final _drafts = StartupDraftRepository.instance;
-
   @override
   void initState() {
     super.initState();
     _vm.load();
-    final uid = AppSession.instance.user?.uid;
-    if (uid != null) _drafts.load(uid);
   }
 
   @override
@@ -57,29 +51,10 @@ class _MyStartupsScreenState extends State<MyStartupsScreen> {
 
   Future<void> _refresh() async {
     await AppRouter.checkInvitations(context);
-    final uid = AppSession.instance.user?.uid;
-    if (uid != null) unawaited(_drafts.load(uid));
     await _vm.load();
   }
 
   void _add() => StartupStepsScreen.openAdd(context);
-
-  void _continueDraft(Map<String, Object?> d) =>
-      StartupStepsScreen.openAdd(context, draft: d);
-
-  Future<void> _discardDraft() async {
-    final ok = await showConfirmSheet(
-      context,
-      title: FounderToolsStrings.discardDraftTitle,
-      message: FounderToolsStrings.discardDraftMessage,
-      confirmLabel: FounderToolsStrings.discard,
-      cancelLabel: FounderToolsStrings.keepEditing,
-    );
-    final uid = AppSession.instance.user?.uid;
-    if (!ok || uid == null) return;
-    await _drafts.clear(uid);
-    if (mounted) AppToast.show(context, FounderToolsStrings.draftDiscarded);
-  }
 
   Future<void> _manage(Startup s, StartupRole role) async {
     await ManageStartupScreen.push(
@@ -105,17 +80,9 @@ class _MyStartupsScreenState extends State<MyStartupsScreen> {
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
-      listenable: Listenable.merge([_vm, _drafts.current]),
+      listenable: _vm,
       builder: (context, _) {
         final hasList = _vm.entries.isNotEmpty;
-        final draft = _drafts.current.value;
-        final draftCard = draft == null
-            ? null
-            : DraftCard(
-                draft: draft,
-                onTap: () => _continueDraft(draft),
-                onDiscard: _discardDraft,
-              );
         final shown = _vm.visible;
         return Scaffold(
           backgroundColor: AppColors.cream,
@@ -129,7 +96,7 @@ class _MyStartupsScreenState extends State<MyStartupsScreen> {
                   ListScreenHeader(
                     title: FounderToolsStrings.myStartupsTitle,
                     onBack: () => AppNav.back(context),
-                    topTrailing: hasList || draft != null
+                    topTrailing: hasList
                         ? GoldPillButton.add(onTap: _add)
                         : null,
                     pills: hasList
@@ -149,10 +116,6 @@ class _MyStartupsScreenState extends State<MyStartupsScreen> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         if (_vm.isEmpty) ...[
-                          if (draftCard != null) ...[
-                            draftCard,
-                            const SizedBox(height: 14),
-                          ],
                           IllustratedEmptyCard(
                             illustration: const _EmptyIllustration(),
                             title: FounderToolsStrings.emptyTitle,
@@ -182,10 +145,6 @@ class _MyStartupsScreenState extends State<MyStartupsScreen> {
                             ),
                           )
                         else ...[
-                          if (draftCard != null) ...[
-                            draftCard,
-                            const SizedBox(height: 14),
-                          ],
                           if (shown.isEmpty)
                             _NoMatches(onShowAll: _vm.resetFilters)
                           else

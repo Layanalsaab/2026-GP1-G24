@@ -26,7 +26,6 @@ class ProfileStrings {
   static const background = 'Investment Background';
   static const yearsOfInvesting = 'Years of investing';
   static const startupsInvested = 'Startups Invested';
-  static const no = 'No';
   static const interests = 'Investment Interests';
   static const sectors = 'Sectors';
 

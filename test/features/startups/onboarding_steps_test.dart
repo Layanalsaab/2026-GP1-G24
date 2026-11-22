@@ -167,11 +167,10 @@ void main() {
       addTearDown(vm.dispose);
       vm.step = StartupStepsViewModel.askStep;
       expect(vm.lookingFor, isEmpty);
-      expect(vm.currentComplete, isFalse);
-      vm.next();
-      expect(vm.errorOf(StartupField.lookingFor), 'Select at least one.');
+      expect(vm.currentComplete, isTrue);
       vm.toggleLookingFor('Partnership');
       expect(vm.currentComplete, isFalse);
+      vm.next();
       expect(
         vm.errorOf(StartupField.partnerTypes),
         'Select at least one partner type.',

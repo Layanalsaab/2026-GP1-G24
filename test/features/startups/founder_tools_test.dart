@@ -8,7 +8,6 @@ import 'package:startsa/data_access/repositories/discovery_repository.dart';
 import 'package:startsa/data_access/repositories/funding_round_repository.dart';
 import 'package:startsa/data_access/repositories/interest_repository.dart';
 import 'package:startsa/data_access/repositories/request_repository.dart';
-import 'package:startsa/data_access/repositories/startup_draft_repository.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:startsa/data_access/repositories/startup_repository.dart';
 import 'package:startsa/data_access/repositories/user_repository.dart';
@@ -146,17 +145,6 @@ void main() {
       final ask = StartupStepsViewModel(onlySection: 5);
       addTearDown(ask.dispose);
       expect(ask.step, 5);
-    });
-
-    test('a draft saved before the swap reopens on the same step', () {
-      final old = StartupStepsViewModel();
-      addTearDown(old.dispose);
-      final draft = {...old.toDraft()}
-        ..remove('order')
-        ..['step'] = 4;
-      final restored = StartupStepsViewModel()..loadDraft(draft);
-      addTearDown(restored.dispose);
-      expect(restored.step, StartupStepsViewModel.askStep);
     });
 
     test(
@@ -829,7 +817,6 @@ void main() {
     for (final choice in ['Discard', 'Keep editing']) {
       testWidgets('Leaving a half-filled new startup: $choice', (tester) async {
         SharedPreferences.setMockInitialValues({});
-        StartupDraftRepository.instance = StartupDraftRepository();
         AppSession.instance.signIn(
           const AppUser(
             uid: 'uid1',
@@ -869,9 +856,6 @@ void main() {
         await tester.tap(find.text(choice));
         await tester.pumpAndSettle();
         final stillOnForm = hint.evaluate().isNotEmpty;
-        final draft = StartupDraftRepository.instance.current.value;
-        // Nothing is saved as a draft any more.
-        expect(draft, isNull);
         if (choice == 'Keep editing') {
           expect(stillOnForm, isTrue);
         } else {
@@ -892,10 +876,15 @@ void main() {
         _app(
           Builder(
             builder: (context) => TextButton(
-              onPressed: () async => result = await StartupStepsScreen.pushEdit(
-                context,
-                _withNewAnswers(PrototypeSeed.rafeeq),
-              ),
+              onPressed: () async =>
+                  result = await Navigator.of(context).push<Startup>(
+                    MaterialPageRoute(
+                      builder: (_) => StartupStepsScreen(
+                        mode: StartupStepsMode.edit,
+                        startup: _withNewAnswers(PrototypeSeed.rafeeq),
+                      ),
+                    ),
+                  ),
               child: const Text('edit'),
             ),
           ),
@@ -927,32 +916,13 @@ void main() {
       await tester.pump(const Duration(seconds: 5));
     });
 
-    test('a draft remembers the furthest step even after going Back', () {
+    test('an untouched form is not dirty; typing makes it dirty', () {
       final vm = StartupStepsViewModel();
-      _fillAll(vm);
-      expect(vm.next(), StepAdvance.advanced);
-      expect(vm.next(), StepAdvance.advanced);
-      expect(vm.step, 2);
-      vm.previous();
-      vm.previous();
-      expect(vm.step, 0);
-      final draft = vm.toDraft();
-      expect(draft['step'], 2, reason: 'step 3 of 4');
-      final reopened = StartupStepsViewModel()..loadDraft(draft);
-      expect(reopened.step, 2);
-    });
-
-    test('a draft restores the form and an untouched form is not dirty', () {
-      final vm = StartupStepsViewModel();
+      addTearDown(vm.dispose);
       expect(vm.isDirty, isFalse);
       vm.name.text = 'Nakhla Pay';
       vm.toggleSector('Fintech');
       expect(vm.isDirty, isTrue);
-      final draft = vm.toDraft();
-      final other = StartupStepsViewModel()..loadDraft(draft);
-      expect(other.name.text, 'Nakhla Pay');
-      expect(other.sector, Sector.fintech);
-      expect(other.isDirty, isFalse, reason: 'opening a draft is the baseline');
     });
 
     testWidgets(

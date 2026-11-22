@@ -40,10 +40,6 @@ void main() {
       expect(ids.contains('mock-naql'), isTrue);
     });
 
-    test('new on Start.sa carries the Joined lines', () {
-      expect(repo.newInvestors().first.joinedLabel, 'Joined yesterday');
-    });
-
     test('bookmark keys follow the s-/i-/p- rule', () {
       expect(repo.startups().first.bookmarkKey, 's-mock-rafeeq');
       expect(repo.investors().first.bookmarkKey, 'i-ahmad');
@@ -115,26 +111,6 @@ void main() {
       final repo = DiscoveryRepository();
       expect(repo.startups(), isEmpty);
       expect(repo.investors(), isEmpty);
-    });
-
-    test('joined labels', () {
-      final now = DateTime(2026, 10, 19, 12);
-      expect(
-        DiscoveryRepository.joinedLabel(DateTime(2026, 10, 19), now: now),
-        'Joined today',
-      );
-      expect(
-        DiscoveryRepository.joinedLabel(DateTime(2026, 10, 18), now: now),
-        'Joined yesterday',
-      );
-      expect(
-        DiscoveryRepository.joinedLabel(DateTime(2026, 10, 16), now: now),
-        'Joined 3 days ago',
-      );
-      expect(
-        DiscoveryRepository.joinedLabel(DateTime(2026, 8, 1), now: now),
-        'Joined August 2026',
-      );
     });
   });
 }

@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../../../app_constants/founder_tools_strings.dart';
-import '../../../data_access/repositories/startup_draft_repository.dart';
-import '../../../helpers/app_session.dart';
 import '../../../models/startup.dart';
 import '../../../navigation/app_router.dart';
 import '../../../navigation/main_screen.dart';
@@ -34,7 +32,6 @@ class StartupStepsScreen extends StatefulWidget {
     super.key,
     required this.mode,
     this.startup,
-    this.draft,
     this.onlySection,
     this.lostStartup = false,
   }) : assert(mode != StartupStepsMode.edit || startup != null);
@@ -42,9 +39,6 @@ class StartupStepsScreen extends StatefulWidget {
   final bool lostStartup;
 
   final StartupStepsMode mode;
-
-  /// A saved draft to continue (StartupStepsMode.add only).
-  final Map<String, Object?>? draft;
 
   /// The startup being edited (StartupStepsMode.edit only).
   final Startup? startup;
@@ -65,25 +59,13 @@ class StartupStepsScreen extends StatefulWidget {
   }
 
   /// My Startups -> Add.
-  static void openAdd(BuildContext context, {Map<String, Object?>? draft}) {
+  static void openAdd(BuildContext context) {
     AppNav.push(
       context,
-      StartupStepsScreen(mode: StartupStepsMode.add, draft: draft),
+      const StartupStepsScreen(mode: StartupStepsMode.add),
       greenHeader: true,
     );
   }
-
-  /// Manage -> Edit startup.
-  static void openEdit(BuildContext context, Startup startup) {
-    pushEdit(context, startup);
-  }
-
-  static Future<Startup?> pushEdit(BuildContext context, Startup startup) =>
-      AppNav.push<Startup>(
-        context,
-        StartupStepsScreen(mode: StartupStepsMode.edit, startup: startup),
-        greenHeader: true,
-      );
 
   static Future<Startup?> pushEditSection(
     BuildContext context,
@@ -108,7 +90,6 @@ class _StartupStepsScreenState extends State<StartupStepsScreen> {
     initial: widget.startup,
     onlySection: widget.onlySection,
   );
-  late final bool _fromDraft = widget.draft != null;
   final ScrollController _scroll = ScrollController();
 
   bool get _onboarding => widget.mode == StartupStepsMode.onboarding;
@@ -120,12 +101,8 @@ class _StartupStepsScreenState extends State<StartupStepsScreen> {
   @override
   void initState() {
     super.initState();
-    final d = widget.draft;
-    if (d != null) _vm.loadDraft(d);
     if (widget.startup != null) _vm.loadInvitations();
   }
-
-  String? get _uid => AppSession.instance.user?.uid;
 
   @override
   void dispose() {
@@ -184,11 +161,6 @@ class _StartupStepsScreenState extends State<StartupStepsScreen> {
       keepLabel: FounderToolsStrings.keepEditing,
     );
     if (!mounted || !discard) return;
-    // Discarding a form opened from a draft deletes that draft.
-    final uid = _uid;
-    if (_fromDraft && uid != null) {
-      await StartupDraftRepository.instance.clear(uid);
-    }
     _exit();
   }
 
@@ -270,11 +242,6 @@ class _StartupStepsScreenState extends State<StartupStepsScreen> {
         if (!mounted) return;
         AppRouter.openHome(context);
       case StartupStepsMode.add:
-        final uid = _uid;
-        if (_fromDraft && uid != null) {
-          await StartupDraftRepository.instance.clear(uid);
-        }
-        if (!mounted) return;
         if (!told) {
           AppToast.show(context, FounderToolsStrings.added(saved.name));
         }

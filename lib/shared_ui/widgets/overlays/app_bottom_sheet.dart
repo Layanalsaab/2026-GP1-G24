@@ -161,64 +161,6 @@ class _SheetCloseButton extends StatelessWidget {
   }
 }
 
-class InfoSheet extends StatelessWidget {
-  const InfoSheet({
-    super.key,
-    required this.title,
-    required this.text,
-    this.buttonLabel = 'Got it',
-  });
-
-  final String title;
-  final String text;
-  final String buttonLabel;
-
-  @override
-  Widget build(BuildContext context) {
-    return AppSheetScaffold(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Semantics(
-              header: true,
-              child: Text(
-                title,
-                style: AppText.sans(size: 18, weight: FontWeight.w700),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              text,
-              style: AppText.sans(
-                size: 15,
-                color: AppColors.paragraph,
-                height: 22,
-              ),
-            ),
-            const SizedBox(height: 16),
-            AppButton(
-              label: buttonLabel,
-              onPressed: () => Navigator.of(context).maybePop(),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Opens an InfoSheet.
-Future<void> showInfoSheet(
-  BuildContext context, {
-  required String title,
-  required String text,
-}) => showAppBottomSheet<void>(
-  context,
-  builder: (_) => InfoSheet(title: title, text: text),
-);
-
 class ConfirmSheet extends StatelessWidget {
   const ConfirmSheet({
     super.key,

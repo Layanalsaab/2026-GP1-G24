@@ -22,6 +22,10 @@ class HomeStrings {
   static const noNewStartupsTitle = 'No new startups';
   static const noNewStartupsMessage =
       'No startups joined in this time range. Try a longer one.';
+  static const newestInvestors = 'Newest investors';
+  static const noNewInvestorsTitle = 'No new investors';
+  static const noNewInvestorsMessage =
+      'No investors joined in this time range. Try a longer one.';
   static const top30 = 'Top 30 trending';
   static const results = 'Results';
 

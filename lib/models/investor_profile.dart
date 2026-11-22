@@ -18,7 +18,6 @@ class InvestorProfile {
     this.linkedin,
     this.valueOffered,
     this.hopeToGain,
-    this.joinedLabel,
     this.createdAt,
     this.email,
     this.phone,
@@ -67,9 +66,7 @@ class InvestorProfile {
   /// "What I hope to gain".
   final String? hopeToGain;
 
-  final String? joinedLabel;
-
-  /// When the document was created (orders the "New on Start.sa" rail).
+  /// When the investor joined Start.sa (orders Explore -> Latest).
   final DateTime? createdAt;
 
   /// e.g.
@@ -200,7 +197,6 @@ class InvestorProfile {
     linkedin: linkedin,
     valueOffered: valueOffered,
     hopeToGain: hopeToGain,
-    joinedLabel: joinedLabel,
     createdAt: createdAt,
     email: email,
     phone: phone,

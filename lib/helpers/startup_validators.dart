@@ -168,7 +168,4 @@ class StartupValidators {
       selected.isEmpty ? ValidationStrings.partnerTypes : null;
   static String? supportTypes(Iterable<Object> selected) =>
       selected.isEmpty ? ValidationStrings.supportTypes : null;
-
-  static String? lookingFor(Iterable<Object> selected) =>
-      selected.isEmpty ? ValidationStrings.selectAtLeastOne : null;
 }

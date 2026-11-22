@@ -135,18 +135,6 @@ void main() {
       },
     );
 
-    test('a draft saved with one sector reopens with it', () {
-      final vm = StartupStepsViewModel();
-      addTearDown(vm.dispose);
-      vm.loadDraft({'sector': 'saas', 'sectorOther': ''});
-      expect(vm.sectorPicks, ['SaaS']);
-      vm.loadDraft({
-        'sectors': ['AI', 'Other'],
-        'sectorOther': 'Beekeeping',
-      });
-      expect(vm.sectorPicks, ['AI', 'Other']);
-    });
-
     test('the messages', () {
       final vm = StartupStepsViewModel();
       addTearDown(vm.dispose);

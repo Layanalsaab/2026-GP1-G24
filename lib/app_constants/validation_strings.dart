@@ -29,7 +29,6 @@ class ValidationStrings {
   static const bioRequired = 'Please write a short bio.';
   static const selectAtLeastOneStage = 'Select at least one stage.';
   static const selectAtLeastOneModel = 'Select at least one commerce model.';
-  static const selectAtLeastOne = 'Select at least one.';
 
   // Investor
   static const gainRequired =

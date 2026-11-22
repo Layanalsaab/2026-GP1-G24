@@ -217,6 +217,7 @@ await check('a startup without otherSectors (an older one) still saves', true, a
 
 // Closing, the owner leaving, taking over (docs: Closing a Startup, Leaving
 // and Deleting an Account)
+await check('a startup with nothing ticked in the Startup Ask can be created', true, () => setDoc(doc(founder, 'startups', 'A0'), maxStartup({ lookingFor: [], fundingRequirement: null, raisedInRound: null, partnerTypes: [], supportTypes: [] })));
 await check('a new startup as the app writes it (status, coFounderIds) can be created', true, () => setDoc(doc(founder, 'startups', 'O1'), maxStartup({ status: 'active', coFounderIds: [] })));
 await check('creating a startup that names someone else as its founder is refused', false, () => setDoc(doc(founder, 'startups', 'O2'), maxStartup({ founderId: 'x1' })));
 await check('creating an already closed startup is refused', false, () => setDoc(doc(founder, 'startups', 'O3'), maxStartup({ status: 'closed' })));

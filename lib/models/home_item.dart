@@ -31,8 +31,6 @@ class HomeItem {
     this.programType,
     this.matchPercent,
     this.matchReason,
-    this.joinedLabel,
-    this.isNew = false,
     this.highlight,
     this.highlightReason,
     this.imageData,
@@ -81,17 +79,13 @@ class HomeItem {
   final int? matchPercent;
   final String? matchReason;
 
-  /// "Joined yesterday" on the "New on Start.sa" rail.
-  final String? joinedLabel;
-  final bool isNew;
-
   final String? highlight;
   final String? highlightReason;
 
   /// The saved logo or photo (base64); null: the default picture.
   final String? imageData;
 
-  /// When the startup / investor joined Start.sa (for "Newest").
+  /// When the startup / investor joined Start.sa (Explore -> Latest).
   final DateTime? createdAt;
 
   /// A closed startup (shown in the Hub only, with a Closed tag).
@@ -107,16 +101,12 @@ class HomeItem {
   HomeItem withMatch(int percent, String reason) =>
       _copy(matchPercent: percent, matchReason: reason);
 
-  HomeItem withJoined(String label) => _copy(joinedLabel: label, isNew: true);
-
   HomeItem withHighlight(String text, {String? reason}) =>
       _copy(highlight: text, highlightReason: reason);
 
   HomeItem _copy({
     int? matchPercent,
     String? matchReason,
-    String? joinedLabel,
-    bool? isNew,
     String? highlight,
     String? highlightReason,
   }) => HomeItem(
@@ -142,8 +132,6 @@ class HomeItem {
     programType: programType,
     matchPercent: matchPercent ?? this.matchPercent,
     matchReason: matchReason ?? this.matchReason,
-    joinedLabel: joinedLabel ?? this.joinedLabel,
-    isNew: isNew ?? this.isNew,
     highlight: highlight ?? this.highlight,
     highlightReason: highlightReason ?? this.highlightReason,
     imageData: imageData,
@@ -196,7 +184,6 @@ class HomeItem {
       ticketHigh: range?.high,
       matchPercent: i.matchPercent,
       matchReason: i.matchReason,
-      joinedLabel: i.joinedLabel,
       createdAt: i.createdAt,
     );
   }

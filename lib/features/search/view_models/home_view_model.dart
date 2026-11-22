@@ -93,6 +93,7 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
   int? _hubSwitch;
   int? _resultsSwitch;
   int? _trendingSwitch;
+  int? _latestSwitch;
 
   TrendingRange range = TrendingRange.week;
 
@@ -118,10 +119,12 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
   int get hubSwitch => _hubSwitch ?? _defaultSwitch;
   int get resultsSwitch => _resultsSwitch ?? _defaultSwitch;
   int get trendingSwitch => _trendingSwitch ?? _defaultSwitch;
+  int get latestSwitch => _latestSwitch ?? _defaultSwitch;
 
   void setHubSwitch(int v) => _set(() => _hubSwitch = v);
   void setResultsSwitch(int v) => _set(() => _resultsSwitch = v);
   void setTrendingSwitch(int v) => _set(() => _trendingSwitch = v);
+  void setLatestSwitch(int v) => _set(() => _latestSwitch = v);
 
   void _set(VoidCallback f) {
     f();
@@ -295,15 +298,14 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
   List<HomeItem> get exploreResults =>
       _filtered(resultsSwitch == 0 ? _startups : _investors);
 
-  /// How far back "Newest startups" goes (Last week by default).
-  LatestRange latestRange = LatestRange.week;
+  LatestRange latestRange = LatestRange.months6;
 
   void setLatestRange(int index) =>
       _set(() => latestRange = LatestRange.values[index]);
 
-  /// Explore -> Latest: the newest public startups in the chosen range.
-  List<HomeItem> get latest =>
-      _discovery.latestStartups(days: latestRange.days, excludeIds: _ownIds);
+  List<HomeItem> get latest => latestSwitch == 0
+      ? _discovery.latestStartups(days: latestRange.days)
+      : _discovery.latestInvestors(days: latestRange.days);
 
   List<HomeItem> get recommended => _forYou ??= _computeForYou();
 
@@ -364,7 +366,8 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
 
   String get paneKey =>
       '${tab.name}-$effectiveExploreTab-${role.name}-${filtering ? 'f' : ''}'
-      '-$hubSwitch-$resultsSwitch-$trendingSwitch-${latestRange.name}';
+      '-$hubSwitch-$resultsSwitch-$trendingSwitch-$latestSwitch'
+      '-${latestRange.name}';
 
   String get title => switch (tab) {
     HomeTab.support => HomeStrings.supportTitle,
