@@ -55,6 +55,8 @@ class MatchResult {
     this.close = false,
     this.ticketId,
     this.remaining = 0,
+    this.fit,
+    this.picks = 0,
   });
 
   /// The startup id (ticket) or investor id (round).
@@ -78,18 +80,26 @@ class MatchResult {
   /// Ticket matches: what the startup's round still needs (SAR).
   final int remaining;
 
+  /// Tie-breakers for equal scores (PDF 1.7): how much of the round the
+  /// ticket covers (null for profile matches), then the sector + stage picks
+  /// (fewer first). How many investments an investor made is not used.
+  final double? fit;
+  final int picks;
+
   bool get viaTicket => ticketId != null;
 }
 
+/// Met (1) or not met (0); null = blank, skipped by weightedScore.
 double? _overlap(Set<String> chosen, String? value) {
   if (chosen.isEmpty || value == null || value.isEmpty) return null;
-  return (chosen.contains(value) ? 1.0 : 0.0) / math.sqrt(chosen.length);
+  return chosen.contains(value) ? 1.0 : 0.0;
 }
 
+/// Met (1), partly met through another sector (0.5) or not met (0).
 double? _sector(int picks, bool main, bool other, MatchStartup s) {
   if (picks == 0 || s.sector == null || s.sector!.isEmpty) return null;
-  if (main) return 1 / math.sqrt(picks);
-  if (other) return otherSectorFactor / math.sqrt(picks);
+  if (main) return 1;
+  if (other) return otherSectorFactor;
   return 0;
 }
 
@@ -326,14 +336,32 @@ List<MatchRow> profileRows(MatchInvestor i, MatchStartup s) {
   ];
 }
 
-int _byScore(MatchResult a, MatchResult b) =>
-    (b.score * 1e9).round().compareTo((a.score * 1e9).round());
+/// Higher first, ignoring differences below 1e-9.
+int _higher(double a, double b) => (b * 1e9).round().compareTo((a * 1e9).round());
 
+int _byScore(MatchResult a, MatchResult b) => _higher(a.score, b.score);
+
+/// Equal scores: round fit, then fewer picks, then name and id.
 int _compare(MatchResult a, MatchResult b) {
-  final byScore = _byScore(a, b);
-  if (byScore != 0) return byScore;
-  final byName = a.name.toLowerCase().compareTo(b.name.toLowerCase());
-  return byName != 0 ? byName : a.id.compareTo(b.id);
+  for (final c in [
+    _byScore(a, b),
+    _higher(a.fit ?? 0, b.fit ?? 0),
+    a.picks.compareTo(b.picks),
+    a.name.toLowerCase().compareTo(b.name.toLowerCase()),
+  ]) {
+    if (c != 0) return c;
+  }
+  return a.id.compareTo(b.id);
+}
+
+/// The ticket to show for an investor: exact beats close, then the higher
+/// score, then the higher round fit, then the smaller ticket id.
+bool _betterTicket(MatchResult m, MatchResult best) {
+  if (best.close != m.close) return !m.close;
+  for (final c in [_byScore(m, best), _higher(m.fit ?? 0, best.fit ?? 0)]) {
+    if (c != 0) return c < 0;
+  }
+  return m.ticketId!.compareTo(best.ticketId!) < 0;
 }
 
 /// Exact matches first, then close ones, each sorted.
@@ -357,6 +385,7 @@ MatchResult? matchTicket(MatchTicket t, Set<String> models, MatchStartup s) {
     rows: ticketRows(t, models, s),
     close: !exact,
     remaining: s.remaining,
+    fit: roundFit(t, s),
   );
 }
 
@@ -402,12 +431,10 @@ List<MatchResult> matchesForStartup(
         rows: roundTicketRows(t, i.models, startup),
         close: !exact,
         ticketId: t.id,
+        fit: roundFit(t, startup),
+        picks: t.picks,
       );
-      if (best == null ||
-          (best.close && !m.close) ||
-          (best.close == m.close && _byScore(m, best) < 0)) {
-        best = m;
-      }
+      if (best == null || _betterTicket(m, best)) best = m;
     }
     if (best != null) {
       viaTicket.add(best);
@@ -425,11 +452,18 @@ List<MatchResult> matchesForStartup(
         percent: _percent(score),
         rows: profileRows(i, startup),
         close: !exact,
+        picks: i.picks,
       ),
     );
   }
+  // Exact matches first (open tickets, then profiles), then the close ones in
+  // the same order: a close match is listed after every exact one (PDF 1.4).
+  final byTicket = _ordered(viaTicket);
+  final byProfile = _ordered(viaProfile);
   return [
-    ..._ordered(viaTicket),
-    ..._ordered(viaProfile),
+    for (final m in byTicket) if (!m.close) m,
+    for (final m in byProfile) if (!m.close) m,
+    for (final m in byTicket) if (m.close) m,
+    for (final m in byProfile) if (m.close) m,
   ].take(limit).toList();
 }

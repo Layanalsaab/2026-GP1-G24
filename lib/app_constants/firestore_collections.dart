@@ -28,6 +28,9 @@ class FirestoreCollections {
   /// users/{uid}/bookmarks/{itemKey}
   static const bookmarks = 'bookmarks';
 
+  /// users/{uid}/notInterested/{itemKey}
+  static const notInterested = 'notInterested';
+
   static const notices = 'notices';
 }
 

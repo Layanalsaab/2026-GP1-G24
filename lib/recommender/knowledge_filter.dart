@@ -163,6 +163,9 @@ class MatchInvestor {
   final int? roundSizeMin;
   final int? roundSizeMax;
 
+  /// How many sectors and stages they picked; fewer = more specialised.
+  int get picks => sectors.length + stages.length;
+
   static Set<String> _values(Object? raw, Map<String, String> toValue) => {
     if (raw is List)
       for (final label in raw)
@@ -201,6 +204,9 @@ class MatchTicket {
 
   /// Only open tickets match (used and closed ones don't).
   final bool isOpen;
+
+  /// How many sectors and stages the ticket names; fewer = more specialised.
+  int get picks => sectors.length + stages.length;
 
   static Set<String> _stageValues(Object? raw) => {
     if (raw is List)

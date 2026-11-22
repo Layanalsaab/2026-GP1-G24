@@ -29,6 +29,10 @@ class HomeStrings {
   static const top30 = 'Top 30 trending';
   static const results = 'Results';
 
+  static const notInterested = 'Not interested';
+  static const hiddenFromForYou = 'Hidden from For You';
+  static const undo = 'Undo';
+
   static const bookmarkRemoved = 'Removed from bookmarks';
 
   // Long lists are shown a page at a time

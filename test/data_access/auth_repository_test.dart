@@ -1,7 +1,11 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:startsa/data_access/firebase_services/auth_service.dart';
 import 'package:startsa/data_access/firebase_services/firestore_service.dart';
 import 'package:startsa/data_access/repositories/auth_repository.dart';
+import 'package:startsa/data_access/repositories/bookmark_repository.dart';
+import 'package:startsa/data_access/repositories/for_you_cache.dart';
+import 'package:startsa/data_access/repositories/not_interested_repository.dart';
 import 'package:startsa/data_access/repositories/startup_repository.dart';
 import 'package:startsa/data_access/repositories/ticket_repository.dart';
 import 'package:startsa/data_access/repositories/ticket_request_repository.dart';
@@ -10,6 +14,30 @@ import 'package:startsa/models/auth_failure.dart';
 
 import '../support/fakes.dart';
 import '../support/recording_firestore.dart';
+
+/// Firestore kept in a map (collection path -> document id -> data); reads
+/// of the collections in [failing] throw.
+class _MemoryFirestore extends FirestoreService {
+  final Map<String, Map<String, Map<String, Object?>>> store = {};
+  final Set<String> failing = {};
+
+  @override
+  Future<void> deleteDocument(String collection, String id) async {
+    store[collection]?.remove(id);
+  }
+
+  @override
+  Future<List<FirestoreDocument>> listCollection(
+    String collection, {
+    int limit = 100,
+  }) async {
+    if (failing.contains(collection)) throw StateError('offline');
+    return [
+      for (final e in (store[collection] ?? {}).entries)
+        (id: e.key, data: Map<String, dynamic>.from(e.value)),
+    ];
+  }
+}
 
 void main() {
   late FakeAuthService auth;
@@ -284,6 +312,65 @@ void main() {
   });
 
   group('deleteAccount', () {
+    setUp(() => SharedPreferences.setMockInitialValues({}));
+
+    /// Bookmarks s-a and Not interested s-b, saved and loaded for uid1.
+    Future<(_MemoryFirestore, BookmarkRepository, NotInterestedRepository)>
+    savedLists() async {
+      final db = _MemoryFirestore()
+        ..store['users/uid1/bookmarks'] = {'s-a': {}}
+        ..store['users/uid1/notInterested'] = {'s-b': {}};
+      final marks = BookmarkRepository(firestore: db);
+      final hidden = NotInterestedRepository(firestore: db);
+      await marks.load('uid1');
+      await hidden.load('uid1');
+      final oldMarks = BookmarkRepository.instance;
+      final oldHidden = NotInterestedRepository.instance;
+      BookmarkRepository.instance = marks;
+      NotInterestedRepository.instance = hidden;
+      addTearDown(() {
+        BookmarkRepository.instance = oldMarks;
+        NotInterestedRepository.instance = oldHidden;
+      });
+      return (db, marks, hidden);
+    }
+
+    test('a failed bookmark cleanup still deletes Not interested; both are '
+        'forgotten', () async {
+      final (db, marks, hidden) = await savedLists();
+      expect(marks.keys.value, {'s-a'});
+      expect(hidden.keys.value, {'s-b'});
+      db.failing.add('users/uid1/bookmarks');
+      auth.signedIn = verified();
+      await repo.deleteAccount();
+      expect(db.store['users/uid1/notInterested'], isEmpty);
+      expect(marks.keys.value, isEmpty);
+      expect(hidden.keys.value, isEmpty);
+      expect(auth.calls, contains('delete'));
+    });
+
+    test('a failed Not interested cleanup is still forgotten', () async {
+      final (db, marks, hidden) = await savedLists();
+      db.failing.add('users/uid1/notInterested');
+      auth.signedIn = verified();
+      await repo.deleteAccount();
+      expect(db.store['users/uid1/bookmarks'], isEmpty);
+      expect(marks.keys.value, isEmpty);
+      expect(hidden.keys.value, isEmpty);
+      expect(auth.calls, contains('delete'));
+    });
+
+    test('the saved For You list is removed from the phone', () async {
+      SharedPreferences.setMockInitialValues({
+        'forYou.lastList.uid1': ['s-a'],
+        'forYou.lastList.u2': ['s-b'],
+      });
+      auth.signedIn = verified();
+      await repo.deleteAccount();
+      expect(await ForYouCache().read('uid1'), isEmpty);
+      expect(await ForYouCache().read('u2'), ['s-b']);
+    });
+
     test('a fresh sign-in deletes without asking for the password', () async {
       auth.signedIn = verified();
       await repo.deleteAccount();

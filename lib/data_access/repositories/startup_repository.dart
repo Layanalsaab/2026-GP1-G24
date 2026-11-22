@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 
 import '../../app_constants/firestore_collections.dart';
 import '../../models/auth_failure.dart';
+import '../../models/home_item.dart';
 import '../../models/startup.dart';
 import '../../models/startup_enums.dart';
 import '../../models/startup_notice.dart';
@@ -12,6 +13,7 @@ import '../../models/team_member.dart';
 import '../firebase_services/auth_service.dart';
 import '../firebase_services/firestore_service.dart';
 import '../device_services/image_fit.dart';
+import '../remote/for_you_api.dart';
 import 'discovery_repository.dart';
 import 'funding_round_repository.dart';
 import 'invitation_repository.dart';
@@ -25,9 +27,11 @@ class StartupRepository {
     AuthService? auth,
     FirestoreService? firestore,
     FundingRoundRepository? rounds,
+    ForYouSource? forYou,
   }) : _auth = auth ?? AuthService(),
        _firestore = firestore ?? FirestoreService(),
-       _roundsOverride = rounds;
+       _roundsOverride = rounds,
+       _forYou = forYou ?? ForYouApi.instance;
 
   /// The app-wide instance.
   static StartupRepository instance = StartupRepository();
@@ -37,6 +41,7 @@ class StartupRepository {
   final AuthService _auth;
   final FirestoreService _firestore;
   final FundingRoundRepository? _roundsOverride;
+  final ForYouSource _forYou;
 
   /// Read when used, so a test can replace FundingRoundRepository.instance.
   FundingRoundRepository get _rounds =>
@@ -125,8 +130,7 @@ class StartupRepository {
   void _refreshMyProfile() {
     try {
       unawaited(PublicProfileRepository.instance.refreshMyStartups(_founderId));
-    } catch (_) {
-    }
+    } catch (_) {}
   }
 
   Future<void> leave(Startup startup) async {
@@ -401,6 +405,7 @@ class StartupRepository {
     } catch (_) {
       rethrow;
     }
+    _forYou.refreshProfileText(HomeItemKind.startup, id);
     changes.value++;
     _refreshMyProfile();
     return toSave;
@@ -437,6 +442,7 @@ class StartupRepository {
       ]);
     }
 
+    _forYou.refreshProfileText(HomeItemKind.startup, startup.id);
     changes.value++;
     _refreshMyProfile();
     _showInDirectory(updated);

@@ -11,6 +11,9 @@ class OtherCheck {
     return k;
   }
 
+  /// The comparison key of a written-in answer (also used by the For You backend).
+  static String key(String text) => _key(text.trim());
+
   static bool same(String? a, String? b) {
     final x = (a ?? '').trim(), y = (b ?? '').trim();
     if (x.isEmpty || y.isEmpty) return false;

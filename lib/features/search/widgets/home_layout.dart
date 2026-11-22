@@ -84,6 +84,7 @@ class HomeItemCard extends StatelessWidget {
     this.actionLabel,
     this.onTap,
     this.bookmarkable = true,
+    this.onNotInterested,
   });
 
   final HomeItem item;
@@ -98,6 +99,9 @@ class HomeItemCard extends StatelessWidget {
 
   /// False on My Startups: you can't bookmark your own startup.
   final bool bookmarkable;
+
+  /// For You only: shows the ✕ "Not interested" on the card.
+  final void Function(HomeItem item)? onNotInterested;
   final int index;
 
   /// Shows the "N% match" row (Explore, Matches).
@@ -136,6 +140,9 @@ class HomeItemCard extends StatelessWidget {
           onBookmark: canBookmark
               ? () => BookmarkRepository.instance.toggle(item.bookmarkKey)
               : null,
+          onNotInterested: onNotInterested == null
+              ? null
+              : () => onNotInterested!(item),
         ),
       ),
     );
@@ -143,11 +150,20 @@ class HomeItemCard extends StatelessWidget {
 }
 
 /// Cards of items with the staggered entrance (40 ms per card).
-List<Widget> homeCardsOf(List<HomeItem> items, {bool showMatch = false}) => [
+List<Widget> homeCardsOf(
+  List<HomeItem> items, {
+  bool showMatch = false,
+  void Function(HomeItem item)? onNotInterested,
+}) => [
   for (var i = 0; i < items.length; i++)
     Padding(
       padding: EdgeInsets.only(top: i == 0 ? 0 : HomeColumn.gap),
-      child: HomeItemCard(item: items[i], index: i, showMatch: showMatch),
+      child: HomeItemCard(
+        item: items[i],
+        index: i,
+        showMatch: showMatch,
+        onNotInterested: onNotInterested,
+      ),
     ),
 ];
 
@@ -156,11 +172,13 @@ HomeSlot cardsSlot(
   List<HomeItem> items, {
   bool showMatch = false,
   String scope = '',
+  void Function(HomeItem item)? onNotInterested,
 }) => HomeSlot(
   PagedCards(
     key: ValueKey('$scope|${contentSignature(items)}|$showMatch'),
     items: items,
     showMatch: showMatch,
+    onNotInterested: onNotInterested,
   ),
 );
 
@@ -175,10 +193,12 @@ class PagedCards extends StatefulWidget {
     required this.items,
     this.showMatch = false,
     this.pageSize = 20,
+    this.onNotInterested,
   });
 
   final List<HomeItem> items;
   final bool showMatch;
+  final void Function(HomeItem item)? onNotInterested;
   final int pageSize;
 
   @override
@@ -206,7 +226,11 @@ class _PagedCardsState extends State<PagedCards> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        ...homeCardsOf(shown, showMatch: widget.showMatch),
+        ...homeCardsOf(
+          shown,
+          showMatch: widget.showMatch,
+          onNotInterested: widget.onNotInterested,
+        ),
         if (left > 0)
           Padding(
             padding: const EdgeInsets.only(top: HomeColumn.gap),

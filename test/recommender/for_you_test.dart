@@ -25,7 +25,7 @@ Candidate<String> _c(String name, Features f, String? sector) =>
 
 void main() {
   group('features', () {
-    test('a startup: all sectors count the same, "Other" dropped', () {
+    test('a startup: all sectors count the same; an unnamed "Other" is left out', () {
       final s = PrototypeSeed.rafeeq.copyWith(
         sector: Sector.healthtech,
         otherSectors: ['Fintech', 'Other'],
@@ -36,6 +36,39 @@ void main() {
       expect(f.groups['sector'], {'healthtech': 1.0, 'fintech': 1.0});
       expect(f.groups['stage'], {'seed': 1.0});
       expect(f.groups['model'], {'b2b': 1.0});
+    });
+
+    test('a written-in "Other" counts as what was written', () {
+      final s = PrototypeSeed.rafeeq.copyWith(
+        sector: Sector.other,
+        sectorOther: 'Space-Tech',
+        otherSectors: ['Drones', 'Fin tech'],
+        stage: StartupStage.seed,
+        commerceModel: CommerceModel.other,
+        commerceModelOther: 'Subscriptions',
+      );
+      final f = startupFeatures(s);
+      expect(f.groups['sector'], {
+        'other:spacetech': 1.0,
+        'other:drone': 1.0,
+        'fintech': 1.0, // repeats an existing option
+      });
+      expect(f.groups['model'], {'other:subscription': 1.0});
+    });
+
+    test('a ticket\'s written-in sector counts as what was written', () {
+      final t = InvestmentTicket.fromMap('inv-T1', {
+        'investorId': 'inv',
+        'name': 'Space',
+        'amountMin': 1,
+        'amountMax': 2,
+        'sectors': ['space tech', 'Logistics'],
+        'stages': ['Seed'],
+      })!;
+      expect(ticketFeatures(t).groups['sector'], {
+        'other:spacetech': 1.0,
+        'logistics': 1.0,
+      });
     });
 
     test('investor answers become the same stored values', () {
@@ -49,6 +82,17 @@ void main() {
       expect(f.groups['sector'], {'fintech': 1.0, 'hr_tech': 1.0});
       expect(f.groups['stage'], {'seed': 1.0});
       expect(f.groups['model'], {'b2b': 1.0});
+      final written = criteriaFeatures(
+        const InvestorCriteria(
+          sectors: ['Fintech', 'Other'],
+          sectorsOther: 'Space tech',
+          stages: ['Seed'],
+          commerceModels: ['Other'],
+          commerceModelsOther: 'Subscriptions',
+        ),
+      );
+      expect(written.groups['sector'], {'fintech': 1.0, 'other:spacetech': 1.0});
+      expect(written.groups['model'], {'other:subscription': 1.0});
     });
 
     test('similarity: same is 1, nothing in common is 0', () {
@@ -595,13 +639,13 @@ void main() {
       );
       addTearDown(vm.dispose);
       vm.selectTab(HomeTab.explore);
-      vm.selectExploreTab(0);
+      vm.selectExploreTab(2); // For You
       final before = [for (final i in vm.recommended) i.id];
       marks.toggle('s-${before.first}');
       // Still on For You: nothing moves, the card stays.
       expect([for (final i in vm.recommended) i.id], before);
       vm.selectExploreTab(1);
-      vm.selectExploreTab(0);
+      vm.selectExploreTab(2);
       expect(vm.recommended.any((i) => i.id == before.first), isFalse);
     });
   });

@@ -6,6 +6,8 @@ import '../../models/app_user.dart';
 import '../../models/auth_failure.dart';
 import '../firebase_services/auth_service.dart';
 import 'bookmark_repository.dart';
+import 'for_you_cache.dart';
+import 'not_interested_repository.dart';
 import 'invitation_repository.dart';
 import 'notice_repository.dart';
 import 'startup_repository.dart';
@@ -262,11 +264,23 @@ class AuthRepository {
     }
     // Nobody can find or open a person who no longer exists.
     await TeamLookup.instance.remove(uid: account.uid, email: account.email);
+    // Each list on its own: a failure must not leave the other's documents
+    // behind (nobody can clean them up once the account is gone). Carry on
+    // either way: the account itself must still be removed. Memory is
+    // cleared in any case, so the next account on this phone starts empty.
     try {
       await BookmarkRepository.instance.deleteAll(account.uid);
     } catch (_) {
-      // Carry on: the account itself must still be removed.
+    } finally {
+      BookmarkRepository.instance.clear();
     }
+    try {
+      await NotInterestedRepository.instance.deleteAll(account.uid);
+    } catch (_) {
+    } finally {
+      NotInterestedRepository.instance.clear();
+    }
+    await ForYouCache.instance.remove(account.uid);
     // The notice inbox lives under the user document too.
     await NoticeRepository.instance.clearMine();
     await _users.deleteProfile(account.uid);
