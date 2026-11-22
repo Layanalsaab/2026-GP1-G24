@@ -56,7 +56,6 @@ class MatchResult {
     this.ticketId,
     this.remaining = 0,
     this.fit,
-    this.activity = -1,
     this.picks = 0,
   });
 
@@ -82,10 +81,9 @@ class MatchResult {
   final int remaining;
 
   /// Tie-breakers for equal scores (PDF 1.7): how much of the round the
-  /// ticket covers (null for profile matches), the investor's activity rank
-  /// (MatchInvestor.activity) and their sector + stage picks (fewer first).
+  /// ticket covers (null for profile matches), then the sector + stage picks
+  /// (fewer first). How many investments an investor made is not used.
   final double? fit;
-  final int activity;
   final int picks;
 
   bool get viaTicket => ticketId != null;
@@ -343,12 +341,11 @@ int _higher(double a, double b) => (b * 1e9).round().compareTo((a * 1e9).round()
 
 int _byScore(MatchResult a, MatchResult b) => _higher(a.score, b.score);
 
-/// Equal scores: round fit, then activity, then fewer picks, then name and id.
+/// Equal scores: round fit, then fewer picks, then name and id.
 int _compare(MatchResult a, MatchResult b) {
   for (final c in [
     _byScore(a, b),
     _higher(a.fit ?? 0, b.fit ?? 0),
-    b.activity.compareTo(a.activity),
     a.picks.compareTo(b.picks),
     a.name.toLowerCase().compareTo(b.name.toLowerCase()),
   ]) {
@@ -435,7 +432,6 @@ List<MatchResult> matchesForStartup(
         close: !exact,
         ticketId: t.id,
         fit: roundFit(t, startup),
-        activity: i.activity,
         picks: t.picks,
       );
       if (best == null || _betterTicket(m, best)) best = m;
@@ -456,7 +452,6 @@ List<MatchResult> matchesForStartup(
         percent: _percent(score),
         rows: profileRows(i, startup),
         close: !exact,
-        activity: i.activity,
         picks: i.picks,
       ),
     );

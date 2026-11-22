@@ -70,15 +70,17 @@ def test_reference_tie_breakers():
     def ids(results):
         return [r["id"] for r in results]
 
-    profile = [_investor(id="a", fullName="Aa", investmentsCount="0"),
-               _investor(id="z", fullName="Zz", investmentsCount="10+")]
-    assert ids(matches_for_startup(_startup(), profile, [])) == ["z", "a"]  # activity, profile matches
+    # How many investments an investor made does not change the order (the team chose not to rank by it).
+    profile = [_investor(id="z", fullName="Zz", investmentsCount="10+"),
+               _investor(id="a", fullName="Aa", investmentsCount="0"),
+               _investor(id="m", fullName="Mm")]
+    assert ids(matches_for_startup(_startup(), profile, [])) == ["a", "m", "z"]
 
     covering = {"amountMax": 3_000_000}  # more than the 2M left: fit 1
-    by_ticket = [_investor(id="a", fullName="Aa", investmentsCount="1–3"),
-                 _investor(id="z", fullName="Zz", investmentsCount="4–6")]
-    tickets = [_ticket(id="a-T1", investorId="a", **covering), _ticket(id="z-T1", investorId="z", **covering)]
-    assert ids(matches_for_startup(_startup(), by_ticket, tickets)) == ["z", "a"]  # activity, ticket matches
+    by_ticket = [_investor(id="z", fullName="Zz", investmentsCount="4–6"),
+                 _investor(id="a", fullName="Aa", investmentsCount="1–3")]
+    tickets = [_ticket(id="z-T1", investorId="z", **covering), _ticket(id="a-T1", investorId="a", **covering)]
+    assert ids(matches_for_startup(_startup(), by_ticket, tickets)) == ["a", "z"]
 
     picks = [_investor(id="a", fullName="Aa", preferredSectors=["Fintech", "AI", "SaaS"],
                        preferredStages=["Seed", "Series A"]),

@@ -1,7 +1,6 @@
 library;
 
 import '../helpers/other_check.dart';
-import '../models/investor_criteria.dart';
 
 /// Investor sector label -> the startups' stored value (the 25 sectors).
 const Map<String, String> sectorValue = {
@@ -151,8 +150,7 @@ class MatchInvestor {
       models = _values(data['preferredCommerceModels'], modelValue),
       ticketSize = data['ticketSize'] as String?,
       roundSizeMin = _int(data['roundSizeMin']),
-      roundSizeMax = _int(data['roundSizeMax']),
-      activity = _activity(data['investmentsCount']);
+      roundSizeMax = _int(data['roundSizeMax']);
 
   final String id;
   final String name;
@@ -164,14 +162,6 @@ class MatchInvestor {
   final String? ticketSize;
   final int? roundSizeMin;
   final int? roundSizeMax;
-
-  /// How many startups they have invested in, as a rank: the index of the
-  /// answer in InvestorCriteria.dealsOptions ('0' = 0 … '10+' = 4); -1 when
-  /// missing or not one of the options. Breaks ties between equal matches.
-  final int activity;
-
-  static int _activity(Object? raw) =>
-      raw is String ? InvestorCriteria.dealsOptions.indexOf(raw.trim()) : -1;
 
   /// How many sectors and stages they picked; fewer = more specialised.
   int get picks => sectors.length + stages.length;

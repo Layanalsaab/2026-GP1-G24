@@ -434,27 +434,24 @@ void main() {
       'amountMax': 3000000, // more than the 2M left: fit 1
     });
 
-    test('investor activity breaks a tie between profile matches', () {
-      final r = matchesForStartup(startup(), [
-        investor({'id': 'a', 'fullName': 'Aa', 'investmentsCount': '0'}),
+    test('how many investments an investor made does not change the order', () {
+      // The team chose not to rank by activity: equal investors go by name.
+      final profiles = matchesForStartup(startup(), [
         investor({'id': 'z', 'fullName': 'Zz', 'investmentsCount': '10+'}),
+        investor({'id': 'a', 'fullName': 'Aa', 'investmentsCount': '0'}),
+        investor({'id': 'm', 'fullName': 'Mm'}), // no answer, as imported data
       ]);
-      expect(ids(r), ['z', 'a']);
-      expect([for (final m in r) m.percent], [100, 100]);
-    });
-
-    test('investor activity breaks a tie between ticket matches', () {
-      final r = matchesForStartup(
+      expect(ids(profiles), ['a', 'm', 'z']);
+      expect([for (final m in profiles) m.percent], [100, 100, 100]);
+      final tickets = matchesForStartup(
         startup(),
         [
-          investor({'id': 'a', 'fullName': 'Aa', 'investmentsCount': '1–3'}),
           investor({'id': 'z', 'fullName': 'Zz', 'investmentsCount': '4–6'}),
+          investor({'id': 'a', 'fullName': 'Aa', 'investmentsCount': '1–3'}),
         ],
-        tickets: [covering('a-T1', 'a'), covering('z-T1', 'z')],
+        tickets: [covering('z-T1', 'z'), covering('a-T1', 'a')],
       );
-      expect(ids(r), ['z', 'a']);
-      expect([for (final m in r) m.ticketId], ['z-T1', 'a-T1']);
-      expect([for (final m in r) m.percent], [100, 100]);
+      expect(ids(tickets), ['a', 'z']);
     });
 
     test('fewer picks breaks a tie', () {
@@ -468,27 +465,6 @@ void main() {
         investor({'id': 'z', 'fullName': 'Zz'}),
       ]);
       expect(ids(r), ['z', 'a']);
-    });
-
-    test('missing or odd investmentsCount sorts last and never crashes', () {
-      final odd = [
-        investor({'id': 'm1', 'fullName': 'Aa1'}),
-        investor({'id': 'm2', 'fullName': 'Aa2', 'investmentsCount': 7}),
-        investor({'id': 'm3', 'fullName': 'Aa3', 'investmentsCount': 'lots'}),
-      ];
-      final known = investor({
-        'id': 'z',
-        'fullName': 'Zz',
-        'investmentsCount': '0',
-      });
-      expect([for (final i in odd) i.activity], [-1, -1, -1]);
-      expect(known.activity, 0);
-      expect(ids(matchesForStartup(startup(), [...odd, known])), [
-        'z',
-        'm1',
-        'm2',
-        'm3',
-      ]);
     });
 
     test('identical inputs fall back to name, then id', () {

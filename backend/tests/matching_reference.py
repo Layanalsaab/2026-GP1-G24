@@ -43,8 +43,6 @@ TICKET_MIN = {
     "SAR 1M – 5M": 1_000_000, "Over SAR 5M": 5_000_000, "Other": None,
 }
 SECTOR_LABEL = {v: k for k, v in SECTOR_VALUE.items()}
-# InvestorCriteria.dealsOptions: "How many startups have you invested in?" (the index is the activity rank).
-DEALS_OPTIONS = ("0", "1–3", "4–6", "7–9", "10+")
 
 _NOT_LETTER_OR_DIGIT = re.compile(r"[\W_]", re.UNICODE)
 
@@ -151,11 +149,9 @@ class Investor:
     ticket_size: str | None
     round_size_min: int | None
     round_size_max: int | None
-    activity: int
 
     @classmethod
     def of(cls, d: dict) -> "Investor":
-        deals = d.get("investmentsCount")
         return cls(
             id=d["id"],
             name=d.get("fullName") or "",
@@ -165,7 +161,6 @@ class Investor:
             ticket_size=d.get("ticketSize") if isinstance(d.get("ticketSize"), str) else None,
             round_size_min=_int(d.get("roundSizeMin")),
             round_size_max=_int(d.get("roundSizeMax")),
-            activity=DEALS_OPTIONS.index(deals.strip()) if isinstance(deals, str) and deals.strip() in DEALS_OPTIONS else -1,
         )
 
     @property
@@ -354,7 +349,6 @@ class _Result:
     close: bool
     ticket_id: str | None = None
     fit: float | None = None  # tie-breakers (PDF 1.7)
-    activity: int = -1
     picks: int = 0
 
     def out(self) -> dict:
@@ -377,8 +371,8 @@ def _score_key(r: _Result) -> int:
 
 
 def _sort_key(r: _Result) -> tuple:
-    """Score, round fit, activity (higher first); picks (fewer first); name; id."""
-    return (-_score_key(r), -_key(r.fit or 0.0), -r.activity, r.picks, r.name.lower(), r.id)
+    """Score, round fit (higher first); picks (fewer first); name; id."""
+    return (-_score_key(r), -_key(r.fit or 0.0), r.picks, r.name.lower(), r.id)
 
 
 def _better_ticket(m: _Result, best: _Result) -> bool:
@@ -433,7 +427,7 @@ def matches_for_startup(startup: dict, investors: list[dict], tickets: list[dict
             if not exact and not is_close_for_ticket(t, s):
                 continue
             score = weighted_score(ticket_score_parts(t, i.models, s))
-            m = _Result(i.id, i.name, score, not exact, t.id, round_fit(t, s), i.activity, t.picks)
+            m = _Result(i.id, i.name, score, not exact, t.id, round_fit(t, s), t.picks)
             if best is None or _better_ticket(m, best):
                 best = m
         if best is not None:
@@ -445,7 +439,7 @@ def matches_for_startup(startup: dict, investors: list[dict], tickets: list[dict
         if not exact and not is_close(i, s):
             continue
         score = weighted_score(score_parts(i, s))
-        via_profile.append(_Result(i.id, i.name, score, not exact, activity=i.activity, picks=i.picks))
+        via_profile.append(_Result(i.id, i.name, score, not exact, picks=i.picks))
     # Exact (tickets, then profiles), then close in the same order: close after every exact (PDF 1.4).
     by_ticket, by_profile = _ordered(via_ticket), _ordered(via_profile)
     tiers = [r for close in (False, True) for group in (by_ticket, by_profile) for r in group if r.close == close]
