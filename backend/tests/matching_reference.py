@@ -43,6 +43,8 @@ TICKET_MIN = {
     "SAR 1M – 5M": 1_000_000, "Over SAR 5M": 5_000_000, "Other": None,
 }
 SECTOR_LABEL = {v: k for k, v in SECTOR_VALUE.items()}
+# InvestorCriteria.dealsOptions: "How many startups have you invested in?" (the index is the activity rank).
+DEALS_OPTIONS = ("0", "1–3", "4–6", "7–9", "10+")
 
 _NOT_LETTER_OR_DIGIT = re.compile(r"[\W_]", re.UNICODE)
 
@@ -149,9 +151,11 @@ class Investor:
     ticket_size: str | None
     round_size_min: int | None
     round_size_max: int | None
+    activity: int
 
     @classmethod
     def of(cls, d: dict) -> "Investor":
+        deals = d.get("investmentsCount")
         return cls(
             id=d["id"],
             name=d.get("fullName") or "",
@@ -161,11 +165,16 @@ class Investor:
             ticket_size=d.get("ticketSize") if isinstance(d.get("ticketSize"), str) else None,
             round_size_min=_int(d.get("roundSizeMin")),
             round_size_max=_int(d.get("roundSizeMax")),
+            activity=DEALS_OPTIONS.index(deals.strip()) if isinstance(deals, str) and deals.strip() in DEALS_OPTIONS else -1,
         )
 
     @property
     def interests_complete(self) -> bool:
         return bool(self.sectors) and bool(self.stages)
+
+    @property
+    def picks(self) -> int:
+        return len(self.sectors) + len(self.stages)
 
 
 @dataclass(frozen=True)
@@ -192,6 +201,10 @@ class Ticket:
             amount_max=_int(d.get("amountMax")) or 0,
             is_open=("open" if status is None else status) == "open",
         )
+
+    @property
+    def picks(self) -> int:
+        return len(self.sectors) + len(self.stages)
 
     @property
     def sector_values(self) -> set[str]:
@@ -340,6 +353,9 @@ class _Result:
     score: float
     close: bool
     ticket_id: str | None = None
+    fit: float | None = None  # tie-breakers (PDF 1.7)
+    activity: int = -1
+    picks: int = 0
 
     def out(self) -> dict:
         return {
@@ -351,12 +367,25 @@ class _Result:
         }
 
 
+def _key(x: float) -> int:
+    """Differences below 1e-9 do not count."""
+    return _round(x * 1e9)
+
+
 def _score_key(r: _Result) -> int:
-    return _round(r.score * 1e9)
+    return _key(r.score)
 
 
 def _sort_key(r: _Result) -> tuple:
-    return (-_score_key(r), r.name.lower(), r.id)
+    """Score, round fit, activity (higher first); picks (fewer first); name; id."""
+    return (-_score_key(r), -_key(r.fit or 0.0), -r.activity, r.picks, r.name.lower(), r.id)
+
+
+def _better_ticket(m: _Result, best: _Result) -> bool:
+    """Exact beats close, then the higher score, then the higher round fit, then the smaller ticket id."""
+    if m.close != best.close:
+        return not m.close
+    return (-_score_key(m), -_key(m.fit or 0.0), m.ticket_id) < (-_score_key(best), -_key(best.fit or 0.0), best.ticket_id)
 
 
 def _ordered(results: list[_Result]) -> list[_Result]:
@@ -380,7 +409,8 @@ def matches_for_ticket(ticket: dict, models: set[str], startups: list[dict]) -> 
         exact = not failed_ticket_filters(t, s)
         if not exact and not is_close_for_ticket(t, s):
             continue
-        results.append(_Result(s.id, s.name, weighted_score(ticket_score_parts(t, chosen, s)), not exact))
+        score = weighted_score(ticket_score_parts(t, chosen, s))
+        results.append(_Result(s.id, s.name, score, not exact, fit=round_fit(t, s)))
     return [r.out() for r in _ordered(results)]
 
 
@@ -402,12 +432,9 @@ def matches_for_startup(startup: dict, investors: list[dict], tickets: list[dict
             exact = not failed_ticket_filters(t, s)
             if not exact and not is_close_for_ticket(t, s):
                 continue
-            m = _Result(i.id, i.name, weighted_score(ticket_score_parts(t, i.models, s)), not exact, t.id)
-            if (
-                best is None
-                or (best.close and not m.close)
-                or (best.close == m.close and _score_key(m) > _score_key(best))
-            ):
+            score = weighted_score(ticket_score_parts(t, i.models, s))
+            m = _Result(i.id, i.name, score, not exact, t.id, round_fit(t, s), i.activity, t.picks)
+            if best is None or _better_ticket(m, best):
                 best = m
         if best is not None:
             via_ticket.append(best)
@@ -417,5 +444,6 @@ def matches_for_startup(startup: dict, investors: list[dict], tickets: list[dict
         exact = not failed_filters(i, s)
         if not exact and not is_close(i, s):
             continue
-        via_profile.append(_Result(i.id, i.name, weighted_score(score_parts(i, s)), not exact))
+        score = weighted_score(score_parts(i, s))
+        via_profile.append(_Result(i.id, i.name, score, not exact, activity=i.activity, picks=i.picks))
     return [r.out() for r in (_ordered(via_ticket) + _ordered(via_profile))[:limit]]

@@ -66,6 +66,30 @@ def test_reference_matches_criterion_satisfaction():
     assert c["percent"] == 94  # worked example C
 
 
+def test_reference_tie_breakers():
+    def ids(results):
+        return [r["id"] for r in results]
+
+    profile = [_investor(id="a", fullName="Aa", investmentsCount="0"),
+               _investor(id="z", fullName="Zz", investmentsCount="10+")]
+    assert ids(matches_for_startup(_startup(), profile, [])) == ["z", "a"]  # activity, profile matches
+
+    covering = {"amountMax": 3_000_000}  # more than the 2M left: fit 1
+    by_ticket = [_investor(id="a", fullName="Aa", investmentsCount="1–3"),
+                 _investor(id="z", fullName="Zz", investmentsCount="4–6")]
+    tickets = [_ticket(id="a-T1", investorId="a", **covering), _ticket(id="z-T1", investorId="z", **covering)]
+    assert ids(matches_for_startup(_startup(), by_ticket, tickets)) == ["z", "a"]  # activity, ticket matches
+
+    picks = [_investor(id="a", fullName="Aa", preferredSectors=["Fintech", "AI", "SaaS"],
+                       preferredStages=["Seed", "Series A"]),
+             _investor(id="z", fullName="Zz")]
+    assert ids(matches_for_startup(_startup(), picks, [])) == ["z", "a"]  # fewer picks
+
+    two = [_ticket(id="i1-T2", **covering), _ticket(id="i1-T1", **covering)]
+    (best,) = matches_for_startup(_startup(), [_investor()], two)
+    assert best["ticketId"] == "i1-T1"  # deterministic best ticket
+
+
 def test_reference_reproduces_the_committed_fixture(fixture):
     investors = {i["id"]: i for i in fixture["investors"]}
     startups = {s["id"]: s for s in fixture["startups"]}

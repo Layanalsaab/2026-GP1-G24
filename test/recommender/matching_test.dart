@@ -426,6 +426,97 @@ void main() {
     });
   });
 
+  group('tie-breakers (PDF 1.7)', () {
+    // Every investor here fits the default startup fully (100%).
+    MatchTicket covering(String id, String investorId) => ticket({
+      'id': id,
+      'investorId': investorId,
+      'amountMax': 3000000, // more than the 2M left: fit 1
+    });
+
+    test('investor activity breaks a tie between profile matches', () {
+      final r = matchesForStartup(startup(), [
+        investor({'id': 'a', 'fullName': 'Aa', 'investmentsCount': '0'}),
+        investor({'id': 'z', 'fullName': 'Zz', 'investmentsCount': '10+'}),
+      ]);
+      expect(ids(r), ['z', 'a']);
+      expect([for (final m in r) m.percent], [100, 100]);
+    });
+
+    test('investor activity breaks a tie between ticket matches', () {
+      final r = matchesForStartup(
+        startup(),
+        [
+          investor({'id': 'a', 'fullName': 'Aa', 'investmentsCount': '1–3'}),
+          investor({'id': 'z', 'fullName': 'Zz', 'investmentsCount': '4–6'}),
+        ],
+        tickets: [covering('a-T1', 'a'), covering('z-T1', 'z')],
+      );
+      expect(ids(r), ['z', 'a']);
+      expect([for (final m in r) m.ticketId], ['z-T1', 'a-T1']);
+      expect([for (final m in r) m.percent], [100, 100]);
+    });
+
+    test('fewer picks breaks a tie', () {
+      final r = matchesForStartup(startup(), [
+        investor({
+          'id': 'a',
+          'fullName': 'Aa',
+          'preferredSectors': ['Fintech', 'AI', 'SaaS'],
+          'preferredStages': ['Seed', 'Series A'],
+        }),
+        investor({'id': 'z', 'fullName': 'Zz'}),
+      ]);
+      expect(ids(r), ['z', 'a']);
+    });
+
+    test('missing or odd investmentsCount sorts last and never crashes', () {
+      final odd = [
+        investor({'id': 'm1', 'fullName': 'Aa1'}),
+        investor({'id': 'm2', 'fullName': 'Aa2', 'investmentsCount': 7}),
+        investor({'id': 'm3', 'fullName': 'Aa3', 'investmentsCount': 'lots'}),
+      ];
+      final known = investor({
+        'id': 'z',
+        'fullName': 'Zz',
+        'investmentsCount': '0',
+      });
+      expect([for (final i in odd) i.activity], [-1, -1, -1]);
+      expect(known.activity, 0);
+      expect(ids(matchesForStartup(startup(), [...odd, known])), [
+        'z',
+        'm1',
+        'm2',
+        'm3',
+      ]);
+    });
+
+    test('identical inputs fall back to name, then id', () {
+      final r = matchesForStartup(startup(), [
+        investor({'id': 'i2', 'fullName': 'b'}),
+        investor({'id': 'i1', 'fullName': 'B'}),
+      ]);
+      expect(ids(r), ['i1', 'i2']);
+    });
+
+    test('the best ticket per investor is deterministic', () {
+      final r = matchesForStartup(
+        startup(),
+        [investor()],
+        tickets: [covering('i1-T2', 'i1'), covering('i1-T1', 'i1')],
+      );
+      expect(r.single.ticketId, 'i1-T1');
+    });
+
+    test('ticket → startups: equal score and fit go by name', () {
+      final r = matchesForTicket(ticket({'amountMax': 3000000}), b2b, [
+        startup({'id': 'a', 'name': 'Zz'}),
+        startup({'id': 'b', 'name': 'Aa'}),
+      ]);
+      expect(ids(r), ['b', 'a']);
+    });
+  });
+
   group('same results as the Python reference (real data)', () {
     final fixture =
         jsonDecode(
