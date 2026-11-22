@@ -186,8 +186,8 @@ void main() {
       expect(map['stage'], 'seed');
       expect(map['startDate'], now);
       expect(map['endDate'], isNull);
-      expect(map['investorIds'], ['inv-2']);
-      expect(map['investorCount'], 2);
+      expect(map.containsKey('investorIds'), isFalse);
+      expect(map.containsKey('investorCount'), isFalse);
       expect(map['isArchived'], isFalse);
     });
 

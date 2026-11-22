@@ -168,8 +168,6 @@ class FundingRoundFields {
   static const startDate = 'startDate';
   static const endDate = 'endDate';
   static const investors = 'investors';
-  static const investorIds = 'investorIds';
-  static const investorCount = 'investorCount';
 
   /// True only on rounds imported from the dataset (Crunchbase).
   static const isArchived = 'isArchived';

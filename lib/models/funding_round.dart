@@ -117,11 +117,6 @@ class FundingRound {
     FundingRoundFields.startDate: start,
     FundingRoundFields.endDate: end,
     FundingRoundFields.investors: [for (final i in investors) i.toMap()],
-    FundingRoundFields.investorIds: [
-      for (final i in investors)
-        if (i.hasProfile) i.investorId,
-    ],
-    FundingRoundFields.investorCount: investors.length,
     FundingRoundFields.isArchived: false,
   };
 

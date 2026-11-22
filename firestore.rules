@@ -443,8 +443,7 @@ service cloud.firestore {
     function validRound(d, s, id) {
       return d.keys().hasOnly(['startupId', 'number', 'status', 'stage',
                                'stageOther', 'amount', 'raised', 'startDate',
-                               'endDate', 'investors', 'investorIds',
-                               'investorCount',
+                               'endDate', 'investors',
                                'amountEstimated', 'raisedEstimated',
                                'isArchived', 'createdAt', 'updatedAt'])
           && d.startupId == id
