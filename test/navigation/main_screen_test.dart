@@ -9,7 +9,6 @@ import 'package:startsa/navigation/main_screen.dart';
 import 'package:startsa/shared_ui/theme/app_theme.dart';
 import 'package:startsa/shared_ui/widgets/headers/home_header.dart';
 import 'package:startsa/shared_ui/widgets/nav/app_side_drawer.dart';
-import 'package:startsa/shared_ui/widgets/overlays/app_bottom_sheet.dart';
 import 'package:startsa/shared_ui/icons/app_icons.dart';
 
 import '../support/fakes.dart';
@@ -72,35 +71,39 @@ void main() {
   });
 
   for (final role in ['founder', 'investor']) {
-    testWidgets('a $role\'s Explore has Latest, Trending and For You, no Matches', (
-      tester,
-    ) async {
-      AppSession.instance.signIn(role == 'founder' ? founder : investor);
-      await pumpMain(tester);
-      await tester.tap(find.bySemanticsLabel('Explore').last);
-      await tester.pump(const Duration(milliseconds: 500));
-      expect(find.text('Explore'), findsWidgets);
-      expect(find.text('Latest'), findsOneWidget);
-      expect(find.text('Trending'), findsOneWidget);
-      expect(find.text('For You'), findsOneWidget);
-      expect(find.text('Matches'), findsNothing);
-      // Three equal columns, centred, in this order.
-      final row = tester.getRect(find.byType(ExploreTabs));
-      expect(
-        tester.getCenter(find.text('Latest')).dx,
-        closeTo(row.left + row.width / 6, 20),
-      );
-      expect(
-        tester.getCenter(find.text('Trending')).dx,
-        closeTo(row.center.dx, 20),
-      );
-      expect(
-        tester.getCenter(find.text('For You')).dx,
-        closeTo(row.left + row.width * 5 / 6, 20),
-      );
-      // It opens on Latest.
-      expect(find.text('Newest startups'), findsOneWidget);
-    });
+    testWidgets(
+      'a $role\'s Explore has Latest, Trending and For You, no Matches',
+      (tester) async {
+        AppSession.instance.signIn(role == 'founder' ? founder : investor);
+        await pumpMain(tester);
+        await tester.tap(find.bySemanticsLabel('Explore').last);
+        await tester.pump(const Duration(milliseconds: 500));
+        expect(find.text('Explore'), findsWidgets);
+        expect(find.text('Latest'), findsOneWidget);
+        expect(find.text('Trending'), findsOneWidget);
+        expect(find.text('For You'), findsOneWidget);
+        expect(find.text('Matches'), findsNothing);
+        // Three equal columns, centred, in this order.
+        final row = tester.getRect(find.byType(ExploreTabs));
+        expect(
+          tester.getCenter(find.text('Latest')).dx,
+          closeTo(row.left + row.width / 6, 20),
+        );
+        expect(
+          tester.getCenter(find.text('Trending')).dx,
+          closeTo(row.center.dx, 20),
+        );
+        expect(
+          tester.getCenter(find.text('For You')).dx,
+          closeTo(row.left + row.width * 5 / 6, 20),
+        );
+        // It opens on Latest, on the same side as the Hub.
+        expect(
+          find.text(role == 'founder' ? 'Newest investors' : 'Newest startups'),
+          findsOneWidget,
+        );
+      },
+    );
   }
 
   testWidgets('a guest only has Trending, no sub-tabs', (tester) async {
@@ -153,11 +156,6 @@ void main() {
     expect(tester.takeException(), isNull);
     Navigator.of(ctx, rootNavigator: true).pop();
     await tester.pump(const Duration(milliseconds: 600));
-
-    showInfoSheet(ctx, title: 'Hello', text: 'Body');
-    await tester.pump(const Duration(milliseconds: 600));
-    expect(find.text('Hello'), findsOneWidget);
-    expect(tester.takeException(), isNull);
     handle.dispose();
   });
 

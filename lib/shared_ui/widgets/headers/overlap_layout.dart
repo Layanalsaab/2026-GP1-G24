@@ -7,8 +7,6 @@ import '../../theme/app_metrics.dart';
 class AuthCard extends StatelessWidget {
   const AuthCard({super.key, required this.child, this.animate = true});
 
-  static const double overlap = 44;
-
   final Widget child;
 
   /// Play the rise on mount (turn off for cards that are re-created often).

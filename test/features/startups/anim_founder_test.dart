@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:startsa/features/connection_requests/screens/interest_tab.dart';
-import 'package:startsa/features/startups/widgets/draft_card.dart';
 import 'package:startsa/features/startups/widgets/hover_lift_card.dart';
 import 'package:startsa/features/startups/widgets/manage_card.dart';
 import 'package:startsa/shared_ui/theme/app_colors.dart';
@@ -118,23 +117,6 @@ void main() {
   testWidgets('ManageCard without onTap is a plain card', (t) async {
     await t.pumpWidget(_app(const ManageCard(child: Text('Plain'))));
     expect(find.byType(HoverLiftCard), findsNothing);
-  });
-
-  testWidgets('draft card lifts on hover and keeps its tap', (t) async {
-    var taps = 0;
-    await t.pumpWidget(
-      _app(
-        DraftCard(
-          draft: const {'name': 'Acme', 'step': 1},
-          onTap: () => taps++,
-          onDiscard: () {},
-        ),
-      ),
-    );
-    await _mouse(t, find.text('Acme'));
-    expect(_dy(t), -2);
-    await t.tap(find.text('Acme'));
-    expect(taps, 1);
   });
 
   group('interest reply button', () {

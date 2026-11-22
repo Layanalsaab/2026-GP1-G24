@@ -11,6 +11,5 @@ enum LatestRange {
   /// The text in the dropdown.
   final String label;
 
-  /// A startup that joined at most this many days ago is shown.
   final int days;
 }

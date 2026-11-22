@@ -96,11 +96,11 @@ void main() {
       startups: {
         'a': now.subtract(const Duration(days: 2)),
         'b': now,
-        'c': now.subtract(const Duration(days: 40)),
+        'c': now.subtract(const Duration(days: 200)),
       },
     );
     expect(find.text('Newest startups'), findsOneWidget);
-    expect(find.text('Last week'), findsOneWidget);
+    expect(find.text('Last 6 months'), findsOneWidget);
     expect(find.byType(HomeCard), findsNWidgets(2));
     // Newest first.
     expect(
@@ -115,25 +115,20 @@ void main() {
 
   testWidgets('Latest: the dropdown goes further back', (t) async {
     final now = DateTime.now();
-    await pump(t, startups: {'c': now.subtract(const Duration(days: 40))});
+    await pump(t, startups: {'c': now.subtract(const Duration(days: 200))});
     expect(find.text('No new startups'), findsOneWidget);
     expect(
       find.text('No startups joined in this time range. Try a longer one.'),
       findsOneWidget,
     );
-    await t.tap(find.text('Last week'));
+    await t.tap(find.text('Last 6 months'));
     await t.pumpAndSettle();
-    for (final o in [
-      'Last month',
-      'Last 3 months',
-      'Last 6 months',
-      'Last year',
-    ]) {
+    for (final o in ['Last week', 'Last month', 'Last 3 months', 'Last year']) {
       expect(find.text(o), findsOneWidget);
     }
-    await t.tap(find.text('Last 3 months'));
+    await t.tap(find.text('Last year'));
     await t.pumpAndSettle();
-    expect(find.text('Joined 1 month ago'), findsOneWidget);
+    expect(find.text('Joined 7 months ago'), findsOneWidget);
     expect(find.text('No new startups'), findsNothing);
   });
 

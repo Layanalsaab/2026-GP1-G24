@@ -261,38 +261,46 @@ void main() {
 
     Future<HomeViewModel> loaded(
       Map<String, DateTime> startups, {
+      Map<String, DateTime> investors = const {},
       Set<String> own = const {},
+      SessionRole role = SessionRole.investor,
     }) async {
       final base = PrototypeSeed.rafeeq;
       final repo = DiscoveryRepository(
-        firestore: _Docs({
-          for (final e in startups.entries)
-            e.key: {
-              ...base.toMap(),
-              'name': 'S ${e.key}',
-              'isPublic': true,
-              'createdAt': e.value,
-            },
-        }),
+        firestore: _Docs(
+          {
+            for (final e in startups.entries)
+              e.key: {
+                ...base.toMap(),
+                'name': 'S ${e.key}',
+                'isPublic': true,
+                'createdAt': e.value,
+              },
+          },
+          investors: {
+            for (final e in investors.entries)
+              e.key: {'fullName': 'I ${e.key}', 'createdAt': e.value},
+          },
+        ),
       );
       await repo.refresh();
       DiscoveryRepository.instance = repo;
-      return HomeViewModel(role: SessionRole.investor, ownStartupIds: own);
+      return HomeViewModel(role: role, ownStartupIds: own);
     }
 
     test(
-      'newest first, with a "Joined … ago" line, the last week by default',
+      'newest first, with a "Joined … ago" line, the last 6 months by default',
       () async {
         final m = await loaded({
           'a': ago(2),
           'b': ago(20),
           'c': ago(0),
-          'd': ago(100),
+          'd': ago(200),
         });
-        expect(m.latestRange.label, 'Last week');
-        expect([for (final i in m.latest) i.id], ['c', 'a']);
+        expect(m.latestRange.label, 'Last 6 months');
+        expect([for (final i in m.latest) i.id], ['c', 'a', 'b']);
         expect(m.latest.first.highlight, 'Joined today');
-        expect(m.latest.last.highlight, 'Joined 2 days ago');
+        expect(m.latest[1].highlight, 'Joined 2 days ago');
         m.dispose();
       },
     );
@@ -318,7 +326,7 @@ void main() {
           ],
         );
         expect(LatestRange.month.days, 30);
-        // Last week: only a.
+        m.setLatestRange(0); // Last week
         expect([for (final i in m.latest) i.id], ['a']);
         m.setLatestRange(1); // Last month
         expect([for (final i in m.latest) i.id], ['a', 'b']);
@@ -332,9 +340,42 @@ void main() {
       },
     );
 
-    test('a founder does not see their own startups', () async {
-      final m = await loaded({'a': ago(1), 'b': ago(2)}, own: {'a'});
-      expect([for (final i in m.latest) i.id], ['b']);
+    test('a founder sees their own new startups too', () async {
+      final m = await loaded(
+        {'a': ago(1), 'b': ago(2)},
+        own: {'a'},
+        role: SessionRole.founder,
+      );
+      m.setLatestSwitch(0);
+      expect([for (final i in m.latest) i.id], ['a', 'b']);
+      m.dispose();
+    });
+
+    test('a Hub-style switch; each role starts on the other side', () async {
+      final investor = await loaded({'s': ago(1)}, investors: {'i': ago(1)});
+      expect(investor.latestSwitch, 0);
+      expect([for (final i in investor.latest) i.id], ['s']);
+      investor.dispose();
+      final founder = await loaded(
+        {'s': ago(1)},
+        investors: {'i': ago(1)},
+        role: SessionRole.founder,
+      );
+      expect(founder.latestSwitch, 1);
+      expect([for (final i in founder.latest) i.id], ['i']);
+      founder.dispose();
+    });
+
+    test('the Investors side lists new investors, yourself included', () async {
+      final m = await loaded(
+        const {},
+        investors: {'me': ago(0), 'old': ago(40), 'other': ago(3)},
+      );
+      m.setLatestSwitch(1);
+      expect([for (final i in m.latest) i.id], ['me', 'other', 'old']);
+      expect(m.latest.first.highlight, 'Joined today');
+      m.setLatestRange(1);
+      expect([for (final i in m.latest) i.id], ['me', 'other']);
       m.dispose();
     });
 
@@ -360,9 +401,10 @@ void main() {
 
 /// Startups served as documents (the isPublic == true query).
 class _Docs extends FirestoreService {
-  _Docs(this.startups);
+  _Docs(this.startups, {this.investors = const {}});
 
   final Map<String, Map<String, Object?>> startups;
+  final Map<String, Map<String, Object?>> investors;
 
   @override
   Future<List<FirestoreDocument>> queryWhereEqual(
@@ -381,5 +423,10 @@ class _Docs extends FirestoreService {
   Future<List<FirestoreDocument>> listCollection(
     String collection, {
     int limit = 100,
-  }) async => const [];
+  }) async => collection == 'investors'
+      ? [
+          for (final e in investors.entries)
+            (id: e.key, data: Map<String, dynamic>.from(e.value)),
+        ]
+      : const [];
 }

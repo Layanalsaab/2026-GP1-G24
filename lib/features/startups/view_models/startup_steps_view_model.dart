@@ -47,7 +47,6 @@ enum StartupField {
   valuation,
   revenue,
   modelText,
-  lookingFor,
   funding,
   raised,
   partnerTypes,
@@ -171,89 +170,6 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
   bool get isDirty =>
       newLogo != null || removeLogo || _signature() != _baseline;
 
-  /// The form as a draft (the logo is not kept).
-  Map<String, Object?> toDraft() => {
-    ..._state(),
-    'step': furthestStep,
-    'order': 2,
-  };
-
-  void loadDraft(Map<String, Object?> d) {
-    String t(String k) => (d[k] as String?) ?? '';
-    name.text = t('name');
-    // Older drafts kept a one-line pitch next to the description.
-    description.text = t('description').isNotEmpty
-        ? t('description')
-        : t('pitch');
-    founded.text = t('founded');
-    website.text = t('website');
-    sectorPicks.clear();
-    if (d['sectors'] is List) {
-      sectorPicks.addAll([
-        for (final v in d['sectors'] as List)
-          if (v is String && !sectorPicks.contains(v)) v,
-      ]);
-    } else if (Sector.fromValue(d['sector']) case final old?) {
-      // A draft saved when only one sector could be picked.
-      sectorPicks.add(old.label);
-    }
-    sectorOther.text = t('sectorOther');
-    final draftStage = StartupStage.fromValue(d['stage']);
-    stage = StartupStage.picks.contains(draftStage) ? draftStage : null;
-    final draftModel = CommerceModel.fromValue(d['model']);
-    model = CommerceModel.picks.contains(draftModel) ? draftModel : null;
-    modelOther.text = t('modelOther');
-    city = StartupLocation.fromValue(d['city']);
-    problem.text = t('problem');
-    solution.text = t('solution');
-    customers.text = t('customers');
-    advantage.text = t('advantage');
-    marketSize.text = t('marketSize');
-    team = [
-      if (d['team'] is List)
-        for (final raw in d['team'] as List) ?TeamMember.fromMap(raw),
-    ];
-    revenueNow.text = t('revenueNow');
-    capital.text = t('capital');
-    burn.text = t('burn');
-    modelText.text = t('modelText');
-    raised.text = t('raised');
-    partnerSel = {
-      if (d['partners'] is List)
-        for (final v in d['partners'] as List) '$v',
-    };
-    partnerOther.text = t('partnerOther');
-    supportSel = {
-      if (d['supports'] is List)
-        for (final v in d['supports'] as List) '$v',
-    };
-    supportOther.text = t('supportOther');
-    rev1.text = t('rev1');
-    rev2.text = t('rev2');
-    rev3.text = t('rev3');
-    valuation.text = t('valuation');
-    funding.text = t('funding');
-    lookingFor = {
-      if (d['lookingFor'] is List)
-        for (final raw in d['lookingFor'] as List) ?LookingFor.fromValue(raw),
-    };
-    isPublic = d['isPublic'] != false;
-    _ensureFounder();
-    var savedStep = (d['step'] as num?)?.toInt() ?? 0;
-    if (d['order'] != 2) {
-      if (savedStep == 4) {
-        savedStep = 5;
-      } else if (savedStep == 5) {
-        savedStep = 4;
-      }
-    }
-    step = savedStep.clamp(0, stepCount - 1);
-    furthestStep = step;
-    _openFounderIfNeeded();
-    _baseline = _signature();
-    notifyListeners();
-  }
-
   final Startup? initial;
 
   final int? onlySection;
@@ -283,7 +199,6 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
   /// The current step, 0-based.
   int step = 0;
 
-  int furthestStep = 0;
   final Set<int> _tried = {};
 
   final Map<StartupField, FocusNode> _focus = {};
@@ -552,8 +467,6 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
         return StartupValidators.funding(funding.text);
       case StartupField.raised:
         return StartupValidators.raisedInRound(raised.text, funding.text);
-      case StartupField.lookingFor:
-        return isEditing ? null : StartupValidators.lookingFor(lookingFor);
       case StartupField.partnerTypes:
         if (partnerOtherRepeats) return ValidationStrings.otherRepeats;
         return _typesError(
@@ -613,7 +526,6 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
     ],
     [],
     [
-      StartupField.lookingFor,
       StartupField.funding,
       StartupField.raised,
       StartupField.partnerTypes,
@@ -625,7 +537,6 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
   List<StartupField> _fieldsOf(int s) {
     if (s != askStep) return _stepFields[s];
     return [
-      StartupField.lookingFor,
       if (wantsFunding) ...[StartupField.funding, StartupField.raised],
       if (wantsPartner) StartupField.partnerTypes,
       if (wantsSupport) StartupField.supportTypes,
@@ -784,7 +695,6 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
     }
     if (!isSectionEdit && step < stepCount - 1) {
       step++;
-      if (step > furthestStep) furthestStep = step;
       _openFounderIfNeeded();
       notifyListeners();
       return StepAdvance.advanced;

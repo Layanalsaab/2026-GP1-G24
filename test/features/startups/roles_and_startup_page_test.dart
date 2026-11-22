@@ -352,7 +352,6 @@ void main() {
         ..setHubSwitch(0);
       addTearDown(m.dispose);
       expect(m.hubCards.any((i) => i.id == naql), isTrue);
-      expect(m.latest.any((i) => i.id == naql), isFalse);
       expect(m.recommended.any((i) => i.id == naql), isFalse);
     });
 

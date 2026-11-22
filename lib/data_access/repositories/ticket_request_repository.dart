@@ -87,6 +87,21 @@ class TicketRequestRepository {
     );
   }
 
+  /// Deletes every request sent to investorId's tickets.
+  Future<void> removeAllFor(String investorId) async {
+    final docs = await _firestore.queryWhereEqual(
+      FirestoreCollections.ticketRequests,
+      'investorId',
+      investorId,
+      limit: _limit,
+    );
+    if (docs.isEmpty) return;
+    await _firestore.commit([
+      for (final d in docs)
+        FirestoreWrite.delete(FirestoreCollections.ticketRequests, d.id),
+    ]);
+  }
+
   /// The investor accepts or declines a pending request (once).
   Future<void> answer(String id, {required bool accept}) =>
       _firestore.updateDocument(FirestoreCollections.ticketRequests, id, {

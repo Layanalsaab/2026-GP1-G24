@@ -685,10 +685,8 @@ class _Ask extends StatelessWidget {
       children: [
         AppField(
           label: FounderToolsStrings.lookingForLabel,
-          required: !vm.isEditing,
           sentenceCase: true,
           subLabel: 'Select all that apply',
-          error: vm.errorOf(StartupField.lookingFor),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [

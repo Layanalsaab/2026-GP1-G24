@@ -142,24 +142,31 @@ class DiscoveryRepository {
   /// Support Channels.
   List<HomeItem> programs() => const [];
 
-  List<HomeItem> latestStartups({
-    required int days,
-    Set<String> excludeIds = const {},
-    DateTime? now,
-  }) {
-    final today = now ?? DateTime.now();
-    final dated = [
+  List<HomeItem> latestStartups({required int days, DateTime? now}) => _latest(
+    [
       for (final s in _startups)
-        if (s.isListed &&
-            s.createdAt != null &&
-            !excludeIds.contains(s.id) &&
-            _daysSince(s.createdAt!, today) <= days)
-          s,
+        if (s.isListed) HomeItem.fromStartup(s),
+    ],
+    days,
+    now ?? DateTime.now(),
+  );
+
+  List<HomeItem> latestInvestors({required int days, DateTime? now}) =>
+      _latest(investors(), days, now ?? DateTime.now());
+
+  static List<HomeItem> _latest(
+    List<HomeItem> items,
+    int days,
+    DateTime today,
+  ) {
+    final dated = [
+      for (final it in items)
+        if (it.createdAt != null && _daysSince(it.createdAt!, today) <= days)
+          it,
     ]..sort((a, b) => b.createdAt!.compareTo(a.createdAt!));
     return [
-      for (final s in dated)
-        HomeItem.fromStartup(s)
-            .withHighlight(joinedAgo(s.createdAt!, now: today)),
+      for (final it in dated)
+        it.withHighlight(joinedAgo(it.createdAt!, now: today)),
     ];
   }
 
@@ -183,52 +190,6 @@ class DiscoveryRepository {
       return 'Joined $m ${m == 1 ? 'month' : 'months'} ago';
     }
     return 'Joined over a year ago';
-  }
-
-  /// "New on Start.sa" rail, Investors side (newest first).
-  List<HomeItem> newInvestors() {
-    if (sample) {
-      return [
-        for (final id in const ['nora', 'omar', 'sara'])
-          HomeItem.fromInvestor(_investors.firstWhere((i) => i.id == id))
-              .withJoined(PrototypeSeed.joined[id] ?? 'Joined this week'),
-      ];
-    }
-    final dated = [
-      for (final i in _investors)
-        if (i.createdAt != null) i,
-    ]..sort((a, b) => b.createdAt!.compareTo(a.createdAt!));
-    return [
-      for (final i in dated.take(3))
-        HomeItem.fromInvestor(i).withJoined(joinedLabel(i.createdAt!)),
-    ];
-  }
-
-  static String joinedLabel(DateTime created, {DateTime? now}) {
-    final today = now ?? DateTime.now();
-    final days = DateTime(
-      today.year,
-      today.month,
-      today.day,
-    ).difference(DateTime(created.year, created.month, created.day)).inDays;
-    if (days <= 0) return 'Joined today';
-    if (days == 1) return 'Joined yesterday';
-    if (days < 7) return 'Joined $days days ago';
-    const months = [
-      'January',
-      'February',
-      'March',
-      'April',
-      'May',
-      'June',
-      'July',
-      'August',
-      'September',
-      'October',
-      'November',
-      'December',
-    ];
-    return 'Joined ${months[created.month - 1]} ${created.year}';
   }
 
   List<HomeItem> recommendedStartups({

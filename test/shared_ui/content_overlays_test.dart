@@ -8,7 +8,6 @@ import 'package:startsa/shared_ui/widgets/cards/home_card.dart';
 import 'package:startsa/shared_ui/widgets/lists/segmented_switch.dart';
 import 'package:startsa/shared_ui/widgets/nav/app_bottom_nav.dart';
 import 'package:startsa/shared_ui/widgets/nav/home_search_bar.dart';
-import 'package:startsa/shared_ui/widgets/overlays/app_bottom_sheet.dart';
 import 'package:startsa/shared_ui/widgets/overlays/app_toast.dart';
 import 'package:startsa/shared_ui/widgets/overlays/app_dropdown.dart';
 
@@ -80,7 +79,7 @@ void main() {
     expect(nav, 2);
   });
 
-  testWidgets('toast and sheet', (tester) async {
+  testWidgets('toast and dropdown', (tester) async {
     await tester.pumpWidget(
       _wrap(
         Builder(
@@ -89,10 +88,6 @@ void main() {
               TextButton(
                 onPressed: () => AppToast.error(c, 'Link copied'),
                 child: const Text('t'),
-              ),
-              TextButton(
-                onPressed: () => showInfoSheet(c, title: 'Title', text: 'Body'),
-                child: const Text('s'),
               ),
               RangeDropdown(
                 options: const ['Today', 'Last 7 days'],
@@ -116,13 +111,6 @@ void main() {
     await tester.pump(const Duration(milliseconds: 2600));
     await tester.pump(const Duration(milliseconds: 300));
     expect(find.text('Link copied'), findsNothing);
-
-    await tester.tap(find.text('s'));
-    await tester.pumpAndSettle();
-    expect(find.text('Got it'), findsOneWidget);
-    await tester.tap(find.text('Got it'));
-    await tester.pumpAndSettle();
-    expect(find.text('Got it'), findsNothing);
 
     await tester.tap(find.text('Last 7 days'));
     await tester.pumpAndSettle();

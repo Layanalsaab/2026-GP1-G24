@@ -236,39 +236,6 @@ void main() {
     });
   });
 
-  testWidgets('RailCard hovers like a home card and has no entrance', (
-    t,
-  ) async {
-    await t.pumpWidget(
-      _app(
-        Padding(
-          padding: const EdgeInsets.all(16),
-          child: RailCard(
-            name: 'Rail Co',
-            tag: 'AgriTech',
-            city: 'Jeddah',
-            body: 'Body',
-            joined: 'Joined today',
-            onTap: () {},
-          ),
-        ),
-      ),
-    );
-    expect(find.byType(Rise), findsNothing);
-    final g = await _mouse(t);
-    await _hover(t, g, find.text('Rail Co'));
-    final c = t.widget<AnimatedContainer>(
-      find
-          .descendant(
-            of: find.byType(RailCard),
-            matching: find.byType(AnimatedContainer),
-          )
-          .first,
-    );
-    expect((c.decoration as BoxDecoration).boxShadow, hasLength(2));
-    expect(c.transform!.getTranslation().y, -2);
-  });
-
   group('SegmentedSwitch (4.4)', () {
     testWidgets('hover turns the unselected label moss600, not the selected', (
       t,

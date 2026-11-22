@@ -7,10 +7,13 @@ import 'package:startsa/data_access/repositories/bookmark_repository.dart';
 import 'package:startsa/data_access/repositories/for_you_cache.dart';
 import 'package:startsa/data_access/repositories/not_interested_repository.dart';
 import 'package:startsa/data_access/repositories/startup_repository.dart';
+import 'package:startsa/data_access/repositories/ticket_repository.dart';
+import 'package:startsa/data_access/repositories/ticket_request_repository.dart';
 import 'package:startsa/models/app_user.dart';
 import 'package:startsa/models/auth_failure.dart';
 
 import '../support/fakes.dart';
+import '../support/recording_firestore.dart';
 
 /// Firestore kept in a map (collection path -> document id -> data); reads
 /// of the collections in [failing] throw.
@@ -41,12 +44,16 @@ void main() {
   late FakeUserRepository users;
   late AuthRepository repo;
   late FakeStartupRepository startups;
+  late RecordingFirestore db;
 
   setUp(() {
     auth = FakeAuthService();
     users = FakeUserRepository();
     startups = FakeStartupRepository();
     StartupRepository.instance = startups;
+    db = RecordingFirestore();
+    TicketRepository.instance = TicketRepository(firestore: db);
+    TicketRequestRepository.instance = TicketRequestRepository(firestore: db);
     repo = AuthRepository(authService: auth, userRepository: users);
   });
 
@@ -385,6 +392,35 @@ void main() {
       expect(auth.calls, contains('delete'));
     });
 
+    test("an investor's tickets and requests are deleted too", () async {
+      db.store['tickets'] = {
+        'uid1-T1': {'investorId': 'uid1'},
+        'other-T1': {'investorId': 'other'},
+      };
+      db.store['requests'] = {
+        'r1': {'investorId': 'uid1', 'status': 'accepted'},
+        'r2': {'investorId': 'other'},
+      };
+      db.store['ticketRequests'] = {
+        's1~uid1-T1': {'investorId': 'uid1', 'status': 'pending'},
+        's1~other-T1': {'investorId': 'other'},
+      };
+      auth.signedIn = verified();
+      await repo.deleteAccount();
+      expect(db.store['tickets']!.keys, ['other-T1']);
+      expect(db.store['requests']!.keys, ['r2']);
+      expect(db.store['ticketRequests']!.keys, ['s1~other-T1']);
+      expect(auth.calls, contains('delete'));
+    });
+
+    test('when deleting the tickets fails, the account stays', () async {
+      TicketRepository.instance = TicketRepository(firestore: _Failing());
+      auth.signedIn = verified();
+      await expectLater(repo.deleteAccount(), throwsA(anything));
+      expect(auth.calls, isNot(contains('delete')));
+      expect(users.deletedProfiles, isEmpty);
+    });
+
     test('when closing the startups fails, nothing is deleted', () async {
       auth.signedIn = verified();
       startups.closeAllFails = AuthFailure.network;
@@ -407,4 +443,14 @@ void main() {
       expect(auth.calls, contains('delete'));
     });
   });
+}
+
+class _Failing extends RecordingFirestore {
+  @override
+  Future<List<FirestoreDocument>> queryWhereEqual(
+    String collection,
+    String field,
+    Object value, {
+    int? limit,
+  }) async => throw Exception('offline');
 }

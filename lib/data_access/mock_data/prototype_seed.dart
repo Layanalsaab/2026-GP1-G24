@@ -414,17 +414,6 @@ class PrototypeSeed {
     'mock-founder-5': 'Khalid Alharbi',
   };
 
-  /// "Joined ..." lines on the "New on Start.sa" rail.
-  static const joined = <String, String>{
-    'mock-sanabil': 'Joined today',
-    'mock-mizan': 'Joined 2 days ago',
-    'mock-naql': 'Joined 4 days ago',
-    'mock-daftar': 'Joined this week',
-    'nora': 'Joined yesterday',
-    'omar': 'Joined 3 days ago',
-    'sara': 'Joined this week',
-  };
-
   static InvestorProfile _investor({
     required String id,
     required String name,
@@ -471,7 +460,6 @@ class PrototypeSeed {
       linkedin: linkedin,
       valueOffered: give,
       hopeToGain: gain,
-      joinedLabel: joined[id],
       yearsInvesting: years ?? yearsList[seed % yearsList.length],
       startupsInvested: d,
       roundSize: d == '0' ? null : ticket,

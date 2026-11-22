@@ -135,13 +135,11 @@ void main() {
     expect(find.text('A Very Long Investor Name Number 6'), findsNothing);
   });
 
-  group('the edit form may have no asks', () {
-    test('a new startup must pick at least one', () {
+  group('the Startup Ask is optional', () {
+    test('a new startup can go on with none ticked', () {
       final vm = StartupStepsViewModel();
       addTearDown(vm.dispose);
-      vm.step = StartupStepsViewModel.askStep;
-      vm.next();
-      expect(vm.errorOf(StartupField.lookingFor), 'Select at least one.');
+      expect(vm.stepComplete(StartupStepsViewModel.askStep), isTrue);
     });
 
     test('an existing startup can save with none ticked', () {
@@ -149,9 +147,6 @@ void main() {
         initial: startup.copyWith(lookingFor: {}, clearFunding: true),
       );
       addTearDown(vm.dispose);
-      vm.step = StartupStepsViewModel.askStep;
-      vm.next();
-      expect(vm.errorOf(StartupField.lookingFor), isNull);
       expect(vm.stepComplete(StartupStepsViewModel.askStep), isTrue);
     });
   });
