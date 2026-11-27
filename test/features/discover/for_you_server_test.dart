@@ -84,6 +84,41 @@ class _MemoryFirestore extends FirestoreService {
   ];
 }
 
+/// Firestore whose writes and deletes finish when the test says so.
+class _HeldFirestore extends _MemoryFirestore {
+  final List<Completer<void>> pending = [];
+
+  Future<void> _held() {
+    final c = Completer<void>();
+    pending.add(c);
+    return c.future;
+  }
+
+  @override
+  Future<void> setDocument(
+    String collection,
+    String id,
+    Map<String, Object?> data, {
+    bool merge = false,
+  }) async {
+    await _held();
+    await super.setDocument(collection, id, data, merge: merge);
+  }
+
+  @override
+  Future<void> deleteDocument(String collection, String id) async {
+    await _held();
+    await super.deleteDocument(collection, id);
+  }
+
+  void finishAll() {
+    for (final c in pending) {
+      c.complete();
+    }
+    pending.clear();
+  }
+}
+
 /// A saved-list store whose reads finish when the test says so.
 class _HeldCache extends ForYouCache {
   final Map<String, Completer<List<String>>> reads = {};
@@ -593,6 +628,41 @@ void main() {
     await pumpEventQueue();
     expect(server.calls, 2);
     expect(ids(m), ['c']);
+  });
+
+  test(
+    'the server is asked only after a Not interested mark is saved',
+    () async {
+      final slow = _HeldFirestore();
+      hidden = NotInterestedRepository(firestore: slow);
+      final server = FakeForYou()..then = [s('a'), s('b'), s('c')];
+      final m = vm(server);
+      await pumpEventQueue();
+      final before = server.calls;
+      m.hideForYou(m.recommended[1]);
+      await pumpEventQueue();
+      expect(server.calls, before, reason: 'the mark is not saved yet');
+      slow.finishAll();
+      await pumpEventQueue();
+      expect(server.calls, before + 1);
+    },
+  );
+
+  test('the server is asked only after a bookmark is saved', () async {
+    final slow = _HeldFirestore();
+    marks = BookmarkRepository(firestore: slow);
+    BookmarkRepository.instance = marks;
+    final server = FakeForYou()..then = [s('a'), s('b')];
+    final m = vm(server);
+    await pumpEventQueue();
+    final before = server.calls;
+    marks.toggle('s-a');
+    await pumpEventQueue();
+    expect(server.calls, before, reason: 'the bookmark is not saved yet');
+    slow.finishAll();
+    await pumpEventQueue();
+    expect(server.calls, before + 1);
+    expect(m.recommended, isNotEmpty);
   });
 
   test('quick changes send one request', () {

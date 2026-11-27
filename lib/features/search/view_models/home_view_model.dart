@@ -57,6 +57,8 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
     _bookmarks.keys.addListener(_onBookmarks);
     _seenNotInterested = {..._notInterested.keys.value};
     _notInterested.keys.addListener(_onNotInterested);
+    _bookmarks.saved.addListener(_askWhenQuiet);
+    _notInterested.saved.addListener(_askWhenQuiet);
     _server.profileTextDone.addListener(_onProfileTextDone);
     _startForYou();
   }
@@ -414,8 +416,9 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
   /// A bookmark or "Not interested" change. While the user is on For You one
   /// change leaves the cards where they are (the bookmarked card stays; a
   /// hidden one was already taken out by [hideForYou]); a bulk change (load,
-  /// sign-out) or a change made elsewhere redraws the list. One change also
-  /// asks the server again once things have been quiet for a while.
+  /// sign-out) or a change made elsewhere redraws the list. The server is
+  /// asked again once the change is saved (the repositories' `saved`), so its
+  /// answer always includes it.
   void _onTasteChanged(Set<String> before, Set<String> now) {
     final added = now.difference(before).length;
     final removed = before.difference(now).length;
@@ -426,7 +429,6 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
       _forYou = null;
       if (bulk) notifyListeners();
     }
-    if (!bulk) _askWhenQuiet();
   }
 
   // For You from the server, the saved list and the fallback.
@@ -620,6 +622,8 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
     _discovery.changes.removeListener(_onDiscovery);
     _bookmarks.keys.removeListener(_onBookmarks);
     _notInterested.keys.removeListener(_onNotInterested);
+    _bookmarks.saved.removeListener(_askWhenQuiet);
+    _notInterested.saved.removeListener(_askWhenQuiet);
     _server.profileTextDone.removeListener(_onProfileTextDone);
     searchController.dispose();
     super.dispose();

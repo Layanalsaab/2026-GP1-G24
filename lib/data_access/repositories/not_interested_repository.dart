@@ -29,6 +29,11 @@ class NotInterestedRepository {
   /// When key was marked, if known (the backup ranking weighs newer marks
   /// more, like the server does).
   DateTime? savedAt(String key) => _savedAt[key];
+
+  /// Counts finished saves (a mark written or deleted in Firestore): For You
+  /// asks the server again only once the server can see the change.
+  ValueListenable<int> get saved => _saved;
+  final ValueNotifier<int> _saved = ValueNotifier<int>(0);
   final Map<String, DateTime> _savedAt = {};
 
   /// users/{uid}/notInterested
@@ -49,6 +54,7 @@ class NotInterestedRepository {
         'targetId': BookmarkRepository.targetIdOf(key),
         'createdAt': _firestore.serverTimestamp(),
       });
+      _saved.value++;
     } catch (e) {
       debugPrint('Not interested "$key" was not saved: $e');
       _savedAt.remove(key);
@@ -66,6 +72,7 @@ class NotInterestedRepository {
     if (uid == null) return;
     try {
       await _firestore.deleteDocument(_collectionOf(uid), key);
+      _saved.value++;
     } catch (e) {
       debugPrint('Not interested "$key" was not removed: $e');
       if (at != null) _savedAt[key] = at;
