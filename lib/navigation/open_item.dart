@@ -1,7 +1,6 @@
 import 'package:flutter/widgets.dart';
 
 import '../data_access/repositories/discovery_repository.dart';
-import '../data_access/repositories/interaction_repository.dart';
 import '../data_access/repositories/matching_repository.dart';
 import '../features/program_details/screens/program_details_screen.dart';
 import '../features/profiles/screens/investor_profile_screen.dart';
@@ -13,7 +12,6 @@ import '../models/home_item.dart';
 import '../models/startup.dart';
 
 void openStartup(BuildContext context, Startup startup) {
-  InteractionRepository.instance.recordProfileView('s-${startup.id}');
   final session = AppSession.instance;
   final own =
       session.ownStartupIds.contains(startup.id) ||
@@ -48,7 +46,6 @@ void openHomeItem(BuildContext context, HomeItem item) {
           discovery.investorById(item.id) ??
           MatchingRepository.instance.investorById(item.id);
       if (investor == null) return;
-      InteractionRepository.instance.recordProfileView(item.bookmarkKey);
       InvestorProfileScreen.open(context, investor);
     case HomeItemKind.program:
       final program = discovery.programById(item.id);

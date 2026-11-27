@@ -6,7 +6,6 @@ import 'package:startsa/data_access/firebase_services/firestore_service.dart';
 import 'package:startsa/data_access/mock_data/prototype_seed.dart';
 import 'package:startsa/data_access/repositories/matching_repository.dart';
 import 'package:startsa/data_access/repositories/ticket_repository.dart';
-import 'package:startsa/data_access/repositories/ticket_request_repository.dart';
 import 'package:startsa/features/wallet/screens/wallet_screen.dart';
 import 'package:startsa/helpers/formatters.dart';
 import 'package:startsa/features/wallet/view_models/wallet_view_model.dart';
@@ -54,7 +53,6 @@ Future<WalletViewModel> open(
   final vm = WalletViewModel(
     investorId: 'inv1',
     tickets: TicketRepository(firestore: db),
-    received: TicketRequestRepository(firestore: db),
     matching: MatchingRepository(firestore: db, live: false),
   );
   vm.setOptionOrder(
@@ -430,252 +428,48 @@ void main() {
     expect(find.text('Ticket saved'), findsNothing);
   });
 
-  testWidgets('Send request: form, errors, confirm, toast and the pill', (
+  testWidgets('the Requests tab: only the empty text, nothing works', (
     t,
   ) async {
-    final vm = await open(
-      t,
-      tickets: [ticket(id: 'inv1-T1', name: 'Health bets')],
-    );
-    await press(t, find.text('Health bets'));
-    await t.scrollUntilVisible(
-      find.text('Send request'),
-      200,
-      scrollable: find.byType(Scrollable).first,
-    );
-    await press(t, find.text('Send request'));
-    expect(find.text('Between SAR 100,000 and SAR 300,000'), findsOneWidget);
-
-    // Nothing typed: the error shows after trying.
-    await press(t, find.text('Send request').last);
-    expect(find.text('Enter an amount.'), findsOneWidget);
-    expect(find.text('Send request?'), findsNothing);
-
-    vm.sendAmount.text = '400,000';
-    await t.pumpAndSettle();
-    expect(find.text('The most you can send is SAR 300,000.'), findsOneWidget);
-
-    vm.sendAmount.text = '200,000';
-    await t.pumpAndSettle();
-    await press(t, find.text('Send request').last);
-    expect(find.text('Send request?'), findsOneWidget);
-    expect(
-      find.text('Rafeeq Health will see your request for SAR 200,000.'),
-      findsOneWidget,
-    );
-    await press(t, find.text('Send request').last);
-    expect(find.text('Request sent to Rafeeq Health'), findsOneWidget);
-    expect(find.text('Request sent'), findsOneWidget);
-    // It also shows under "Requests" of the ticket.
-    expect(
-      find.text('SAR 200,000 · ${Formatters.dayMonthYear(DateTime.now())}'),
-      findsOneWidget,
-    );
-    expect(find.text('Pending'), findsOneWidget);
-    // Let the toast go away.
-    await t.pumpAndSettle(const Duration(seconds: 5));
-  });
-
-  testWidgets('Send request: Cancel closes at once, or asks after a change', (
-    t,
-  ) async {
-    final vm = await open(
-      t,
-      tickets: [ticket(id: 'inv1-T1', name: 'Health bets')],
-    );
-    await press(t, find.text('Health bets'));
-    await press(t, find.text('Send request'));
-    expect(find.text('Between SAR 100,000 and SAR 300,000'), findsOneWidget);
-    // Nothing typed: Cancel closes the form with no question.
-    await press(t, find.text('Cancel'));
-    expect(find.text('Discard changes?'), findsNothing);
-    expect(find.text('Between SAR 100,000 and SAR 300,000'), findsNothing);
-    // Something typed: Cancel asks first.
-    await press(t, find.text('Send request'));
-    vm.sendAmount.text = '150,000';
-    await t.pumpAndSettle();
-    await press(t, find.text('Cancel'));
-    expect(find.text('Discard changes?'), findsOneWidget);
-    expect(
-      find.text('If you go back now, your changes will be lost.'),
-      findsOneWidget,
-    );
-    await press(t, find.text('Keep editing'));
-    expect(find.text('Between SAR 100,000 and SAR 300,000'), findsOneWidget);
-    await press(t, find.text('Cancel'));
-    await press(t, find.text('Discard'));
-    expect(find.text('Between SAR 100,000 and SAR 300,000'), findsNothing);
-    expect(db.store[FirestoreCollections.requests], isNull);
-  });
-
-  testWidgets('the Requests tab: badge, filters, withdraw, cards do not open', (
-    t,
-  ) async {
-    (db.store[FirestoreCollections.requests] ??= {}).addAll({
-      'r1': {
-        'startupId': 'mock-rafeeq',
-        'founderId': 'f',
-        'investorId': 'inv1',
-        'message': '',
-        'amount': 150000,
-        'status': 'pending',
-        'createdAt': DateTime.now().subtract(const Duration(hours: 3)),
-        TicketFields.ticketId: 'inv1-T1',
-        TicketFields.startupName: 'Rafeeq Health',
-      },
-      'r2': {
-        'startupId': 'mock-daftar',
-        'founderId': 'f',
-        'investorId': 'inv1',
-        'message': '',
-        'amount': 120000,
-        'status': 'declined',
-        'createdAt': DateTime.now().subtract(const Duration(days: 4)),
-        TicketFields.ticketId: 'inv1-T1',
-        TicketFields.startupName: 'Daftar',
-      },
-    });
     await open(
       t,
       tickets: [ticket(id: 'inv1-T1', name: 'Health bets')],
     );
-    // The badge counts the pending requests.
-    expect(find.text('1'), findsOneWidget);
     await press(t, find.text('Requests').first);
     for (final f in [
-      'All · 2',
-      'Pending · 1',
+      'All · 0',
+      'Pending · 0',
       'Accepted · 0',
-      'Declined · 1',
+      'Declined · 0',
     ]) {
       expect(find.widgetWithText(AppFilterChip, f), findsOneWidget);
     }
-    expect(find.text('Rafeeq Health'), findsOneWidget);
-    expect(find.text('Daftar'), findsOneWidget);
-    expect(find.text('Ticket: Health bets'), findsNWidgets(2));
-    expect(find.text('SAR 150,000'), findsOneWidget);
-    expect(
-      find.text(
-        Formatters.dayMonthYear(
-          DateTime.now().subtract(const Duration(hours: 3)),
-        ),
-      ),
-      findsOneWidget,
-    );
-
-    // A card does not open anything.
-    await press(t, find.text('Rafeeq Health'));
-    expect(find.text('Rafeeq Health'), findsOneWidget);
-    expect(find.text('Investment Wallet'), findsOneWidget);
-
-    // Filter.
-    await press(t, find.widgetWithText(AppFilterChip, 'Declined · 1'));
-    expect(find.text('Daftar'), findsOneWidget);
-    expect(find.text('Rafeeq Health'), findsNothing);
-    await press(t, find.widgetWithText(AppFilterChip, 'All · 2'));
-
-    // Only the pending one has Withdraw.
-    expect(find.text('Withdraw'), findsOneWidget);
-    await press(t, find.text('Withdraw'));
-    expect(find.text('Withdraw request?'), findsOneWidget);
-    expect(
-      find.text('Rafeeq Health will no longer see this request.'),
-      findsOneWidget,
-    );
-    await press(t, find.text('Withdraw').last);
-    expect(find.text('Request withdrawn'), findsOneWidget);
-    expect(find.text('Rafeeq Health'), findsNothing);
-    // Let the toast go away.
-    await t.pumpAndSettle(const Duration(seconds: 5));
-  });
-
-  testWidgets('no requests: the empty text', (t) async {
-    await open(t);
-    await press(t, find.text('Requests').first);
+    await press(t, find.widgetWithText(AppFilterChip, 'Pending · 0'));
     expect(
       find.text('No requests yet. Send one from a matching ticket.'),
       findsOneWidget,
     );
   });
 
-  /// A request a startup sent to ticket inv1-T1.
-  void seedReceived({String status = 'pending'}) {
-    (db.store[FirestoreCollections.ticketRequests] ??= {})['S9~inv1-T1'] = {
-      'startupId': 'S9',
-      'founderId': 'f9',
-      'investorId': 'inv1',
-      'ticketId': 'inv1-T1',
-      'startupName': 'Nova Labs',
-      'amount': 150000,
-      'message': '',
-      'status': status,
-      'createdAt': DateTime(2026, 11, 3),
-    };
-  }
-
-  testWidgets('a request received shows on the ticket page and is accepted', (
-    t,
-  ) async {
-    seedReceived();
+  testWidgets('Send request on a match does nothing', (t) async {
     await open(
       t,
       tickets: [ticket(id: 'inv1-T1', name: 'Health bets')],
     );
     await press(t, find.text('Health bets'));
-    expect(find.text('Requests Received'), findsOneWidget);
     expect(
-      find.text('Startups that sent you a request for this ticket'),
+      find.text('No requests received for this ticket yet.'),
       findsOneWidget,
     );
-    expect(find.text('Nova Labs'), findsOneWidget);
-    expect(find.text('Request received'), findsOneWidget);
-    expect(find.text('SAR 150,000'), findsOneWidget);
-    expect(find.text('3 Nov 2026'), findsOneWidget);
-    expect(find.text('Pending'), findsOneWidget);
-
-    await press(t, find.text('Accept'));
-    expect(find.text('Request accepted'), findsOneWidget);
-    expect(find.text('Accepted'), findsOneWidget);
-    expect(find.text('Accept'), findsNothing);
-    expect(
-      db.store[FirestoreCollections.ticketRequests]!['S9~inv1-T1']!['status'],
-      'accepted',
+    await t.scrollUntilVisible(
+      find.text('Send request'),
+      200,
+      scrollable: find.byType(Scrollable).first,
     );
-    await t.pumpAndSettle(const Duration(seconds: 5));
-  });
-
-  testWidgets('a request received can be declined', (t) async {
-    seedReceived();
-    await open(
-      t,
-      tickets: [ticket(id: 'inv1-T1', name: 'Health bets')],
-    );
-    await press(t, find.text('Health bets'));
-    await press(t, find.text('Decline'));
-    expect(find.text('Request declined'), findsOneWidget);
-    expect(
-      db.store[FirestoreCollections.ticketRequests]!['S9~inv1-T1']!['status'],
-      'declined',
-    );
-    await t.pumpAndSettle(const Duration(seconds: 5));
-  });
-
-  testWidgets('the Requests tab lists what was received, with its ticket', (
-    t,
-  ) async {
-    seedReceived();
-    final vm = await open(
-      t,
-      tickets: [ticket(id: 'inv1-T1', name: 'Health bets')],
-    );
-    // The badge counts it.
-    expect(vm.pendingCount, 1);
-    await press(t, find.text('Requests').first);
-    expect(find.text('Nova Labs'), findsOneWidget);
-    expect(find.text('Request received · Health bets'), findsOneWidget);
-    expect(find.widgetWithText(AppFilterChip, 'All · 1'), findsOneWidget);
-    expect(find.widgetWithText(AppFilterChip, 'Pending · 1'), findsOneWidget);
-    await press(t, find.widgetWithText(AppFilterChip, 'Declined · 0'));
-    expect(find.text('Nova Labs'), findsNothing);
+    await press(t, find.text('Send request'));
+    expect(find.text('Send request?'), findsNothing);
+    expect(find.byType(TextField), findsNothing);
+    expect(find.text('Send request'), findsOneWidget);
+    expect(db.store['requests'], isNull);
   });
 }

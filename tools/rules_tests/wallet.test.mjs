@@ -1,5 +1,5 @@
-// Security-rules tests for the Investment Wallet: `tickets` and the requests an
-// investor sends with a ticket (run with the Firestore emulator; see README.md).
+// Security-rules tests for the Investment Wallet: `tickets` (run with the
+// Firestore emulator; see README.md).
 import { initializeTestEnvironment } from '@firebase/rules-unit-testing';
 import {
   setDoc, getDoc, getDocs, updateDoc, deleteDoc, doc, collection, query, where,
@@ -27,7 +27,6 @@ async function check(label, expectOk, fn) {
 
 const inv1 = env.authenticatedContext('i1', { email: 'i1@gmail.com', email_verified: true }).firestore();
 const inv2 = env.authenticatedContext('i2', { email: 'i2@gmail.com', email_verified: true }).firestore();
-const founder = env.authenticatedContext('f1', { email: 'f1@gmail.com', email_verified: true }).firestore();
 const stranger = env.authenticatedContext('x1', { email: 'x1@gmail.com', email_verified: true }).firestore();
 const anon = env.unauthenticatedContext().firestore();
 
@@ -39,16 +38,6 @@ const ticketBase = {
 
 await env.withSecurityRulesDisabled(async (ctx) => {
   const db = ctx.firestore();
-  await setDoc(doc(db, 'startups', 'S1'), {
-    founderId: 'f1', name: 'Rafeeq', description: 'd', sector: 'healthtech', stage: 'seed',
-    commerceModel: 'b2b', location: 'riyadh', lookingFor: ['funding'], isPublic: true,
-    fundingRequirement: 500000, raisedInRound: 100000, memberIds: [], memberRoles: {},
-  });
-  await setDoc(doc(db, 'startups', 'S3'), {
-    founderId: 'f1', name: 'Idle', description: 'd', sector: 'healthtech', stage: 'seed',
-    commerceModel: 'b2b', location: 'riyadh', lookingFor: ['talent'], isPublic: true,
-    memberIds: [], memberRoles: {},
-  });
   await setDoc(doc(db, 'tickets', 'i1-T1'), ticketBase);
   await setDoc(doc(db, 'tickets', 'i1-T2'), { ...ticketBase, status: 'closed' });
   await setDoc(doc(db, 'tickets', 'i1-T4'), { ...ticketBase, amountMax: 900000 });
@@ -101,52 +90,11 @@ await check("another investor cannot close", false, () => updateDoc(doc(inv2, 't
 await check("another investor cannot delete", false, () => deleteDoc(doc(inv2, 'tickets', 'i1-T9')));
 await check('investor deletes their own ticket (account deletion)', true, () => deleteDoc(doc(inv1, 'tickets', 'i1-T9')));
 
-console.log('--- requests sent with a ticket');
-const req = (extra = {}) => ({
-  startupId: 'S1', founderId: 'f1', investorId: 'i1', message: '', amount: 200000,
-  status: 'pending', createdAt: serverTimestamp(), ticketId: 'i1-T5x', startupName: 'Rafeeq', ...extra,
-});
-await env.withSecurityRulesDisabled(async (ctx) => {
-  await setDoc(doc(ctx.firestore(), 'tickets', 'i1-T6'), ticketBase); // open 100K-300K
-  await setDoc(doc(ctx.firestore(), 'tickets', 'i1-T7'), { ...ticketBase, amountMax: 900000 }); // open 100K-900K
-});
-const ok = (extra = {}) => req({ ticketId: 'i1-T6', ...extra });
-await check('investor sends a request with their open ticket', true, () => setDoc(doc(inv1, 'requests', 'r1'), ok()));
-await check('the minimum is allowed', true, () => setDoc(doc(inv1, 'requests', 'r2'), ok({ amount: 100000 })));
-await check('the ticket maximum is allowed', true, () => setDoc(doc(inv1, 'requests', 'r3'), ok({ amount: 300000 })));
-await check('below the ticket minimum is refused', false, () => setDoc(doc(inv1, 'requests', 'r4'), ok({ amount: 99999 })));
-await check('above the ticket maximum is refused', false, () => setDoc(doc(inv1, 'requests', 'r5'), ok({ amount: 300001 })));
-await check('the round still needs 400,000: exactly that is allowed', true, () => setDoc(doc(inv1, 'requests', 'r6'), req({ ticketId: 'i1-T7', amount: 400000 })));
-await check('more than the round still needs is refused', false, () => setDoc(doc(inv1, 'requests', 'r7'), req({ ticketId: 'i1-T7', amount: 400001 })));
-await check('a closed ticket cannot be used', false, () => setDoc(doc(inv1, 'requests', 'r8'), ok({ ticketId: 'i1-T2' })));
-await check('a used ticket cannot be used again', false, () => setDoc(doc(inv1, 'requests', 'r9'), ok({ ticketId: 'i1-T5' })));
-await check("cannot use another investor's ticket", false, () => setDoc(doc(inv1, 'requests', 'r10'), ok({ ticketId: 'i2-T1' })));
-await check('cannot send as another investor', false, () => setDoc(doc(inv1, 'requests', 'r11'), ok({ investorId: 'i2' })));
-await check('the founder must be the startup owner', false, () => setDoc(doc(inv1, 'requests', 'r12'), ok({ founderId: 'x1' })));
-await check('a startup that is not raising is refused', false, () => setDoc(doc(inv1, 'requests', 'r13'), ok({ startupId: 'S3' })));
-await check('a ticket request has no equity', false, () => setDoc(doc(inv1, 'requests', 'r14'), ok({ equity: 10 })));
-await check('startupName over 60 characters is refused', false, () => setDoc(doc(inv1, 'requests', 'r15'), ok({ startupName: 'x'.repeat(61) })));
-await check('must start as pending', false, () => setDoc(doc(inv1, 'requests', 'r16'), ok({ status: 'accepted' })));
-await check('an unknown field is refused', false, () => setDoc(doc(inv1, 'requests', 'r17'), ok({ extra: 1 })));
-await check('signed out cannot send', false, () => setDoc(doc(anon, 'requests', 'r18'), ok()));
-
-console.log('--- requests: the existing request (no ticket) is unchanged');
-const legacy = { startupId: 'S1', founderId: 'f1', investorId: 'i1', message: 'Hello', amount: 300000, equity: 15, status: 'pending', createdAt: serverTimestamp() };
-await check('a request with an equity is still allowed', true, () => setDoc(doc(inv1, 'requests', 'l1'), legacy));
-await check('a request without a ticket still needs an equity', false, () => setDoc(doc(inv1, 'requests', 'l2'), { ...legacy, equity: undefined }));
-await check('equity 100 is still refused', false, () => setDoc(doc(inv1, 'requests', 'l3'), { ...legacy, equity: 100 }));
-
-console.log('--- requests: read, decide, withdraw, delete');
-await check('investor reads their own requests', true, () => getDocs(query(collection(inv1, 'requests'), where('investorId', '==', 'i1'))));
-await check('the startup owner reads the request', true, () => getDoc(doc(founder, 'requests', 'r1')));
-await check('a stranger cannot read it', false, () => getDoc(doc(stranger, 'requests', 'r1')));
-await check('another investor cannot read it', false, () => getDoc(doc(inv2, 'requests', 'r1')));
-await check('the owner can still accept (status only)', true, () => updateDoc(doc(founder, 'requests', 'r3'), { status: 'accepted' }));
-await check('the investor cannot change the status', false, () => updateDoc(doc(inv1, 'requests', 'r1'), { status: 'accepted' }));
-await check('a stranger cannot withdraw', false, () => deleteDoc(doc(stranger, 'requests', 'r1')));
-await check('another investor cannot withdraw', false, () => deleteDoc(doc(inv2, 'requests', 'r1')));
-await check('the investor withdraws their request', true, () => deleteDoc(doc(inv1, 'requests', 'r1')));
-await check('the startup owner removes requests of a deleted startup', true, () => deleteDoc(doc(founder, 'requests', 'r2')));
+console.log('--- requests are not part of this release');
+for (const c of ['requests', 'ticketRequests', 'interests']) {
+  await check(`nobody writes ${c}`, false, () => setDoc(doc(inv1, c, 'r1'), { investorId: 'i1', status: 'pending' }));
+  await check(`nobody reads ${c}`, false, () => getDocs(query(collection(inv1, c), where('investorId', '==', 'i1'))));
+}
 
 await env.cleanup();
 console.log(fails === 0 ? 'ALL PASSED' : `${fails} FAILED`);

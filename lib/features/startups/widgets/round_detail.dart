@@ -6,10 +6,8 @@ import '../../../data_access/repositories/discovery_repository.dart';
 import '../../../helpers/formatters.dart';
 import '../../../models/funding_round.dart';
 import '../../../models/match_summary.dart';
-import '../../../models/connection_request.dart';
 import '../../../models/investor_profile.dart';
 import '../../connection_requests/screens/requests_tab.dart';
-import '../../connection_requests/view_models/requests_view_model.dart';
 import '../../profiles/screens/investor_profile_screen.dart';
 import '../view_models/rounds_view_model.dart';
 import 'founder_ui.dart';
@@ -23,9 +21,6 @@ class RoundDetail extends StatelessWidget {
     required this.number,
     required this.onBack,
     this.canManage = true,
-    this.requests,
-    this.onCheck,
-    this.onToast,
   });
 
   final RoundsViewModel vm;
@@ -35,10 +30,6 @@ class RoundDetail extends StatelessWidget {
 
   /// False for a view-only team member: no "Edit round".
   final bool canManage;
-
-  final RequestsViewModel? requests;
-  final void Function(ConnectionRequest request)? onCheck;
-  final void Function(String message)? onToast;
 
   FundingRound? get _round {
     for (final r in vm.rounds) {
@@ -75,19 +66,14 @@ class RoundDetail extends StatelessWidget {
         ),
         const SizedBox(height: 10),
         _Investors(round: round),
-        if (round.isOpen && requests != null) ...[
+        if (round.isOpen) ...[
           const SizedBox(height: 22),
           const SectionTitle(
             title: 'Investment Requests',
             subtitle: 'Investors asking to join this round',
           ),
           const SizedBox(height: 10),
-          RequestsTab(
-            vm: requests!,
-            onCheck: onCheck ?? (_) {},
-            onToast: onToast ?? (_) {},
-            canAct: canManage,
-          ),
+          const RequestsTab(),
         ],
         if (round.isOpen) ...[
           const SizedBox(height: 22),

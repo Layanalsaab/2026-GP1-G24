@@ -3,218 +3,52 @@ import 'package:flutter/material.dart';
 import '../../../app_constants/founder_tools_strings.dart';
 import '../../startups/widgets/founder_ui.dart';
 import '../../startups/widgets/manage_card.dart';
-import '../view_models/interest_view_model.dart';
 
+/// Manage startup -> EOI (front end only).
 class InterestTab extends StatelessWidget {
-  const InterestTab({
-    super.key,
-    required this.vm,
-    required this.onToast,
-    this.canAct = true,
-  });
-
-  final InterestViewModel vm;
-
-  /// False hides the reply button (a team member only reads).
-  final bool canAct;
-  final void Function(String message) onToast;
+  const InterestTab({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return ListenableBuilder(
-      listenable: vm,
-      builder: (context, _) {
-        final items = vm.visible;
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const ManageTabHeader(
+          title: FounderToolsStrings.interestTitle,
+          subtitle: FounderToolsStrings.interestSubtitle,
+        ),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
           children: [
-            const ManageTabHeader(
-              title: FounderToolsStrings.interestTitle,
-              subtitle: FounderToolsStrings.interestSubtitle,
+            AppFilterChip(
+              label: FounderToolsStrings.filterLabel(
+                FounderToolsStrings.interestNew,
+                0,
+              ),
+              selected: true,
+              onTap: () {},
             ),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                AppFilterChip(
-                  label: FounderToolsStrings.filterLabel(
-                    FounderToolsStrings.interestNew,
-                    vm.newCount,
-                  ),
-                  selected: vm.onlyNew,
-                  onTap: () => vm.select(onlyNew: true),
-                ),
-                AppFilterChip(
-                  label: FounderToolsStrings.filterLabel(
-                    FounderToolsStrings.interestAll,
-                    vm.allCount,
-                  ),
-                  selected: !vm.onlyNew,
-                  onTap: () => vm.select(onlyNew: false),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            ManageCard(
-              padding: items.isEmpty
-                  ? const EdgeInsets.all(16)
-                  : const EdgeInsets.symmetric(horizontal: 16),
-              child: items.isEmpty
-                  ? Text(
-                      vm.onlyNew
-                          ? FounderToolsStrings.interestEmpty
-                          : FounderToolsStrings.interestAllEmpty,
-                      style: AppText.sans(
-                        size: 14,
-                        height: 20,
-                        color: AppColors.grey,
-                      ),
-                    )
-                  : Column(
-                      children: [
-                        for (var i = 0; i < items.length; i++)
-                          Container(
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            decoration: BoxDecoration(
-                              border: i == items.length - 1
-                                  ? null
-                                  : Border(
-                                      bottom: BorderSide(
-                                        color: AppColors.dividerSoft,
-                                      ),
-                                    ),
-                            ),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                TileAvatar(
-                                  initials: appInitials(items[i].name),
-                                  tone: i.isEven
-                                      ? TileTone.moss
-                                      : TileTone.gold,
-                                  size: 42,
-                                  fontSize: 14,
-                                  round: true,
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
-                                        children: [
-                                          Flexible(
-                                            child: Text(
-                                              items[i].name,
-                                              style: AppText.sans(
-                                                size: 16.5,
-                                                weight: FontWeight.w600,
-                                              ),
-                                            ),
-                                          ),
-                                          if (items[i].isNew) ...[
-                                            const SizedBox(width: 6),
-                                            Semantics(
-                                              label: 'New',
-                                              child: Container(
-                                                width: 8,
-                                                height: 8,
-                                                decoration: const BoxDecoration(
-                                                  color: AppColors.gold,
-                                                  shape: BoxShape.circle,
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ],
-                                      ),
-                                      Text(
-                                        _sub(
-                                          items[i].roleLine,
-                                          items[i].whenLabel,
-                                        ),
-                                        style: AppText.sans(
-                                          size: 14,
-                                          height: 20,
-                                          color: AppColors.grey,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        items[i].message,
-                                        style: AppText.sans(
-                                          size: 16,
-                                          height: 24,
-                                          color: AppColors.paragraph,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                if (canAct) ...[
-                                  const SizedBox(width: 12),
-                                  Semantics(
-                                    button: true,
-                                    label:
-                                        '${FounderToolsStrings.replyLabel} ${items[i].name}',
-                                    excludeSemantics: true,
-                                    child: const InterestReplyButton(),
-                                  ),
-                                ],
-                              ],
-                            ),
-                          ),
-                      ],
-                    ),
+            AppFilterChip(
+              label: FounderToolsStrings.filterLabel(
+                FounderToolsStrings.interestAll,
+                0,
+              ),
+              selected: false,
+              onTap: () {},
             ),
           ],
-        );
-      },
-    );
-  }
-
-  static String _sub(String role, String? when) =>
-      when == null || when.isEmpty ? role : '$role · $when';
-}
-
-class InterestReplyButton extends StatefulWidget {
-  const InterestReplyButton({super.key});
-
-  @override
-  State<InterestReplyButton> createState() => _InterestReplyButtonState();
-}
-
-class _InterestReplyButtonState extends State<InterestReplyButton> {
-  bool _hover = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return MouseRegion(
-      onEnter: (_) {
-        if (!_hover && mounted) setState(() => _hover = true);
-      },
-      onExit: (_) {
-        if (_hover && mounted) setState(() => _hover = false);
-      },
-      child: AnimatedContainer(
-        duration: Motion.dur(context, const Duration(milliseconds: 150)),
-        curve: Curves.ease,
-        width: 38,
-        height: 38,
-        decoration: BoxDecoration(
-          color: _hover ? AppColors.moss100 : AppColors.moss50,
-          shape: BoxShape.circle,
         ),
-        child: Center(
-          child: AppIcon.filled(
-            AppIcons.chat,
-            size: 20,
-            color: AppColors.mossText,
+        const SizedBox(height: 12),
+        ManageCard(
+          padding: const EdgeInsets.all(16),
+          child: Text(
+            FounderToolsStrings.interestEmpty,
+            style: AppText.sans(size: 14, height: 20, color: AppColors.grey),
           ),
         ),
-      ),
+      ],
     );
   }
 }

@@ -7,9 +7,6 @@ import 'package:startsa/data_access/repositories/activity_repository.dart';
 import 'package:startsa/data_access/repositories/bookmark_repository.dart';
 import 'package:startsa/data_access/repositories/discovery_repository.dart';
 import 'package:startsa/data_access/repositories/funding_round_repository.dart';
-import 'package:startsa/data_access/repositories/interaction_repository.dart';
-import 'package:startsa/data_access/repositories/interest_repository.dart';
-import 'package:startsa/data_access/repositories/request_repository.dart';
 import 'package:startsa/data_access/repositories/startup_repository.dart';
 import 'package:startsa/data_access/repositories/user_repository.dart';
 import 'package:startsa/features/search/view_models/home_view_model.dart';
@@ -72,8 +69,6 @@ void main() {
     StartupRepository.instance = FakeStartupRepository()
       ..startups.add(PrototypeSeed.rafeeq);
     UserRepository.instance = FakeUserRepository();
-    RequestRepository.instance = RequestRepository(sample: true);
-    InterestRepository.instance = InterestRepository(sample: true);
     ActivityRepository.instance = ActivityRepository(sample: true);
     DiscoveryRepository.instance = DiscoveryRepository.sample();
     FundingRoundRepository.instance = FundingRoundRepository.sample();
@@ -338,14 +333,6 @@ void main() {
   });
 
   group('Part 7 · who sees which startup', () {
-    test('a private startup is never trending', () {
-      final privateId = PrototypeSeed.daftar.id; // private in the sample
-      final ids = InteractionRepository()
-          .trendingStartups(TrendingRange.week)
-          .map((i) => i.id);
-      expect(ids, isNot(contains(privateId)));
-    });
-
     test('the startups I belong to are in my Hub but not in For You', () {
       final naql = PrototypeSeed.naql.id;
       final m = HomeViewModel(role: SessionRole.founder, ownStartupIds: {naql})
@@ -353,14 +340,6 @@ void main() {
       addTearDown(m.dispose);
       expect(m.hubCards.any((i) => i.id == naql), isTrue);
       expect(m.recommended.any((i) => i.id == naql), isFalse);
-    });
-
-    test('they still appear in Trending', () {
-      final naql = PrototypeSeed.naql.id;
-      final m = HomeViewModel(role: SessionRole.founder, ownStartupIds: {naql})
-        ..setTrendingSwitch(0);
-      addTearDown(m.dispose);
-      expect(m.trending.any((i) => i.id == naql), isTrue);
     });
 
     test('the session lists every startup the user belongs to', () {

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../../../app_constants/home_strings.dart';
-import '../../../data_access/repositories/interaction_repository.dart';
 import '../../../models/latest_range.dart';
 import '../../../shared_ui/icons/app_icons.dart';
 import '../../../models/home_item.dart';
@@ -129,25 +128,15 @@ class ExploreScreen extends StatelessWidget {
     );
   }
 
-  List<HomeSlot> _trending(HomeViewModel vm) {
-    final items = vm.trending;
-    return [
-      _switch('trending', vm.trendingSwitch, vm.setTrendingSwitch),
-      _heading(
-        _InfoHeading(
-          title: HomeStrings.top30,
-          trailing: RangeDropdown(
-            options: [for (final r in TrendingRange.values) r.label],
-            selectedIndex: vm.range.index,
-            onSelected: vm.setRange,
-          ),
-        ),
-        bottom: 0,
+  List<HomeSlot> _trending(HomeViewModel vm) => [
+    const HomeSlot(
+      EmptyState(
+        title: HomeStrings.noTrendingTitle,
+        message: HomeStrings.noTrendingMessage,
       ),
-      cardsSlot(items, scope: '${vm.paneKey}|${vm.range.name}'),
-      if (vm.isGuest) HomeSlot(GuestJoinCard(onSignUp: onSignUp)),
-    ];
-  }
+    ),
+    if (vm.isGuest) HomeSlot(GuestJoinCard(onSignUp: onSignUp)),
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -170,13 +159,12 @@ class ExploreScreen extends StatelessWidget {
 }
 
 class _InfoHeading extends StatefulWidget {
-  const _InfoHeading({required this.title, this.info, this.trailing});
+  const _InfoHeading({required this.title, this.info});
 
   final String title;
 
   /// The tip behind the (i) button; null shows no button.
   final String? info;
-  final Widget? trailing;
 
   @override
   State<_InfoHeading> createState() => _InfoHeadingState();
@@ -207,10 +195,6 @@ class _InfoHeadingState extends State<_InfoHeading> {
                   semanticLabel: 'About this list',
                   onTap: () => setState(() => _open = !_open),
                 ),
-              ],
-              if (widget.trailing != null) ...[
-                const Spacer(),
-                widget.trailing!,
               ],
             ],
           ),

@@ -194,15 +194,6 @@ class _StartupStepsScreenState extends State<StartupStepsScreen> {
       case StepAdvance.memberOpen:
         AppToast.error(context, FounderToolsStrings.saveMemberFirst);
       case StepAdvance.readyToSave:
-        if (_edit) {
-          final go = await showSaveConfirmDialog(
-            context,
-            title: FounderToolsStrings.saveConfirmTitle,
-            message: FounderToolsStrings.saveStartupMessage,
-            confirmLabel: FounderToolsStrings.saveConfirmButton,
-          );
-          if (!go || !mounted) return;
-        }
         await _save();
     }
   }

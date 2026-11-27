@@ -26,7 +26,7 @@ void main() {
           final m = vm(r);
           expect(m.hubSwitch, want, reason: '$r Hub');
           expect(m.resultsSwitch, want, reason: '$r Explore results');
-          expect(m.trendingSwitch, want, reason: '$r Trending');
+          expect(m.latestSwitch, want, reason: '$r Latest');
           m.dispose();
         }
         expect(vm(SessionRole.founder).tab, HomeTab.hub);
@@ -178,14 +178,6 @@ void main() {
   });
 
   group('explore lists', () {
-    test('trending has at most 30 and follows the range', () {
-      final m = vm(SessionRole.investor);
-      expect(m.trending.length, lessThanOrEqualTo(30));
-      m.setRange(0);
-      expect(m.range.label, 'Today');
-      m.dispose();
-    });
-
     test('the tabs are Latest, Trending, For You and open on Latest', () {
       expect(
         [for (final t in ExploreTab.defaults) t.label],
@@ -199,22 +191,6 @@ void main() {
       expect(m.effectiveExploreTab, 2);
       m.selectExploreTab(9);
       expect(m.effectiveExploreTab, 2);
-      m.dispose();
-    });
-
-    test('trending cards carry the rank only (no analytics)', () {
-      final m = vm(SessionRole.investor);
-      final items = m.trending;
-      expect(items.first.highlight, '#1');
-      expect(items.first.highlightReason, isNull);
-      expect(items[1].highlight, '#2');
-      for (final i in items) {
-        expect(i.highlight, matches(RegExp(r'^#\d+$')));
-        expect(i.highlightReason, isNull);
-      }
-      // The range does not add anything to a card.
-      m.setRange(0);
-      expect(m.trending.first.highlightReason, isNull);
       m.dispose();
     });
 

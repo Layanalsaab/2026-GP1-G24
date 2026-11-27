@@ -6,8 +6,6 @@ import 'package:flutter/material.dart';
 
 import '../../../app_constants/founder_tools_strings.dart';
 import '../../../data_access/repositories/bookmark_repository.dart';
-import '../../../data_access/repositories/interest_repository.dart';
-import '../../../data_access/repositories/request_repository.dart';
 import '../../../helpers/formatters.dart';
 import '../../../models/startup.dart';
 import '../../../models/match_summary.dart';
@@ -86,15 +84,10 @@ class _StartupProfileScreenState extends State<StartupProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final bookmarks = BookmarkRepository.instance.keys;
-    final requests = RequestRepository.instance.outgoing;
-    final interests = InterestRepository.instance.sent;
     return ListenableBuilder(
-      listenable: Listenable.merge([_vm, bookmarks, requests, interests]),
+      listenable: Listenable.merge([_vm, bookmarks]),
       builder: (context, _) {
         final bookmarked = bookmarks.value.contains(_vm.key);
-        _vm.ctaDone = _vm.isGuest
-            ? interests.value.contains(_vm.key)
-            : requests.value.contains(_vm.key);
         final preview = _vm.isPreview;
         final s = _vm.startup;
         final header = TabbedHeader(
@@ -210,7 +203,6 @@ class _StartupProfileScreenState extends State<StartupProfileScreen> {
                 ProfileCtaBar(
                   label: _vm.ctaLabel,
                   icon: _vm.isGuest ? AppIcons.chat : AppIcons.send,
-                  done: _vm.ctaDone,
                 ),
             ],
           ),

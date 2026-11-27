@@ -6,11 +6,9 @@ import 'package:startsa/data_access/repositories/matching_repository.dart';
 import 'package:startsa/data_access/repositories/ticket_repository.dart';
 import 'package:startsa/features/wallet/view_models/wallet_view_model.dart';
 import 'package:startsa/helpers/ticket_rules.dart';
-import 'package:startsa/models/connection_request.dart';
 import 'package:startsa/models/investment_ticket.dart';
 import 'package:startsa/models/startup.dart';
 import 'package:startsa/models/startup_enums.dart';
-import 'package:startsa/recommender/content_ranker.dart' show MatchResult;
 
 /// Firestore kept in a map: collection -> document id -> data.
 class MemoryFirestore extends FirestoreService {
@@ -177,12 +175,6 @@ void main() {
       ];
     }
 
-    test('what a round still needs is funding minus raised', () {
-      expect(remainingOf(rafeeq), 500000);
-      expect(remainingOf(rafeeq.copyWith(raisedInRound: 200000)), 300000);
-      expect(remainingOf(rafeeq.copyWith(raisedInRound: 900000)), 0);
-    });
-
     test('same sector and stage, minimum within what is left', () {
       final m = matches(ticket(), [rafeeq]).single;
       expect(m.remaining, 500000);
@@ -269,28 +261,6 @@ void main() {
       expect(shortList(['A']), 'A');
       expect(shortList(['A', 'B']), 'A, B');
       expect(shortList(['A', 'B', 'C', 'D']), 'A, B +2');
-    });
-
-    test('timeAgo', () {
-      final now = DateTime(2026, 11, 7, 12);
-      expect(timeAgo(now, now: now), 'just now');
-      expect(
-        timeAgo(now.subtract(const Duration(minutes: 5)), now: now),
-        '5m ago',
-      );
-      expect(
-        timeAgo(now.subtract(const Duration(hours: 3)), now: now),
-        '3h ago',
-      );
-      expect(
-        timeAgo(now.subtract(const Duration(days: 2)), now: now),
-        '2d ago',
-      );
-      expect(
-        timeAgo(now.subtract(const Duration(days: 14)), now: now),
-        '2w ago',
-      );
-      expect(timeAgo(null, now: now), 'just now');
     });
 
     test('a ticket number comes from its id', () {
@@ -485,131 +455,6 @@ void main() {
     );
 
     test(
-      'send request: the amount is checked against the ticket and the round',
-      () async {
-        await seed([ticket(id: 'inv1-T1', min: 100000, max: 300000)]);
-        vm = await make();
-        final t = vm.tickets.first;
-        final m = vm.matchesOf(t).single;
-        vm.startSend(t, m.startup.id);
-        expect(vm.sendError(t, m.remaining), isNull);
-        vm.sendAmount.text = '';
-        vm.trySend(t, m.remaining);
-        expect(vm.sendError(t, m.remaining), 'Enter an amount.');
-        vm.sendAmount.text = '50,000';
-        expect(
-          vm.sendError(t, m.remaining),
-          'The minimum for this ticket is SAR 100,000.',
-        );
-        vm.sendAmount.text = '400,000';
-        // The ticket's maximum is smaller than what the round needs.
-        expect(
-          vm.sendError(t, m.remaining),
-          'The most you can send is SAR 300,000.',
-        );
-        vm.sendAmount.text = '200,000';
-        expect(vm.sendError(t, m.remaining), isNull);
-        expect(
-          TicketSend.range(t, m.remaining),
-          'Between SAR 100,000 and SAR 300,000',
-        );
-      },
-    );
-
-    test('send request: the most is what the round still needs', () async {
-      await seed([ticket(id: 'inv1-T1', min: 100000, max: 900000)]);
-      vm = await make();
-      final t = vm.tickets.first;
-      expect(TicketSend.most(t, 500000), 500000);
-    });
-
-    test(
-      'sending stores a pending request with the ticket and amount',
-      () async {
-        await seed([ticket(id: 'inv1-T1')]);
-        vm = await make();
-        final t = vm.tickets.first;
-        final m = vm.matchesOf(t).single;
-        vm.startSend(t, m.startup.id);
-        vm.sendAmount.text = '200,000';
-        expect(vm.trySend(t, m.remaining), isTrue);
-        expect(await vm.sendRequest(t, m), isTrue);
-        expect(vm.sendingTo, isNull);
-        expect(vm.requestSent(t, m.startup.id), isTrue);
-        expect(vm.pendingCount, 1);
-        final doc = db.store[FirestoreCollections.requests]!.values.single;
-        expect(doc['ticketId'], 'inv1-T1');
-        expect(doc['amount'], 200000);
-        expect(doc['status'], 'pending');
-        expect(doc['startupId'], m.startup.id);
-        expect(doc['investorId'], 'inv1');
-      },
-    );
-
-    test('a closed or used ticket cannot send a request', () async {
-      await seed([ticket(id: 'inv1-T1', status: TicketStatus.closed)]);
-      vm = await make();
-      final t = vm.tickets.first;
-      vm.startSend(t, 'mock-rafeeq');
-      expect(vm.sendingTo, isNull);
-      vm.sendAmount.text = '200,000';
-      final fake = TicketMatch(
-        startup: PrototypeSeed.rafeeq,
-        result: const MatchResult(
-          id: 'mock-rafeeq',
-          name: 'Rafeeq Health',
-          score: 1,
-          percent: 100,
-          rows: [],
-          remaining: 500000,
-        ),
-      );
-      expect(await vm.sendRequest(t, fake), isFalse);
-      expect(db.store[FirestoreCollections.requests], isNull);
-    });
-
-    test('requests: filters, pending count and withdraw', () async {
-      await seed([ticket(id: 'inv1-T1')]);
-      (db.store[FirestoreCollections.requests] ??= {}).addAll({
-        'r1': _requestDoc('r1', 'pending', 100000),
-        'r2': _requestDoc('r2', 'accepted', 150000),
-        'r3': _requestDoc('r3', 'declined', 120000),
-      });
-      vm = await make();
-      expect(vm.requests.length, 3);
-      expect(vm.pendingCount, 1);
-      vm.setFilter(RequestFilter.accepted);
-      expect([for (final r in vm.visibleRequests) r.id], ['r2']);
-      vm.setFilter(RequestFilter.all);
-      expect(vm.visibleRequests.length, 3);
-      // Only a pending request is withdrawn.
-      final accepted = vm.requests.firstWhere((r) => r.id == 'r2');
-      expect(await vm.withdraw(accepted), isFalse);
-      final pending = vm.requests.firstWhere((r) => r.id == 'r1');
-      expect(await vm.withdraw(pending), isTrue);
-      expect(vm.pendingCount, 0);
-      expect(
-        db.store[FirestoreCollections.requests]!.containsKey('r1'),
-        isFalse,
-      );
-    });
-
-    test('a request is shown with the ticket it was sent with', () async {
-      await seed([ticket(id: 'inv1-T1', name: 'Health bets')]);
-      (db.store[FirestoreCollections.requests] ??= {})['r1'] = _requestDoc(
-        'r1',
-        'pending',
-        100000,
-      );
-      vm = await make();
-      expect(vm.ticketName('inv1-T1'), 'Health bets');
-      expect(
-        vm.requestsOfTicket(vm.tickets.first).single.startupName,
-        'Rafeeq Health',
-      );
-    });
-
-    test(
       'Other in the sectors: the typed text is the ticket\'s sector',
       () async {
         vm = await make();
@@ -646,6 +491,12 @@ void main() {
       expect(vm.sectors, isEmpty);
     });
 
+    test('deleting an investor account removes their tickets', () async {
+      await seed([ticket(id: 'inv1-T1'), ticket(id: 'inv1-T2')]);
+      await TicketRepository(firestore: db).removeAllFor('inv1');
+      expect(db.store[FirestoreCollections.tickets], isEmpty);
+    });
+
     test('editing a ticket with a typed sector shows it under Other', () async {
       await seed([
         ticket(id: 'inv1-T1', sectors: ['HealthTech', 'SportsTech']),
@@ -659,55 +510,8 @@ void main() {
       vm.setSectorOther('Esports');
       expect(vm.formDirty, isTrue);
     });
-
-    test(
-      'an investor account deleted removes its tickets and requests',
-      () async {
-        await seed([ticket(id: 'inv1-T1')]);
-        (db.store[FirestoreCollections.requests] ??= {})['r1'] = _requestDoc(
-          'r1',
-          'pending',
-          100000,
-        );
-        await TicketRepository(firestore: db).removeAllFor('inv1');
-        expect(db.store[FirestoreCollections.tickets], isEmpty);
-        expect(db.store[FirestoreCollections.requests], isEmpty);
-      },
-    );
-
-    test('a deleted startup removes the requests sent to it', () async {
-      (db.store[FirestoreCollections.requests] ??= {})['r1'] = _requestDoc(
-        'r1',
-        'pending',
-        100000,
-      );
-      await TicketRepository(firestore: db)
-          .removeRequestsForStartup('mock-rafeeq');
-      expect(db.store[FirestoreCollections.requests], isEmpty);
-    });
-
-    test('a request status is read from the stored value', () {
-      final r = TicketRequest.fromMap('r', _requestDoc('r', 'accepted', 1));
-      expect(r!.status, RequestStatus.accepted);
-      expect(
-        TicketRequest.fromMap('x', {'startupId': 's', 'amount': 1}),
-        isNull,
-      );
-    });
   });
 }
-
-Map<String, Object?> _requestDoc(String id, String status, int amount) => {
-  'startupId': 'mock-rafeeq',
-  'founderId': 'mock-founder-1',
-  'investorId': 'inv1',
-  'message': '',
-  'amount': amount,
-  'status': status,
-  'createdAt': DateTime(2026, 11, 6),
-  TicketFields.ticketId: 'inv1-T1',
-  TicketFields.startupName: 'Rafeeq Health',
-};
 
 /// The public startups for the matches.
 class _StartupsFirestore extends FirestoreService {

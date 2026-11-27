@@ -12,7 +12,6 @@ import 'invitation_repository.dart';
 import 'notice_repository.dart';
 import 'startup_repository.dart';
 import 'ticket_repository.dart';
-import 'ticket_request_repository.dart';
 import 'team_lookup.dart';
 import 'user_repository.dart';
 
@@ -253,8 +252,8 @@ class AuthRepository {
     } else if (!_auth.signedInRecently) {
       throw const AuthException(AuthFailure.requiresRecentLogin);
     }
-    // Delete the investor's tickets and requests.
-    await _removeInvestorData(account.uid);
+    // Delete the investor's tickets.
+    await TicketRepository.instance.removeAllFor(account.uid);
     // Close or delete the founder's startups.
     await StartupRepository.instance.settleMineBeforeDeletion(fates);
     try {
@@ -292,13 +291,6 @@ class AuthRepository {
     final account = _auth.currentAccount;
     if (account == null) throw const AuthException(AuthFailure.unknown);
     await _auth.reauthenticate(account.email, password);
-  }
-
-  /// The investor's tickets, the requests they sent, and the requests
-  /// startups sent to their tickets.
-  Future<void> _removeInvestorData(String uid) async {
-    await TicketRequestRepository.instance.removeAllFor(uid);
-    await TicketRepository.instance.removeAllFor(uid);
   }
 
   Future<AuthAccount> _signInOrGeneric(String email, String password) async {

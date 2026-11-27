@@ -11,7 +11,6 @@ import '../../recommender/for_you.dart';
 import '../../recommender/knowledge_filter.dart' show sectorValue;
 import '../firebase_services/firestore_service.dart';
 import '../mock_data/prototype_seed.dart';
-import 'request_repository.dart';
 
 class DiscoveryRepository {
   DiscoveryRepository({FirestoreService? firestore})
@@ -122,7 +121,6 @@ class DiscoveryRepository {
 
   /// Every loaded public startup / investor (for matching and ranking).
   List<Startup> get allStartups => List.unmodifiable(_startups);
-  List<InvestorProfile> get allInvestors => List.unmodifiable(_investors);
 
   List<HomeItem> startups({
     Set<String> excludeIds = const {},
@@ -383,12 +381,9 @@ class DiscoveryRepository {
       sample ? PrototypeSeed.founderNames[startup.founderId] : null;
 
   List<InvestorProfile> associatedInvestors(String startupId) {
-    final accepted = RequestRepository.instance.acceptedFor(startupId);
-    final ids = accepted.isNotEmpty
-        ? [for (final r in accepted) r.investorId]
-        : (sample
-              ? (PrototypeSeed.associations[startupId] ?? const <String>[])
-              : const <String>[]);
+    final ids = sample
+        ? (PrototypeSeed.associations[startupId] ?? const <String>[])
+        : const <String>[];
     return [for (final id in ids) ?investorById(id)];
   }
 

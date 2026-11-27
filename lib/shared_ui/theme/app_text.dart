@@ -106,11 +106,11 @@ class AppText {
   static TextStyle get introHeadline =>
       sans(size: 31, weight: FontWeight.w700, height: 38, letterSpacing: -0.3);
 
-  /// Section title on home ("New on Start.sa", "Top 30 trending").
+  /// Section title on home ("Newest startups").
   static TextStyle get sectionTitle =>
       sans(size: 16, weight: FontWeight.w700, letterSpacing: -0.1);
 
-  /// Card name on home cards and trending rows.
+  /// Card name on home cards.
   static TextStyle get cardName =>
       sans(size: 18, weight: FontWeight.w700, height: 23);
 

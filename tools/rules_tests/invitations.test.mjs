@@ -297,6 +297,37 @@ await check('the invited person takes over; the old founder stays as a co-founde
 });
 await check('the old founder (now a co-founder) can no longer edit it', false, () => updateDoc(doc(founder, 'startups', 'S5'), touch({ problem: 'z' })));
 
+// A PRIVATE startup: the invited person reads it to drop "Invited" from their card when they join.
+const nadia = env.authenticatedContext('n7', { email: 'nadia@gmail.com', email_verified: true }).firestore();
+const nadiaUnverified = env.authenticatedContext('n7', { email: 'nadia@gmail.com', email_verified: false }).firestore();
+const nadiaCard = { fullName: 'Nadia', email: 'nadia@gmail.com', invited: true };
+await env.withSecurityRulesDisabled(async (ctx) => {
+  const db = ctx.firestore();
+  await setDoc(doc(db, 'startups', 'S7'), {
+    founderId: 'f1', name: 'Hidden', description: 'd', sector: 'fintech', stage: 'seed',
+    commerceModel: 'b2b', location: 'riyadh', lookingFor: [], isPublic: false,
+    memberIds: [], memberRoles: {}, teamMembers: [{ fullName: 'Founder', uid: 'f1', isFounder: true }, nadiaCard],
+  });
+  await setDoc(doc(db, 'startups', 'S8'), {
+    founderId: 'f1', name: 'Other', description: 'd', sector: 'fintech', stage: 'seed',
+    commerceModel: 'b2b', location: 'riyadh', lookingFor: [], isPublic: false,
+    memberIds: [], memberRoles: {}, teamMembers: [],
+  });
+  await setDoc(doc(db, 'invitations', 'S7~nadia@gmail.com'), { ...inv({ startupId: 'S7', startupName: 'Hidden', emailLower: 'nadia@gmail.com', role: 'member' }), createdAt: new Date() });
+});
+await check('the invited person reads the private startup', true, () => getDoc(doc(nadia, 'startups', 'S7')));
+await check('an unverified e-mail cannot read it', false, () => getDoc(doc(nadiaUnverified, 'startups', 'S7')));
+await check('a stranger cannot read it', false, () => getDoc(doc(stranger, 'startups', 'S7')));
+await check('no invitation: another private startup stays hidden', false, () => getDoc(doc(nadia, 'startups', 'S8')));
+await check('the invitation does not let them list private startups', false, () => getDocs(query(collection(nadia, 'startups'), where('isPublic', '==', false))));
+await check('joining removes "Invited" from their own card', true, async () => {
+  const b = writeBatch(nadia);
+  b.update(doc(nadia, 'startups', 'S7'), { memberIds: ['n7'], 'memberRoles.n7': 'member', teamMembers: [{ fullName: 'Founder', uid: 'f1', isFounder: true }, { ...nadiaCard, invited: false, uid: 'n7' }], updatedAt: serverTimestamp() });
+  b.update(doc(nadia, 'invitations', 'S7~nadia@gmail.com'), { status: 'accepted', acceptedBy: 'n7', acceptedByName: 'Nadia' });
+  await b.commit();
+});
+await check('once accepted, they read it as a member', true, () => getDoc(doc(nadia, 'startups', 'S7')));
+
 console.log(fails === 0 ? 'ALL PASSED' : fails + ' FAILED');
 await env.cleanup();
 process.exit(fails === 0 ? 0 : 1);

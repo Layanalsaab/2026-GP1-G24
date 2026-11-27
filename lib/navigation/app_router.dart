@@ -7,14 +7,12 @@ import '../data_access/repositories/app_settings_repository.dart';
 import '../data_access/repositories/auth_repository.dart';
 import '../data_access/repositories/bookmark_repository.dart';
 import '../data_access/repositories/not_interested_repository.dart';
-import '../data_access/repositories/interest_repository.dart';
 import '../data_access/repositories/invitation_repository.dart';
 import '../data_access/repositories/team_lookup.dart';
 import '../app_constants/app_config.dart';
 import '../features/startups/widgets/invitation_dialogs.dart';
 import '../features/startups/widgets/startup_notices.dart';
 import '../helpers/invitation_claimer.dart';
-import '../data_access/repositories/request_repository.dart';
 import '../data_access/repositories/startup_repository.dart';
 import '../features/login_and_signup/screens/investor_investments_screen.dart';
 import '../features/login_and_signup/screens/welcome_screen.dart';
@@ -77,8 +75,7 @@ class AppRouter {
                     .isEmpty;
           } catch (_) {}
         }
-      } catch (_) {
-      }
+      } catch (_) {}
     }
     if (!context.mounted) return;
     if (needsStartup) {
@@ -226,8 +223,6 @@ class AppRouter {
     SignupFlow.current = null;
     BookmarkRepository.instance.clear();
     NotInterestedRepository.instance.clear();
-    RequestRepository.instance.clear();
-    InterestRepository.instance.clear();
     AppSession.instance.signOut();
     // A message such as "Hidden from For You · Undo" must not follow the user
     // to the next screen.

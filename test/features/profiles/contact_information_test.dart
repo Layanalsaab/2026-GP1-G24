@@ -3,7 +3,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:startsa/data_access/repositories/bookmark_repository.dart';
 import 'package:startsa/data_access/repositories/discovery_repository.dart';
-import 'package:startsa/data_access/repositories/request_repository.dart';
 import 'package:startsa/data_access/repositories/startup_repository.dart';
 import 'package:startsa/data_access/repositories/user_repository.dart';
 import 'package:startsa/features/profiles/screens/account_screen.dart';
@@ -56,7 +55,6 @@ void main() {
   setUp(() {
     AppSession.instance = AppSession();
     BookmarkRepository.instance = BookmarkRepository();
-    RequestRepository.instance = RequestRepository(sample: true);
     DiscoveryRepository.instance = DiscoveryRepository.sample();
     UserRepository.instance = FakeUserRepository()
       ..profiles['f1'] = founder

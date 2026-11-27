@@ -2,10 +2,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:startsa/data_access/mock_data/prototype_seed.dart';
 import 'package:startsa/data_access/repositories/bookmark_repository.dart';
 import 'package:startsa/data_access/repositories/discovery_repository.dart';
-import 'package:startsa/data_access/repositories/interaction_repository.dart';
-import 'package:startsa/data_access/repositories/interest_repository.dart';
-import 'package:startsa/data_access/repositories/request_repository.dart';
-import 'package:startsa/models/connection_request.dart';
 import 'package:startsa/models/investor_profile.dart';
 
 void main() {
@@ -14,14 +10,9 @@ void main() {
   });
 
   group('sample data', () {
-    test('has 30 startups and 30 investors for Trending', () {
+    test('has 30 startups and 30 investors', () {
       expect(PrototypeSeed.startups.length, 30);
       expect(PrototypeSeed.investors.length, 30);
-      // A private startup (Daftar in the sample) is never trending.
-      expect(
-        InteractionRepository().trendingStartups(TrendingRange.week).length,
-        29,
-      );
     });
 
     test('the detailed startup has a team and market size', () {
@@ -46,32 +37,6 @@ void main() {
       // There are no support channels yet.
       expect(repo.programs(), isEmpty);
     });
-  });
-
-  group('requests', () {
-    test('accepting a request makes the investor an associated investor', () {
-      final requests = RequestRepository(sample: true);
-      RequestRepository.instance = requests;
-      final discovery = DiscoveryRepository.sample();
-      expect(requests.pendingCount('mock-rafeeq'), 1);
-      requests.setStatus('r1', RequestStatus.accepted);
-      expect(requests.pendingCount('mock-rafeeq'), 0);
-      expect(
-        discovery.associatedInvestors('mock-rafeeq').map((i) => i.id),
-        containsAll(['ahmad', 'omar']),
-      );
-      expect(
-        requests.inboxFor('mock-rafeeq').first.offerLabel,
-        'SAR 300,000 for 15%',
-      );
-    });
-  });
-
-  test('interests: replying marks them seen', () {
-    final repo = InterestRepository(sample: true);
-    expect(repo.newCount('mock-rafeeq'), 2);
-    repo.markSeen('i1');
-    expect(repo.newCount('mock-rafeeq'), 1);
   });
 
   test('bookmarks toggle and clear', () {

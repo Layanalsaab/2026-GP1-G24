@@ -9,8 +9,6 @@ import 'package:startsa/data_access/repositories/funding_round_repository.dart';
 import 'package:startsa/data_access/repositories/matching_repository.dart';
 import 'package:startsa/features/profiles/screens/investor_profile_screen.dart';
 import 'package:startsa/features/startups/widgets/manage_rounds_tab.dart';
-import 'package:startsa/data_access/repositories/interest_repository.dart';
-import 'package:startsa/data_access/repositories/request_repository.dart';
 import 'package:startsa/data_access/repositories/startup_repository.dart';
 import 'package:startsa/data_access/repositories/user_repository.dart';
 import 'package:startsa/features/startups/screens/manage_startup_screen.dart';
@@ -79,8 +77,6 @@ void main() {
     StartupRepository.instance = FakeStartupRepository()
       ..startups.add(PrototypeSeed.rafeeq);
     UserRepository.instance = FakeUserRepository();
-    RequestRepository.instance = RequestRepository(sample: true);
-    InterestRepository.instance = InterestRepository(sample: true);
     ActivityRepository.instance = ActivityRepository(sample: true);
     DiscoveryRepository.instance = DiscoveryRepository.sample();
     FundingRoundRepository.instance = FundingRoundRepository.sample();
@@ -525,16 +521,10 @@ void main() {
       await t.ensureVisible(find.text('Save changes'));
       await t.pumpAndSettle();
       await t.tap(find.text('Save changes'));
-      await t.pumpAndSettle();
-      expect(find.text('Save changes?'), findsOneWidget);
-      expect(
-        find.text('Your changes will be saved to this round.'),
-        findsOneWidget,
-      );
-      await t.tap(find.text('Save changes').last);
       await t.pump();
       await t.pump(const Duration(milliseconds: 600));
-      expect(find.text('Round updated'), findsOneWidget);
+      expect(find.text('Save changes?'), findsNothing);
+      expect(find.text('Changes saved'), findsOneWidget);
       await t.pumpAndSettle(const Duration(seconds: 5));
       expect(find.text('Edit round · Round 2'), findsNothing);
       expect(find.text('SAR 3,000,000'), findsOneWidget);
@@ -615,7 +605,9 @@ void main() {
       expect(find.text('Funding rounds'), findsOneWidget);
     });
 
-    testWidgets('Investment requests live on the open round page', (t) async {
+    testWidgets('the open round page shows requests as a placeholder', (
+      t,
+    ) async {
       await _openRounds(t);
       // Not a tab of Manage startup any more.
       expect(
@@ -629,14 +621,14 @@ void main() {
       await t.pumpAndSettle();
       expect(find.text('Investment Requests'), findsOneWidget);
       expect(find.text('Investors asking to join this round'), findsOneWidget);
-      expect(find.text('Pending · 1'), findsOneWidget);
-      expect(find.text('SAR 300,000 for 15%'), findsOneWidget);
-      await t.ensureVisible(find.text('Accept'));
+      expect(find.text('Pending · 0'), findsOneWidget);
+      expect(find.text('No pending requests.'), findsOneWidget);
+      expect(find.text('Accept'), findsNothing);
+      await t.ensureVisible(find.text('All · 0'));
       await t.pumpAndSettle();
-      await t.tap(find.text('Accept'));
+      await t.tap(find.text('All · 0'));
       await t.pumpAndSettle();
       expect(find.text('No pending requests.'), findsOneWidget);
-      await t.pump(const Duration(seconds: 4));
     });
 
     testWidgets('a closed round has no investment requests', (t) async {
@@ -644,18 +636,6 @@ void main() {
       await t.tap(find.text('Round 1'));
       await t.pumpAndSettle();
       expect(find.text('Investment Requests'), findsNothing);
-    });
-
-    testWidgets('a view-only member sees the requests without the buttons', (
-      t,
-    ) async {
-      await _openRounds(t, role: StartupRole.member);
-      await t.tap(find.text('Round 2'));
-      await t.pumpAndSettle();
-      expect(find.text('Investment Requests'), findsOneWidget);
-      expect(find.text('Pending · 1'), findsOneWidget);
-      expect(find.text('Accept'), findsNothing);
-      expect(find.text('Decline'), findsNothing);
     });
 
     testWidgets('a team member only reads the rounds', (t) async {

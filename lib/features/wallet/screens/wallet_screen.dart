@@ -72,7 +72,7 @@ class _WalletScreenState extends State<WalletScreen> {
                 equalTabs: true,
                 tabs: [
                   const HeaderTab(WalletStrings.tabTickets),
-                  HeaderTab(WalletStrings.tabRequests, badge: _vm.pendingCount),
+                  const HeaderTab(WalletStrings.tabRequests),
                 ],
                 selectedIndex: _tab,
                 onTabChanged: _selectTab,
@@ -88,7 +88,7 @@ class _WalletScreenState extends State<WalletScreen> {
                       index: _tab,
                       child: _tab == 0
                           ? WalletTicketsTab(vm: _vm)
-                          : WalletRequestsTab(vm: _vm),
+                          : const WalletRequestsTab(),
                     ),
                   ),
                 ),

@@ -43,26 +43,15 @@ class WalletStrings {
   static String closeTitle(String name) => 'Close $name?';
   static const closeMessage =
       'This ticket won’t match any round anymore. You can’t use it after closing it.';
-  static const sendTitle = 'Send request?';
-  static String sendMessage(String startup, String amount) =>
-      '$startup will see your request for $amount.';
   static const sendRequest = 'Send request';
-  static const withdrawTitle = 'Withdraw request?';
-  static String withdrawMessage(String startup) =>
-      '$startup will no longer see this request.';
-  static const withdraw = 'Withdraw';
 
   // Toasts
   static const ticketAdded = 'Ticket added';
   static const ticketSaved = 'Ticket saved';
   static const ticketClosed = 'Ticket closed';
-  static const requestWithdrawn = 'Request withdrawn';
-  static String requestSent(String startup) => 'Request sent to $startup';
 
   // Errors (never a technical message)
   static const saveFailed = 'Couldn’t save the ticket. Try again.';
-  static const sendFailed = 'Couldn’t send the request. Try again.';
-  static const withdrawFailed = 'Couldn’t withdraw the request. Try again.';
 
   // Ticket page
   static const allTickets = 'All tickets';
@@ -73,12 +62,6 @@ class WalletStrings {
   static const receivedHeading = 'Requests Received';
   static const receivedSub = 'Startups that sent you a request for this ticket';
   static const noReceived = 'No requests received for this ticket yet.';
-  static const requestReceived = 'Request received';
-  static const accept = 'Accept';
-  static const decline = 'Decline';
-  static const requestAccepted = 'Request accepted';
-  static const requestDeclined = 'Request declined';
-  static const answerFailed = 'Couldn’t answer the request. Try again.';
   static const requestsHeading = 'Investment Requests';
   static const requestsSub = 'Sent with this ticket';
   static const noTicketRequests = 'No requests sent with this ticket yet.';
@@ -88,10 +71,7 @@ class WalletStrings {
   static const noMatches = 'No startups with a matching open round right now.';
   static const matchesFailed =
       'Couldn’t load the suggested startups. Check your connection.';
-  static const requestSentPill = 'Request sent';
 
   // Requests tab
   static const noRequests = 'No requests yet. Send one from a matching ticket.';
-  static String noRequestsOf(String filter) =>
-      'No ${filter.toLowerCase()} requests.';
 }

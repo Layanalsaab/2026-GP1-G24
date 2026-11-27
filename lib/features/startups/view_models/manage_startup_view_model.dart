@@ -6,12 +6,10 @@ import '../../../app_constants/founder_tools_strings.dart';
 import '../../../data_access/mock_data/prototype_seed.dart';
 import '../../../data_access/repositories/auth_repository.dart';
 import '../../../data_access/repositories/invitation_repository.dart';
-import '../../../data_access/repositories/request_repository.dart';
 import '../../../data_access/repositories/startup_repository.dart';
 import '../../../helpers/app_session.dart';
 import '../../../helpers/safe_notifier.dart';
 import '../../../models/auth_failure.dart';
-import '../../../models/connection_request.dart';
 import '../../../models/invitation.dart';
 import '../../../models/startup.dart';
 
@@ -111,46 +109,41 @@ class ManageStartupViewModel extends ChangeNotifier with SafeNotifier {
     }
   }
 
-  Future<bool> transferTo(String uid, {String? stay}) =>
-      _run(FounderToolsStrings.handoverFailed, () async {
-        startup = await _repository.transferOwnership(
-          startup,
-          uid,
-          stay: stay,
-        );
-        if (stay == null) {
-          _forget(startup.id);
-        } else {
-          // Still on the team: no longer one of mine, one I joined.
-          final session = AppSession.instance;
-          session.setOwnStartupIds([
-            for (final own in session.ownStartupIds)
-              if (own != startup.id) own,
-          ]);
-          session.setMemberStartupIds({
-            ...session.memberStartupIds,
-            startup.id,
-          });
-        }
-      });
+  Future<bool> transferTo(String uid, {String? stay}) => _run(
+    FounderToolsStrings.handoverFailed,
+    () async {
+      startup = await _repository.transferOwnership(startup, uid, stay: stay);
+      if (stay == null) {
+        _forget(startup.id);
+      } else {
+        // Still on the team: no longer one of mine, one I joined.
+        final session = AppSession.instance;
+        session.setOwnStartupIds([
+          for (final own in session.ownStartupIds)
+            if (own != startup.id) own,
+        ]);
+        session.setMemberStartupIds({...session.memberStartupIds, startup.id});
+      }
+    },
+  );
 
   Future<bool> inviteOwner(
     String email, {
     required bool newUser,
     String? stay,
   }) => _run(FounderToolsStrings.ownerInviteFailed, () async {
-        final repo = InvitationRepository.instance;
-        final invitation = await repo.inviteOwner(
-          startup: startup,
-          email: email,
-          invitedByName: AppSession.instance.user?.fullName ?? '',
-          newUser: newUser,
-          stay: stay,
-        );
-        pendingOwnerInvite = invitation;
-        expiredOwnerEmail = null;
-        ownerEmailResult = await repo.sendEmail(invitation);
-      });
+    final repo = InvitationRepository.instance;
+    final invitation = await repo.inviteOwner(
+      startup: startup,
+      email: email,
+      invitedByName: AppSession.instance.user?.fullName ?? '',
+      newUser: newUser,
+      stay: stay,
+    );
+    pendingOwnerInvite = invitation;
+    expiredOwnerEmail = null;
+    ownerEmailResult = await repo.sendEmail(invitation);
+  });
 
   /// What happened to the e-mail of the last owner invitation or resend.
   InviteSendResult? ownerEmailResult;
@@ -175,12 +168,6 @@ class ManageStartupViewModel extends ChangeNotifier with SafeNotifier {
   Future<bool> close() => _run(FounderToolsStrings.closeFailed, () async {
     startup = await _repository.close(startup);
     pendingOwnerInvite = null;
-    final requests = RequestRepository.instance;
-    for (final r in requests.inboxFor(startup.id)) {
-      if (r.status == RequestStatus.pending) {
-        requests.setStatus(r.id, RequestStatus.declined);
-      }
-    }
   });
 
   Future<String?> deleteStartup(String password) async {

@@ -226,21 +226,11 @@ class FounderToolsStrings {
   static const pending = 'Pending';
   static const accepted = 'Accepted';
   static const declined = 'Declined';
-  static const offer = 'Offer';
-  static const checkInCalculator = 'Check in calculator';
-  static const decline = 'Decline';
-  static const accept = 'Accept';
-  static const acceptedNote = 'Now an associated investor';
   static String filterLabel(String label, int n) => '$label · $n';
   static String requestsEmpty(String status) => 'No $status requests.';
-  static String acceptedToast(String name) =>
-      '$name is now an associated investor';
-  static const declinedToast = 'Request declined';
   static const interestNew = 'New';
   static const interestAll = 'All';
   static const interestEmpty = 'No new expressions of interest.';
-  static const interestAllEmpty = 'No expressions of interest yet.';
-  static const replyLabel = 'Reply';
   static const publicProfileOn = visibilityPublicText;
   static const publicProfileOff = visibilityPrivateText;
   static const nowPublic = 'Startup is now public';
@@ -532,17 +522,9 @@ class FounderToolsStrings {
     ),
   };
 
-  static const saveConfirmTitle = 'Save changes?';
-  static const saveConfirmButton = 'Save changes';
-  static const saveProfileMessage =
-      'Your changes will be saved to your profile.';
-  static const saveStartupMessage =
-      'Your changes will be saved to this startup.';
-  static const saveRoundMessage = 'Your changes will be saved to this round.';
   static const addRoundTitle = 'Add round?';
   static const addRoundMessage = 'This round will be added to your startup.';
   static const addRoundButton = 'Add round';
-  static const roundUpdated = 'Round updated';
 
   static const discard = 'Discard';
   static const keepEditing = 'Keep editing';

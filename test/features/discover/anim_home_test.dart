@@ -167,20 +167,15 @@ void main() {
       await t.pump(const Duration(seconds: 2));
     });
 
-    testWidgets('Explore: Trending shows standard cards with rank and growth', (
-      t,
-    ) async {
+    testWidgets('Explore: Trending says there is no trending yet', (t) async {
       await pumpMain(t);
       await t.tap(find.bySemanticsLabel('Explore').last);
       await t.pump(const Duration(milliseconds: 600));
       await t.tap(find.text('Trending').first);
       await t.pump();
       await t.pump(const Duration(milliseconds: 600));
-      expect(find.byType(HomeCard), findsWidgets);
-      expect(find.text('#1'), findsOneWidget);
-      // No analytics on the cards.
-      expect(find.textContaining('more views'), findsNothing);
-      expect(find.textContaining('%'), findsNothing);
+      expect(find.text('No trending yet'), findsOneWidget);
+      expect(find.byType(HomeCard), findsNothing);
       await t.pump(const Duration(seconds: 2));
     });
   });

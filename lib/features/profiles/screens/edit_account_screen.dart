@@ -215,18 +215,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     FocusScope.of(context).unfocus();
     if (_vm.isLoading) return;
     if (!_vm.isValid) {
-      // Invalid: the field errors show first, no confirm.
       await _vm.submit();
       if (mounted) AppToast.error(context, ProfileStrings.fixFields);
       return;
     }
-    final go = await showSaveConfirmDialog(
-      context,
-      title: FounderToolsStrings.saveConfirmTitle,
-      message: FounderToolsStrings.saveProfileMessage,
-      confirmLabel: FounderToolsStrings.saveConfirmButton,
-    );
-    if (!go || !mounted) return;
     final now = AppSession.instance.user;
     if (now == null ||
         now.uid != widget.user.uid ||
@@ -238,12 +230,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     if (!mounted) return;
     if (updated != null) {
       AppSession.instance.updateUser(updated);
-      AppToast.confirm(
-        context,
-        widget.user.isInvestor
-            ? ProfileStrings.changesSaved
-            : ProfileStrings.profileSaved,
-      );
+      AppToast.confirm(context, ProfileStrings.changesSaved);
       Navigator.of(context).pop(updated);
     } else if (_vm.formError != null) {
       AppToast.error(context, _vm.formError!);

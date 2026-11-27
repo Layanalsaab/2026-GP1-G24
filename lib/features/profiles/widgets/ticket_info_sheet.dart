@@ -7,18 +7,15 @@ import '../../../shared_ui/widgets/buttons/app_button.dart';
 import '../../../shared_ui/widgets/overlays/app_bottom_sheet.dart';
 import 'investor_profile_body.dart' show ProfileValueRows;
 
-Future<bool> showTicketInfoSheet(
+Future<void> showTicketInfoSheet(
   BuildContext context,
   InvestmentTicket ticket, {
   bool canSendRequest = false,
-}) async {
-  final send = await showAppBottomSheet<bool>(
-    context,
-    builder: (_) =>
-        TicketInfoSheet(ticket: ticket, canSendRequest: canSendRequest),
-  );
-  return send ?? false;
-}
+}) => showAppBottomSheet<void>(
+  context,
+  builder: (_) =>
+      TicketInfoSheet(ticket: ticket, canSendRequest: canSendRequest),
+);
 
 class TicketInfoSheet extends StatelessWidget {
   const TicketInfoSheet({
@@ -69,7 +66,7 @@ class TicketInfoSheet extends StatelessWidget {
             child: canSendRequest && t.isOpen
                 ? AppButton(
                     label: ProfileStrings.sendTicketRequest,
-                    onPressed: () => Navigator.of(context).pop(true),
+                    onPressed: () {},
                   )
                 : AppButton(
                     label: ProfileStrings.done,

@@ -28,10 +28,8 @@ stops the old one first.
 
 ## Investment Wallet (`npm run wallet`)
 
-Tests the `tickets` rules and the requests an investor sends with a ticket
-(`ticketId`): who can create, edit, close and delete a ticket, the amount rules
-(inside the ticket's range, no more than the open round still needs) and that
-the existing request without a ticket is unchanged.
+Tests the `tickets` rules (who can create, edit, close and delete a ticket, and
+the amount rules) and that `requests`, `ticketRequests` and `interests` are closed.
 
     cd tools/rules_tests
     npm run wallet

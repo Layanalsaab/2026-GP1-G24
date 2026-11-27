@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../../app_constants/founder_tools_strings.dart';
 import '../../../data_access/repositories/discovery_repository.dart';
-import '../../../data_access/repositories/request_repository.dart';
 import '../../../helpers/formatters.dart';
 import '../../../models/funding_round.dart';
 import '../../../models/startup.dart';
@@ -45,6 +44,9 @@ class ManageDashboardTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final investors = DiscoveryRepository.instance.associatedInvestors(
+      startup.id,
+    );
     final round = openRound;
     final open = round != null;
     final valuation = startup.valuation;
@@ -88,99 +90,90 @@ class ManageDashboardTab extends StatelessWidget {
         const SizedBox(height: 12),
         _CalculatorCard(onTap: onCalculator),
         const SizedBox(height: 12),
-        ListenableBuilder(
-          listenable: RequestRepository.instance.inboxChanges,
-          builder: (context, _) {
-            final investors = DiscoveryRepository.instance.associatedInvestors(
-              startup.id,
-            );
-            return ManageCard(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const ManageCardTitle(FounderToolsStrings.associatedTitle),
-                  if (investors.isEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 8),
-                      child: Text(
-                        emptyInvestorsText,
-                        style: AppText.sans(
-                          size: 14,
-                          height: 20,
-                          color: AppColors.grey,
-                        ),
-                      ),
-                    )
-                  else
-                    for (final i in investors)
-                      Semantics(
-                        button: true,
-                        label: i.name,
-                        excludeSemantics: true,
-                        child: GestureDetector(
-                          behavior: HitTestBehavior.opaque,
-                          onTap: () => InvestorProfileScreen.open(context, i),
-                          child: Padding(
-                            padding: const EdgeInsets.only(top: 12),
-                            child: Row(
-                              children: [
-                                TileAvatar(
-                                  initials: i.initials,
-                                  size: 40,
-                                  fontSize: 14,
-                                  round: true,
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        i.name,
-                                        style: AppText.sans(
-                                          size: 16.5,
-                                          weight: FontWeight.w600,
-                                        ),
-                                      ),
-                                      Text.rich(
-                                        TextSpan(
-                                          children: [
-                                            TextSpan(text: '${i.title} · '),
-                                            PinCity.span(
-                                              i.city,
-                                              style: AppText.sans(
-                                                size: 14,
-                                                height: 20,
-                                                color: AppColors.grey,
-                                              ),
-                                              pinColor: AppColors.hint,
-                                            ),
-                                          ],
-                                        ),
-                                        style: AppText.sans(
-                                          size: 14,
-                                          height: 20,
-                                          color: AppColors.grey,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                AppIcon.filled(
-                                  AppIcons.chevRight,
-                                  size: 22,
-                                  color: AppColors.hint,
-                                ),
-                              ],
+        ManageCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const ManageCardTitle(FounderToolsStrings.associatedTitle),
+              if (investors.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Text(
+                    emptyInvestorsText,
+                    style: AppText.sans(
+                      size: 14,
+                      height: 20,
+                      color: AppColors.grey,
+                    ),
+                  ),
+                )
+              else
+                for (final i in investors)
+                  Semantics(
+                    button: true,
+                    label: i.name,
+                    excludeSemantics: true,
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () => InvestorProfileScreen.open(context, i),
+                      child: Padding(
+                        padding: const EdgeInsets.only(top: 12),
+                        child: Row(
+                          children: [
+                            TileAvatar(
+                              initials: i.initials,
+                              size: 40,
+                              fontSize: 14,
+                              round: true,
                             ),
-                          ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    i.name,
+                                    style: AppText.sans(
+                                      size: 16.5,
+                                      weight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  Text.rich(
+                                    TextSpan(
+                                      children: [
+                                        TextSpan(text: '${i.title} · '),
+                                        PinCity.span(
+                                          i.city,
+                                          style: AppText.sans(
+                                            size: 14,
+                                            height: 20,
+                                            color: AppColors.grey,
+                                          ),
+                                          pinColor: AppColors.hint,
+                                        ),
+                                      ],
+                                    ),
+                                    style: AppText.sans(
+                                      size: 14,
+                                      height: 20,
+                                      color: AppColors.grey,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            AppIcon.filled(
+                              AppIcons.chevRight,
+                              size: 22,
+                              color: AppColors.hint,
+                            ),
+                          ],
                         ),
                       ),
-                ],
-              ),
-            );
-          },
+                    ),
+                  ),
+            ],
+          ),
         ),
       ],
     );

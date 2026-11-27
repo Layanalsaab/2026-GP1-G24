@@ -52,8 +52,6 @@ void main() {
       expect(vm.showCta, isTrue);
       expect(vm.showBookmark, isFalse);
       expect(vm.ctaLabel, 'Express interest');
-      vm.ctaDone = true;
-      expect(vm.ctaLabel, 'Interest sent');
     });
 
     test('investor: send investment request', () {
@@ -62,8 +60,6 @@ void main() {
       expect(vm.showCta, isTrue);
       expect(vm.showBookmark, isTrue);
       expect(vm.ctaLabel, 'Send investment request');
-      vm.ctaDone = true;
-      expect(vm.ctaLabel, 'Request sent');
     });
 
     test('founder on another startup: no CTA; on own startup: preview', () {

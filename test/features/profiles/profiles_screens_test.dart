@@ -5,7 +5,6 @@ import 'package:startsa/data_access/mock_data/prototype_seed.dart';
 import 'package:startsa/data_access/repositories/bookmark_repository.dart';
 import 'package:startsa/data_access/repositories/discovery_repository.dart';
 import 'package:startsa/data_access/repositories/funding_round_repository.dart';
-import 'package:startsa/data_access/repositories/request_repository.dart';
 import 'package:startsa/data_access/repositories/startup_repository.dart';
 import 'package:startsa/data_access/repositories/user_repository.dart';
 import 'package:startsa/features/profiles/screens/edit_account_screen.dart';
@@ -60,7 +59,6 @@ void main() {
   setUp(() {
     AppSession.instance = AppSession();
     BookmarkRepository.instance = BookmarkRepository();
-    RequestRepository.instance = RequestRepository(sample: true);
     DiscoveryRepository.instance = DiscoveryRepository.sample();
     FundingRoundRepository.instance = FundingRoundRepository.sample();
     UserRepository.instance = FakeUserRepository()

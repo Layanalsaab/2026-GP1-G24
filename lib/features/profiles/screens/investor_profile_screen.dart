@@ -8,7 +8,6 @@ import 'package:flutter/material.dart';
 import '../../../app_constants/account_strings.dart';
 import '../../../app_constants/profile_strings.dart';
 import '../../../data_access/repositories/bookmark_repository.dart';
-import '../../../data_access/repositories/request_repository.dart';
 import '../../../models/investment_ticket.dart';
 import '../../../models/investor_profile.dart';
 import '../../../models/match_summary.dart';
@@ -19,7 +18,6 @@ import '../../../shared_ui/widgets/cards/match_justification.dart';
 import '../../../shared_ui/widgets/headers/profile_banner.dart';
 import '../view_models/investor_profile_view_model.dart';
 import '../widgets/investor_profile_body.dart';
-import '../widgets/send_ticket_request_sheet.dart';
 import '../widgets/ticket_info_sheet.dart';
 import '../widgets/profile_widgets.dart';
 
@@ -61,19 +59,8 @@ class _InvestorProfileScreenState extends State<InvestorProfileScreen> {
   }
 
   /// A ticket: everything it says, and (a founder) "Send request".
-  Future<void> _openTicket(BuildContext context, InvestmentTicket t) async {
-    final send = await showTicketInfoSheet(
-      context,
-      t,
-      canSendRequest: _vm.showCta,
-    );
-    if (!send || !context.mounted) return;
-    await showSendTicketRequestSheet(
-      context,
-      ticket: t,
-      investorName: _vm.investor.name,
-    );
-  }
+  void _openTicket(BuildContext context, InvestmentTicket t) =>
+      showTicketInfoSheet(context, t, canSendRequest: _vm.showCta);
 
   @override
   void dispose() {
@@ -85,11 +72,9 @@ class _InvestorProfileScreenState extends State<InvestorProfileScreen> {
   Widget build(BuildContext context) {
     final inv = _vm.investor;
     final bookmarks = BookmarkRepository.instance.keys;
-    final requests = RequestRepository.instance.outgoing;
     return ListenableBuilder(
-      listenable: Listenable.merge([bookmarks, requests]),
+      listenable: bookmarks,
       builder: (context, _) {
-        final sent = requests.value.contains(_vm.key);
         return Scaffold(
           backgroundColor: AppColors.profileBg,
           body: Column(
@@ -154,12 +139,9 @@ class _InvestorProfileScreenState extends State<InvestorProfileScreen> {
                 ),
               ),
               if (_vm.showCta)
-                ProfileCtaBar(
-                  label: sent
-                      ? ProfileStrings.requestSent
-                      : ProfileStrings.sendRequest,
+                const ProfileCtaBar(
+                  label: ProfileStrings.sendRequest,
                   icon: AppIcons.send,
-                  done: sent,
                 ),
             ],
           ),

@@ -1,5 +1,4 @@
 import '../app_constants/firestore_collections.dart';
-import 'connection_request.dart';
 
 /// Where an investment ticket stands.
 enum TicketStatus {
@@ -118,53 +117,6 @@ class InvestmentTicket {
       amountMax: max.round(),
       status: TicketStatus.fromValue(data[TicketFields.status]),
       startupId: startup is String && startup.isNotEmpty ? startup : null,
-      createdAt: created is DateTime ? created : null,
-    );
-  }
-}
-
-class TicketRequest {
-  const TicketRequest({
-    required this.id,
-    required this.ticketId,
-    required this.startupId,
-    required this.startupName,
-    required this.amount,
-    required this.status,
-    this.createdAt,
-  });
-
-  final String id;
-  final String ticketId;
-  final String startupId;
-  final String startupName;
-
-  /// In SAR.
-  final int amount;
-  final RequestStatus status;
-  final DateTime? createdAt;
-
-  bool get isPending => status == RequestStatus.pending;
-
-  /// Null for a request that was not sent through a ticket.
-  static TicketRequest? fromMap(String id, Map<String, dynamic>? data) {
-    if (data == null) return null;
-    final ticket = data[TicketFields.ticketId];
-    final startup = data['startupId'];
-    final amount = data['amount'];
-    if (ticket is! String || ticket.isEmpty) return null;
-    if (startup is! String || amount is! num) return null;
-    final name = data[TicketFields.startupName];
-    final created = data['createdAt'];
-    return TicketRequest(
-      id: id,
-      ticketId: ticket,
-      startupId: startup,
-      startupName: name is String && name.trim().isNotEmpty
-          ? name.trim()
-          : 'Startup',
-      amount: amount.round(),
-      status: RequestStatus.fromValue(data['status']),
       createdAt: created is DateTime ? created : null,
     );
   }

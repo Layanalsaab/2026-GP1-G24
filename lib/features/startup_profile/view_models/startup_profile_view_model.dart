@@ -4,7 +4,6 @@ import '../../../app_constants/founder_tools_strings.dart';
 import '../../../app_constants/profile_strings.dart';
 import '../../../data_access/repositories/discovery_repository.dart';
 import '../../../data_access/repositories/funding_round_repository.dart';
-import '../../../data_access/repositories/request_repository.dart';
 import '../../../helpers/app_session.dart';
 import '../../../helpers/formatters.dart';
 import '../../../helpers/safe_notifier.dart';
@@ -78,25 +77,20 @@ class StartupProfileViewModel extends ChangeNotifier with SafeNotifier {
       [...rounds]..sort((a, b) => b.number.compareTo(a.number));
 
   CurrentRound? get currentRound {
-    final accepted = RequestRepository.instance
-        .acceptedFor(startup.id)
-        .fold<int>(0, (sum, r) => sum + r.amount);
     final open = openRound;
     if (open != null) {
-      final base = startup.raisedInRound ?? open.raised;
       return CurrentRound(
         type: open.typeLabel,
         goal: open.amount,
-        raised: base > accepted ? base : accepted,
+        raised: startup.raisedInRound ?? open.raised,
       );
     }
     final goal = startup.fundingRequirement ?? 0;
     if (startup.seeksFunding && goal > 0) {
-      final base = startup.raisedInRound ?? 0;
       return CurrentRound(
         type: startup.stageLabel,
         goal: goal,
-        raised: base > accepted ? base : accepted,
+        raised: startup.raisedInRound ?? 0,
       );
     }
     return null;
@@ -125,18 +119,15 @@ class StartupProfileViewModel extends ChangeNotifier with SafeNotifier {
   bool get showBookmark => !isPreview && !isGuest;
   bool get showShare => !isPreview;
 
-  /// A closed startup receives no requests or interest.
+  /// A closed startup shows no button.
   bool get showCta =>
       !isPreview && (isGuest || isInvestor) && !startup.isClosed;
 
-  /// s-{id} for the bookmark, request and interest repositories.
+  /// s-{id} for the bookmarks.
   String get key => 's-${startup.id}';
 
-  String get ctaLabel => isGuest
-      ? (ctaDone ? ProfileStrings.interestSent : ProfileStrings.expressInterest)
-      : (ctaDone ? ProfileStrings.requestSent : ProfileStrings.sendRequest);
-
-  bool ctaDone = false;
+  String get ctaLabel =>
+      isGuest ? ProfileStrings.expressInterest : ProfileStrings.sendRequest;
 
   /// "HealthTech · Pre-seed · Riyadh": the one sub-line under the name.
   String get infoLine => [

@@ -2,10 +2,8 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:startsa/features/connection_requests/screens/interest_tab.dart';
 import 'package:startsa/features/startups/widgets/hover_lift_card.dart';
 import 'package:startsa/features/startups/widgets/manage_card.dart';
-import 'package:startsa/shared_ui/theme/app_colors.dart';
 
 Widget _app(Widget child, {bool reduce = false}) => MaterialApp(
   home: MediaQuery(
@@ -117,30 +115,5 @@ void main() {
   testWidgets('ManageCard without onTap is a plain card', (t) async {
     await t.pumpWidget(_app(const ManageCard(child: Text('Plain'))));
     expect(find.byType(HoverLiftCard), findsNothing);
-  });
-
-  group('interest reply button', () {
-    Color fill(WidgetTester t) =>
-        (t
-                    .widget<AnimatedContainer>(
-                      find.descendant(
-                        of: find.byType(InterestReplyButton),
-                        matching: find.byType(AnimatedContainer),
-                      ),
-                    )
-                    .decoration!
-                as BoxDecoration)
-            .color!;
-
-    testWidgets('hover swaps moss50 for moss100 over 150 ms', (t) async {
-      await t.pumpWidget(_app(const InterestReplyButton()));
-      expect(fill(t), AppColors.moss50);
-      final g = await _mouse(t, find.byType(InterestReplyButton));
-      expect(fill(t), AppColors.moss100);
-      await g.moveTo(const Offset(790, 590));
-      await t.pump();
-      await t.pump(const Duration(milliseconds: 300));
-      expect(fill(t), AppColors.moss50);
-    });
   });
 }

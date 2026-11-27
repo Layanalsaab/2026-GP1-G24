@@ -39,30 +39,22 @@ class RoundForm extends StatelessWidget {
   }
 
   Future<void> _submit(BuildContext context) async {
-    // Invalid: the field errors show first, no confirm.
-    if (!vm.formValid) {
-      editing ? await vm.saveEdit() : await vm.addRound();
-      return;
+    // Adding asks first; an invalid form shows its errors without asking.
+    if (!editing && vm.formValid) {
+      final go = await showSaveConfirmDialog(
+        context,
+        title: FounderToolsStrings.addRoundTitle,
+        message: FounderToolsStrings.addRoundMessage,
+        confirmLabel: FounderToolsStrings.addRoundButton,
+      );
+      if (!go || !context.mounted) return;
     }
-    final go = await showSaveConfirmDialog(
-      context,
-      title: editing
-          ? FounderToolsStrings.saveConfirmTitle
-          : FounderToolsStrings.addRoundTitle,
-      message: editing
-          ? FounderToolsStrings.saveRoundMessage
-          : FounderToolsStrings.addRoundMessage,
-      confirmLabel: editing
-          ? FounderToolsStrings.saveConfirmButton
-          : FounderToolsStrings.addRoundButton,
-    );
-    if (!go || !context.mounted) return;
     final ok = editing ? await vm.saveEdit() : await vm.addRound();
     if (!context.mounted) return;
     if (!ok && vm.error != null) {
       AppToast.error(context, vm.error!);
     } else if (ok && editing) {
-      AppToast.confirm(context, FounderToolsStrings.roundUpdated);
+      AppToast.confirm(context, FounderToolsStrings.changesSaved);
     }
   }
 
@@ -146,7 +138,7 @@ class RoundForm extends StatelessWidget {
               Expanded(
                 child: AppButton(
                   label: editing
-                      ? FounderToolsStrings.saveConfirmButton
+                      ? FounderToolsStrings.saveChanges
                       : FounderToolsStrings.addRoundButton,
                   variant: vm.formValid
                       ? AppButtonVariant.primary

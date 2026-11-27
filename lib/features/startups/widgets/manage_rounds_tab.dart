@@ -3,9 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../data_access/repositories/discovery_repository.dart';
 import '../../../helpers/formatters.dart';
 import '../../../models/funding_round.dart';
-import '../../../models/connection_request.dart';
 import '../../../shared_ui/widgets/overlays/app_dialog.dart';
-import '../../connection_requests/view_models/requests_view_model.dart';
 import '../../profiles/screens/investor_profile_screen.dart';
 import '../view_models/rounds_view_model.dart';
 import 'founder_ui.dart';
@@ -15,23 +13,11 @@ import 'round_form.dart';
 
 /// Manage startup -> Rounds: the startup's rounds from Firestore.
 class ManageRoundsTab extends StatefulWidget {
-  const ManageRoundsTab({
-    super.key,
-    required this.vm,
-    this.canManage = true,
-    this.requests,
-    this.onCheck,
-    this.onToast,
-  });
+  const ManageRoundsTab({super.key, required this.vm, this.canManage = true});
 
   final RoundsViewModel vm;
 
   final bool canManage;
-
-  final RequestsViewModel? requests;
-
-  final void Function(ConnectionRequest request)? onCheck;
-  final void Function(String message)? onToast;
 
   @override
   State<ManageRoundsTab> createState() => _ManageRoundsTabState();
@@ -79,9 +65,6 @@ class _ManageRoundsTabState extends State<ManageRoundsTab> {
             vm: vm,
             number: detail,
             canManage: canManage,
-            requests: widget.requests,
-            onCheck: widget.onCheck,
-            onToast: widget.onToast,
             onBack: () {
               // An Edit round form left open is dropped with the page.
               if (vm.editOpen) vm.cancelEdit();

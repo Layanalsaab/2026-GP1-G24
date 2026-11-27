@@ -2,9 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../../data_access/repositories/matching_repository.dart';
 import '../../../data_access/repositories/ticket_repository.dart';
-import '../../../data_access/repositories/ticket_request_repository.dart';
-import '../../../models/connection_request.dart' show RequestStatus;
-import '../../../models/received_request.dart';
 import '../../../helpers/formatters.dart';
 import '../../../helpers/safe_notifier.dart';
 import '../../../helpers/ticket_rules.dart';
@@ -13,31 +10,17 @@ import '../../../models/match_summary.dart';
 import '../../../models/startup.dart';
 import '../../../app_constants/wallet_strings.dart';
 
-/// The filters of the Requests tab.
-enum RequestFilter {
-  all('All'),
-  pending('Pending'),
-  accepted('Accepted'),
-  declined('Declined');
-
-  const RequestFilter(this.label);
-
-  final String label;
-}
-
 class WalletViewModel extends ChangeNotifier with SafeNotifier {
   WalletViewModel({
     required this.investorId,
     this.commerceModels = const [],
     TicketRepository? tickets,
-    TicketRequestRepository? received,
     MatchingRepository? matching,
     DateTime Function()? now,
   }) : _ticketsOverride = tickets,
-       _receivedOverride = received,
        _matchingOverride = matching,
        _fixedNow = now {
-    for (final c in [name, min, max, sendAmount]) {
+    for (final c in [name, min, max]) {
       c.addListener(notifyListeners);
     }
     _pool.changes.addListener(_onPoolChange);
@@ -48,21 +31,14 @@ class WalletViewModel extends ChangeNotifier with SafeNotifier {
   final List<String> commerceModels;
 
   final TicketRepository? _ticketsOverride;
-  final TicketRequestRepository? _receivedOverride;
   final MatchingRepository? _matchingOverride;
   final DateTime Function()? _fixedNow;
 
   TicketRepository get _repo => _ticketsOverride ?? TicketRepository.instance;
-  TicketRequestRepository get _incoming =>
-      _receivedOverride ?? TicketRequestRepository.instance;
   MatchingRepository get _pool =>
       _matchingOverride ?? MatchingRepository.instance;
 
   List<InvestmentTicket> tickets = const [];
-  List<TicketRequest> requests = const [];
-
-  /// What startups sent to the investor's tickets ("Request received").
-  List<ReceivedRequest> received = const [];
   List<Startup> _startups = const [];
 
   bool isLoading = true;
@@ -77,14 +53,8 @@ class WalletViewModel extends ChangeNotifier with SafeNotifier {
     notifyListeners();
     try {
       tickets = await _repo.ticketsOf(investorId);
-      requests = await _repo.requestsOf(investorId);
     } catch (_) {
       loadFailed = true;
-    }
-    try {
-      received = await _incoming.receivedBy(investorId);
-    } catch (_) {
-      received = const [];
     }
     isLoading = false;
     notifyListeners();
@@ -142,11 +112,6 @@ class WalletViewModel extends ChangeNotifier with SafeNotifier {
 
   /// The startup a used ticket was used for.
   String usedForName(InvestmentTicket t) {
-    for (final r in requests) {
-      if (r.ticketId == t.id && r.startupId == t.startupId) {
-        return r.startupName;
-      }
-    }
     for (final s in _startups) {
       if (s.id == t.startupId) return s.name;
     }
@@ -264,10 +229,9 @@ class WalletViewModel extends ChangeNotifier with SafeNotifier {
 
   /// Back on the list: a form left open is dropped.
   void resetView() {
-    if (!formOpen && editing == null && sendingTo == null) return;
+    if (!formOpen && editing == null) return;
     formOpen = false;
     editing = null;
-    sendingTo = null;
     notifyListeners();
   }
 
@@ -412,7 +376,6 @@ class WalletViewModel extends ChangeNotifier with SafeNotifier {
         for (final t in tickets)
           t.id == ticket.id ? t.copyWith(status: TicketStatus.closed) : t,
       ];
-      if (sendingTo != null) sendingTo = null;
       return true;
     } catch (_) {
       error = WalletStrings.saveFailed;
@@ -423,171 +386,6 @@ class WalletViewModel extends ChangeNotifier with SafeNotifier {
     }
   }
 
-  /// The startup whose "Send request" form is open.
-  String? sendingTo;
-  final sendAmount = TextEditingController();
-  bool sendTried = false;
-  bool isSending = false;
-
-  /// Only open tickets send requests.
-  void startSend(InvestmentTicket ticket, String startupId) {
-    if (!ticket.isOpen) return;
-    sendingTo = startupId;
-    sendAmount.clear();
-    sendTried = false;
-    error = null;
-    notifyListeners();
-  }
-
-  void cancelSend() {
-    sendingTo = null;
-    notifyListeners();
-  }
-
-  int? get sendValue => Formatters.parseMoney(sendAmount.text);
-
-  bool get sendDirty => sendAmount.text.trim().isNotEmpty;
-
-  String? sendError(InvestmentTicket ticket, int remaining) {
-    final v = sendValue;
-    if (v == null && !sendTried) return null;
-    return TicketSend.error(v, ticket, remaining);
-  }
-
-  bool sendValid(InvestmentTicket ticket, int remaining) =>
-      TicketSend.error(sendValue, ticket, remaining) == null;
-
-  /// A pending request of ticket to startupId exists.
-  bool requestSent(InvestmentTicket ticket, String startupId) => requests.any(
-    (r) => r.ticketId == ticket.id && r.startupId == startupId && r.isPending,
-  );
-
-  /// Marks the form as tried (the error shows); true when it can be sent.
-  bool trySend(InvestmentTicket ticket, int remaining) {
-    sendTried = true;
-    notifyListeners();
-    return ticket.isOpen && sendValid(ticket, remaining);
-  }
-
-  Future<bool> sendRequest(InvestmentTicket ticket, TicketMatch match) async {
-    final amount = sendValue;
-    if (isSending || amount == null || !ticket.isOpen) return false;
-    if (!sendValid(ticket, match.remaining)) return false;
-    isSending = true;
-    error = null;
-    notifyListeners();
-    try {
-      final sent = await _repo.sendRequest(
-        ticket: ticket,
-        startupId: match.startup.id,
-        startupName: match.startup.name,
-        founderId: match.startup.founderId,
-        amount: amount,
-      );
-      requests = [sent, ...requests];
-      sendingTo = null;
-      return true;
-    } catch (_) {
-      error = WalletStrings.sendFailed;
-      return false;
-    } finally {
-      isSending = false;
-      notifyListeners();
-    }
-  }
-
-  RequestFilter filter = RequestFilter.all;
-
-  void setFilter(RequestFilter value) {
-    if (filter == value) return;
-    filter = value;
-    notifyListeners();
-  }
-
-  /// How many requests a filter holds (All counts every one).
-  int countOf(RequestFilter f) =>
-      (f == RequestFilter.all
-          ? requests.length
-          : requests.where((r) => r.status.value == f.name).length) +
-      (f == RequestFilter.all
-          ? received.length
-          : received.where((r) => r.status.value == f.name).length);
-
-  int get pendingCount =>
-      requests.where((r) => r.isPending).length +
-      received.where((r) => r.isPending).length;
-
-  List<ReceivedRequest> get visibleReceived => [
-    for (final r in received)
-      if (filter == RequestFilter.all || r.status.value == filter.name) r,
-  ];
-
-  List<ReceivedRequest> receivedOfTicket(InvestmentTicket t) => [
-    for (final r in received)
-      if (r.ticketId == t.id) r,
-  ];
-
-  /// The investor accepts or declines a request received (once).
-  Future<bool> answerReceived(
-    ReceivedRequest request, {
-    required bool accept,
-  }) async {
-    if (!request.isPending || isSaving) return false;
-    isSaving = true;
-    error = null;
-    notifyListeners();
-    try {
-      await _incoming.answer(request.id, accept: accept);
-      final now = accept ? RequestStatus.accepted : RequestStatus.declined;
-      received = [
-        for (final r in received)
-          if (r.id == request.id) r.withStatus(now) else r,
-      ];
-      return true;
-    } catch (_) {
-      error = WalletStrings.answerFailed;
-      return false;
-    } finally {
-      isSaving = false;
-      notifyListeners();
-    }
-  }
-
-  List<TicketRequest> get visibleRequests => [
-    for (final r in requests)
-      if (filter == RequestFilter.all || r.status.value == filter.name) r,
-  ];
-
-  List<TicketRequest> requestsOfTicket(InvestmentTicket t) => [
-    for (final r in requests)
-      if (r.ticketId == t.id) r,
-  ];
-
-  String ticketName(String ticketId) => ticketById(ticketId)?.name ?? 'Ticket';
-
-  Future<bool> withdraw(TicketRequest request) async {
-    if (!request.isPending || isSaving) return false;
-    isSaving = true;
-    error = null;
-    notifyListeners();
-    try {
-      await _repo.withdraw(request.id);
-      requests = [
-        for (final r in requests)
-          if (r.id != request.id) r,
-      ];
-      return true;
-    } catch (_) {
-      error = WalletStrings.withdrawFailed;
-      return false;
-    } finally {
-      isSaving = false;
-      notifyListeners();
-    }
-  }
-
-  String ago(DateTime? when) => timeAgo(when, now: _fixedNow?.call());
-
   /// A real date ("8 Nov 2026").
   String dateOf(DateTime? when) =>
       Formatters.dayMonthYear(when ?? _fixedNow?.call() ?? DateTime.now());
@@ -595,7 +393,7 @@ class WalletViewModel extends ChangeNotifier with SafeNotifier {
   @override
   void dispose() {
     _pool.changes.removeListener(_onPoolChange);
-    for (final c in [name, min, max, sendAmount]) {
+    for (final c in [name, min, max]) {
       c.removeListener(notifyListeners);
       c.dispose();
     }

@@ -4,13 +4,9 @@ class FirestoreCollections {
 
   static const users = 'users';
   static const startups = 'startups';
-  static const requests = 'requests';
-
-  static const ticketRequests = 'ticketRequests';
 
   /// An investor's investment tickets (id = investorId-T1, ...).
   static const tickets = 'tickets';
-  static const interests = 'interests';
   static const publicProfiles = 'publicProfiles';
 
   /// Investors (imported dataset and, later, public investor profiles).
@@ -179,32 +175,6 @@ class FundingRoundFields {
   static const completed = 'completed';
 }
 
-/// Fields of a requests/{id} document (investor -> startup).
-class RequestFields {
-  RequestFields._();
-
-  static const startupId = 'startupId';
-  static const founderId = 'founderId';
-  static const investorId = 'investorId';
-  static const message = 'message';
-  static const amount = 'amount';
-  static const equity = 'equity';
-  static const status = 'status';
-  static const createdAt = 'createdAt';
-}
-
-/// Fields of an interests/{id} document (guest -> startup).
-class InterestFields {
-  InterestFields._();
-
-  static const startupId = 'startupId';
-  static const name = 'name';
-  static const roleLine = 'roleLine';
-  static const message = 'message';
-  static const createdAt = 'createdAt';
-  static const seenByFounder = 'seenByFounder';
-}
-
 /// Firebase Storage folders.
 class StoragePaths {
   StoragePaths._();
@@ -230,8 +200,4 @@ class TicketFields {
   static const open = 'open';
   static const closed = 'closed';
   static const used = 'used';
-
-  /// Extra fields of a requests document sent through a ticket.
-  static const ticketId = 'ticketId';
-  static const startupName = 'startupName';
 }

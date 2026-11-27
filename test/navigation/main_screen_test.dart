@@ -113,7 +113,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 500));
     tester.takeException();
     expect(find.byType(ExploreTabs), findsNothing);
-    expect(find.text('Top 30 trending'), findsOneWidget);
+    expect(find.text('No trending yet'), findsOneWidget);
     expect(find.text('Newest startups'), findsNothing);
   });
 

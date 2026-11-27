@@ -7,7 +7,6 @@ import '../../../data_access/remote/for_you_api.dart';
 import '../../../data_access/repositories/bookmark_repository.dart';
 import '../../../data_access/repositories/discovery_repository.dart';
 import '../../../data_access/repositories/for_you_cache.dart';
-import '../../../data_access/repositories/interaction_repository.dart';
 import '../../../data_access/repositories/not_interested_repository.dart';
 import '../../../helpers/app_session.dart';
 import '../../../helpers/safe_notifier.dart';
@@ -39,7 +38,6 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
     required this.role,
     this.user,
     DiscoveryRepository? discovery,
-    InteractionRepository? interactions,
     Set<String> ownStartupIds = const {},
     List<Startup> ownStartups = const [],
     ForYouSource? forYou,
@@ -47,7 +45,6 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
     NotInterestedRepository? notInterested,
     Duration forYouQuietTime = const Duration(seconds: 2),
   }) : _discovery = discovery ?? DiscoveryRepository.instance,
-       _interactions = interactions ?? InteractionRepository.instance,
        _ownIds = ownStartupIds,
        _own = ownStartups,
        _server = forYou ?? ForYouApi.instance,
@@ -100,7 +97,6 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
   }
 
   final DiscoveryRepository _discovery;
-  final InteractionRepository _interactions;
 
   Set<String> _ownIds;
   List<Startup> _own;
@@ -116,10 +112,7 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
 
   int? _hubSwitch;
   int? _resultsSwitch;
-  int? _trendingSwitch;
   int? _latestSwitch;
-
-  TrendingRange range = TrendingRange.week;
 
   bool get isGuest => role == SessionRole.guest;
   bool get isFounder => role == SessionRole.founder;
@@ -142,12 +135,10 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
   int get _defaultSwitch => isFounder ? 1 : 0;
   int get hubSwitch => _hubSwitch ?? _defaultSwitch;
   int get resultsSwitch => _resultsSwitch ?? _defaultSwitch;
-  int get trendingSwitch => _trendingSwitch ?? _defaultSwitch;
   int get latestSwitch => _latestSwitch ?? _defaultSwitch;
 
   void setHubSwitch(int v) => _set(() => _hubSwitch = v);
   void setResultsSwitch(int v) => _set(() => _resultsSwitch = v);
-  void setTrendingSwitch(int v) => _set(() => _trendingSwitch = v);
   void setLatestSwitch(int v) => _set(() => _latestSwitch = v);
 
   void _set(VoidCallback f) {
@@ -166,7 +157,7 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
     notifyListeners();
   }
 
-  /// Guests only have Trending (index 0 of their single tab).
+  /// Guests only have Trending.
   void selectExploreTab(int index) {
     if (index == exploreTab) return;
     exploreTab = index;
@@ -602,22 +593,9 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
       ? HomeStrings.forYouInfoFounder
       : HomeStrings.forYouInfoInvestor;
 
-  void setRange(int index) => _set(() => range = TrendingRange.values[index]);
-
-  /// The top 30, each with its rank ("#1").
-  List<HomeItem> get trending {
-    final items = trendingSwitch == 0
-        ? _interactions.trendingStartups(range)
-        : _interactions.trendingInvestors(range);
-    return [
-      for (var i = 0; i < items.length; i++)
-        items[i].withHighlight('#${i + 1}'),
-    ];
-  }
-
   String get paneKey =>
       '${tab.name}-$effectiveExploreTab-${role.name}-${filtering ? 'f' : ''}'
-      '-$hubSwitch-$resultsSwitch-$trendingSwitch-$latestSwitch'
+      '-$hubSwitch-$resultsSwitch-$latestSwitch'
       '-${latestRange.name}';
 
   String get title => switch (tab) {

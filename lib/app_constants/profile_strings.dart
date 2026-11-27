@@ -14,9 +14,7 @@ class ProfileStrings {
   static const kvCapital = 'Current capital';
   static const kvModel = 'Commerce model';
   static const sendRequest = 'Send investment request';
-  static const requestSent = 'Request sent';
   static const expressInterest = 'Express interest';
-  static const interestSent = 'Interest sent';
 
   static const interestedIn = 'Interested in';
   static const investmentSize = 'Investment Size';
@@ -33,13 +31,6 @@ class ProfileStrings {
   static const tickets = 'Investment Tickets';
   static const ticketStatus = 'Status';
   static const sendTicketRequest = 'Send request';
-  static const chooseStartup = 'Choose your startup';
-  static const requestAmount = 'Amount';
-  static const noRaisingStartup =
-      'You need a startup that is raising to send a request.';
-  static const requestAlreadySent =
-      'You already sent a request on this ticket with every startup that is raising.';
-  static const sendRequestFailed = 'Couldn’t send the request. Try again.';
   static const ticketMinimum = 'Minimum';
   static const ticketMaximum = 'Maximum';
   static const ticketCreated = 'Created';
@@ -161,12 +152,10 @@ class ProfileStrings {
       .replaceAll('{link}', link);
 
   static const linkCopied = 'Link copied';
-  static const profileSaved = 'Profile saved';
   static const changesSaved = 'Changes saved';
   static const fixFields = 'Please fix the highlighted fields';
   static const darkOn = 'Dark mode on';
   static const darkOff = 'Dark mode off';
-  static String requestSentTo(String name) => 'Request sent to $name';
 
   static const changePasswordTitle = 'Change password';
   static const currentPassword = 'Current password';

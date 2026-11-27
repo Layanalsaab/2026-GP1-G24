@@ -8,7 +8,6 @@ import 'package:startsa/data_access/repositories/for_you_cache.dart';
 import 'package:startsa/data_access/repositories/not_interested_repository.dart';
 import 'package:startsa/data_access/repositories/startup_repository.dart';
 import 'package:startsa/data_access/repositories/ticket_repository.dart';
-import 'package:startsa/data_access/repositories/ticket_request_repository.dart';
 import 'package:startsa/models/app_user.dart';
 import 'package:startsa/models/auth_failure.dart';
 
@@ -53,7 +52,6 @@ void main() {
     StartupRepository.instance = startups;
     db = RecordingFirestore();
     TicketRepository.instance = TicketRepository(firestore: db);
-    TicketRequestRepository.instance = TicketRequestRepository(firestore: db);
     repo = AuthRepository(authService: auth, userRepository: users);
   });
 
@@ -392,24 +390,14 @@ void main() {
       expect(auth.calls, contains('delete'));
     });
 
-    test("an investor's tickets and requests are deleted too", () async {
+    test("an investor's tickets are deleted too", () async {
       db.store['tickets'] = {
         'uid1-T1': {'investorId': 'uid1'},
         'other-T1': {'investorId': 'other'},
       };
-      db.store['requests'] = {
-        'r1': {'investorId': 'uid1', 'status': 'accepted'},
-        'r2': {'investorId': 'other'},
-      };
-      db.store['ticketRequests'] = {
-        's1~uid1-T1': {'investorId': 'uid1', 'status': 'pending'},
-        's1~other-T1': {'investorId': 'other'},
-      };
       auth.signedIn = verified();
       await repo.deleteAccount();
       expect(db.store['tickets']!.keys, ['other-T1']);
-      expect(db.store['requests']!.keys, ['r2']);
-      expect(db.store['ticketRequests']!.keys, ['s1~other-T1']);
       expect(auth.calls, contains('delete'));
     });
 

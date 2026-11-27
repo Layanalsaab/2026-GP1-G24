@@ -19,7 +19,6 @@ import 'funding_round_repository.dart';
 import 'invitation_repository.dart';
 import 'notice_repository.dart';
 import 'public_profile_repository.dart';
-import 'ticket_repository.dart';
 
 /// Reads and writes the startups collection and the startups' logos in Storage.
 class StartupRepository {
@@ -257,17 +256,6 @@ class StartupRepository {
         key: data[key],
       StartupFields.updatedAt: _firestore.serverTimestamp(),
     });
-    if (!stored.isClosed) {
-      try {
-        await TicketRepository.instance.moveRequests(
-          startup.id,
-          from: me,
-          to: newOwnerId,
-        );
-      } catch (e) {
-        debugPrint('Could not move the requests to the new founder: $e');
-      }
-    }
     try {
       // Somebody invited to take over is no longer needed.
       await InvitationRepository.instance.cancelOwnerInvite(startup);
@@ -288,14 +276,6 @@ class StartupRepository {
       await InvitationRepository.instance.cancelOwnerInvite(startup);
     } catch (e) {
       debugPrint('Could not cancel the owner invitation: $e');
-    }
-    try {
-      await TicketRepository.instance.declinePendingFor(
-        startup.id,
-        founderId: startup.founderId,
-      );
-    } catch (e) {
-      debugPrint('Could not decline the requests of a closed startup: $e');
     }
     final closed = await update(
       startup.copyWith(
@@ -507,11 +487,6 @@ class StartupRepository {
       await InvitationRepository.instance.cancelOwnerInvite(startup);
     } catch (e) {
       debugPrint('Could not cancel the founder invitation: $e');
-    }
-    try {
-      await TicketRepository.instance.removeRequestsForStartup(startup.id);
-    } catch (e) {
-      debugPrint('Could not remove the requests of a startup: $e');
     }
     await _deleteDocumentAndRounds(startup);
     changes.value++;

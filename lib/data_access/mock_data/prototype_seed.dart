@@ -1,5 +1,3 @@
-import '../../models/connection_request.dart';
-import '../../models/expressed_interest.dart';
 import '../../models/funding_round.dart';
 import '../../models/investor_profile.dart';
 import '../../models/program.dart';
@@ -547,7 +545,7 @@ class PrototypeSeed {
     gain: 'Early access to promising HealthTech and Fintech teams, and a long-term stake in founders I can grow with.',
   );
 
-  /// [id, name, sector, city] for the extra investors that fill Trending.
+  /// [id, name, sector, city] for the extra sample investors.
   static const _extraInvestors = <List<String>>[
     ['khalid', 'Khalid Al-Otaibi', 'Fintech', 'Riyadh'],
     ['reem', 'Reem Al-Harbi', 'EdTech', 'Jeddah'],
@@ -650,57 +648,6 @@ class PrototypeSeed {
       focus: 'Co-building startups',
       logoText: 'BV',
       websiteUrl: 'bimventures.com',
-    ),
-  ];
-
-  static const requests = <ConnectionRequest>[
-    ConnectionRequest(
-      id: 'r1',
-      startupId: 'mock-rafeeq',
-      investorId: 'omar',
-      message: 'I like the traction in Riyadh. I’d like to invest and help with logistics partners.',
-      amount: 300000,
-      equityPercent: 15,
-      status: RequestStatus.pending,
-      whenLabel: '2h ago',
-    ),
-    ConnectionRequest(
-      id: 'r2',
-      startupId: 'mock-rafeeq',
-      investorId: 'ahmad',
-      message: 'Happy to back you and open doors to two hospital groups.',
-      amount: 200000,
-      equityPercent: 8,
-      status: RequestStatus.accepted,
-      whenLabel: '3d ago',
-    ),
-  ];
-
-  static const interests = <ExpressedInterest>[
-    ExpressedInterest(
-      id: 'i1',
-      startupId: 'mock-rafeeq',
-      name: 'Noura Alharbi',
-      roleLine: 'Registered nurse',
-      message: 'Would love to join as a part-time nurse.',
-      whenLabel: '1h ago',
-    ),
-    ExpressedInterest(
-      id: 'i2',
-      startupId: 'mock-rafeeq',
-      name: 'Fahad Saleh',
-      roleLine: 'Startup seeker',
-      message: 'Interested in partnering on home-care supplies.',
-      whenLabel: '1d ago',
-    ),
-    ExpressedInterest(
-      id: 'i3',
-      startupId: 'mock-rafeeq',
-      name: 'Reem Almutairi',
-      roleLine: 'Product designer',
-      message: 'Open to helping with your app design.',
-      seenByFounder: true,
-      whenLabel: '4d ago',
     ),
   ];
 

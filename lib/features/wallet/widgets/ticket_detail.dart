@@ -2,18 +2,16 @@ import 'package:flutter/material.dart';
 
 import '../../../app_constants/wallet_strings.dart';
 import '../../../helpers/formatters.dart';
-import '../../../helpers/ticket_rules.dart';
+import '../../../helpers/ticket_rules.dart' show TicketMatch;
 import '../../../models/investment_ticket.dart';
 import '../../../models/match_summary.dart';
 import '../../../shared_ui/widgets/overlays/app_dialog.dart';
-import '../../connection_requests/widgets/request_status_pill.dart';
 import '../../startup_profile/screens/startup_profile_screen.dart';
 import '../../startups/widgets/founder_ui.dart';
 import '../../startups/widgets/manage_card.dart';
 import '../../startups/widgets/round_detail.dart'
     show DetailBackLink, InfoBox, SectionTitle;
 import '../view_models/wallet_view_model.dart';
-import 'received_request_card.dart';
 import 'ticket_form.dart';
 
 class TicketDetail extends StatelessWidget {
@@ -61,8 +59,6 @@ class TicketDetail extends StatelessWidget {
     final ticket = vm.ticketById(ticketId);
     if (ticket == null) return const SizedBox.shrink();
     final editingThis = vm.editing?.id == ticket.id;
-    final mine = vm.requestsOfTicket(ticket);
-    final received = vm.receivedOfTicket(ticket);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -87,26 +83,14 @@ class TicketDetail extends StatelessWidget {
             subtitle: WalletStrings.requestsSub,
           ),
           const SizedBox(height: 10),
-          if (mine.isEmpty)
-            const ManageCard(child: _Grey(WalletStrings.noTicketRequests))
-          else
-            for (final r in mine) ...[
-              _RequestRow(vm: vm, request: r),
-              const SizedBox(height: 10),
-            ],
+          const ManageCard(child: _Grey(WalletStrings.noTicketRequests)),
           const SizedBox(height: 22),
           const SectionTitle(
             title: WalletStrings.receivedHeading,
             subtitle: WalletStrings.receivedSub,
           ),
           const SizedBox(height: 10),
-          if (received.isEmpty)
-            const ManageCard(child: _Grey(WalletStrings.noReceived))
-          else
-            for (final r in received) ...[
-              ReceivedRequestCard(vm: vm, request: r),
-              const SizedBox(height: 10),
-            ],
+          const ManageCard(child: _Grey(WalletStrings.noReceived)),
           if (ticket.isOpen) ...[
             const SizedBox(height: 12),
             const SectionTitle(
@@ -277,55 +261,6 @@ class _TicketCard extends StatelessWidget {
   }
 }
 
-/// One request sent with the ticket: the startup, "SAR amount · time ago" and its status.
-class _RequestRow extends StatelessWidget {
-  const _RequestRow({required this.vm, required this.request});
-
-  final WalletViewModel vm;
-  final TicketRequest request;
-
-  @override
-  Widget build(BuildContext context) {
-    final r = request;
-    return ManageCard(
-      padding: const EdgeInsets.all(14),
-      child: Row(
-        children: [
-          HueAvatar(name: r.startupName, size: 44),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  r.startupName,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppText.sans(
-                    size: 16,
-                    height: 22,
-                    weight: FontWeight.w700,
-                  ),
-                ),
-                Text(
-                  '${Formatters.sar(r.amount)} · ${vm.dateOf(r.createdAt)}',
-                  style: AppText.sans(
-                    size: 13.5,
-                    height: 19,
-                    color: AppColors.grey,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 8),
-          RequestStatusPill(status: r.status),
-        ],
-      ),
-    );
-  }
-}
-
 class _Matches extends StatelessWidget {
   const _Matches({
     required this.vm,
@@ -349,7 +284,7 @@ class _Matches extends StatelessWidget {
     return Column(
       children: [
         for (final m in matches) ...[
-          _MatchCard(vm: vm, ticket: ticket, match: m, onOpen: () => onOpen(m)),
+          _MatchCard(match: m, onOpen: () => onOpen(m)),
           const SizedBox(height: 10),
         ],
       ],
@@ -358,58 +293,14 @@ class _Matches extends StatelessWidget {
 }
 
 class _MatchCard extends StatelessWidget {
-  const _MatchCard({
-    required this.vm,
-    required this.ticket,
-    required this.match,
-    required this.onOpen,
-  });
+  const _MatchCard({required this.match, required this.onOpen});
 
-  final WalletViewModel vm;
-  final InvestmentTicket ticket;
   final TicketMatch match;
   final VoidCallback onOpen;
-
-  Future<void> _cancel(BuildContext context) async {
-    if (vm.sendDirty) {
-      final discard = await showDiscardDialog(
-        context,
-        title: WalletStrings.discardTitle,
-        message: WalletStrings.discardMessage,
-        discardLabel: WalletStrings.discard,
-        keepLabel: WalletStrings.keepEditing,
-      );
-      if (!discard) return;
-    }
-    vm.cancelSend();
-  }
-
-  Future<void> _send(BuildContext context) async {
-    // Invalid: the error shows first, no confirm.
-    if (!vm.trySend(ticket, match.remaining)) return;
-    final name = match.startup.name;
-    final amount = Formatters.sar(vm.sendValue!);
-    final go = await showSaveConfirmDialog(
-      context,
-      title: WalletStrings.sendTitle,
-      message: WalletStrings.sendMessage(name, amount),
-      confirmLabel: WalletStrings.sendRequest,
-    );
-    if (!go || !context.mounted) return;
-    final ok = await vm.sendRequest(ticket, match);
-    if (!context.mounted) return;
-    if (ok) {
-      AppToast.confirm(context, WalletStrings.requestSent(name));
-    } else if (vm.error != null) {
-      AppToast.error(context, vm.error!);
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
     final s = match.startup;
-    final sent = vm.requestSent(ticket, s.id);
-    final sending = vm.sendingTo == s.id && !sent;
     return ManageCard(
       padding: const EdgeInsets.all(14),
       child: Column(
@@ -493,60 +384,12 @@ class _MatchCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 12),
-          if (sent)
-            const Align(
-              alignment: Alignment.centerLeft,
-              child: AppPill(
-                label: WalletStrings.requestSentPill,
-                icon: AppIcons.check,
-                weight: FontWeight.w600,
-              ),
-            )
-          else if (!sending)
-            AppButton(
-              label: WalletStrings.sendRequest,
-              variant: AppButtonVariant.outline,
-              size: AppButtonSize.small,
-              onPressed: () => vm.startSend(ticket, s.id),
-            )
-          else ...[
-            AppField(
-              label: 'Amount',
-              required: true,
-              sentenceCase: true,
-              hint: TicketSend.range(ticket, match.remaining),
-              error: vm.sendError(ticket, match.remaining),
-              child: MoneyField(
-                controller: vm.sendAmount,
-                hasError: vm.sendError(ticket, match.remaining) != null,
-                semanticLabel: 'Amount',
-              ),
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: AppButton(
-                    label: WalletStrings.cancel,
-                    variant: AppButtonVariant.outline,
-                    size: AppButtonSize.small,
-                    onPressed: () => _cancel(context),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: AppButton(
-                    label: WalletStrings.sendRequest,
-                    variant: vm.sendValid(ticket, match.remaining)
-                        ? AppButtonVariant.primary
-                        : AppButtonVariant.off,
-                    size: AppButtonSize.small,
-                    onPressed: () => _send(context),
-                  ),
-                ),
-              ],
-            ),
-          ],
+          AppButton(
+            label: WalletStrings.sendRequest,
+            variant: AppButtonVariant.outline,
+            size: AppButtonSize.small,
+            onPressed: () {},
+          ),
         ],
       ),
     );

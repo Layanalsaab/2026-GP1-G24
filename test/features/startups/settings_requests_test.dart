@@ -6,15 +6,12 @@ import 'package:startsa/data_access/repositories/activity_repository.dart';
 import 'package:startsa/data_access/repositories/auth_repository.dart';
 import 'package:startsa/data_access/repositories/discovery_repository.dart';
 import 'package:startsa/data_access/repositories/funding_round_repository.dart';
-import 'package:startsa/data_access/repositories/interest_repository.dart';
-import 'package:startsa/data_access/repositories/request_repository.dart';
 import 'package:startsa/data_access/repositories/startup_repository.dart';
 import 'package:startsa/data_access/repositories/user_repository.dart';
 import 'package:startsa/features/startups/screens/manage_startup_screen.dart';
 import 'package:startsa/features/startups/screens/my_startups_screen.dart';
 import 'package:startsa/helpers/app_session.dart';
 import 'package:startsa/models/auth_failure.dart';
-import 'package:startsa/models/connection_request.dart';
 import 'package:startsa/models/list_entries.dart';
 import 'package:startsa/models/startup.dart';
 import 'package:startsa/shared_ui/theme/app_theme.dart';
@@ -80,8 +77,6 @@ void main() {
     StartupRepository.instance = FakeStartupRepository()
       ..startups.add(PrototypeSeed.rafeeq);
     UserRepository.instance = FakeUserRepository();
-    RequestRepository.instance = RequestRepository(sample: true);
-    InterestRepository.instance = InterestRepository(sample: true);
     ActivityRepository.instance = ActivityRepository(sample: true);
     DiscoveryRepository.instance = DiscoveryRepository.sample();
     FundingRoundRepository.instance = FundingRoundRepository.sample();
@@ -168,9 +163,7 @@ void main() {
       expect(find.text(publicText), findsOneWidget);
     });
 
-    testWidgets('co-founder: like a team member, nothing to change', (
-      t,
-    ) async {
+    testWidgets('co-founder: like a team member, nothing to change', (t) async {
       await _open(t, role: StartupRole.coFounder);
       expect(find.text('Public startup'), findsNothing);
       expect(find.text('Close startup'), findsNothing);
@@ -293,9 +286,7 @@ void main() {
       await t.pump(const Duration(seconds: 4));
     });
 
-    testWidgets('the founder alone chooses his role, then invites', (
-      t,
-    ) async {
+    testWidgets('the founder alone chooses his role, then invites', (t) async {
       await _open(t, tab: 'Startup Team');
       await _toLeave(t);
       await t.tap(find.text('Leave startup'));
@@ -364,9 +355,7 @@ void main() {
       await t.pump(const Duration(seconds: 4));
     });
 
-    testWidgets('the founder hands over and stays as a team member', (
-      t,
-    ) async {
+    testWidgets('the founder hands over and stays as a team member', (t) async {
       await _open(
         t,
         startup: PrototypeSeed.rafeeq.copyWith(
@@ -394,10 +383,7 @@ void main() {
       await t.pump(const Duration(seconds: 4));
     });
 
-    testWidgets('Close asks, then closes it and declines waiting requests', (
-      t,
-    ) async {
-      final requests = RequestRepository.instance;
+    testWidgets('Close asks, then closes it', (t) async {
       await _open(t);
       await t.tap(find.text('Close startup'));
       await t.pumpAndSettle();
@@ -407,12 +393,6 @@ void main() {
       await t.pump(const Duration(milliseconds: 600));
       final repo = StartupRepository.instance as FakeStartupRepository;
       expect(repo.startups.single.isClosed, isTrue);
-      expect(
-        requests
-            .inboxFor('mock-rafeeq')
-            .where((r) => r.status == RequestStatus.pending),
-        isEmpty,
-      );
       await t.pump(const Duration(seconds: 4));
     });
   });
@@ -440,12 +420,14 @@ void main() {
       );
     });
 
-    testWidgets('a team member sees interest without the reply button', (
-      t,
-    ) async {
-      await _open(t, role: StartupRole.member, tab: 'EOI');
-      expect(find.text('Noura Alharbi'), findsOneWidget);
-      expect(find.bySemanticsLabel(RegExp('^Reply')), findsNothing);
+    testWidgets('EOI shows only the empty message', (t) async {
+      await _open(t, tab: 'EOI');
+      expect(find.text('No new expressions of interest.'), findsOneWidget);
+      expect(find.text('New · 0'), findsOneWidget);
+      expect(find.text('All · 0'), findsOneWidget);
+      await t.tap(find.text('All · 0'));
+      await t.pump();
+      expect(find.text('No new expressions of interest.'), findsOneWidget);
     });
   });
 

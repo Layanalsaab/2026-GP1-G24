@@ -26,7 +26,6 @@ class HomeStrings {
   static const noNewInvestorsTitle = 'No new investors';
   static const noNewInvestorsMessage =
       'No investors joined in this time range. Try a longer one.';
-  static const top30 = 'Top 30 trending';
   static const results = 'Results';
 
   static const notInterested = 'Not interested';
@@ -46,6 +45,9 @@ class HomeStrings {
   static const noSupportTitle = 'No support channels yet';
   static const noSupportMessage =
       'Support channels are not available yet. Check back soon.';
+  static const noTrendingTitle = 'No trending yet';
+  static const noTrendingMessage =
+      'Trending is not available yet. Check back soon.';
   static const sortTitle = 'Sort by';
   static const sortNewest = 'Newest';
   static const sortOldest = 'Oldest';

@@ -11,7 +11,7 @@ import '../cards/avatars.dart';
 
 /// Where an AppDropdown menu hangs and grows from.
 enum AppDropdownOrigin {
-  /// Right edges aligned, grows from the top-right (Trending range).
+  /// Right edges aligned, grows from the top-right (Latest range).
   topRight,
 
   /// Same width as the anchor, grows from the top-center (Matches for).

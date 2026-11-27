@@ -5,8 +5,6 @@ import 'package:startsa/data_access/mock_data/prototype_seed.dart';
 import 'package:startsa/data_access/repositories/activity_repository.dart';
 import 'package:startsa/data_access/repositories/discovery_repository.dart';
 import 'package:startsa/data_access/repositories/funding_round_repository.dart';
-import 'package:startsa/data_access/repositories/interest_repository.dart';
-import 'package:startsa/data_access/repositories/request_repository.dart';
 import 'package:startsa/data_access/repositories/startup_repository.dart';
 import 'package:startsa/data_access/repositories/user_repository.dart';
 import 'package:startsa/features/startups/screens/manage_startup_screen.dart';
@@ -74,8 +72,6 @@ void main() {
     StartupRepository.instance = FakeStartupRepository()
       ..startups.add(PrototypeSeed.rafeeq);
     UserRepository.instance = FakeUserRepository();
-    RequestRepository.instance = RequestRepository(sample: true);
-    InterestRepository.instance = InterestRepository(sample: true);
     ActivityRepository.instance = ActivityRepository(sample: true);
     DiscoveryRepository.instance = DiscoveryRepository.sample();
     FundingRoundRepository.instance = FundingRoundRepository.sample();
@@ -165,9 +161,7 @@ void main() {
     await t.pump();
     await t.tap(find.text('Save'));
     await t.pumpAndSettle();
-    expect(find.text('Save changes?'), findsOneWidget);
-    await t.tap(find.text('Save changes'));
-    await t.pumpAndSettle();
+    expect(find.text('Save changes?'), findsNothing);
     expect(find.text('EDIT STARTUP'), findsNothing);
     expect(find.text('Nurses are hard to book'), findsWidgets);
     final repo = StartupRepository.instance as FakeStartupRepository;
@@ -247,8 +241,6 @@ void main() {
     );
     await t.pump();
     await t.tap(find.text('Save'));
-    await t.pumpAndSettle();
-    await t.tap(find.text('Save changes'));
     await t.pump();
     await t.pump(const Duration(milliseconds: 600));
     expect(find.text('Changes saved'), findsOneWidget);

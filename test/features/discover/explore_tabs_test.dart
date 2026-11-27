@@ -4,7 +4,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:startsa/data_access/firebase_services/firestore_service.dart';
 import 'package:startsa/data_access/mock_data/prototype_seed.dart';
 import 'package:startsa/data_access/repositories/discovery_repository.dart';
-import 'package:startsa/data_access/repositories/interaction_repository.dart';
 import 'package:startsa/features/explore_startups/screens/explore_screen.dart';
 import 'package:startsa/features/search/view_models/home_view_model.dart';
 import 'package:startsa/helpers/app_session.dart';
@@ -65,7 +64,6 @@ void main() {
       await repo.refresh();
       DiscoveryRepository.instance = repo;
     }
-    InteractionRepository.instance = InteractionRepository();
     final vm = HomeViewModel(role: role)
       ..selectTab(HomeTab.explore)
       ..selectExploreTab(tab);
@@ -132,17 +130,16 @@ void main() {
     expect(find.text('No new startups'), findsNothing);
   });
 
-  testWidgets('Trending: standard cards with the rank, no analytics', (
-    t,
-  ) async {
+  testWidgets('Trending: only the no trending yet message', (t) async {
     await pump(t, sample: true, tab: 1);
-    expect(find.text('Top 30 trending'), findsOneWidget);
-    expect(find.text('Last 7 days'), findsOneWidget);
-    expect(find.byType(HomeCard), findsWidgets);
-    expect(find.text('#1'), findsOneWidget);
-    expect(find.textContaining('%'), findsNothing);
-    expect(find.textContaining('more views'), findsNothing);
-    expect(find.bySemanticsLabel('About this list'), findsNothing);
+    expect(find.text('No trending yet'), findsOneWidget);
+    expect(
+      find.text('Trending is not available yet. Check back soon.'),
+      findsOneWidget,
+    );
+    expect(find.byType(HomeCard), findsNothing);
+    expect(find.text('Last 7 days'), findsNothing);
+    expect(find.text('Investors'), findsNothing);
   });
 
   testWidgets('For You (investor): startups, no switch, no New section', (

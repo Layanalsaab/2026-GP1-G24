@@ -1,12 +1,9 @@
 import '../../../shared_ui/widgets/lists/app_refresh.dart';
 
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 
 import '../../../app_constants/founder_tools_strings.dart';
 import '../../../data_access/repositories/invitation_repository.dart';
-import '../../../data_access/repositories/request_repository.dart';
 import '../../../data_access/repositories/startup_repository.dart';
 import '../../../data_access/repositories/team_lookup.dart';
 import '../../../helpers/formatters.dart';
@@ -18,8 +15,6 @@ import '../../../models/startup.dart';
 import '../../../navigation/app_router.dart';
 import '../../../navigation/main_screen.dart';
 import '../../connection_requests/screens/interest_tab.dart';
-import '../../connection_requests/view_models/interest_view_model.dart';
-import '../../connection_requests/view_models/requests_view_model.dart';
 import '../../engagement_analytics/view_models/activity_view_model.dart';
 import '../../fundraising_calculator/screens/valuation_calculator_screen.dart';
 import '../../profiles/screens/delete_account_dialog.dart';
@@ -83,12 +78,6 @@ class _ManageStartupScreenState extends State<ManageStartupScreen> {
   late final ManageStartupViewModel _vm = ManageStartupViewModel(
     startup: widget.startup,
   );
-  late final RequestsViewModel _requests = RequestsViewModel(
-    startupId: widget.startup.id,
-  );
-  late final InterestViewModel _interest = InterestViewModel(
-    startupId: widget.startup.id,
-  );
   late final RoundsViewModel _rounds = RoundsViewModel(
     startup: widget.startup,
     currentStartup: () => _vm.startup,
@@ -137,8 +126,6 @@ class _ManageStartupScreenState extends State<ManageStartupScreen> {
   void dispose() {
     _vm.dispose();
     _rounds.dispose();
-    _requests.dispose();
-    _interest.dispose();
     _activity.dispose();
     _profile.dispose();
     super.dispose();
@@ -515,18 +502,10 @@ class _ManageStartupScreenState extends State<ManageStartupScreen> {
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
-      listenable: Listenable.merge([_vm, _interest, _rounds]),
+      listenable: Listenable.merge([_vm, _rounds]),
       builder: (context, _) {
         final s = _vm.startup;
-        final already = s.raisedInRound;
-        _rounds.openRaised = already == null
-            ? null
-            : math.max(
-                already,
-                RequestRepository.instance
-                    .acceptedFor(s.id)
-                    .fold<int>(0, (sum, r) => sum + r.amount),
-              );
+        _rounds.openRaised = s.raisedInRound;
         // The startup page's own tabs, kept in step with this screen.
         if (!identical(_profile.startup, s)) _profile.replaceStartup(s);
         _profile.rounds = _rounds.rounds;
@@ -545,7 +524,7 @@ class _ManageStartupScreenState extends State<ManageStartupScreen> {
                 ? FounderToolsStrings.associatedEmpty
                 : FounderToolsStrings.associatedEmptyMember,
           ),
-          1 => InterestTab(vm: _interest, onToast: _toast, canAct: _canEdit),
+          1 => const InterestTab(),
           _settingsTab => ManageSettingsTab(
             role: _role,
             startupName: s.name,
@@ -574,18 +553,7 @@ class _ManageStartupScreenState extends State<ManageStartupScreen> {
               ),
               expiredOwnerEmail: _vm.expiredOwnerEmail,
             ),
-            roundsSection: ManageRoundsTab(
-              vm: _rounds,
-              canManage: _canEdit,
-              requests: _requests,
-              onCheck: (r) => ValuationCalculatorScreen.open(
-                context,
-                startup: s,
-                funding: r.amount,
-                equityPercent: r.equityPercent,
-              ),
-              onToast: _toast,
-            ),
+            roundsSection: ManageRoundsTab(vm: _rounds, canManage: _canEdit),
           ),
         };
         return Scaffold(
@@ -642,10 +610,7 @@ class _ManageStartupScreenState extends State<ManageStartupScreen> {
                 scrollableTabs: true,
                 tabs: [
                   const HeaderTab(FounderToolsStrings.tabDashboard),
-                  HeaderTab(
-                    FounderToolsStrings.tabInterest,
-                    badge: _interest.newCount,
-                  ),
+                  const HeaderTab(FounderToolsStrings.tabInterest),
                   for (final t in FounderToolsStrings.stepTitles) HeaderTab(t),
                   const HeaderTab(FounderToolsStrings.tabSettings),
                 ],

@@ -28,21 +28,12 @@ class ProfileActions {
 }
 
 class ProfileCtaBar extends StatelessWidget {
-  const ProfileCtaBar({
-    super.key,
-    required this.label,
-    required this.icon,
-    required this.done,
-    this.onPressed,
-  });
+  const ProfileCtaBar({super.key, required this.label, required this.icon});
 
   final String label;
 
-  /// Filled icon path shown while not done.
+  /// Filled icon path.
   final String icon;
-  final bool done;
-
-  final VoidCallback? onPressed;
 
   @override
   Widget build(BuildContext context) {
@@ -55,10 +46,9 @@ class ProfileCtaBar extends StatelessWidget {
       ),
       child: AppButton(
         label: label,
-        icon: done ? null : icon,
-        variant: done ? AppButtonVariant.done : AppButtonVariant.primary,
+        icon: icon,
         size: AppButtonSize.cta,
-        onPressed: onPressed,
+        onPressed: () {},
       ),
     );
   }

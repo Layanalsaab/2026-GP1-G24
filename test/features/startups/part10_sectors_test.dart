@@ -4,7 +4,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:startsa/data_access/mock_data/prototype_seed.dart';
 import 'package:startsa/data_access/repositories/discovery_repository.dart';
 import 'package:startsa/data_access/repositories/funding_round_repository.dart';
-import 'package:startsa/data_access/repositories/request_repository.dart';
 import 'package:startsa/features/startup_profile/screens/startup_profile_screen.dart';
 import 'package:startsa/features/startups/view_models/startup_steps_view_model.dart';
 import 'package:startsa/features/startups/widgets/startup_step_body.dart';
@@ -34,7 +33,6 @@ void main() {
     repo = FakeStartupRepository()..startups.add(_startup());
     StartupRepository.instance = repo;
     AppSession.instance = AppSession();
-    RequestRepository.instance = RequestRepository(sample: true);
     DiscoveryRepository.instance = DiscoveryRepository.sample();
     FundingRoundRepository.instance = FundingRoundRepository.sample();
   });

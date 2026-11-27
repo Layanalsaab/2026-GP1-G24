@@ -6,13 +6,9 @@ import 'package:startsa/data_access/mock_data/prototype_seed.dart';
 import 'package:startsa/data_access/repositories/activity_repository.dart';
 import 'package:startsa/data_access/repositories/discovery_repository.dart';
 import 'package:startsa/data_access/repositories/funding_round_repository.dart';
-import 'package:startsa/data_access/repositories/interest_repository.dart';
-import 'package:startsa/data_access/repositories/request_repository.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:startsa/data_access/repositories/startup_repository.dart';
 import 'package:startsa/data_access/repositories/user_repository.dart';
-import 'package:startsa/features/connection_requests/view_models/interest_view_model.dart';
-import 'package:startsa/features/connection_requests/view_models/requests_view_model.dart';
 import 'package:startsa/features/fundraising_calculator/screens/valuation_calculator_screen.dart';
 import 'package:startsa/features/fundraising_calculator/view_models/valuation_calculator_view_model.dart';
 import 'package:startsa/features/startups/screens/manage_startup_screen.dart';
@@ -24,7 +20,6 @@ import 'package:startsa/shared_ui/widgets/overlays/picker_sheet.dart';
 import 'package:startsa/features/startups/view_models/startup_steps_view_model.dart';
 import 'package:startsa/features/startups/widgets/startup_step_body.dart';
 import 'package:startsa/helpers/app_session.dart';
-import 'package:startsa/models/connection_request.dart';
 import 'package:startsa/models/startup.dart';
 import 'package:startsa/models/startup_enums.dart';
 import 'package:startsa/shared_ui/theme/app_theme.dart';
@@ -93,8 +88,6 @@ void main() {
     repo = FakeStartupRepository();
     StartupRepository.instance = repo;
     UserRepository.instance = FakeUserRepository();
-    RequestRepository.instance = RequestRepository(sample: true);
-    InterestRepository.instance = InterestRepository(sample: true);
     ActivityRepository.instance = ActivityRepository(sample: true);
     DiscoveryRepository.instance = DiscoveryRepository.sample();
     FundingRoundRepository.instance = FundingRoundRepository.sample();
@@ -548,31 +541,6 @@ void main() {
     });
   });
 
-  group('Manage tab view models', () {
-    test('requests filter, accept and decline', () {
-      final vm = RequestsViewModel(startupId: 'mock-rafeeq');
-      addTearDown(vm.dispose);
-      expect(vm.count(RequestStatus.pending), 1);
-      expect(vm.count(RequestStatus.accepted), 1);
-      final row = vm.rows.single;
-      expect(row.name, 'Omar Khalid');
-      expect(row.sub, 'Angel Investor · 2h ago');
-      expect(vm.accept(row), 'Omar Khalid');
-      expect(vm.count(RequestStatus.pending), 0);
-      expect(vm.count(RequestStatus.accepted), 2);
-    });
-
-    test('interest new / all', () {
-      final vm = InterestViewModel(startupId: 'mock-rafeeq');
-      addTearDown(vm.dispose);
-      expect(vm.newCount, 2);
-      expect(vm.allCount, 3);
-      expect(vm.visible, hasLength(2));
-      vm.select(onlyNew: false);
-      expect(vm.visible, hasLength(3));
-    });
-  });
-
   group('screens', () {
     testWidgets('My Startups empty state', (tester) async {
       _bigScreen(tester);
@@ -603,9 +571,7 @@ void main() {
       expect(AppSession.instance.ownStartupIds, {'mock-rafeeq', 'mock-daftar'});
     });
 
-    testWidgets('Manage: tabs, requests accept, interest, settings', (
-      tester,
-    ) async {
+    testWidgets('Manage: tabs, interest, settings', (tester) async {
       _bigScreen(tester);
       await tester.pumpWidget(
         _app(ManageStartupScreen(startup: PrototypeSeed.rafeeq)),
@@ -659,8 +625,8 @@ void main() {
         find.text('Guests who are interested in your startup'),
         findsOneWidget,
       );
-      expect(find.text('New · 2'), findsOneWidget);
-      expect(find.text('Noura Alharbi'), findsOneWidget);
+      expect(find.text('New · 0'), findsOneWidget);
+      expect(find.text('No new expressions of interest.'), findsOneWidget);
 
       await tester.ensureVisible(tab('Settings'));
       await tester.pumpAndSettle();
@@ -902,14 +868,9 @@ void main() {
       expect(find.text('Save changes'), findsOneWidget);
       await tester.tap(find.text('Save changes'));
       await tester.pumpAndSettle();
-      // The confirm comes first.
-      expect(find.text('Save changes?'), findsOneWidget);
-      expect(
-        find.text('Your changes will be saved to this startup.'),
-        findsOneWidget,
-      );
-      await tester.tap(find.text('Save changes').last);
-      await tester.pumpAndSettle();
+      // Saved at once, no question first.
+      expect(find.text('Save changes?'), findsNothing);
+      expect(find.text('Changes saved'), findsOneWidget);
       expect(find.text('Save changes'), findsNothing, reason: 'left the form');
       expect(find.text('edit'), findsOneWidget);
       expect(result?.name, 'Rafeeq Health Plus');

@@ -23,9 +23,6 @@ enum AppButtonVariant {
   /// Transparent, moss text, 40 high.
   ghost,
 
-  /// After an action: moss100 fill, green text, moss border, check icon.
-  done,
-
   /// Form not complete: grey fill and text.
   off,
 }
@@ -86,7 +83,6 @@ class AppButton extends StatelessWidget {
     AppButtonVariant.outline => AppColors.surface,
     AppButtonVariant.danger => AppColors.dangerFill,
     AppButtonVariant.ghost => Colors.transparent,
-    AppButtonVariant.done => AppColors.moss100,
     AppButtonVariant.off => AppColors.offFill,
   };
 
@@ -95,7 +91,6 @@ class AppButton extends StatelessWidget {
     AppButtonVariant.dark ||
     AppButtonVariant.danger => AppColors.onDark,
     AppButtonVariant.outline || AppButtonVariant.ghost => AppColors.mossText,
-    AppButtonVariant.done => AppColors.greenText,
     AppButtonVariant.off => AppColors.offText,
   };
 
@@ -107,8 +102,10 @@ class AppButton extends StatelessWidget {
   };
 
   BoxBorder? get _border => switch (variant) {
-    AppButtonVariant.outline ||
-    AppButtonVariant.done => Border.all(color: AppColors.mossText, width: 1.5),
+    AppButtonVariant.outline => Border.all(
+      color: AppColors.mossText,
+      width: 1.5,
+    ),
     _ => null,
   };
 
@@ -153,8 +150,6 @@ class AppButton extends StatelessWidget {
                   ? 15
                   : null,
             );
-    final iconPath =
-        icon ?? (variant == AppButtonVariant.done ? AppIcons.check : null);
     final showShine =
         variant == AppButtonVariant.primary || variant == AppButtonVariant.dark;
 
@@ -171,9 +166,9 @@ class AppButton extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              if (iconPath != null) ...[
+              if (icon != null) ...[
                 AppIcon.filled(
-                  iconPath,
+                  icon!,
                   size: _small ? 18 : 20,
                   color: _foreground,
                 ),
