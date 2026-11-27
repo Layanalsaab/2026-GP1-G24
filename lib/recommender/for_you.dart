@@ -44,9 +44,9 @@ const double ticketAmountBonus = 0.1;
 const int exploreSlots = 2;
 
 /// Calibration (Steck, "Calibrated Recommendations", RecSys 2018), as the
-/// server: relevance against closeness to the user's sector mix, and the
-/// smoothing of the list's mix.
-const double calibrationWeight = 0.5;
+/// server: relevance against closeness to the user's sector mix (tuned for
+/// Start.sa), and the smoothing of the list's mix (0.01, as in the paper).
+const double calibrationWeight = 0.7;
 const double calibrationAlpha = 0.01;
 const double calibrationTie = 1e-9;
 

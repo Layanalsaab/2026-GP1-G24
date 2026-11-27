@@ -9,8 +9,10 @@ import numpy as np
 from .catalog import finite_int, sector_label, stage_label, stored_sector, stored_stage, ticket_min
 
 # Calibration (Steck, "Calibrated Recommendations", RecSys 2018): relevance against
-# closeness to the user's sector mix, and the smoothing of the list's mix.
-CALIBRATION_WEIGHT = 0.5
+# closeness to the user's sector mix, and the smoothing of the list's mix (0.01, as in the
+# paper). The weight is tuned for Start.sa: on real data 0.7 kept the best matches on top
+# while showing new interests (0.5 showed too few, 0.9 put weak matches first).
+CALIBRATION_WEIGHT = 0.7
 CALIBRATION_ALPHA = 0.01
 # Values this close count as equal, so ties follow the order given, not rounding noise.
 CALIBRATION_TIE = 1e-9

@@ -109,7 +109,7 @@ def test_calibration_follows_the_target_mix():
 
 
 def test_calibration_trades_closeness_for_score_when_scores_are_far_apart():
-    # Steck's method balances the two (weight 0.5): a much weaker sector gets fewer places.
+    # Steck's method balances the two (CALIBRATION_WEIGHT): a much weaker sector gets fewer places.
     ids, names, scores, sectors = _two_sectors(10, gap=0.3)
     picks = recommend_best(ids, names, ["fintech"] * 10 + ["saas"] * 10, scores, np.ones_like(scores, dtype=bool),
                            np.zeros_like(scores), limit=12, sectors=sectors, target=np.array([0.8, 0.2]))
