@@ -207,7 +207,7 @@ class DiscoveryRepository {
       [
         for (final e in bookmarks.entries)
           if (e.key.startsWith('s-'))
-            if (startupById(e.key.substring(2)) case final s?)
+            if (startupById(e.key.substring(2)) case final s? when s.isListed)
               Signal(startupFeatures(s), e.value),
         for (final t in tickets)
           Signal(
@@ -219,7 +219,7 @@ class DiscoveryRepository {
       dislikes: [
         for (final e in notInterested.entries)
           if (e.key.startsWith('s-'))
-            if (startupById(e.key.substring(2)) case final s?)
+            if (startupById(e.key.substring(2)) case final s? when s.isListed)
               Signal(startupFeatures(s), e.value),
       ],
       now: at,
@@ -229,6 +229,7 @@ class DiscoveryRepository {
         if (s.isListed &&
             !excludeIds.contains(s.id) &&
             !bookmarks.containsKey('s-${s.id}') &&
+            !notInterested.containsKey('s-${s.id}') &&
             amountFits(
               s,
               tickets: tickets,
@@ -279,7 +280,8 @@ class DiscoveryRepository {
     }
     final candidates = <Candidate<InvestorProfile>>[
       for (final i in _investors)
-        if (!bookmarks.containsKey('i-${i.id}'))
+        if (!bookmarks.containsKey('i-${i.id}') &&
+            !notInterested.containsKey('i-${i.id}'))
           Candidate(
             i,
             i.name,

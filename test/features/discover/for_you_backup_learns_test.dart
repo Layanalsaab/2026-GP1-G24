@@ -20,6 +20,7 @@ Startup _startup(
   String name,
   String sector, {
   List<String> otherSectors = const [],
+  bool closed = false,
 }) => Startup.fromMap(id, {
   'name': name,
   'sector': sector,
@@ -29,6 +30,7 @@ Startup _startup(
   'location': 'riyadh',
   'founderId': 'f-$id',
   'isPublic': true,
+  if (closed) 'status': 'closed',
 })!;
 
 InvestorProfile _investor(String id, String name, List<String> sectors) =>
@@ -56,6 +58,72 @@ void main() {
   tearDown(() => AppSession.instance.reset());
 
   List<String> ids(HomeViewModel vm) => [for (final i in vm.recommended) i.id];
+
+  // Like the server: hidden cards are left out before the top 20 is picked,
+  // and marks on closed startups count for nothing.
+  group('ranks exactly like the server', () {
+    const criteria = InvestorCriteria(
+      sectors: ['Fintech', 'HealthTech'],
+      stages: ['Seed'],
+    );
+    final at = DateTime.now();
+
+    test('hidden startups are not ranked at all', () {
+      final repo = DiscoveryRepository.sample(
+        startups: [
+          for (var k = 0; k < 25; k++) _startup('s$k', 'Startup $k', 'fintech'),
+        ],
+      );
+      final picks = repo.recommendedStartups(
+        criteria: criteria,
+        notInterested: {'s-s0': at, 's-s1': at},
+      );
+      expect(picks, hasLength(20));
+      expect([for (final p in picks) p.id], isNot(contains('s0')));
+      expect([for (final p in picks) p.id], isNot(contains('s1')));
+    });
+
+    test('hidden investors are not ranked at all', () {
+      final repo = DiscoveryRepository.sample(
+        startups: const [],
+        investors: [
+          for (var k = 0; k < 25; k++)
+            _investor('a$k', 'Angel $k', const ['Fintech']),
+        ],
+      );
+      final picks = repo.recommendedInvestors(
+        own: [_startup('mine', 'My Startup', 'fintech')],
+        notInterested: {'i-a0': at},
+      );
+      expect(picks, hasLength(20));
+      expect([for (final p in picks) p.id], isNot(contains('a0')));
+    });
+
+    test('a mark or bookmark on a closed startup changes nothing', () {
+      final repo = DiscoveryRepository.sample(
+        startups: [
+          _startup('f2', 'Fin Two', 'fintech'),
+          _startup('h1', 'Health One', 'healthtech'),
+          _startup('gone', 'Closed Fin', 'fintech', closed: true),
+          _startup('gone2', 'Closed Health', 'healthtech', closed: true),
+        ],
+      );
+      List<String> order({
+        Map<String, DateTime> marks = const {},
+        Map<String, DateTime> saved = const {},
+      }) => [
+        for (final p in repo.recommendedStartups(
+          criteria: criteria,
+          notInterested: marks,
+          bookmarks: saved,
+        ))
+          p.id,
+      ];
+      expect(order(), ['f2', 'h1']);
+      expect(order(marks: {'s-gone': at}), ['f2', 'h1']);
+      expect(order(saved: {'s-gone2': at}), ['f2', 'h1']);
+    });
+  });
 
   test(
     'an investor: a startup like the hidden one drops below others',
