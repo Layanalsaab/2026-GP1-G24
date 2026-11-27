@@ -195,6 +195,7 @@ class DiscoveryRepository {
     InvestorCriteria? criteria,
     String? investorId,
     Map<String, DateTime> bookmarks = const {},
+    Map<String, DateTime> notInterested = const {},
     DateTime? now,
   }) {
     final at = now ?? DateTime.now();
@@ -214,6 +215,12 @@ class DiscoveryRepository {
             t.createdAt ?? at,
             strength: ticketStrength,
           ),
+      ],
+      dislikes: [
+        for (final e in notInterested.entries)
+          if (e.key.startsWith('s-'))
+            if (startupById(e.key.substring(2)) case final s?)
+              Signal(startupFeatures(s), e.value),
       ],
       now: at,
     );
@@ -243,20 +250,28 @@ class DiscoveryRepository {
   List<HomeItem> recommendedInvestors({
     List<Startup> own = const [],
     Map<String, DateTime> bookmarks = const {},
+    Map<String, DateTime> notInterested = const {},
     DateTime? now,
   }) {
-    final signals = [
-      for (final e in bookmarks.entries)
+    List<Signal> signalsOf(Map<String, DateTime> marks) => [
+      for (final e in marks.entries)
         if (e.key.startsWith('i-'))
           if (investorById(e.key.substring(2)) case final i?)
             Signal(investorFeatures(i), e.value),
     ];
+    final signals = signalsOf(bookmarks);
+    final dislikes = signalsOf(notInterested);
     final at = now ?? DateTime.now();
     final tastes = own.isEmpty
-        ? [Taste.build(Features.empty, signals, now: at)]
+        ? [Taste.build(Features.empty, signals, dislikes: dislikes, now: at)]
         : [
             for (final s in own)
-              Taste.build(startupFeatures(s), signals, now: at),
+              Taste.build(
+                startupFeatures(s),
+                signals,
+                dislikes: dislikes,
+                now: at,
+              ),
           ];
     final tickets = <String, List<InvestmentTicket>>{};
     for (final t in _tickets) {

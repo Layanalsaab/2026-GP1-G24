@@ -377,13 +377,22 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
       for (final k in _bookmarks.keys.value)
         k: _bookmarks.savedAt(k) ?? DateTime.now(),
     };
+    final hidden = {
+      for (final k in _notInterested.keys.value)
+        k: _notInterested.savedAt(k) ?? DateTime.now(),
+    };
     return isFounder
-        ? _discovery.recommendedInvestors(own: _own, bookmarks: saved)
+        ? _discovery.recommendedInvestors(
+            own: _own,
+            bookmarks: saved,
+            notInterested: hidden,
+          )
         : _discovery.recommendedStartups(
             excludeIds: _ownIds,
             criteria: user?.investorCriteria,
             investorId: user?.uid,
             bookmarks: saved,
+            notInterested: hidden,
           );
   }
 

@@ -34,6 +34,9 @@ const int defaultLimit = 20;
 
 const double ticketStrength = 1.5;
 
+/// How far one unit of "Not interested" pushes the taste away (as the server).
+const double dislikeWeight = 0.2;
+
 const double ticketFitBonus = 0.3;
 const double ticketAmountBonus = 0.1;
 
@@ -198,26 +201,27 @@ class Taste {
 
   bool get isEmpty => features.isEmpty;
 
+  /// signals: bookmarks and open tickets (pull toward); dislikes: "Not
+  /// interested" marks (push away, weight [dislikeWeight]), as the server.
   factory Taste.build(
     Features base,
     List<Signal> signals, {
+    List<Signal> dislikes = const [],
     required DateTime now,
   }) {
-    final weights = [
-      for (final s in signals)
+    double decayed(Signal s) =>
         s.strength *
-            math.max(
-              oldestBookmarkWeight,
-              math
-                  .pow(
-                    0.5,
-                    math.max(0, now.difference(s.at).inHours) /
-                        24 /
-                        halfLifeDays,
-                  )
-                  .toDouble(),
-            ),
-    ];
+        math.max(
+          oldestBookmarkWeight,
+          math
+              .pow(
+                0.5,
+                math.max(0, now.difference(s.at).inHours) / 24 / halfLifeDays,
+              )
+              .toDouble(),
+        );
+    final weights = [for (final s in signals) decayed(s)];
+    final dislikeWeights = [for (final s in dislikes) decayed(s)];
     final fresh = weights.fold<double>(0, (a, w) => a + w);
     final share = maxLearnedShare * fresh / (fresh + _halfPullBookmarks);
 
@@ -238,6 +242,24 @@ class Taste {
         groups[g] = {
           for (final k in {...from.keys, ...toward.keys})
             k: (1 - share) * (from[k] ?? 0) + share * (toward[k] ?? 0),
+        };
+      }
+      final unwanted = <String, double>{};
+      for (var i = 0; i < dislikes.length; i++) {
+        _unit(dislikes[i].features.groups[g] ?? const {}).forEach(
+          (k, w) => unwanted[k] = (unwanted[k] ?? 0) + w * dislikeWeights[i],
+        );
+      }
+      final away = _unit(unwanted);
+      final blended = groups[g]!;
+      if (away.isNotEmpty && blended.values.any((w) => w != 0)) {
+        // Below zero means "not wanted at all": dropped, as the server clips
+        // at 0 (and skips a group left with nothing).
+        groups[g] = {
+          for (final k in {...blended.keys, ...away.keys})
+            if ((blended[k] ?? 0) - dislikeWeight * (away[k] ?? 0) case final w
+                when w > 0)
+              k: w,
         };
       }
     }

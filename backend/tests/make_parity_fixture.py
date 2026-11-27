@@ -32,6 +32,12 @@ SCENARIO = {
         # an open ticket from 11 days 5.5 hours ago (269 whole hours)
         {"groups": {"sector": ["fintech", "logistics"], "stage": ["seed"], "model": []}, "at": "2026-11-10T03:30:00Z", "strength": 1.5},
     ],
+    "dislikes": [
+        # a "Not interested" mark 10 days old: pushes series_b (only an old bookmark wanted it) down to 0
+        {"groups": {"sector": ["logistics"], "stage": ["series_b"], "model": ["b2c"]}, "at": "2026-11-11T09:00:00Z", "strength": 1.0},
+        # a mark 120 days old (weight floored at 0.4), with no commerce model
+        {"groups": {"sector": ["saas"], "stage": ["series_a"], "model": []}, "at": "2026-07-24T09:00:00Z", "strength": 1.0},
+    ],
     "candidates": [
         {"id": "c1", "name": "Payly", "mainSector": "fintech", "groups": {"sector": ["fintech"], "stage": ["seed"], "model": ["b2b"]}},
         {"id": "c2", "name": "MediBook", "mainSector": "healthtech", "groups": {"sector": ["healthtech", "ai"], "stage": ["seed"], "model": ["b2c"]}},
@@ -55,7 +61,8 @@ def _time(text: str) -> datetime:
 
 def compute_expected(scenario: dict) -> list[dict]:
     likes = [Signal(encode(l["groups"]), _time(l["at"]), l["strength"]) for l in scenario["likes"]]
-    taste = build_taste(encode(scenario["base"]), likes, [], _time(scenario["now"]))
+    dislikes = [Signal(encode(d["groups"]), _time(d["at"]), d["strength"]) for d in scenario.get("dislikes", [])]
+    taste = build_taste(encode(scenario["base"]), likes, dislikes, _time(scenario["now"]))
     encoded = [encode(c["groups"]) for c in scenario["candidates"]]
     rows = {g: np.stack([e[g] for e in encoded]) for g in LABEL_GROUPS}
     scores = score_candidates(taste, rows)[None, :]
