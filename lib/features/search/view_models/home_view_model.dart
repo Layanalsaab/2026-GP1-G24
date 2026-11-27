@@ -425,6 +425,7 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
     // A reload that found the same keys (a new but equal set): nothing to do.
     if (added == 0 && removed == 0) return;
     final bulk = added > 1 || removed > 1;
+    if (!bulk) _tasteChangedAt = DateTime.now();
     if (bulk || !_onForYou) {
       _forYou = null;
       if (bulk) notifyListeners();
@@ -446,6 +447,16 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
 
   /// The list saved on the phone for this user.
   List<String>? _savedKeys;
+
+  /// When the server's list of this session and the saved list were made
+  /// (null: unknown), and when the user last changed their taste here
+  /// (a bookmark, a Not interested mark or a ticket).
+  DateTime? _serverAt;
+  DateTime? _savedListAt;
+  DateTime? _tasteChangedAt;
+
+  /// The last request to the server got no answer.
+  bool _noAnswer = false;
 
   /// Where each hidden card was, for Undo.
   final Map<String, int> _hiddenAt = {};
@@ -469,6 +480,10 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
     _serverKeys = null;
     _waitingKeys = null;
     _savedKeys = null;
+    _serverAt = null;
+    _savedListAt = null;
+    _tasteChangedAt = null;
+    _noAnswer = false;
     _hiddenAt.clear();
     _quietTimer?.cancel();
     _quietTimer = null;
@@ -482,8 +497,18 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
 
   Future<void> _readSaved(String uid) async {
     final keys = await _cache.read(uid);
+    final at = await _cache.savedAt(uid);
     if (_closed || uid != user?.uid) return;
     _savedKeys = keys;
+    _savedListAt = at;
+    // The server already failed to answer: a saved list older than the
+    // user's latest change gives way to the app's own ranking.
+    if (_noAnswer && _serverKeys == null && _listIsStale) {
+      _savedKeys = null;
+      _forYou = null;
+      notifyListeners();
+      return;
+    }
     if (_serverKeys == null && _waitingKeys == null && keys.isNotEmpty) {
       _forYou = null;
       notifyListeners();
@@ -555,7 +580,23 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
     if (_closed || uid != user?.uid) return;
     final atOnce = _answerAtOnce;
     _answerAtOnce = false;
-    if (picks == null) return; // No answer: the list shown stays.
+    _noAnswer = picks == null;
+    if (picks == null) {
+      // No answer. A list made before the user's latest change would ignore
+      // it, so the app's own ranking (which learns from it) takes over; with
+      // nothing new the list shown stays.
+      if (_listIsStale) {
+        _serverKeys = null;
+        _savedKeys = null;
+        _waitingKeys = null;
+        if (atOnce || !_onForYou) {
+          _forYou = null;
+          notifyListeners();
+        }
+      }
+      return;
+    }
+    _serverAt = DateTime.now();
     final keys = [for (final p in picks) p.key];
     unawaited(_cache.write(uid, keys));
     if (!atOnce && _onForYou) {
@@ -566,6 +607,27 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
     _waitingKeys = null;
     _forYou = null;
     notifyListeners();
+  }
+
+  /// True when the list in use (the server's or the saved one) was made
+  /// before the user's latest bookmark, Not interested mark or ticket change.
+  bool get _listIsStale {
+    if (_serverKeys == null && _savedKeys == null) return false;
+    final made = _serverKeys != null ? _serverAt : _savedListAt;
+    var newest = _tasteChangedAt;
+    void consider(DateTime? t) {
+      if (t != null && (newest == null || t.isAfter(newest!))) newest = t;
+    }
+
+    for (final k in _bookmarks.keys.value) {
+      consider(_bookmarks.savedAt(k));
+    }
+    for (final k in _notInterested.keys.value) {
+      consider(_notInterested.savedAt(k));
+    }
+    final latest = newest;
+    if (latest == null) return false;
+    return made == null || latest.isAfter(made);
   }
 
   /// "Not interested" (the card's ✕): the card leaves For You at once.

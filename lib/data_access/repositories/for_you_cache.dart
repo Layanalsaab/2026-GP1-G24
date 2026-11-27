@@ -9,6 +9,7 @@ class ForYouCache {
   static ForYouCache instance = ForYouCache();
 
   static String _key(String uid) => 'forYou.lastList.$uid';
+  static String _atKey(String uid) => 'forYou.lastListAt.$uid';
 
   /// The saved list, or an empty list when none is saved or storage fails.
   Future<List<String>> read(String uid) async {
@@ -21,11 +22,25 @@ class ForYouCache {
     }
   }
 
-  /// Saves the list; a storage failure is only logged.
+  /// When the saved list was saved, or null when unknown (none saved, an
+  /// older app version, or storage fails).
+  Future<DateTime?> savedAt(String uid) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final ms = prefs.getInt(_atKey(uid));
+      return ms == null ? null : DateTime.fromMillisecondsSinceEpoch(ms);
+    } catch (e) {
+      debugPrint('ForYouCache.savedAt failed: $e');
+      return null;
+    }
+  }
+
+  /// Saves the list and the time; a storage failure is only logged.
   Future<void> write(String uid, List<String> keys) async {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setStringList(_key(uid), keys);
+      await prefs.setInt(_atKey(uid), DateTime.now().millisecondsSinceEpoch);
     } catch (e) {
       debugPrint('ForYouCache.write failed: $e');
     }
@@ -36,6 +51,7 @@ class ForYouCache {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_key(uid));
+      await prefs.remove(_atKey(uid));
     } catch (e) {
       debugPrint('ForYouCache.remove failed: $e');
     }

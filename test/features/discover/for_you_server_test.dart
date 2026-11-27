@@ -15,6 +15,7 @@ import 'package:startsa/features/search/view_models/home_view_model.dart';
 import 'package:startsa/helpers/app_session.dart';
 import 'package:startsa/models/app_user.dart';
 import 'package:startsa/models/home_item.dart';
+import 'package:startsa/models/investor_criteria.dart';
 
 /// The For You server, answering from a queue: a list, null (no answer) or a
 /// future (for example a Completer's, to answer later or never).
@@ -194,11 +195,16 @@ void main() {
   List<String> ids(HomeViewModel m) => [for (final i in m.recommended) i.id];
 
   /// What the app ranks by itself (the fallback).
-  List<String> dartList(String uid) => [
+  List<String> dartList(String uid, {InvestorCriteria? criteria}) => [
     for (final i in DiscoveryRepository.instance.recommendedStartups(
       investorId: uid,
+      criteria: criteria,
       bookmarks: {
         for (final k in marks.keys.value) k: marks.savedAt(k) ?? DateTime.now(),
+      },
+      notInterested: {
+        for (final k in hidden.keys.value)
+          k: hidden.savedAt(k) ?? DateTime.now(),
       },
     ))
       i.id,
@@ -663,6 +669,92 @@ void main() {
     await pumpEventQueue();
     expect(server.calls, before + 1);
     expect(m.recommended, isNotEmpty);
+  });
+
+  group('the server cannot answer', () {
+    // An investor with real preferences, so the Dart list differs from the
+    // server's.
+    final liked = PrototypeSeed.startups[6];
+    final criteria = InvestorCriteria(
+      sectors: [liked.sector.label],
+      stages: [liked.stage.label],
+    );
+    HomeViewModel withTaste(FakeForYou server) {
+      final m = HomeViewModel(
+        role: SessionRole.investor,
+        user: AppUser(
+          uid: 'u1',
+          role: AccountRole.investor,
+          fullName: 'Layan Test',
+          email: 'u1@x.co',
+          investorCriteria: criteria,
+        ),
+        forYou: server,
+        forYouCache: ForYouCache(),
+        notInterested: hidden,
+        forYouQuietTime: Duration.zero,
+      );
+      addTearDown(m.dispose);
+      return m;
+    }
+
+    test(
+      'after a new Not interested: the Dart list, which learns from it',
+      () async {
+        final server = FakeForYou([
+          [s('a'), s('b'), s('c')],
+        ]); // every later call: no answer
+        final m = withTaste(server);
+        await pumpEventQueue();
+        expect(ids(m), ['a', 'b', 'c']);
+        await hidden.add('s-b'); // marked on another screen
+        await pumpEventQueue();
+        expect(server.calls, 2);
+        expect(ids(m), dartList('u1', criteria: criteria));
+        expect(ids(m), isNot(contains('b')));
+        expect(ids(m), isNot(equals(['a', 'c'])));
+      },
+    );
+
+    test('with nothing new: the list shown stays', () async {
+      final server = FakeForYou([
+        [s('a'), s('b'), s('c')],
+      ]);
+      final m = withTaste(server);
+      await pumpEventQueue();
+      await m.refreshForYou();
+      await pumpEventQueue();
+      expect(server.calls, 2);
+      expect(ids(m), ['a', 'b', 'c']);
+    });
+
+    test(
+      'a saved list older than the newest mark gives way to the Dart list',
+      () async {
+        await hidden.add('s-b');
+        SharedPreferences.setMockInitialValues({
+          'forYou.lastList.u1': ['s-a', 's-b', 's-c'],
+          'forYou.lastListAt.u1': DateTime(2020).millisecondsSinceEpoch,
+        });
+        final m = withTaste(FakeForYou());
+        await pumpEventQueue();
+        expect(ids(m), dartList('u1', criteria: criteria));
+        expect(ids(m), isNot(equals(['a', 'c'])));
+      },
+    );
+
+    test('a saved list newer than every mark stays', () async {
+      await hidden.add('s-b');
+      SharedPreferences.setMockInitialValues({
+        'forYou.lastList.u1': ['s-a', 's-b', 's-c'],
+        'forYou.lastListAt.u1': DateTime.now()
+            .add(const Duration(days: 1))
+            .millisecondsSinceEpoch,
+      });
+      final m = withTaste(FakeForYou());
+      await pumpEventQueue();
+      expect(ids(m), ['a', 'c']);
+    });
   });
 
   test('quick changes send one request', () {
