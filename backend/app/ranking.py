@@ -157,9 +157,9 @@ def recommend_best(
 
 
 def _calibrated(order: list[int], totals: np.ndarray, sectors: np.ndarray, target: np.ndarray, places: int) -> list[int]:
-    """Steck's greedy calibration: each place goes to the candidate with the best
-    (1 - w) * score - w * KL(target || mix of the list with it), mix smoothed by alpha.
-    Ties (within CALIBRATION_TIE) go to the earliest candidate in order (score, fits, name)."""
+    """Steck's greedy calibration after the best match: each later place goes to the candidate
+    with the best (1 - w) * score - w * KL(target || mix of the list with it), mix smoothed by
+    alpha. Ties (within CALIBRATION_TIE) go to the earliest candidate in order (score, fits, name)."""
     if not order or places <= 0:
         return []
     wanted = target > 0
@@ -172,15 +172,30 @@ def _calibrated(order: list[int], totals: np.ndarray, sectors: np.ndarray, targe
     mixes = np.divide(rows, sums, out=np.zeros_like(rows), where=sums > 0)
     scores = totals[order]
     p = target[wanted]
-    counts = np.zeros(len(target))
-    left = list(range(len(order)))
-    chosen: list[int] = []
-    for size in range(1, min(places, len(order)) + 1):
-        cand = np.array(left)
+
+    def closeness(cand: np.ndarray, size: int) -> np.ndarray:
+        """KL(target || the list's mix with each candidate added), smoothed."""
         q = (counts + mixes[cand]) / size
         smoothed = (1 - CALIBRATION_ALPHA) * q[:, wanted] + CALIBRATION_ALPHA * p
-        kl = np.sum(p * np.log(p / smoothed), axis=1)
-        value = (1 - CALIBRATION_WEIGHT) * scores[cand] - CALIBRATION_WEIGHT * kl
+        return np.sum(p * np.log(p / smoothed), axis=1)
+
+    # The best match in the user's sectors keeps the first place; calibration arranges the rest
+    # (the first greedy pick would otherwise go to the largest single interest, however weak its
+    # best match). A sectorless item never takes it unless nothing else is in the user's sectors.
+    # Among equally good matches, the one closest to the user's interests comes first.
+    counts = np.zeros(len(target))
+    in_sectors = np.flatnonzero(mixes[:, wanted].sum(axis=1) > 0)
+    pool = in_sectors if len(in_sectors) else np.arange(len(order))
+    best_score = scores[pool].max()
+    tied = pool[scores[pool] >= best_score - CALIBRATION_TIE]
+    kl = closeness(tied, 1)
+    first = int(tied[int(np.flatnonzero(kl <= kl.min() + CALIBRATION_TIE)[0])])
+    chosen: list[int] = [first]
+    counts += mixes[first]
+    left = [k for k in range(len(order)) if k != first]
+    for size in range(2, min(places, len(order)) + 1):
+        cand = np.array(left)
+        value = (1 - CALIBRATION_WEIGHT) * scores[cand] - CALIBRATION_WEIGHT * closeness(cand, size)
         best = int(cand[int(np.flatnonzero(value >= value.max() - CALIBRATION_TIE)[0])])
         chosen.append(best)
         counts += mixes[best]

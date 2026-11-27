@@ -497,9 +497,10 @@ Vec _average(List<Vec> all) {
   return {for (final e in sum.entries) e.key: e.value / all.length};
 }
 
-/// Steck's greedy calibration, exactly as the server: each place goes to the
-/// candidate with the best (1 - w) * score - w * KL(target || the list's mix
-/// with it), the mix smoothed by alpha. Ties go to the earliest candidate.
+/// Steck's greedy calibration after the best match, exactly as the server:
+/// each later place goes to the candidate with the best (1 - w) * score -
+/// w * KL(target || the list's mix with it), the mix smoothed by alpha. Ties go
+/// to the earliest candidate.
 List<E> _calibrated<E extends ({Candidate c, double score, int fits})>(
   List<E> order,
   Vec target,
@@ -520,20 +521,52 @@ List<E> _calibrated<E extends ({Candidate c, double score, int fits})>(
           const <String, double>{},
   ];
   final counts = <String, double>{};
-  final left = List<int>.generate(order.length, (i) => i);
-  final chosen = <E>[];
+
+  /// KL(target || the list's mix with candidate i added), smoothed.
+  double closeness(int i, int size) {
+    var kl = 0.0;
+    wanted.forEach((g, p) {
+      final q = ((counts[g] ?? 0) + (mixes[i][g] ?? 0)) / size;
+      final smoothed = (1 - calibrationAlpha) * q + calibrationAlpha * p;
+      kl += p * math.log(p / smoothed);
+    });
+    return kl;
+  }
+
+  // The best match in the user's sectors keeps the first place; calibration
+  // arranges the rest (the first greedy pick would otherwise go to the largest
+  // single interest, however weak its best match). A sectorless item never
+  // takes it unless nothing else is in the user's sectors. Among equally good
+  // matches, the one closest to the user's interests comes first (as the
+  // server).
+  final inSectors = [
+    for (var i = 0; i < order.length; i++)
+      if (wanted.keys.any((g) => (mixes[i][g] ?? 0) > 0)) i,
+  ];
+  final pool = inSectors.isNotEmpty
+      ? inSectors
+      : List<int>.generate(order.length, (i) => i);
+  final bestScore = pool.map((i) => order[i].score).reduce(math.max);
+  final tied = [
+    for (final i in pool)
+      if (order[i].score >= bestScore - calibrationTie) i,
+  ];
+  final tiedKl = {for (final i in tied) i: closeness(i, 1)};
+  final leastKl = tiedKl.values.reduce(math.min);
+  final first = tied.firstWhere((i) => tiedKl[i]! <= leastKl + calibrationTie);
+  final chosen = <E>[order[first]];
+  mixes[first].forEach((g, w) => counts[g] = (counts[g] ?? 0) + w);
+  final left = [
+    for (var i = 0; i < order.length; i++)
+      if (i != first) i,
+  ];
   final steps = math.min(places, order.length);
-  for (var size = 1; size <= steps; size++) {
+  for (var size = 2; size <= steps; size++) {
     final values = <int, double>{};
     for (final i in left) {
-      var kl = 0.0;
-      wanted.forEach((g, p) {
-        final q = ((counts[g] ?? 0) + (mixes[i][g] ?? 0)) / size;
-        final smoothed = (1 - calibrationAlpha) * q + calibrationAlpha * p;
-        kl += p * math.log(p / smoothed);
-      });
       values[i] =
-          (1 - calibrationWeight) * order[i].score - calibrationWeight * kl;
+          (1 - calibrationWeight) * order[i].score -
+          calibrationWeight * closeness(i, size);
     }
     // Values this close count as equal, so ties follow the order given, not
     // rounding noise (as the server).

@@ -21,6 +21,9 @@ from app.taste import Signal, build_taste
 FIXTURE = Path(__file__).parent / "fixtures" / "for_you_parity.json"
 # Equal scores across 4 onboarding sectors: ties must follow the given order on both sides.
 TIES_FIXTURE = Path(__file__).parent / "fixtures" / "for_you_parity_ties.json"
+# The first place: a sectorless top scorer and a learned interest larger than either onboarding
+# sector; the best match in the user's sectors must still come first.
+FIRST_FIXTURE = Path(__file__).parent / "fixtures" / "for_you_parity_first.json"
 
 SCENARIO = {
     "now": "2026-11-21T09:00:00Z",
@@ -71,6 +74,28 @@ TIES = {
 }
 
 
+FIRST = {
+    "now": "2026-11-21T09:00:00Z",
+    "limit": 8,
+    "base": {"sector": ["fintech", "healthtech"], "stage": ["seed"], "model": ["b2b"]},
+    "likes": [
+        {"groups": {"sector": ["saas"], "stage": ["series_a"], "model": ["b2b"]}, "at": "2026-11-21T08:00:00Z",
+         "strength": 1.0, "mainSector": "saas"}
+        for _ in range(6)
+    ],
+    "dislikes": [],
+    "candidates": [
+        {"id": "a-none", "name": "A None", "mainSector": None, "groups": {"sector": [], "stage": ["seed"], "model": ["b2b"]}},
+        {"id": "fin1", "name": "Fin One", "mainSector": "fintech", "groups": {"sector": ["fintech"], "stage": ["seed"], "model": ["b2b"]}},
+        {"id": "health1", "name": "Health One", "mainSector": "healthtech", "groups": {"sector": ["healthtech"], "stage": ["seed"], "model": ["b2b"]}},
+        {"id": "fin2", "name": "Fin Two", "mainSector": "fintech", "groups": {"sector": ["fintech"], "stage": ["seed"], "model": ["b2c"]}},
+    ] + [
+        {"id": f"saas{k}", "name": f"Saas {k}", "mainSector": "saas", "groups": {"sector": ["saas"], "stage": ["series_a"], "model": ["b2b"]}}
+        for k in range(1, 4)
+    ],
+}
+
+
 def _time(text: str) -> datetime:
     return datetime.fromisoformat(text.replace("Z", "+00:00"))
 
@@ -102,7 +127,7 @@ def compute_expected(scenario: dict) -> list[dict]:
 
 def main() -> None:
     FIXTURE.parent.mkdir(parents=True, exist_ok=True)
-    for path, scenario in ((FIXTURE, SCENARIO), (TIES_FIXTURE, TIES)):
+    for path, scenario in ((FIXTURE, SCENARIO), (TIES_FIXTURE, TIES), (FIRST_FIXTURE, FIRST)):
         path.write_text(json.dumps({**scenario, "expected": compute_expected(scenario)}, indent=2) + "\n")
         print(f"wrote {path}")
 

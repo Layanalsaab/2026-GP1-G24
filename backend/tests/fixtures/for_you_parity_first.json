@@ -1,0 +1,257 @@
+{
+  "now": "2026-11-21T09:00:00Z",
+  "limit": 8,
+  "base": {
+    "sector": [
+      "fintech",
+      "healthtech"
+    ],
+    "stage": [
+      "seed"
+    ],
+    "model": [
+      "b2b"
+    ]
+  },
+  "likes": [
+    {
+      "groups": {
+        "sector": [
+          "saas"
+        ],
+        "stage": [
+          "series_a"
+        ],
+        "model": [
+          "b2b"
+        ]
+      },
+      "at": "2026-11-21T08:00:00Z",
+      "strength": 1.0,
+      "mainSector": "saas"
+    },
+    {
+      "groups": {
+        "sector": [
+          "saas"
+        ],
+        "stage": [
+          "series_a"
+        ],
+        "model": [
+          "b2b"
+        ]
+      },
+      "at": "2026-11-21T08:00:00Z",
+      "strength": 1.0,
+      "mainSector": "saas"
+    },
+    {
+      "groups": {
+        "sector": [
+          "saas"
+        ],
+        "stage": [
+          "series_a"
+        ],
+        "model": [
+          "b2b"
+        ]
+      },
+      "at": "2026-11-21T08:00:00Z",
+      "strength": 1.0,
+      "mainSector": "saas"
+    },
+    {
+      "groups": {
+        "sector": [
+          "saas"
+        ],
+        "stage": [
+          "series_a"
+        ],
+        "model": [
+          "b2b"
+        ]
+      },
+      "at": "2026-11-21T08:00:00Z",
+      "strength": 1.0,
+      "mainSector": "saas"
+    },
+    {
+      "groups": {
+        "sector": [
+          "saas"
+        ],
+        "stage": [
+          "series_a"
+        ],
+        "model": [
+          "b2b"
+        ]
+      },
+      "at": "2026-11-21T08:00:00Z",
+      "strength": 1.0,
+      "mainSector": "saas"
+    },
+    {
+      "groups": {
+        "sector": [
+          "saas"
+        ],
+        "stage": [
+          "series_a"
+        ],
+        "model": [
+          "b2b"
+        ]
+      },
+      "at": "2026-11-21T08:00:00Z",
+      "strength": 1.0,
+      "mainSector": "saas"
+    }
+  ],
+  "dislikes": [],
+  "candidates": [
+    {
+      "id": "a-none",
+      "name": "A None",
+      "mainSector": null,
+      "groups": {
+        "sector": [],
+        "stage": [
+          "seed"
+        ],
+        "model": [
+          "b2b"
+        ]
+      }
+    },
+    {
+      "id": "fin1",
+      "name": "Fin One",
+      "mainSector": "fintech",
+      "groups": {
+        "sector": [
+          "fintech"
+        ],
+        "stage": [
+          "seed"
+        ],
+        "model": [
+          "b2b"
+        ]
+      }
+    },
+    {
+      "id": "health1",
+      "name": "Health One",
+      "mainSector": "healthtech",
+      "groups": {
+        "sector": [
+          "healthtech"
+        ],
+        "stage": [
+          "seed"
+        ],
+        "model": [
+          "b2b"
+        ]
+      }
+    },
+    {
+      "id": "fin2",
+      "name": "Fin Two",
+      "mainSector": "fintech",
+      "groups": {
+        "sector": [
+          "fintech"
+        ],
+        "stage": [
+          "seed"
+        ],
+        "model": [
+          "b2c"
+        ]
+      }
+    },
+    {
+      "id": "saas1",
+      "name": "Saas 1",
+      "mainSector": "saas",
+      "groups": {
+        "sector": [
+          "saas"
+        ],
+        "stage": [
+          "series_a"
+        ],
+        "model": [
+          "b2b"
+        ]
+      }
+    },
+    {
+      "id": "saas2",
+      "name": "Saas 2",
+      "mainSector": "saas",
+      "groups": {
+        "sector": [
+          "saas"
+        ],
+        "stage": [
+          "series_a"
+        ],
+        "model": [
+          "b2b"
+        ]
+      }
+    },
+    {
+      "id": "saas3",
+      "name": "Saas 3",
+      "mainSector": "saas",
+      "groups": {
+        "sector": [
+          "saas"
+        ],
+        "stage": [
+          "series_a"
+        ],
+        "model": [
+          "b2b"
+        ]
+      }
+    }
+  ],
+  "expected": [
+    {
+      "id": "fin1",
+      "score": 0.714607677244979
+    },
+    {
+      "id": "saas1",
+      "score": 0.7082133172519964
+    },
+    {
+      "id": "health1",
+      "score": 0.714607677244979
+    },
+    {
+      "id": "saas2",
+      "score": 0.7082133172519964
+    },
+    {
+      "id": "saas3",
+      "score": 0.7082133172519964
+    },
+    {
+      "id": "fin2",
+      "score": 0.5100622226995244
+    },
+    {
+      "id": "a-none",
+      "score": 0.8605547768674212
+    }
+  ]
+}

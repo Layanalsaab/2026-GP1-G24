@@ -20,6 +20,9 @@ void main() {
     'backend/tests/fixtures/for_you_parity.json',
     // Equal scores across 4 sectors: ties must follow the given order.
     'backend/tests/fixtures/for_you_parity_ties.json',
+    // A sectorless top scorer and a large learned interest: the best match in
+    // the user's sectors still comes first.
+    'backend/tests/fixtures/for_you_parity_first.json',
   ]) {
     test(
       'the Python backend and the Dart For You rank the same way ($file)',

@@ -154,3 +154,24 @@ def test_an_items_sectors_outside_the_target_do_not_count():
     picks = recommend_best(ids, ids, ["fintech"] * 3, scores, np.ones_like(scores, dtype=bool),
                            np.zeros_like(scores), limit=5, sectors=sectors, target=np.array([1.0, 0, 0, 0]))
     assert [p.id for p in picks] == ["broad", "f1", "f2"]
+
+
+def test_the_best_match_keeps_the_first_place():
+    # Even when a learned interest (saas) is the largest share of the target, the first place goes to
+    # the best-scoring match; calibration arranges the rest.
+    ids, names, scores, sectors = _two_sectors(10, gap=0.3)
+    picks = recommend_best(ids, names, ["fintech"] * 10 + ["saas"] * 10, scores, np.ones_like(scores, dtype=bool),
+                           np.zeros_like(scores), limit=12, sectors=sectors, target=np.array([0.3, 0.7]))
+    assert picks[0].id == "f0"
+    assert any(p.id.startswith("s") for p in picks[1:3])  # the learned interest still shows right after
+
+
+def test_the_first_place_goes_to_the_best_match_in_the_users_sectors():
+    # A sectorless item (a legacy "Other" with no text) scores on stage and model alone and can top
+    # the scores; the first place still goes to the best match in a sector the user wants.
+    ids = ["nosector", "fin", "saas"]
+    scores = np.array([[1.0, 0.86, 0.6]])
+    sectors = np.array([[0, 0], [1, 0], [0, 1]], dtype=float)
+    picks = recommend_best(ids, ids, [None, "fintech", "saas"], scores, np.ones_like(scores, dtype=bool),
+                           np.zeros_like(scores), limit=5, sectors=sectors, target=np.array([0.6, 0.4]))
+    assert picks[0].id == "fin"

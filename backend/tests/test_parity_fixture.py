@@ -2,10 +2,10 @@ import json
 
 import pytest
 
-from tests.make_parity_fixture import FIXTURE, TIES_FIXTURE, compute_expected
+from tests.make_parity_fixture import FIRST_FIXTURE, FIXTURE, TIES_FIXTURE, compute_expected
 
 
-@pytest.mark.parametrize("fixture", [FIXTURE, TIES_FIXTURE])
+@pytest.mark.parametrize("fixture", [FIXTURE, TIES_FIXTURE, FIRST_FIXTURE])
 def test_fixture_matches_python(fixture):
     data = json.loads(fixture.read_text())
     expected = data.pop("expected")
