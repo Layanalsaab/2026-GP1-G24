@@ -4,6 +4,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:startsa/helpers/startup_validators.dart';
 import 'package:startsa/shared_ui/widgets/forms/app_text_field.dart';
+import 'package:startsa/shared_ui/widgets/overlays/multi_picker_sheet.dart';
+import 'package:startsa/shared_ui/widgets/overlays/picker_sheet.dart';
 
 void main() {
   setUpAll(() => GoogleFonts.config.allowRuntimeFetching = false);
@@ -96,4 +98,56 @@ void main() {
     await t.pump(const Duration(milliseconds: 300));
     expect(find.text('Maximum 4 characters allowed.'), findsOneWidget);
   });
+
+  for (final multi in [false, true]) {
+    testWidgets(
+      '${multi ? 'several picks' : 'one pick'}: typing past 40 in Other '
+      'stops at 40 and shows the red message',
+      (t) async {
+        await t.pumpWidget(
+          MaterialApp(
+            home: Builder(
+              builder: (c) => TextButton(
+                onPressed: () => multi
+                    ? showMultiPickerSheet(
+                        c,
+                        title: 'Commerce models',
+                        options: const ['B2B', 'Other'],
+                        selected: const {},
+                        onToggle: (_) {},
+                        otherNoun: 'commerce model',
+                      )
+                    : showPickerSheet(
+                        c,
+                        title: 'Commerce model',
+                        options: const ['B2B', 'Other'],
+                        otherNoun: 'commerce model',
+                      ),
+                child: const Text('open'),
+              ),
+            ),
+          ),
+        );
+        await t.tap(find.text('open'));
+        await t.pumpAndSettle();
+        await t.tap(find.text('Other'));
+        await t.pumpAndSettle();
+        final box = find.byType(TextField).last;
+        await t.enterText(box, 'x' * 39);
+        await t.pump();
+        expect(find.text('Maximum 40 characters allowed.'), findsNothing);
+        await t.enterText(box, 'x' * 45);
+        await t.pump();
+        await t.pump();
+        expect(t.widget<TextField>(box).controller!.text.length, 40);
+        expect(find.text('40/40'), findsOneWidget);
+        expect(find.text('Maximum 40 characters allowed.'), findsOneWidget);
+        await t.enterText(box, 'x' * 38);
+        await t.pump();
+        await t.pump();
+        expect(find.text('Maximum 40 characters allowed.'), findsNothing);
+        await t.pump(const Duration(seconds: 1));
+      },
+    );
+  }
 }

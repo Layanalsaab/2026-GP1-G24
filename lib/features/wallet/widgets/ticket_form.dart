@@ -76,13 +76,10 @@ class TicketForm extends StatelessWidget {
     }
   }
 
-  /// The chosen sectors; "Other" shows what was typed.
   String _sectorsText() => [
     for (final o in sectorOptions)
       if (vm.sectors.contains(o))
-        o == 'Other' && vm.sectorOther.trim().isNotEmpty
-            ? vm.sectorOther.trim()
-            : o,
+        o == 'Other' ? SelectField.otherText(vm.sectorOther) : o,
   ].join(', ');
 
   String _list(Set<String> chosen, List<String> order) => [

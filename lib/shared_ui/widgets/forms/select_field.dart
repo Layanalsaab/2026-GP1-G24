@@ -21,9 +21,10 @@ class SelectField extends StatelessWidget {
   final bool hasError;
   final String? semanticLabel;
 
-  /// "Other: text", or "Other — describe it" when the write-in is blank.
+  /// How a picked "Other" shows in a field: "Other: text", or "Other" while
+  /// nothing is typed.
   static String otherText(String other) =>
-      other.trim().isEmpty ? 'Other — describe it' : 'Other: ${other.trim()}';
+      other.trim().isEmpty ? 'Other' : 'Other: ${other.trim()}';
 
   @override
   Widget build(BuildContext context) {

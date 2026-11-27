@@ -130,9 +130,8 @@ void main() {
         home: Scaffold(
           body: ListenableBuilder(
             listenable: vm,
-            builder: (context, _) => SingleChildScrollView(
-              child: ExploreScreen(viewModel: vm, onSignUp: () {}),
-            ),
+            builder: (context, _) =>
+                SingleChildScrollView(child: ExploreScreen(viewModel: vm)),
           ),
         ),
       ),

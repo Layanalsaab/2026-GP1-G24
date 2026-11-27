@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../helpers/validators.dart';
 import '../../../app_constants/founder_tools_strings.dart';
 import '../../../models/list_entries.dart';
 import '../../../models/startup.dart';
@@ -451,6 +452,7 @@ class _OwnerEmailSheetState extends State<_OwnerEmailSheet> {
                 controller: _email,
                 hint: FounderToolsStrings.ownerEmailHint,
                 keyboardType: TextInputType.emailAddress,
+                maxLength: Validators.maxEmail,
                 textInputAction: TextInputAction.done,
                 autofillHints: const [AutofillHints.email],
                 hasError: _error != null,

@@ -6,6 +6,7 @@ import '../../motion/motion.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text.dart';
 import 'app_field.dart';
+import 'no_emoji_formatter.dart';
 
 class AppTextField extends StatefulWidget {
   const AppTextField({
@@ -200,8 +201,9 @@ class _AppTextFieldState extends State<AppTextField> {
     if (!w.enabled) textStyle = textStyle.copyWith(color: AppColors.grey);
 
     final formatters = <TextInputFormatter>[
+      const NoEmojiFormatter(),
       ...?w.inputFormatters,
-      if (w.maxLength != null) _MaxLengthFormatter(w.maxLength!, w.onOverflow),
+      if (w.maxLength != null) MaxLengthFormatter(w.maxLength!, w.onOverflow),
     ];
 
     final field = Semantics(
@@ -397,8 +399,10 @@ class _AppTextFieldState extends State<AppTextField> {
   }
 }
 
-class _MaxLengthFormatter extends TextInputFormatter {
-  _MaxLengthFormatter(this.max, this.onOverflow);
+String maxLengthMessage(int max) => 'Maximum $max characters allowed.';
+
+class MaxLengthFormatter extends TextInputFormatter {
+  MaxLengthFormatter(this.max, this.onOverflow);
 
   final int max;
   final ValueChanged<bool>? onOverflow;
@@ -542,7 +546,7 @@ class LabeledTextField extends StatelessWidget {
     final shownError = (error != null && error!.isNotEmpty)
         ? error
         : (over && maxLength != null && showOverflowMessage
-              ? 'Maximum $maxLength characters allowed.'
+              ? maxLengthMessage(maxLength!)
               : null);
     Widget inner(String text) => AppField(
       label: label,

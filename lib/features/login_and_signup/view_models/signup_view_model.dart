@@ -206,7 +206,7 @@ class SignupViewModel extends ChangeNotifier with SafeNotifier {
     if (v.isEmpty) {
       return _requiredShown(email) ? ValidationStrings.emailRequired : null;
     }
-    return Validators.isSignupEmail(v) ? null : ValidationStrings.emailLive;
+    return Validators.isEmail(v) ? null : ValidationStrings.emailInvalid;
   }
 
   String? get phoneError =>
@@ -266,7 +266,7 @@ class SignupViewModel extends ChangeNotifier with SafeNotifier {
             (Validators.isOtherText(sectorsOther.text) &&
                 !sectorsOtherRepeats));
     return Validators.isFullName(name.text) &&
-        Validators.isSignupEmail(email.text) &&
+        Validators.isEmail(email.text) &&
         Validators.isPhone(phone.text) &&
         Validators.isLinkedin(linkedin.text) &&
         Validators.isPassword(password.text) &&
@@ -279,7 +279,7 @@ class SignupViewModel extends ChangeNotifier with SafeNotifier {
   }
 
   bool get nameValid => Validators.isFullName(name.text);
-  bool get emailValid => Validators.isSignupEmail(email.text);
+  bool get emailValid => Validators.isEmail(email.text);
   bool get phoneValid => Validators.isPhone(phone.text);
   bool get linkedinValid =>
       linkedin.text.trim().isNotEmpty && Validators.isLinkedin(linkedin.text);
@@ -321,7 +321,7 @@ class SignupViewModel extends ChangeNotifier with SafeNotifier {
     if (isFounder || flow.accountCreated || mail == _confirmedInvestorEmail) {
       return const [];
     }
-    if (!Validators.isSignupEmail(mail)) return const [];
+    if (!Validators.isEmail(mail)) return const [];
     try {
       return await (repository ?? InvitationRepository.instance).invitedBy(
         mail,

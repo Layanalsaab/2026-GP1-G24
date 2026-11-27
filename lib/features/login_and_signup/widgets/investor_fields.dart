@@ -20,12 +20,6 @@ class InvestorFields {
     return model;
   }
 
-  /// "Other" shown as what was typed (or "Other" while it is blank).
-  static String _typed(String label, String typed) =>
-      label == InvestorOnboardingViewModel.otherLabel && typed.trim().isNotEmpty
-      ? typed.trim()
-      : label;
-
   /// Years investing, startups invested in and round size (hidden for "0").
   static List<Widget> background(
     BuildContext context,
@@ -166,7 +160,10 @@ class InvestorFields {
           placeholder: AuthStrings.sectorsPlaceholder,
           value: [
             for (final o in InvestorOnboardingViewModel.sectorOptions)
-              if (vm.sectors.contains(o)) _typed(o, vm.sectorsOther.text),
+              if (vm.sectors.contains(o))
+                o == InvestorOnboardingViewModel.otherLabel
+                    ? SelectField.otherText(vm.sectorsOther.text)
+                    : o,
           ].join(', '),
           semanticLabel: AuthStrings.investSectors,
           hasError: vm.sectorsError != null || vm.sectorsOtherError != null,
@@ -198,7 +195,7 @@ class InvestorFields {
             for (final o in InvestorOnboardingViewModel.modelOptions)
               if (vm.models.contains(o))
                 o == InvestorOnboardingViewModel.otherLabel
-                    ? _typed(o, vm.modelsOther.text)
+                    ? SelectField.otherText(vm.modelsOther.text)
                     : _short(o),
           ].join(', '),
           semanticLabel: AuthStrings.investModels,

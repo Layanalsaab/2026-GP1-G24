@@ -409,9 +409,7 @@ class _DropGroup extends StatelessWidget {
     final chosen = [
       for (final o in group.options)
         if (selected.contains(o))
-          o == 'Other' && otherText.trim().isNotEmpty
-              ? SelectField.otherText(otherText)
-              : o,
+          o == 'Other' ? SelectField.otherText(otherText) : o,
     ];
     if (chosen.length <= 2) return chosen.join(', ');
     return '${chosen.take(2).join(', ')} +${chosen.length - 2}';

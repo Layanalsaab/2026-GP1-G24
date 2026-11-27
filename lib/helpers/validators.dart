@@ -58,16 +58,14 @@ class Validators {
     return n < 2 || labels[n - 1] != labels[n - 2];
   }
 
-  static bool isEmail(String? value) => _wellFormed((value ?? '').trim());
-
   static String? email(String? value) {
     final v = (value ?? '').trim();
     if (v.isEmpty) return ValidationStrings.emailRequired;
-    if (!_wellFormed(v)) return ValidationStrings.emailInvalid;
+    if (!isEmail(v)) return ValidationStrings.emailInvalid;
     return null;
   }
 
-  /// The email domains accepted at sign-up: the common providers.
+  /// The email domains accepted everywhere: the common providers.
   static const _allowedDomains = {
     'gmail.com',
     'hotmail.com',
@@ -89,7 +87,8 @@ class Validators {
   static bool _isUniversityDomain(String domain) =>
       _universityDomain.hasMatch(domain);
 
-  static bool isSignupEmail(String? value) {
+  /// A well-formed email at a common provider or a university.
+  static bool isEmail(String? value) {
     final v = (value ?? '').trim().toLowerCase();
     if (!_wellFormed(v)) return false;
     final domain = v.substring(v.lastIndexOf('@') + 1);

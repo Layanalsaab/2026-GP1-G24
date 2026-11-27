@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../../helpers/validators.dart';
 import '../../../app_constants/auth_strings.dart';
 import '../../../app_constants/validation_strings.dart';
 import '../../../data_access/repositories/team_lookup.dart';
@@ -217,6 +218,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen>
                           controller: vm.email,
                           placeholder: AuthStrings.emailPlaceholder,
                           keyboardType: TextInputType.emailAddress,
+                          maxLength: Validators.maxEmail,
                           valid: vm.emailValid,
                           error: vm.emailError,
                           autofillHints: const [AutofillHints.email],

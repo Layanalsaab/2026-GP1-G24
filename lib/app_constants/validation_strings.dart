@@ -6,7 +6,6 @@ class ValidationStrings {
   static const nameNoNumbers = "Names can't contain numbers.";
   static const emailRequired = 'Enter a valid email';
   static const emailInvalid = 'Enter a valid email, like name@example.com';
-  static const emailLive = 'Enter a valid email, like name@example.com';
   static const phoneRequired = 'Please enter your phone number.';
   static const phoneInvalid = 'Enter a 9-digit Saudi number, like 5X XXX XXXX';
   static const phoneEdit = phoneInvalid;

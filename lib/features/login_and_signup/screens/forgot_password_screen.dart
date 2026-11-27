@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../helpers/validators.dart';
 import '../../../app_constants/auth_strings.dart';
 import '../../../app_constants/validation_strings.dart';
 import '../../../shared_ui/navigation/app_route.dart';
@@ -95,6 +96,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                             controller: vm.email,
                             placeholder: AuthStrings.forgotPlaceholder,
                             keyboardType: TextInputType.emailAddress,
+                            maxLength: Validators.maxEmail,
                             valid: vm.emailValid,
                             error: vm.emailError,
                             autofillHints: const [AutofillHints.email],

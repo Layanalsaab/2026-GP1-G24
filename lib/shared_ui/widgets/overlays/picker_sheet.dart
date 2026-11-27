@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import '../../../helpers/other_check.dart';
 
@@ -10,6 +9,8 @@ import '../../motion/motion.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text.dart';
 import '../buttons/app_button.dart';
+import '../forms/app_text_field.dart';
+import '../forms/no_emoji_formatter.dart';
 import 'app_bottom_sheet.dart';
 
 /// Result of a PickerSheet.
@@ -360,6 +361,7 @@ class PickerSearchField extends StatelessWidget {
             child: TextField(
               controller: controller,
               onChanged: onChanged,
+              inputFormatters: const [NoEmojiFormatter()],
               textInputAction: TextInputAction.search,
               style: AppText.sans(size: 15),
               cursorColor: AppColors.mossText,
@@ -405,6 +407,11 @@ class PickerOtherField extends StatefulWidget {
 
 class PickerOtherFieldState extends State<PickerOtherField> {
   final FocusNode _focus = FocusNode();
+  bool _over = false;
+
+  void _setOver(bool v) {
+    if (mounted && v != _over) setState(() => _over = v);
+  }
 
   @override
   void initState() {
@@ -420,8 +427,10 @@ class PickerOtherFieldState extends State<PickerOtherField> {
 
   @override
   Widget build(BuildContext context) {
-    final err = widget.error != null;
+    final error = widget.error ?? (_over ? maxLengthMessage(widget.max) : null);
+    final err = error != null;
     final focused = _focus.hasFocus;
+    final count = widget.controller.text.characters.length;
     final border = err
         ? AppColors.error
         : focused
@@ -447,7 +456,10 @@ class PickerOtherFieldState extends State<PickerOtherField> {
             controller: widget.controller,
             focusNode: _focus,
             onChanged: widget.onChanged,
-            inputFormatters: [LengthLimitingTextInputFormatter(widget.max)],
+            inputFormatters: [
+              const NoEmojiFormatter(),
+              MaxLengthFormatter(widget.max, _setOver),
+            ],
             style: AppText.input,
             cursorColor: AppColors.mossText,
             decoration: InputDecoration(
@@ -477,7 +489,7 @@ class PickerOtherFieldState extends State<PickerOtherField> {
                       color: AppColors.error,
                     ),
                     const SizedBox(width: 4),
-                    Expanded(child: Text(widget.error!, style: AppText.error)),
+                    Expanded(child: Text(error, style: AppText.error)),
                   ],
                 ),
               )
@@ -485,8 +497,10 @@ class PickerOtherFieldState extends State<PickerOtherField> {
               Text('Required', style: AppText.helper),
             const SizedBox(width: 8),
             Text(
-              '${widget.controller.text.length}/${widget.max}',
-              style: AppText.helper,
+              '$count/${widget.max}',
+              style: widget.max - count <= 10
+                  ? AppText.helper.copyWith(color: AppColors.error)
+                  : AppText.helper,
             ),
           ],
         ),

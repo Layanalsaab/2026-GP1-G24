@@ -107,8 +107,7 @@ class _MainScreenState extends State<MainScreen> {
           member.add(s.id);
           roles[s.id] = StartupRole.of(s, uid) ?? StartupRole.member;
         }
-      } catch (_) {
-      }
+      } catch (_) {}
       if (!mounted) return;
       _session.setMemberRoles(roles);
       // The menu's title: Founder, Co-founder or Team member.
@@ -251,10 +250,7 @@ class _MainScreenState extends State<MainScreen> {
       case HomeTab.hub:
         return HubScreen(viewModel: _vm);
       case HomeTab.explore:
-        return ExploreScreen(
-          viewModel: _vm,
-          onSignUp: () => ChooseRoleScreen.open(context),
-        );
+        return ExploreScreen(viewModel: _vm);
     }
   }
 

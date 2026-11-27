@@ -11,7 +11,6 @@ import '../../../app_constants/founder_tools_strings.dart';
 import '../../../app_constants/profile_strings.dart';
 import '../../../data_access/device_services/profile_photo_picker_service.dart';
 import '../../../helpers/app_session.dart';
-import '../../../helpers/emoji_filter.dart';
 import '../../../helpers/validators.dart';
 import '../../../models/app_user.dart';
 import '../../../shared_ui/icons/app_icons.dart';
@@ -88,7 +87,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         image = MemoryImage(PictureData.bytes(u.photoData)!);
       }
     }
-    const noEmoji = [NoEmojiFormatter()];
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 24, 16, 32),
       child: Column(
@@ -106,7 +104,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 maxLength: Validators.maxFullName,
                 error: _vm.fullNameError,
                 textCapitalization: TextCapitalization.words,
-                inputFormatters: noEmoji,
               ),
               LabeledTextField(
                 label: AuthStrings.bio,
@@ -116,7 +113,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 placeholder: AuthStrings.bioPlaceholder,
                 maxLength: Validators.maxFounderBio,
                 multiline: true,
-                inputFormatters: noEmoji,
                 error: _vm.bioError,
               ),
               LabeledTextField(
@@ -155,7 +151,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 onChanged: _vm.setLinkedin,
                 placeholder: AuthStrings.linkedinPlaceholder,
                 keyboardType: TextInputType.url,
-                inputFormatters: noEmoji,
                 valid:
                     _vm.linkedin.trim().isNotEmpty &&
                     _vm.linkedinError == null &&
@@ -182,7 +177,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 maxLength: Validators.maxValueText,
                 multiline: true,
                 placeholder: AuthStrings.valuePlaceholder,
-                inputFormatters: noEmoji,
                 info: AuthStrings.valueTip,
                 infoOpen: _infoOpen == 'value',
                 onInfoToggle: () => _toggleInfo('value'),
@@ -196,7 +190,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 maxLength: Validators.maxValueText,
                 multiline: true,
                 placeholder: AuthStrings.gainPlaceholder,
-                inputFormatters: noEmoji,
                 info: AuthStrings.gainTip,
                 infoOpen: _infoOpen == 'gain',
                 onInfoToggle: () => _toggleInfo('gain'),
@@ -282,18 +275,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
   }
 
-  /// The picked sectors in list order, "Other" shown as what was typed.
-  String _sectorsText() {
-    final other = _vm.otherSector.trim();
-    return [
-      for (final o in EditAccountViewModel.sectorOptions)
-        if (_sectorSet.contains(o))
-          if (o != EditAccountViewModel.otherLabel)
-            o
-          else if (other.isNotEmpty)
-            other,
-    ].join(', ');
-  }
+  /// The picked sectors in list order.
+  String _sectorsText() => [
+    for (final o in EditAccountViewModel.sectorOptions)
+      if (_sectorSet.contains(o))
+        o == EditAccountViewModel.otherLabel
+            ? SelectField.otherText(_vm.otherSector)
+            : o,
+  ].join(', ');
 
   Widget _founderForm(AppUser u) {
     ImageProvider? image;

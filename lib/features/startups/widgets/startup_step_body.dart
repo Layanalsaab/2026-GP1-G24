@@ -542,10 +542,7 @@ class _Ask extends StatelessWidget {
   ) => [
     for (final o in order)
       if (picked.contains(o))
-        if (o != 'Other')
-          o
-        else if (other.text.trim().isNotEmpty)
-          'Other: ${other.text.trim()}',
+        o == 'Other' ? SelectField.otherText(other.text) : o,
   ].join(', ');
 
   Widget _section(

@@ -16,16 +16,9 @@ import '../../search/view_models/home_view_model.dart';
 import '../../search/widgets/home_layout.dart';
 
 class ExploreScreen extends StatelessWidget {
-  const ExploreScreen({
-    super.key,
-    required this.viewModel,
-    required this.onSignUp,
-  });
+  const ExploreScreen({super.key, required this.viewModel});
 
   final HomeViewModel viewModel;
-
-  /// Guest "Sign up" button of the Join Start.sa card.
-  final VoidCallback onSignUp;
 
   HomeSlot _switch(String id, int selected, ValueChanged<int> onChanged) =>
       HomeSlot(
@@ -128,14 +121,13 @@ class ExploreScreen extends StatelessWidget {
     );
   }
 
-  List<HomeSlot> _trending(HomeViewModel vm) => [
-    const HomeSlot(
+  List<HomeSlot> get _trending => const [
+    HomeSlot(
       EmptyState(
         title: HomeStrings.noTrendingTitle,
         message: HomeStrings.noTrendingMessage,
       ),
     ),
-    if (vm.isGuest) HomeSlot(GuestJoinCard(onSignUp: onSignUp)),
   ];
 
   @override
@@ -149,7 +141,7 @@ class ExploreScreen extends StatelessWidget {
         case 0:
           slots = _latest(vm);
         case 1:
-          slots = _trending(vm);
+          slots = _trending;
         default:
           slots = _forYou(context, vm);
       }

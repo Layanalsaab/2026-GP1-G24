@@ -36,7 +36,8 @@ void main() {
     test('required and valid messages', () {
       expect(Validators.email(''), ValidationStrings.emailRequired);
       expect(Validators.email('nope'), ValidationStrings.emailInvalid);
-      expect(Validators.email('a@b.co'), isNull);
+      expect(Validators.email('a@example.com'), ValidationStrings.emailInvalid);
+      expect(Validators.email('a@gmail.com'), isNull);
     });
   });
 
@@ -109,7 +110,7 @@ void main() {
       );
     });
 
-    test('sign-up accepts common providers and university addresses', () {
+    test('accepts common providers and university addresses', () {
       for (final mail in [
         'a@gmail.com',
         'a@hotmail.com',
@@ -123,11 +124,11 @@ void main() {
         'a@mit.edu',
         'a@ox.ac.uk',
       ]) {
-        expect(Validators.isSignupEmail(mail), isTrue, reason: mail);
+        expect(Validators.isEmail(mail), isTrue, reason: mail);
       }
     });
 
-    test('sign-up rejects anything else, misspellings included', () {
+    test('rejects anything else, misspellings included', () {
       for (final mail in [
         'a@gmial.com',
         'a@gmail.co',
@@ -141,7 +142,7 @@ void main() {
         'a@fake.edu.com',
         'not an email',
       ]) {
-        expect(Validators.isSignupEmail(mail), isFalse, reason: mail);
+        expect(Validators.isEmail(mail), isFalse, reason: mail);
       }
     });
   });

@@ -19,7 +19,6 @@ export '../../../shared_ui/widgets/forms/money_field.dart';
 export '../../../shared_ui/widgets/forms/photo_pickers.dart';
 export '../../../shared_ui/widgets/forms/select_field.dart';
 export '../../../shared_ui/widgets/chips/app_chip.dart';
-export '../../../shared_ui/widgets/chips/chip_group.dart';
 export '../../../shared_ui/widgets/cards/avatars.dart';
 export '../../../shared_ui/widgets/cards/pills.dart';
 export '../../../shared_ui/widgets/cards/charts.dart';

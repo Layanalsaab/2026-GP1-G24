@@ -832,7 +832,7 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
   bool _memberRequiredShown(TextEditingController c) =>
       memberTried || _memberLeft.contains(c);
 
-  bool get _emailValid => Validators.isSignupEmail(memberEmail.text);
+  bool get _emailValid => Validators.isEmail(memberEmail.text);
 
   /// Another member (not the one being edited) already has this e-mail.
   bool get memberDuplicate {

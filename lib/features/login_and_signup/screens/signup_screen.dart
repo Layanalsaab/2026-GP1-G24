@@ -4,7 +4,6 @@ import 'package:flutter/services.dart';
 import '../../../app_constants/app_strings.dart';
 import '../../../app_constants/auth_strings.dart';
 import '../../../app_constants/validation_strings.dart';
-import '../../../helpers/emoji_filter.dart';
 import '../../../helpers/validators.dart';
 import '../../../models/app_user.dart';
 import '../../../shared_ui/navigation/app_route.dart';
@@ -142,18 +141,14 @@ class _SignupScreenState extends State<SignupScreen> {
     authBack(context);
   }
 
-  /// The picked sectors in list order, "Other" shown as what was typed.
-  String _sectorsText() {
-    final other = _vm.sectorsOther.text.trim();
-    return [
-      for (final o in SignupViewModel.sectorOptions)
-        if (_vm.sectors.contains(o))
-          if (o != SignupViewModel.otherLabel)
-            o
-          else if (other.isNotEmpty)
-            other,
-    ].join(', ');
-  }
+  /// The picked sectors in list order.
+  String _sectorsText() => [
+    for (final o in SignupViewModel.sectorOptions)
+      if (_vm.sectors.contains(o))
+        o == SignupViewModel.otherLabel
+            ? SelectField.otherText(_vm.sectorsOther.text)
+            : o,
+  ].join(', ');
 
   Future<void> _pickCity() async {
     final result = await showPickerSheet(
@@ -249,9 +244,6 @@ class _SignupScreenState extends State<SignupScreen> {
                           valid: vm.nameValid,
                           error: vm.nameError,
                           textCapitalization: TextCapitalization.words,
-                          inputFormatters: founder
-                              ? null
-                              : const [NoEmojiFormatter()],
                           autofillHints: const [AutofillHints.name],
                         ),
                         LabeledTextField(
@@ -262,9 +254,6 @@ class _SignupScreenState extends State<SignupScreen> {
                           placeholder: AuthStrings.bioPlaceholder,
                           maxLength: vm.bioMax,
                           multiline: true,
-                          inputFormatters: founder
-                              ? null
-                              : const [NoEmojiFormatter()],
                           error: vm.bioError,
                         ),
                         LabeledTextField(
@@ -386,7 +375,6 @@ class _SignupScreenState extends State<SignupScreen> {
                             maxLength: Validators.maxValueText,
                             multiline: true,
                             info: AuthStrings.valueTip,
-                            inputFormatters: const [NoEmojiFormatter()],
                             error: vm.valueError,
                           ),
                           LabeledTextField(
@@ -397,7 +385,6 @@ class _SignupScreenState extends State<SignupScreen> {
                             maxLength: Validators.maxValueText,
                             multiline: true,
                             info: AuthStrings.gainTip,
-                            inputFormatters: const [NoEmojiFormatter()],
                             error: vm.gainError,
                           ),
                         ],

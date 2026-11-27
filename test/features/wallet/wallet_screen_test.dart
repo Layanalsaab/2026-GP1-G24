@@ -227,8 +227,7 @@ void main() {
       await t.enterText(box(), 'SportsTech');
       await t.pumpAndSettle();
       await press(t, find.text('Done'));
-      // The select box shows what was typed, not "Other".
-      expect(find.text('SportsTech'), findsOneWidget);
+      expect(find.text('Other: SportsTech'), findsOneWidget);
       vm.toggleStage('Seed');
       vm.min.text = '100,000';
       vm.max.text = '300,000';
@@ -249,7 +248,7 @@ void main() {
       await t.enterText(box(), 'Esports');
       await t.pumpAndSettle();
       await press(t, find.text('Done'));
-      expect(find.text('Esports'), findsOneWidget);
+      expect(find.text('Other: Esports'), findsOneWidget);
     });
 
     testWidgets('a sector that is in the list ticks that one, not Other', (

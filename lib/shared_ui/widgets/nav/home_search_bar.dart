@@ -6,6 +6,7 @@ import '../../motion/motion.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_metrics.dart';
 import '../../theme/app_text.dart';
+import '../forms/no_emoji_formatter.dart';
 
 class HomeSearchBar extends StatelessWidget {
   const HomeSearchBar({
@@ -57,6 +58,7 @@ class HomeSearchBar extends StatelessWidget {
                 controller: controller,
                 onChanged: onChanged,
                 onSubmitted: onSubmitted,
+                inputFormatters: const [NoEmojiFormatter()],
                 textInputAction: TextInputAction.search,
                 cursorColor: AppColors.mossText,
                 style: AppText.sans(size: 15),

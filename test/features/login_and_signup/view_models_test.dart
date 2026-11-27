@@ -55,7 +55,7 @@ void main() {
       expect(vm.nameError, isNull);
       expect(vm.emailError, isNull);
       vm.email.text = 'sara@gmail';
-      expect(vm.emailError, ValidationStrings.emailLive);
+      expect(vm.emailError, ValidationStrings.emailInvalid);
       vm.confirm.text = 'x';
       expect(vm.confirmError, ValidationStrings.confirmMismatch);
     });
@@ -395,9 +395,28 @@ void main() {
       expect(vm.emailError, ValidationStrings.emailInvalid);
     });
 
+    test('the same email rule as sign-up, shown while typing', () async {
+      final vm = make();
+      for (final mail in [
+        'karim@example',
+        'karim@example.com',
+        'a@gmial.com',
+      ]) {
+        vm.email.text = mail;
+        expect(vm.emailError, ValidationStrings.emailInvalid, reason: mail);
+        expect(vm.emailValid, isFalse, reason: mail);
+      }
+      vm.password.text = 'Pass@123';
+      expect(await vm.submit(), isNull);
+      expect(auth.logInCalls, 0);
+      vm.email.text = 'karim@gmail.com';
+      expect(vm.emailError, isNull);
+      expect(vm.emailValid, isTrue);
+    });
+
     test('success returns the user', () async {
       final vm = make();
-      vm.email.text = 'a@b.co';
+      vm.email.text = 'a@gmail.com';
       vm.password.text = 'Pass@123';
       final user = await vm.submit();
       expect(user?.uid, 'uid1');
@@ -406,7 +425,7 @@ void main() {
     test('wrong credentials: one message under the password', () async {
       auth.logInFails = AuthFailure.invalidCredentials;
       final vm = make();
-      vm.email.text = 'a@b.co';
+      vm.email.text = 'a@gmail.com';
       vm.password.text = 'Pass@123';
       expect(await vm.submit(), isNull);
       expect(vm.passwordError, isNotNull);
@@ -418,11 +437,11 @@ void main() {
     test('unverified: needsVerification, then resend works', () async {
       auth.logInFails = AuthFailure.emailNotVerified;
       final vm = make();
-      vm.email.text = 'a@b.co';
+      vm.email.text = 'a@gmail.com';
       vm.password.text = 'Pass@123';
       expect(await vm.submit(), isNull);
       expect(vm.needsVerification, isTrue);
-      expect(vm.verificationEmail, 'a@b.co');
+      expect(vm.verificationEmail, 'a@gmail.com');
       expect(await vm.resend(), ResendOutcome.sent);
     });
 
@@ -430,7 +449,7 @@ void main() {
       auth.logInFails = AuthFailure.emailNotVerified;
       final vm = make();
 
-      vm.email.text = 'a@b.co';
+      vm.email.text = 'a@gmail.com';
       vm.password.text = 'Pass@123';
       await vm.submit();
       expect(vm.resendSeconds, 0);
@@ -461,14 +480,14 @@ void main() {
 
     test('sends the link and returns the address', () async {
       final vm = make();
-      vm.email.text = ' a@b.co ';
-      expect(await vm.submit(), 'a@b.co');
+      vm.email.text = ' a@gmail.com ';
+      expect(await vm.submit(), 'a@gmail.com');
       expect(auth.resetCalls, 1);
     });
 
     test('a network failure is a form error', () async {
       auth.resetFails = AuthFailure.network;
-      final vm = make('a@b.co');
+      final vm = make('a@gmail.com');
       expect(await vm.submit(), isNull);
       expect(vm.formError, isNotNull);
     });

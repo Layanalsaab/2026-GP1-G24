@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../helpers/validators.dart';
 import '../../../app_constants/auth_strings.dart';
 import '../../../app_constants/validation_strings.dart';
 import '../../../navigation/app_router.dart';
@@ -103,6 +104,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             controller: vm.email,
                             placeholder: AuthStrings.emailPlaceholder,
                             keyboardType: TextInputType.emailAddress,
+                            maxLength: Validators.maxEmail,
                             valid: vm.emailValid,
                             error: vm.emailError,
                             autofillHints: const [AutofillHints.email],
