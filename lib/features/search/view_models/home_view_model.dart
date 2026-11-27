@@ -8,6 +8,7 @@ import '../../../data_access/repositories/bookmark_repository.dart';
 import '../../../data_access/repositories/discovery_repository.dart';
 import '../../../data_access/repositories/for_you_cache.dart';
 import '../../../data_access/repositories/not_interested_repository.dart';
+import '../../../data_access/repositories/ticket_repository.dart';
 import '../../../helpers/app_session.dart';
 import '../../../helpers/safe_notifier.dart';
 import '../../../models/app_user.dart';
@@ -43,6 +44,7 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
     ForYouSource? forYou,
     ForYouCache? forYouCache,
     NotInterestedRepository? notInterested,
+    TicketRepository? tickets,
     Duration forYouQuietTime = const Duration(seconds: 2),
   }) : _discovery = discovery ?? DiscoveryRepository.instance,
        _ownIds = ownStartupIds,
@@ -50,6 +52,7 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
        _server = forYou ?? ForYouApi.instance,
        _cache = forYouCache ?? ForYouCache.instance,
        _notInterested = notInterested ?? NotInterestedRepository.instance,
+       _tickets = tickets ?? TicketRepository.instance,
        _quietTime = forYouQuietTime {
     // The lists fill in when Firestore answers.
     _discovery.changes.addListener(_onDiscovery);
@@ -59,6 +62,7 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
     _notInterested.keys.addListener(_onNotInterested);
     _bookmarks.saved.addListener(_askWhenQuiet);
     _notInterested.saved.addListener(_askWhenQuiet);
+    _tickets.saved.addListener(_onTicketSaved);
     _server.profileTextDone.addListener(_onProfileTextDone);
     _startForYou();
   }
@@ -437,6 +441,7 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
   final ForYouSource _server;
   final ForYouCache _cache;
   final NotInterestedRepository _notInterested;
+  final TicketRepository _tickets;
   final Duration _quietTime;
 
   /// The server's list for this user in this session (keys like `s-<id>`).
@@ -609,6 +614,17 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
     notifyListeners();
   }
 
+  /// A ticket was created, edited or closed: the app's own ranking counts it
+  /// at once, and the server is asked again (it reads the investor's
+  /// tickets fresh).
+  void _onTicketSaved() {
+    final ticket = _tickets.lastSaved;
+    if (ticket != null) _discovery.putTicket(ticket);
+    _tasteChangedAt = DateTime.now();
+    if (!_onForYou) _forYou = null;
+    _askWhenQuiet();
+  }
+
   /// True when the list in use (the server's or the saved one) was made
   /// before the user's latest bookmark, Not interested mark or ticket change.
   bool get _listIsStale {
@@ -686,6 +702,7 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
     _notInterested.keys.removeListener(_onNotInterested);
     _bookmarks.saved.removeListener(_askWhenQuiet);
     _notInterested.saved.removeListener(_askWhenQuiet);
+    _tickets.saved.removeListener(_onTicketSaved);
     _server.profileTextDone.removeListener(_onProfileTextDone);
     searchController.dispose();
     super.dispose();

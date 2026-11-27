@@ -11,6 +11,8 @@ import 'package:startsa/data_access/repositories/bookmark_repository.dart';
 import 'package:startsa/data_access/repositories/discovery_repository.dart';
 import 'package:startsa/data_access/repositories/for_you_cache.dart';
 import 'package:startsa/data_access/repositories/not_interested_repository.dart';
+import 'package:startsa/data_access/repositories/ticket_repository.dart';
+import 'package:startsa/models/investment_ticket.dart';
 import 'package:startsa/features/search/view_models/home_view_model.dart';
 import 'package:startsa/helpers/app_session.dart';
 import 'package:startsa/models/app_user.dart';
@@ -755,6 +757,38 @@ void main() {
       await pumpEventQueue();
       expect(ids(m), ['a', 'c']);
     });
+  });
+
+  test('a saved ticket asks the server again', () async {
+    final tickets = TicketRepository(firestore: _MemoryFirestore());
+    final server = FakeForYou()..then = [s('a')];
+    final m = HomeViewModel(
+      role: SessionRole.investor,
+      user: investor('u1'),
+      forYou: server,
+      forYouCache: ForYouCache(),
+      notInterested: hidden,
+      tickets: tickets,
+      forYouQuietTime: Duration.zero,
+    );
+    addTearDown(m.dispose);
+    await pumpEventQueue();
+    final before = server.calls;
+    await tickets.create(
+      'u1',
+      const InvestmentTicket(
+        id: '',
+        investorId: 'u1',
+        name: 'T',
+        sectors: ['Fintech'],
+        stages: ['Seed'],
+        amountMin: 1,
+        amountMax: 2,
+      ),
+      const [],
+    );
+    await pumpEventQueue();
+    expect(server.calls, before + 1);
   });
 
   test('quick changes send one request', () {

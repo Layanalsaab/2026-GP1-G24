@@ -309,6 +309,17 @@ class DiscoveryRepository {
     return [for (final p in picks) HomeItem.fromInvestor(p.item)];
   }
 
+  /// Puts a ticket the user just saved (new, edited or closed) into the
+  /// loaded tickets, so the app's own For You ranking counts it at once.
+  void putTicket(InvestmentTicket ticket) {
+    final at = _tickets.indexWhere((t) => t.id == ticket.id);
+    if (at >= 0) {
+      _tickets[at] = ticket;
+    } else {
+      _tickets.add(ticket);
+    }
+  }
+
   Startup? startupById(String id) {
     for (final s in _startups) {
       if (s.id == id) return s;

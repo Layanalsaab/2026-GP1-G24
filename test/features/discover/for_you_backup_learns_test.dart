@@ -3,6 +3,8 @@ import 'package:startsa/data_access/repositories/bookmark_repository.dart';
 import 'package:startsa/data_access/repositories/discovery_repository.dart';
 import 'package:startsa/data_access/repositories/for_you_cache.dart';
 import 'package:startsa/data_access/repositories/not_interested_repository.dart';
+import 'package:startsa/data_access/repositories/ticket_repository.dart';
+import 'package:startsa/models/investment_ticket.dart';
 import 'package:startsa/features/search/view_models/home_view_model.dart';
 import 'package:startsa/helpers/app_session.dart';
 import 'package:startsa/models/app_user.dart';
@@ -58,6 +60,50 @@ void main() {
   tearDown(() => AppSession.instance.reset());
 
   List<String> ids(HomeViewModel vm) => [for (final i in vm.recommended) i.id];
+
+  test('a new ticket shapes the list as soon as it is saved', () async {
+    final tickets = TicketRepository(firestore: RecordingFirestore());
+    final vm = HomeViewModel(
+      role: SessionRole.investor,
+      user: const AppUser(
+        uid: 'u1',
+        role: AccountRole.investor,
+        fullName: 'Test Investor',
+        email: 'u1@x.co',
+        investorCriteria: InvestorCriteria(
+          sectors: ['Fintech', 'Logistics'],
+          stages: ['Seed'],
+        ),
+      ),
+      discovery: DiscoveryRepository.sample(
+        startups: [
+          _startup('f1', 'Fin One', 'fintech'),
+          _startup('l1', 'Ship One', 'logistics'),
+        ],
+      ),
+      forYouCache: ForYouCache(),
+      notInterested: hidden,
+      tickets: tickets,
+      forYouQuietTime: Duration.zero,
+    );
+    addTearDown(vm.dispose);
+    expect(ids(vm), ['f1', 'l1']);
+
+    await tickets.create(
+      'u1',
+      const InvestmentTicket(
+        id: '',
+        investorId: 'u1',
+        name: 'Logistics seed',
+        sectors: ['Logistics'],
+        stages: ['Seed'],
+        amountMin: 100000,
+        amountMax: 2000000,
+      ),
+      const [],
+    );
+    expect(ids(vm), ['l1', 'f1']);
+  });
 
   // Like the server: hidden cards are left out before the top 20 is picked,
   // and marks on closed startups count for nothing.
