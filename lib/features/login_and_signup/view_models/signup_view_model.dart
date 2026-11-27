@@ -297,7 +297,12 @@ class SignupViewModel extends ChangeNotifier with SafeNotifier {
     notifyListeners();
   }
 
-  /// Picks and crops a square photo (the same button changes it later).
+  void clearPhoto() {
+    photo = null;
+    notifyListeners();
+  }
+
+  /// Picks and crops a square photo.
   Future<String?> pickPhoto() async {
     try {
       final file = await _picker.pickSquarePhoto();

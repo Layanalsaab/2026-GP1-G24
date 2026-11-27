@@ -72,7 +72,6 @@ class ProfileStrings {
   static const contactOnlyYou = 'Only you';
 
   static const save = 'Save';
-  static const changePhoto = 'Change photo';
   static const bio = 'Bio';
   static const city = 'City';
   static const linkedinLabel = 'LinkedIn profile';

@@ -653,6 +653,12 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
 
   void setPublic(bool value) => _touch(() => isPublic = value);
 
+  void clearLogo() => _touch(() {
+    newLogo = null;
+    logoError = null;
+    removeLogo = initial?.logoData != null;
+  });
+
   Future<void> pickLogo() async {
     if (isPickingLogo || isSaving) return;
     isPickingLogo = true;

@@ -29,7 +29,7 @@ class TeamMember {
   /// What this person brings to the startup.
   final String contribution;
 
-  /// Co-founders can edit the startup; other members can only view it.
+  /// A title only: co-founders have the same view-only access as members.
   final bool coFounder;
 
   /// Added by an email that is not (yet) a Start.sa account.

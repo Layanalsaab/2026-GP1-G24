@@ -16,6 +16,7 @@ import '../view_models/startup_steps_view_model.dart';
 import '../../../shared_ui/widgets/forms/checkbox_card.dart';
 import '../../../shared_ui/widgets/overlays/app_dialog.dart';
 import '../../../shared_ui/widgets/overlays/multi_picker_sheet.dart';
+import '../../../shared_ui/widgets/overlays/photo_choice_sheet.dart';
 import '../../../app_constants/validation_strings.dart';
 import 'founder_ui.dart';
 import 'runway_line.dart';
@@ -177,6 +178,19 @@ class _Basics extends StatelessWidget {
     if (r != null) vm.selectModel(r.value, r.otherText);
   }
 
+  Future<void> _logo(BuildContext context) async {
+    if (vm.hasLogo) {
+      final choice = await showPhotoChoiceSheet(
+        context,
+        changeLabel: FounderToolsStrings.changeLogo,
+        removeLabel: FounderToolsStrings.removeLogo,
+      );
+      if (choice == PhotoChoice.remove) vm.clearLogo();
+      if (choice != PhotoChoice.change) return;
+    }
+    await vm.pickLogo();
+  }
+
   Future<void> _pickCity(BuildContext context) async {
     final r = await showPickerSheet(
       context,
@@ -197,7 +211,7 @@ class _Basics extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         LogoPickerRow(
-          onTap: vm.pickLogo,
+          onTap: () => _logo(context),
           hasLogo: vm.hasLogo,
           image: vm.newLogo != null
               ? FileImage(vm.newLogo!)

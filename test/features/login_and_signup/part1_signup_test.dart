@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -158,6 +160,12 @@ void main() {
         expect(vm.confirmError, isNull);
       },
     );
+
+    test('a picked photo can be removed', () {
+      vm.photo = File('photo.jpg');
+      vm.clearPhoto();
+      expect(vm.photo, isNull);
+    });
 
     test('a required message appears after Continue is pressed', () {
       vm.attempted = true;

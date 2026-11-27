@@ -25,10 +25,9 @@ import '../../../shared_ui/widgets/forms/select_field.dart';
 import '../../../shared_ui/widgets/forms/visibility_picker.dart';
 import '../../../shared_ui/widgets/overlays/multi_picker_sheet.dart';
 import '../../../shared_ui/widgets/headers/header_buttons.dart';
-import '../../../shared_ui/widgets/lists/press_surface.dart';
-import '../../../shared_ui/widgets/overlays/app_bottom_sheet.dart';
 import '../../../shared_ui/widgets/overlays/app_dialog.dart';
 import '../../../shared_ui/widgets/overlays/app_toast.dart';
+import '../../../shared_ui/widgets/overlays/photo_choice_sheet.dart';
 import '../../../shared_ui/widgets/overlays/picker_sheet.dart';
 import '../../login_and_signup/widgets/investor_fields.dart';
 import '../../login_and_signup/widgets/phone_formatter.dart';
@@ -409,37 +408,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       .text;
 
   Future<void> _photo() async {
-    var pick = true;
     if (_vm.hasPhoto) {
-      final choice = await showAppBottomSheet<String>(
+      final choice = await showPhotoChoiceSheet(
         context,
-        builder: (sheet) => AppSheetScaffold(
-          title: ProfileStrings.changePhoto,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(12, 0, 12, 24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _SheetOption(
-                  label: AccountStrings.changePhoto,
-                  onTap: () => Navigator.of(sheet).pop('change'),
-                ),
-                _SheetOption(
-                  label: AccountStrings.removePhoto,
-                  destructive: true,
-                  onTap: () => Navigator.of(sheet).pop('remove'),
-                ),
-              ],
-            ),
-          ),
-        ),
+        changeLabel: AccountStrings.changePhoto,
+        removeLabel: AccountStrings.removePhoto,
       );
-      if (choice == 'remove') {
-        _vm.clearPhoto();
-      }
-      pick = choice == 'change';
+      if (choice == PhotoChoice.remove) _vm.clearPhoto();
+      if (choice != PhotoChoice.change) return;
     }
-    if (!pick || !mounted) return;
+    if (!mounted) return;
     try {
       final file = await ProfilePhotoPickerService.instance.pickSquarePhoto();
       if (file != null) _vm.pickPhoto(file);
@@ -561,34 +539,4 @@ class _TopBar extends StatelessWidget {
       ),
     );
   }
-}
-
-class _SheetOption extends StatelessWidget {
-  const _SheetOption({
-    required this.label,
-    required this.onTap,
-    this.destructive = false,
-  });
-
-  final String label;
-  final VoidCallback onTap;
-  final bool destructive;
-
-  @override
-  Widget build(BuildContext context) => PressSurface(
-    onTap: onTap,
-    borderRadius: BorderRadius.circular(12),
-    child: Container(
-      height: 50,
-      alignment: Alignment.centerLeft,
-      padding: const EdgeInsets.symmetric(horizontal: 14),
-      child: Text(
-        label,
-        style: AppText.sans(
-          size: 16,
-          color: destructive ? AppColors.error : AppColors.ink,
-        ),
-      ),
-    ),
-  );
 }

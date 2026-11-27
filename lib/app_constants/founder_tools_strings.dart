@@ -51,6 +51,8 @@ class FounderToolsStrings {
   static const saveFailed = 'We couldn’t save your startup. Please try again.';
   static const logoTooLarge = 'This logo is too large. Try another one.';
   static const logoFailed = 'We couldn’t use that image. Try another one.';
+  static const changeLogo = 'Change logo';
+  static const removeLogo = 'Remove logo';
 
   static const nameLabel = 'Startup name';
   static const nameHint = 'e.g. Rafeeq Health';
@@ -102,7 +104,7 @@ class FounderToolsStrings {
   static const teamLabel = 'Team members';
   static const teamSub = 'Including you as a founder';
   static const teamInfo =
-      'Co-founders can edit this startup. Other members can only view it. Everyone you add by email gets linked to their Start.sa profile, or receives an invitation.';
+      'Only the founder can edit this startup. Co-founders and team members have view-only access. Everyone added receives an email invitation and joins once they sign in. Investors can’t be added.';
   static const addMember = 'Add team member';
   static const newMember = 'New team member';
   static const editMember = 'Edit team member';

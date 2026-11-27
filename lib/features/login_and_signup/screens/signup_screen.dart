@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../../app_constants/account_strings.dart';
 import '../../../app_constants/app_strings.dart';
 import '../../../app_constants/auth_strings.dart';
 import '../../../app_constants/validation_strings.dart';
@@ -20,6 +21,7 @@ import '../../../shared_ui/widgets/headers/overlap_layout.dart';
 import '../../../shared_ui/widgets/overlays/app_dialog.dart';
 import '../../../shared_ui/widgets/overlays/app_toast.dart';
 import '../../../shared_ui/widgets/overlays/multi_picker_sheet.dart';
+import '../../../shared_ui/widgets/overlays/photo_choice_sheet.dart';
 import '../../../shared_ui/widgets/overlays/picker_sheet.dart';
 import '../../startups/widgets/invitation_dialogs.dart';
 import '../view_models/signup_flow.dart';
@@ -98,8 +100,17 @@ class _SignupScreenState extends State<SignupScreen> {
     super.dispose();
   }
 
-  /// Picks (or changes) the photo.
+  /// Picks the photo; once there is one, asks to change or remove it.
   Future<void> _pickPhoto() async {
+    if (_vm.photo != null) {
+      final choice = await showPhotoChoiceSheet(
+        context,
+        changeLabel: AccountStrings.changePhoto,
+        removeLabel: AccountStrings.removePhoto,
+      );
+      if (choice == PhotoChoice.remove) _vm.clearPhoto();
+      if (choice != PhotoChoice.change || !mounted) return;
+    }
     final message = await _vm.pickPhoto();
     if (!mounted || message == null) return;
     AppToast.error(context, message);
