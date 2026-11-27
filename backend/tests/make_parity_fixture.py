@@ -74,6 +74,8 @@ def compute_expected(scenario: dict) -> list[dict]:
         allowed=np.ones_like(scores, dtype=bool),
         bonus=np.zeros_like(scores),
         limit=scenario["limit"],
+        sectors=rows["sector"],
+        target=taste.target,
     )
     return [{"id": p.id, "score": p.score} for p in picks]
 

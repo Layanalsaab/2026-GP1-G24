@@ -198,7 +198,8 @@ void main() {
         forYouQuietTime: Duration.zero,
       );
       addTearDown(vm.dispose);
-      expect(ids(vm), ['f1', 'f2', 'h1']);
+      // Calibrated: the two chosen sectors alternate (equal scores).
+      expect(ids(vm), ['f1', 'h1', 'f2']);
 
       await hidden.add('s-f1');
       vm.refreshForYou();
@@ -238,7 +239,8 @@ void main() {
         forYouQuietTime: Duration.zero,
       );
       addTearDown(vm.dispose);
-      expect(ids(vm), ['a1', 'a2', 'h1']);
+      // Calibrated: the startup's two sectors alternate (equal scores).
+      expect(ids(vm), ['a1', 'h1', 'a2']);
 
       await hidden.add('i-a1');
       vm.refreshForYou();

@@ -43,6 +43,12 @@ const double ticketAmountBonus = 0.1;
 /// Slots at the end of the list kept for items unlike the rest.
 const int exploreSlots = 2;
 
+/// Calibration (Steck, "Calibrated Recommendations", RecSys 2018), as the
+/// server: relevance against closeness to the user's sector mix, and the
+/// smoothing of the list's mix.
+const double calibrationWeight = 0.5;
+const double calibrationAlpha = 0.01;
+
 /// Attribute -> weight, per group ('sector', 'stage', 'model').
 typedef Vec = Map<String, double>;
 
@@ -190,7 +196,12 @@ class Signal {
 }
 
 class Taste {
-  Taste._(this.features, this.learnedShare, this.signals);
+  Taste._(this.features, this.learnedShare, this.signals, this.target);
+
+  /// The sector mix the list should follow (calibration): the base's sectors
+  /// blended with the sectors of bookmarks and tickets by the learned share.
+  /// Null when there are no sectors.
+  final Vec? target;
 
   /// The person's onboarding answers pulled toward their bookmarks.
   final Features features;
@@ -263,8 +274,46 @@ class Taste {
         };
       }
     }
-    return Taste._(Features(groups), signals.isEmpty ? 0 : share, signals);
+    return Taste._(
+      Features(groups),
+      signals.isEmpty ? 0 : share,
+      signals,
+      _target(base, signals, weights, share),
+    );
   }
+
+  static Vec? _target(
+    Features base,
+    List<Signal> likes,
+    List<double> weights,
+    double share,
+  ) {
+    final fromBase = _mixOf(base.groups['sector']);
+    final liked = <String, double>{};
+    var total = 0.0;
+    for (var i = 0; i < likes.length; i++) {
+      final mix = _mixOf(likes[i].features.groups['sector']);
+      if (mix == null || weights[i] <= 0) continue;
+      mix.forEach((k, v) => liked[k] = (liked[k] ?? 0) + weights[i] * v);
+      total += weights[i];
+    }
+    final fromLikes = total > 0
+        ? {for (final e in liked.entries) e.key: e.value / total}
+        : null;
+    if (fromBase == null) return fromLikes;
+    if (fromLikes == null) return fromBase;
+    return {
+      for (final k in {...fromBase.keys, ...fromLikes.keys})
+        k: (1 - share) * (fromBase[k] ?? 0) + share * (fromLikes[k] ?? 0),
+    };
+  }
+}
+
+/// A sector vector as shares that add up to 1 (null when it has no sector).
+Vec? _mixOf(Vec? v) {
+  if (v == null) return null;
+  final total = v.values.fold<double>(0, (a, w) => a + w);
+  return total > 0 ? {for (final e in v.entries) e.key: e.value / total} : null;
 }
 
 class Candidate<T> {
@@ -317,8 +366,18 @@ List<Pick<T>> recommendBest<T>(
     return byFits != 0 ? byFits : a.c.name.compareTo(b.c.name);
   });
 
-  final main = scored.take(math.max(0, limit - exploreSlots)).toList();
-  final rest = scored.skip(main.length).toList();
+  final places = math.max(0, limit - exploreSlots);
+  final targets = [
+    for (final t in tastes)
+      if (t.target case final v? when v.isNotEmpty) v,
+  ];
+  final main = targets.isEmpty
+      ? scored.take(places).toList()
+      : _calibrated(scored, _average(targets), places);
+  final rest = [
+    for (final e in scored)
+      if (!main.contains(e)) e,
+  ];
   final sectors = {for (final e in main) e.c.mainSector};
   final picked = [...main];
   for (final e in rest) {
@@ -389,4 +448,59 @@ bool sizesFit(Startup s, {String? ticketBand, int? roundMin, int? roundMax}) {
   if (roundMin != null && need < roundMin) return false;
   if (roundMax != null && need > roundMax) return false;
   return true;
+}
+
+Vec _average(List<Vec> all) {
+  final sum = <String, double>{};
+  for (final v in all) {
+    v.forEach((k, w) => sum[k] = (sum[k] ?? 0) + w);
+  }
+  return {for (final e in sum.entries) e.key: e.value / all.length};
+}
+
+/// Steck's greedy calibration, exactly as the server: each place goes to the
+/// candidate with the best (1 - w) * score - w * KL(target || the list's mix
+/// with it), the mix smoothed by alpha. Ties go to the earliest candidate.
+List<E> _calibrated<E extends ({Candidate c, double score, int fits})>(
+  List<E> order,
+  Vec target,
+  int places,
+) {
+  final wanted = {
+    for (final e in target.entries)
+      if (e.value > 0) e.key: e.value,
+  };
+  if (wanted.isEmpty || order.isEmpty || places <= 0) {
+    return order.take(math.max(0, places)).toList();
+  }
+  final mixes = [
+    for (final e in order)
+      _mixOf(e.c.features.groups['sector']) ?? const <String, double>{},
+  ];
+  final counts = <String, double>{};
+  final left = List<int>.generate(order.length, (i) => i);
+  final chosen = <E>[];
+  final steps = math.min(places, order.length);
+  for (var size = 1; size <= steps; size++) {
+    var best = -1;
+    var bestValue = double.negativeInfinity;
+    for (final i in left) {
+      var kl = 0.0;
+      wanted.forEach((g, p) {
+        final q = ((counts[g] ?? 0) + (mixes[i][g] ?? 0)) / size;
+        final smoothed = (1 - calibrationAlpha) * q + calibrationAlpha * p;
+        kl += p * math.log(p / smoothed);
+      });
+      final value =
+          (1 - calibrationWeight) * order[i].score - calibrationWeight * kl;
+      if (value > bestValue) {
+        best = i;
+        bestValue = value;
+      }
+    }
+    chosen.add(order[best]);
+    mixes[best].forEach((g, w) => counts[g] = (counts[g] ?? 0) + w);
+    left.remove(best);
+  }
+  return chosen;
 }
