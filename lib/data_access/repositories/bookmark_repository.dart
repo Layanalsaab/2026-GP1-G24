@@ -34,10 +34,12 @@ class BookmarkRepository {
   /// When key was bookmarked, if known.
   DateTime? savedAt(String key) => _savedAt[key];
 
-  /// Counts finished saves (a bookmark written or deleted in Firestore): For
-  /// You asks the server again only once the server can see the change.
-  ValueListenable<int> get saved => _saved;
-  final ValueNotifier<int> _saved = ValueNotifier<int>(0);
+  /// Counts finished saves, successful or not (a bookmark written or deleted
+  /// in Firestore, or the attempt failing, e.g. offline): For You asks the
+  /// server again only once the server can see the change, and still asks
+  /// when it cannot (then the app's own ranking takes over).
+  ValueListenable<int> get settled => _settled;
+  final ValueNotifier<int> _settled = ValueNotifier<int>(0);
 
   /// Every bookmarked key, the most recently saved first.
   List<String> newestFirst({String? type}) {
@@ -125,9 +127,10 @@ class BookmarkRepository {
       } else {
         await _firestore.deleteDocument(_collectionOf(uid), key);
       }
-      _saved.value++;
+      _settled.value++;
     } catch (e) {
       debugPrint('Bookmark "$key" was not saved: $e');
+      _settled.value++;
     }
   }
 

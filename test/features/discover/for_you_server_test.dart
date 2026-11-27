@@ -87,6 +87,21 @@ class _MemoryFirestore extends FirestoreService {
   ];
 }
 
+/// Firestore that is offline: every write and delete fails.
+class _FailingFirestore extends _MemoryFirestore {
+  @override
+  Future<void> setDocument(
+    String collection,
+    String id,
+    Map<String, Object?> data, {
+    bool merge = false,
+  }) async => throw Exception('offline');
+
+  @override
+  Future<void> deleteDocument(String collection, String id) async =>
+      throw Exception('offline');
+}
+
 /// Firestore whose writes and deletes finish when the test says so.
 class _HeldFirestore extends _MemoryFirestore {
   final List<Completer<void>> pending = [];
@@ -790,6 +805,107 @@ void main() {
     await pumpEventQueue();
     expect(server.calls, before + 1);
   });
+
+  group('another screen opened over For You', () {
+    test('a bookmark made there shows when coming back', () async {
+      final server = FakeForYou([
+        [s('a'), s('b')],
+        [s('c')],
+      ]);
+      final m = vm(server);
+      await pumpEventQueue();
+      openForYou(m);
+      expect(ids(m), ['a', 'b']);
+      m.setCovered(true); // a profile opened from a For You card
+      marks.toggle('s-a');
+      await pumpEventQueue();
+      expect(server.calls, 2);
+      m.setCovered(false);
+      expect(ids(m), ['c']);
+    });
+
+    test('an answer still on its way when coming back shows at once', () async {
+      final late = Completer<List<ForYouPick>?>();
+      final server = FakeForYou([
+        [s('a'), s('b')],
+        late.future,
+      ]);
+      final m = vm(server);
+      await pumpEventQueue();
+      openForYou(m);
+      m.setCovered(true);
+      marks.toggle('s-a');
+      await pumpEventQueue();
+      expect(server.calls, 2);
+      m.setCovered(false);
+      late.complete([s('c')]);
+      await pumpEventQueue();
+      expect(ids(m), ['c']);
+    });
+
+    test('a ticket saved there shows when coming back', () async {
+      final tickets = TicketRepository(firestore: _MemoryFirestore());
+      final server = FakeForYou([
+        [s('a'), s('b'), s('c')],
+        [s('c'), s('b'), s('a')],
+      ]);
+      final m = HomeViewModel(
+        role: SessionRole.investor,
+        user: investor('u1'),
+        forYou: server,
+        forYouCache: ForYouCache(),
+        notInterested: hidden,
+        tickets: tickets,
+        forYouQuietTime: Duration.zero,
+      );
+      addTearDown(m.dispose);
+      await pumpEventQueue();
+      openForYou(m);
+      m.setCovered(true); // the wallet, opened from the menu
+      await tickets.create(
+        'u1',
+        const InvestmentTicket(
+          id: '',
+          investorId: 'u1',
+          name: 'T',
+          sectors: ['Fintech'],
+          stages: ['Seed'],
+          amountMin: 1,
+          amountMax: 2,
+        ),
+        const [],
+      );
+      await pumpEventQueue();
+      m.setCovered(false);
+      expect(ids(m), ['c', 'b', 'a']);
+    });
+  });
+
+  test('a bookmark that cannot be saved still asks the server', () async {
+    marks = BookmarkRepository(firestore: _FailingFirestore());
+    BookmarkRepository.instance = marks;
+    final server = FakeForYou()..then = [s('a'), s('b')];
+    vm(server);
+    await pumpEventQueue();
+    final before = server.calls;
+    marks.toggle('s-a');
+    await pumpEventQueue();
+    expect(server.calls, before + 1);
+  });
+
+  test(
+    'a Not interested mark that cannot be saved still asks the server',
+    () async {
+      hidden = NotInterestedRepository(firestore: _FailingFirestore());
+      final server = FakeForYou()..then = [s('a'), s('b')];
+      vm(server);
+      await pumpEventQueue();
+      final before = server.calls;
+      await hidden.add('s-a');
+      await pumpEventQueue();
+      expect(server.calls, before + 1);
+    },
+  );
 
   test('quick changes send one request', () {
     fakeAsync((async) {

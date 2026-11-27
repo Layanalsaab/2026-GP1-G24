@@ -60,8 +60,8 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
     _bookmarks.keys.addListener(_onBookmarks);
     _seenNotInterested = {..._notInterested.keys.value};
     _notInterested.keys.addListener(_onNotInterested);
-    _bookmarks.saved.addListener(_askWhenQuiet);
-    _notInterested.saved.addListener(_askWhenQuiet);
+    _bookmarks.settled.addListener(_askWhenQuiet);
+    _notInterested.settled.addListener(_askWhenQuiet);
     _tickets.saved.addListener(_onTicketSaved);
     _server.profileTextDone.addListener(_onProfileTextDone);
     _startForYou();
@@ -338,7 +338,29 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
 
   /// The user looks at For You (where cards must not jump).
   bool get _onForYou =>
-      tab == HomeTab.explore && effectiveExploreTab == 2 && !filtering;
+      tab == HomeTab.explore &&
+      effectiveExploreTab == 2 &&
+      !filtering &&
+      !_covered;
+
+  /// Another screen (a profile, the wallet...) is open over the home screen.
+  bool _covered = false;
+
+  /// Told by the main screen when another screen opens over it or closes.
+  /// Back on For You, what changed meanwhile shows at once: a newer answer,
+  /// the app's own ranking, and an answer still on its way when it arrives.
+  void setCovered(bool covered) {
+    if (_covered == covered) return;
+    _covered = covered;
+    if (covered) return;
+    if (_quietTimer != null) _quietAtOnce = true;
+    if (_request != null) {
+      _answerAtOnce = true;
+      _againAtOnce = true;
+    }
+    _forYou = null;
+    notifyListeners();
+  }
 
   List<HomeItem> _buildForYou() {
     // A server answer kept aside while For You was open shows now.
@@ -421,7 +443,7 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
   /// change leaves the cards where they are (the bookmarked card stays; a
   /// hidden one was already taken out by [hideForYou]); a bulk change (load,
   /// sign-out) or a change made elsewhere redraws the list. The server is
-  /// asked again once the change is saved (the repositories' `saved`), so its
+  /// asked again once the change is saved (the repositories' `settled`), so its
   /// answer always includes it.
   void _onTasteChanged(Set<String> before, Set<String> now) {
     final added = now.difference(before).length;
@@ -474,6 +496,9 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
   /// once.
   bool _againAtOnce = false;
   Timer? _quietTimer;
+
+  /// The request the quiet timer will send shows its answer at once.
+  bool _quietAtOnce = false;
   bool _closed = false;
 
   /// Signed in and a server address is set (otherwise the Dart list only).
@@ -492,6 +517,7 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
     _hiddenAt.clear();
     _quietTimer?.cancel();
     _quietTimer = null;
+    _quietAtOnce = false;
     _answerAtOnce = false;
     _againAtOnce = false;
     if (!_serverOn) return;
@@ -538,7 +564,9 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
     _quietTimer?.cancel();
     _quietTimer = Timer(_quietTime, () {
       _quietTimer = null;
-      unawaited(_ask(atOnce: false, again: true));
+      final atOnce = _quietAtOnce;
+      _quietAtOnce = false;
+      unawaited(_ask(atOnce: atOnce, again: true));
     });
   }
 
@@ -700,8 +728,8 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
     _discovery.changes.removeListener(_onDiscovery);
     _bookmarks.keys.removeListener(_onBookmarks);
     _notInterested.keys.removeListener(_onNotInterested);
-    _bookmarks.saved.removeListener(_askWhenQuiet);
-    _notInterested.saved.removeListener(_askWhenQuiet);
+    _bookmarks.settled.removeListener(_askWhenQuiet);
+    _notInterested.settled.removeListener(_askWhenQuiet);
     _tickets.saved.removeListener(_onTicketSaved);
     _server.profileTextDone.removeListener(_onProfileTextDone);
     searchController.dispose();
