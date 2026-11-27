@@ -51,7 +51,7 @@ class HomeCard extends StatelessWidget {
   /// Null hides the bookmark button.
   final VoidCallback? onBookmark;
 
-  /// The ✕ "Not interested" (For You only): null hides it.
+  /// The 👎 "Not interested" (For You only): null hides it.
   final VoidCallback? onNotInterested;
   final bool bookmarked;
 
@@ -245,7 +245,7 @@ class HomeCard extends StatelessWidget {
                           label: HomeStrings.notInterested,
                           onTap: onNotInterested,
                           child: AppIcon.filled(
-                            AppIcons.close,
+                            AppIcons.thumbDown,
                             size: 19,
                             color: AppColors.grey,
                           ),

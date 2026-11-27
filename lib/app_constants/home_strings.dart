@@ -29,7 +29,8 @@ class HomeStrings {
   static const results = 'Results';
 
   static const notInterested = 'Not interested';
-  static const hiddenFromForYou = 'Hidden from For You';
+  static const fewerStartupsLikeThis = 'We’ll show fewer startups like this';
+  static const fewerInvestorsLikeThis = 'We’ll show fewer investors like this';
   static const undo = 'Undo';
 
   static const bookmarkRemoved = 'Removed from bookmarks';
