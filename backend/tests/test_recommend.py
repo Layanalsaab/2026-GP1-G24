@@ -90,6 +90,19 @@ def test_open_ticket_adds_the_bonus():
     assert picks[0].id == "fin" and picks[0].score == pytest.approx(1.3)
 
 
+def test_fresh_tickets_from_the_user_context_replace_the_snapshots():
+    ticket = {"investorId": "inv1", "name": "T1", "status": "open", "amountMin": 100_000, "amountMax": 2_000_000,
+              "sectors": ["Fintech"], "stages": ["Seed"], "createdAt": NOW}
+    s = snap({"fin": startup("Payly", "fintech", "seed")})  # the cached snapshot has not seen the ticket yet
+    ctx = investor_ctx(FINTECH_SEED)
+    ctx.own_tickets = [ticket]
+    picks = for_you(ctx, s, NOW)
+    assert picks[0].id == "fin" and picks[0].score == pytest.approx(1.3)
+    closed = snap({"fin": startup("Payly", "fintech", "seed")}, tickets=[ticket])  # closed since the snapshot
+    ctx.own_tickets = []
+    assert for_you(ctx, closed, NOW)[0].score == pytest.approx(1.0)
+
+
 def test_founder_amount_filter_and_best_taste():
     own = {
         "o1": startup("Mine1", "fintech", "seed", fundingRequirement=2_000_000, raisedInRound=1_500_000),  # 500K left

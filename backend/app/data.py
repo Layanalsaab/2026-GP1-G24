@@ -93,6 +93,10 @@ class UserContext:
     bookmarks: dict[str, datetime]
     dislikes: dict[str, datetime]
     own_startups: dict[str, dict]
+    # An investor's own open tickets, read fresh on every request so a ticket
+    # opened or closed a moment ago counts at once (the shared snapshot keeps
+    # tickets for up to 30 minutes). None: use the snapshot's.
+    own_tickets: list[dict] | None = None
 
 
 def _as_time(raw: object, fallback: datetime) -> datetime:
@@ -174,6 +178,12 @@ class DataStore:
         own = _docs(self.source.stream("startups", "founderId", "==", uid))
         # The Python client spells it array_contains ("array-contains" is the JavaScript/Dart spelling).
         own.update(_docs(self.source.stream("startups", "memberIds", "array_contains", uid)))
+        own_tickets = None
+        if user["role"] == "investor":
+            own_tickets = [
+                t for t in _docs(self.source.stream("tickets", "investorId", "==", uid)).values()
+                if t.get("status") == "open"
+            ]
         return UserContext(
             uid=uid,
             role=user["role"],
@@ -181,4 +191,5 @@ class DataStore:
             bookmarks=self._dated(f"users/{uid}/bookmarks", now),
             dislikes=self._dated(f"users/{uid}/notInterested", now),
             own_startups=own,
+            own_tickets=own_tickets,
         )

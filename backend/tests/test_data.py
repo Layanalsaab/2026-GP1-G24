@@ -66,6 +66,19 @@ def test_user_context_reads_bookmarks_dislikes_and_own_startups():
     assert set(ctx.own_startups) == {"s1", "s2", "s3"}  # founder of s1, s2; member of s3
 
 
+def test_user_context_reads_the_investors_open_tickets_fresh():
+    source = seeded()
+    source.docs["users/inv1"] = {"role": "investor"}
+    store = DataStore(source, clock=Clock(T0))
+    store.snapshot()  # cached for 30 minutes from here
+    source.docs["tickets/inv1-T1"] = {"investorId": "inv1", "status": "open", "name": "New", "amountMin": 1, "amountMax": 2}
+    source.docs["tickets/inv1-T2"] = {"investorId": "inv1", "status": "closed", "name": "Old", "amountMin": 1, "amountMax": 2}
+    ctx = store.user_context("inv1")
+    assert [t["name"] for t in ctx.own_tickets] == ["New"]
+    assert store.snapshot().tickets == [source.docs["tickets/i1-T1"]]  # the shared snapshot is unchanged
+    assert store.user_context("f1").own_tickets is None  # founders: tickets come from the snapshot
+
+
 def test_user_without_role_has_no_context():
     store = DataStore(seeded(), clock=Clock(T0))
     assert store.user_context("x1") is None

@@ -98,7 +98,8 @@ def for_you(ctx: UserContext, snap: Snapshot, now: datetime, limit: int = DEFAUL
 
 
 def _for_investor(ctx: UserContext, snap: Snapshot, now: datetime, limit: int) -> list[Pick]:
-    tickets = [t for t in snap.tickets if t.get("investorId") == ctx.uid and valid_ticket(t)]
+    mine = ctx.own_tickets if ctx.own_tickets is not None else snap.tickets
+    tickets = [t for t in mine if t.get("investorId") == ctx.uid and valid_ticket(t)]
     band, round_min, round_max = criteria_amounts(ctx.user_doc)
     ids = [
         sid for sid, doc in snap.startups.items()
