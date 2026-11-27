@@ -85,3 +85,50 @@ def test_legacy_sector_and_stage_match_ticket_labels():
 def test_non_finite_amounts_do_not_crash():
     assert remaining({**RAISING, "fundingRequirement": float("nan")}) == 0
     assert ticket_bonus(RAISING, [{"amountMin": float("inf"), "amountMax": 600_000, "sectors": [], "stages": []}]) == 0.0
+
+
+# Calibration (Steck, "Calibrated Recommendations", RecSys 2018): the main places follow the
+# target sector mix instead of letting the best-scoring sector take them all.
+def _two_sectors(n_each: int, gap: float = 0.02):
+    """n_each fintech candidates scoring a little above n_each saas candidates (by gap);
+    sector rows [fintech, saas]."""
+    ids = [f"f{k}" for k in range(n_each)] + [f"s{k}" for k in range(n_each)]
+    names = list(ids)
+    scores = np.array([[0.8 - k / 1000 for k in range(n_each)] + [0.8 - gap - k / 1000 for k in range(n_each)]])
+    sectors = np.array([[1.0, 0.0]] * n_each + [[0.0, 1.0]] * n_each)
+    return ids, names, scores, sectors
+
+
+def test_calibration_follows_the_target_mix():
+    ids, names, scores, sectors = _two_sectors(10)
+    picks = recommend_best(ids, names, ["fintech"] * 10 + ["saas"] * 10, scores, np.ones_like(scores, dtype=bool),
+                           np.zeros_like(scores), limit=12, sectors=sectors, target=np.array([0.8, 0.2]))
+    top10 = [p.id for p in picks[:10]]
+    assert sum(i.startswith("s") for i in top10) == 2
+    assert [i for i in top10 if i.startswith("f")] == [f"f{k}" for k in range(8)]  # score order within a sector
+
+
+def test_calibration_trades_closeness_for_score_when_scores_are_far_apart():
+    # Steck's method balances the two (weight 0.5): a much weaker sector gets fewer places.
+    ids, names, scores, sectors = _two_sectors(10, gap=0.3)
+    picks = recommend_best(ids, names, ["fintech"] * 10 + ["saas"] * 10, scores, np.ones_like(scores, dtype=bool),
+                           np.zeros_like(scores), limit=12, sectors=sectors, target=np.array([0.8, 0.2]))
+    assert sum(p.id.startswith("s") for p in picks[:10]) == 1
+
+
+def test_calibration_with_only_the_onboarding_sector_keeps_other_sectors_out_of_the_main_places():
+    ids, names, scores, sectors = _two_sectors(10)
+    picks = recommend_best(ids, names, ["fintech"] * 10 + ["saas"] * 10, scores, np.ones_like(scores, dtype=bool),
+                           np.zeros_like(scores), limit=12, sectors=sectors, target=np.array([1.0, 0.0]))
+    assert [p.id for p in picks[:10]] == [f"f{k}" for k in range(10)]
+    assert picks[10].id == "s0"  # the other-sector places still offer something new
+
+
+def test_without_a_target_the_order_is_by_score():
+    ids, names, scores, sectors = _two_sectors(10)
+    plain = recommend_best(ids, names, ["fintech"] * 10 + ["saas"] * 10, scores, np.ones_like(scores, dtype=bool),
+                           np.zeros_like(scores), limit=12)
+    no_target = recommend_best(ids, names, ["fintech"] * 10 + ["saas"] * 10, scores, np.ones_like(scores, dtype=bool),
+                               np.zeros_like(scores), limit=12, sectors=sectors, target=None)
+    assert [p.id for p in plain] == [p.id for p in no_target]
+    assert [p.id for p in plain[:10]] == [f"f{k}" for k in range(10)]

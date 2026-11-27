@@ -8,6 +8,11 @@ import numpy as np
 
 from .catalog import finite_int, sector_label, stage_label, stored_sector, stored_stage, ticket_min
 
+# Calibration (Steck, "Calibrated Recommendations", RecSys 2018): relevance against
+# closeness to the user's sector mix, and the smoothing of the list's mix.
+CALIBRATION_WEIGHT = 0.5
+CALIBRATION_ALPHA = 0.01
+
 TICKET_FIT_BONUS = 0.3
 TICKET_AMOUNT_BONUS = 0.1
 DEFAULT_LIMIT = 20
@@ -110,16 +115,27 @@ def recommend_best(
     bonus: np.ndarray,
     limit: int = DEFAULT_LIMIT,
     explore_slots: int = EXPLORE_SLOTS,
+    sectors: np.ndarray | None = None,
+    target: np.ndarray | None = None,
 ) -> list[Pick]:
-    """Best score over the tastes a candidate fits; sorted; last places kept for new sectors."""
+    """Best score over the tastes a candidate fits; the main places follow the target sector
+    mix (calibration) when one is given, else the score order; last places kept for new sectors.
+
+    sectors: one row per candidate over the same sector values as target.
+    """
     counts = (allowed & (scores > 0))
     fits = counts.sum(axis=0)
     totals = np.where(counts, scores + bonus, -np.inf).max(axis=0, initial=-np.inf)
     scored = [k for k in range(len(ids)) if fits[k] > 0 and totals[k] > 0]
     scored.sort(key=lambda k: (-totals[k], -fits[k], names[k]))
 
-    main = scored[: max(0, limit - explore_slots)]
-    rest = scored[len(main):]
+    places = max(0, limit - explore_slots)
+    if target is not None and sectors is not None and float(np.sum(target)) > 0:
+        main = _calibrated(scored, totals, sectors, target, places)
+    else:
+        main = scored[:places]
+    taken = set(main)
+    rest = [k for k in scored if k not in taken]
     sectors = {main_sectors[k] for k in main}
     picked = list(main)
     for k in rest:
@@ -134,3 +150,31 @@ def recommend_best(
         if k not in picked:
             picked.append(k)
     return [Pick(ids[k], float(totals[k])) for k in picked]
+
+
+def _calibrated(order: list[int], totals: np.ndarray, sectors: np.ndarray, target: np.ndarray, places: int) -> list[int]:
+    """Steck's greedy calibration: each place goes to the candidate with the best
+    (1 - w) * score - w * KL(target || mix of the list with it), mix smoothed by alpha.
+    Ties go to the earliest candidate in order (score, fits, name)."""
+    if not order or places <= 0:
+        return []
+    rows = sectors[order].astype(float)
+    sums = rows.sum(axis=1, keepdims=True)
+    mixes = np.divide(rows, sums, out=np.zeros_like(rows), where=sums > 0)
+    scores = totals[order]
+    wanted = target > 0
+    p = target[wanted]
+    counts = np.zeros(len(target))
+    left = list(range(len(order)))
+    chosen: list[int] = []
+    for size in range(1, min(places, len(order)) + 1):
+        cand = np.array(left)
+        q = (counts + mixes[cand]) / size
+        smoothed = (1 - CALIBRATION_ALPHA) * q[:, wanted] + CALIBRATION_ALPHA * p
+        kl = np.sum(p * np.log(p / smoothed), axis=1)
+        value = (1 - CALIBRATION_WEIGHT) * scores[cand] - CALIBRATION_WEIGHT * kl
+        best = int(cand[int(np.argmax(value))])
+        chosen.append(best)
+        counts += mixes[best]
+        left.remove(best)
+    return [order[k] for k in chosen]

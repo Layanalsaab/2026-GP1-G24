@@ -31,6 +31,29 @@ class Signal:
 class Taste:
     groups: GroupVectors
     learned_share: float
+    # The sector mix the list should follow (calibration, Steck 2018): the base's sectors
+    # blended with the sectors of bookmarks and tickets by the learned share. None: no sectors.
+    target: np.ndarray | None = None
+
+
+def _mix(vector: np.ndarray | None) -> np.ndarray | None:
+    """A sector vector as shares that add up to 1 (None when it has no sector)."""
+    if vector is None:
+        return None
+    total = float(np.sum(vector))
+    return vector / total if total > 0 else None
+
+
+def _target(base: GroupVectors, likes: list[Signal], weights: list[float], share: float) -> np.ndarray | None:
+    from_base = _mix(base.get("sector"))
+    liked = [(w, _mix(s.groups.get("sector"))) for s, w in zip(likes, weights)]
+    liked = [(w, m) for w, m in liked if m is not None and w > 0]
+    from_likes = sum(w * m for w, m in liked) / sum(w for w, _ in liked) if liked else None
+    if from_base is None:
+        return from_likes
+    if from_likes is None:
+        return from_base
+    return (1 - share) * from_base + share * from_likes
 
 
 def decay_weight(at: datetime, now: datetime, strength: float = 1.0) -> float:
@@ -79,4 +102,4 @@ def build_taste(base: GroupVectors, likes: list[Signal], dislikes: list[Signal],
         if group in LABEL_GROUPS:
             blended = np.maximum(blended, 0.0)
         groups[group] = blended
-    return Taste(groups, share if likes else 0.0)
+    return Taste(groups, share if likes else 0.0, _target(base, likes, like_weights, share))

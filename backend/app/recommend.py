@@ -135,6 +135,7 @@ def _for_investor(ctx: UserContext, snap: Snapshot, now: datetime, limit: int) -
     return recommend_best(
         ids, [d["name"] for d in docs], [v["sector"][0] if v["sector"] else None for v in candidates],
         scores, np.ones_like(scores, dtype=bool), bonus, limit=limit,
+        sectors=rows.get("sector"), target=taste.target,
     )
 
 
@@ -181,7 +182,9 @@ def _for_founder(ctx: UserContext, snap: Snapshot, now: datetime, limit: int) ->
             allowed[t, k] = amount_fits(startup, theirs, *criteria_amounts(doc))
             bonus[t, k] = ticket_bonus(startup, theirs)
 
+    targets = [t.target for t in tastes if t.target is not None]
     return recommend_best(
         ids, [d["fullName"] for d in docs], [investor_main_sector(d) for d in docs],
         scores, allowed, bonus, limit=limit,
+        sectors=rows.get("sector"), target=np.mean(targets, axis=0) if targets else None,
     )

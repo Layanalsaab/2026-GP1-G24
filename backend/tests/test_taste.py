@@ -65,3 +65,26 @@ def test_text_keeps_negatives_and_empty_taste_ignores_dislikes():
     assert t.groups["text"][1] == pytest.approx(-0.2)
     empty = build_taste({}, [], [Signal({"text": np.array([0.0, 1.0])}, NOW)], NOW)
     assert not np.any(empty.groups.get("text", np.zeros(2)))
+
+
+def test_target_mix_blends_the_base_sectors_with_the_liked_ones():
+    base = {"sector": np.array([1.0, 1.0, 0.0])}  # fintech, healthtech chosen at onboarding
+    like = Signal({"sector": np.array([0.0, 0.0, 1.0])}, NOW)  # one saas bookmark, made now
+    taste = build_taste(base, [like], [], NOW)
+    share = taste.learned_share
+    assert share == pytest.approx(0.2)
+    assert taste.target == pytest.approx([(1 - share) / 2, (1 - share) / 2, share])
+
+
+def test_target_mix_without_likes_is_the_base_and_without_a_base_the_likes():
+    base = {"sector": np.array([1.0, 1.0, 0.0])}
+    assert build_taste(base, [], [], NOW).target == pytest.approx([0.5, 0.5, 0.0])
+    like = Signal({"sector": np.array([0.0, 1.0, 1.0])}, NOW)
+    assert build_taste({}, [like], [], NOW).target == pytest.approx([0.0, 0.5, 0.5])
+    assert build_taste({}, [], [], NOW).target is None
+
+
+def test_dislikes_do_not_change_the_target_mix():
+    base = {"sector": np.array([1.0, 1.0, 0.0])}
+    nope = Signal({"sector": np.array([1.0, 0.0, 0.0])}, NOW)
+    assert build_taste(base, [], [nope], NOW).target == pytest.approx([0.5, 0.5, 0.0])

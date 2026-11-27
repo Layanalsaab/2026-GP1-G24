@@ -204,3 +204,34 @@ def test_written_other_matches_the_same_written_sector():
     picks = for_you(ctx, s, NOW)
     assert picks[0].id == "space" and picks[0].score == pytest.approx(1.0)
     assert picks[1].id == "fin" and picks[1].score == pytest.approx(0.29 / 0.70)
+
+
+def _dataset_snapshot():
+    """The dataset copy the app's matching tests use (startups with stage Other left out)."""
+    import json
+    from pathlib import Path
+
+    fixture = Path(__file__).resolve().parents[2] / "test/recommender/matching_fixture.json"
+    data = json.loads(fixture.read_text())
+    docs = {}
+    for s in data["startups"]:
+        if s["stage"] == "other":
+            continue
+        doc = {k: v for k, v in s.items() if k != "id" and v is not None}
+        docs[s["id"]] = {**doc, "location": "riyadh", "founderId": "f-" + s["id"]}
+    return snap(docs)
+
+
+def test_one_bookmark_brings_its_sector_into_the_top_10_and_keeps_the_onboarding_sectors():
+    s = _dataset_snapshot()
+    prefs = {"preferredSectors": ["HealthTech", "Fintech"], "preferredStages": ["Pre-seed", "Seed"],
+             "preferredCommerceModels": ["Business-to-Business (B2B)", "Business-to-Consumer (B2C)"],
+             "ticketSize": "SAR 100K – 500K"}
+    saas = sorted(k for k, d in s.startups.items() if d["sector"] == "saas" and d.get("isPublic") and d.get("status") != "closed")
+    sector = lambda pick: s.startups[pick.id]["sector"]
+    before = for_you(investor_ctx(prefs), s, NOW)
+    assert all(sector(p) in ("healthtech", "fintech") for p in before[:10])
+    after = for_you(investor_ctx(prefs, bookmarks={f"s-{saas[0]}": NOW}), s, NOW)
+    top10 = [sector(p) for p in after[:10]]
+    assert top10.count("saas") >= 1
+    assert sum(x in ("healthtech", "fintech") for x in top10) >= 7
