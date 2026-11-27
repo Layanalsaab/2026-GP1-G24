@@ -74,6 +74,20 @@ void main() {
     expect(_api(_failIfCalled()).enabled, isTrue);
   });
 
+  test('with no setting, the app calls the deployed server', () async {
+    late Uri seen;
+    final api = ForYouApi(
+      client: MockClient((req) async {
+        seen = req.url;
+        return http.Response(jsonEncode({'items': []}), 200);
+      }),
+      idToken: () async => 'tok',
+    );
+    expect(api.enabled, isTrue);
+    await api.forYou();
+    expect(seen.toString(), 'https://startsa-for-you.onrender.com/for-you');
+  });
+
   test('items with an unknown kind are skipped', () async {
     final client = MockClient(
       (_) async => http.Response(
