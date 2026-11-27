@@ -208,7 +208,11 @@ class DiscoveryRepository {
         for (final e in bookmarks.entries)
           if (e.key.startsWith('s-'))
             if (startupById(e.key.substring(2)) case final s? when s.isListed)
-              Signal(startupFeatures(s), e.value),
+              Signal(
+                startupFeatures(s),
+                e.value,
+                sectors: startupCalibrationSectors(s),
+              ),
         for (final t in tickets)
           Signal(
             ticketFeatures(t),
@@ -237,7 +241,13 @@ class DiscoveryRepository {
               roundMin: criteria?.roundMin,
               roundMax: criteria?.roundMax,
             ))
-          Candidate(s, s.name, startupFeatures(s), s.sector.value),
+          Candidate(
+            s,
+            s.name,
+            startupFeatures(s),
+            s.sector.value,
+            sectors: startupCalibrationSectors(s),
+          ),
     ];
     final picks = recommendBest<Startup>(
       [taste],

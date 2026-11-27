@@ -235,3 +235,26 @@ def test_one_bookmark_brings_its_sector_into_the_top_10_and_keeps_the_onboarding
     top10 = [sector(p) for p in after[:10]]
     assert top10.count("saas") >= 1
     assert sum(x in ("healthtech", "fintech") for x in top10) >= 7
+
+
+def test_a_startup_ticking_many_sectors_does_not_take_the_top_place():
+    prefs = {"preferredSectors": ["Fintech", "HealthTech"], "preferredStages": ["Seed"],
+             "preferredCommerceModels": ["Business-to-Business (B2B)"]}
+    docs = {f"f{k}": startup(f"Fin {k}", "fintech", "seed") for k in range(6)}
+    docs.update({f"h{k}": startup(f"Health {k}", "healthtech", "seed") for k in range(6)})
+    docs["wide"] = startup("Wide", "fintech", "seed", otherSectors=[
+        "HealthTech", "EdTech", "SaaS", "AI", "Logistics", "Media", "Gaming", "Retail", "Energy"])
+    picks = for_you(investor_ctx(prefs), snap(docs), NOW)
+    assert [p.id for p in picks].index("wide") >= 12  # it scores below all 12; ticking more sectors must not lift it
+
+
+def test_a_broad_investor_keeps_its_place_on_a_founders_list():
+    own = {"mine": startup("Mine", "fintech", "seed", fundingRequirement=300_000)}
+    investors = {"broad": {"fullName": "Broad Angel", "preferredSectors": ["Fintech", "Gaming", "Media", "Sports"],
+                           "preferredStages": ["Seed"], "preferredCommerceModels": ["Business-to-Business (B2B)"]}}
+    investors.update({f"n{k}": {"fullName": f"Narrow {k}", "preferredSectors": ["Fintech"],
+                                "preferredStages": ["Series A"], "preferredCommerceModels": ["Business-to-Business (B2B)"]}
+                      for k in range(4)})
+    ctx = UserContext("f1", "founder", {"role": "founder"}, {}, {}, own)
+    picks = for_you(ctx, snap(investors=investors), NOW)
+    assert picks[0].id == "broad"  # the best match: its other sectors are only what it also accepts

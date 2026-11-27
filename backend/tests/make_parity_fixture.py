@@ -19,6 +19,8 @@ from app.scoring import score_candidates
 from app.taste import Signal, build_taste
 
 FIXTURE = Path(__file__).parent / "fixtures" / "for_you_parity.json"
+# Equal scores across 4 onboarding sectors: ties must follow the given order on both sides.
+TIES_FIXTURE = Path(__file__).parent / "fixtures" / "for_you_parity_ties.json"
 
 SCENARIO = {
     "now": "2026-11-21T09:00:00Z",
@@ -26,9 +28,9 @@ SCENARIO = {
     "base": {"sector": ["fintech", "ai", "saas"], "stage": ["seed", "series_a"], "model": ["b2b", "b2c"]},
     "likes": [
         # a bookmark 45 days old
-        {"groups": {"sector": ["healthtech", "ai"], "stage": ["seed"], "model": ["b2b"]}, "at": "2026-10-07T09:00:00Z", "strength": 1.0},
+        {"groups": {"sector": ["healthtech", "ai"], "stage": ["seed"], "model": ["b2b"]}, "at": "2026-10-07T09:00:00Z", "strength": 1.0, "mainSector": "healthtech"},
         # a bookmark 200 days old (weight floored at 0.4)
-        {"groups": {"sector": ["logistics"], "stage": ["series_b"], "model": ["b2c"]}, "at": "2026-05-05T09:00:00Z", "strength": 1.0},
+        {"groups": {"sector": ["logistics"], "stage": ["series_b"], "model": ["b2c"]}, "at": "2026-05-05T09:00:00Z", "strength": 1.0, "mainSector": "logistics"},
         # an open ticket from 11 days 5.5 hours ago (269 whole hours)
         {"groups": {"sector": ["fintech", "logistics"], "stage": ["seed"], "model": []}, "at": "2026-11-10T03:30:00Z", "strength": 1.5},
     ],
@@ -55,12 +57,29 @@ SCENARIO = {
 }
 
 
+TIES = {
+    "now": "2026-11-21T09:00:00Z",
+    "limit": 10,
+    "base": {"sector": ["fintech", "saas", "healthtech", "ai"], "stage": ["seed"], "model": ["b2b"]},
+    "likes": [],
+    "dislikes": [],
+    "candidates": [
+        {"id": f"{sector}{k}", "name": f"{sector} {k}", "mainSector": sector,
+         "groups": {"sector": [sector], "stage": ["seed"], "model": ["b2b"]}}
+        for k in range(2) for sector in ("ai", "fintech", "healthtech", "saas")
+    ],
+}
+
+
 def _time(text: str) -> datetime:
     return datetime.fromisoformat(text.replace("Z", "+00:00"))
 
 
 def compute_expected(scenario: dict) -> list[dict]:
-    likes = [Signal(encode(l["groups"]), _time(l["at"]), l["strength"]) for l in scenario["likes"]]
+    def main_only(item: dict):
+        return encode({"sector": [item["mainSector"]]})["sector"] if item.get("mainSector") else None
+
+    likes = [Signal(encode(l["groups"]), _time(l["at"]), l["strength"], main_only(l)) for l in scenario["likes"]]
     dislikes = [Signal(encode(d["groups"]), _time(d["at"]), d["strength"]) for d in scenario.get("dislikes", [])]
     taste = build_taste(encode(scenario["base"]), likes, dislikes, _time(scenario["now"]))
     encoded = [encode(c["groups"]) for c in scenario["candidates"]]
@@ -74,7 +93,8 @@ def compute_expected(scenario: dict) -> list[dict]:
         allowed=np.ones_like(scores, dtype=bool),
         bonus=np.zeros_like(scores),
         limit=scenario["limit"],
-        sectors=rows["sector"],
+        sectors=np.stack([encode({"sector": [c["mainSector"]] if c["mainSector"] else []})["sector"]
+                          for c in scenario["candidates"]]),
         target=taste.target,
     )
     return [{"id": p.id, "score": p.score} for p in picks]
@@ -82,8 +102,9 @@ def compute_expected(scenario: dict) -> list[dict]:
 
 def main() -> None:
     FIXTURE.parent.mkdir(parents=True, exist_ok=True)
-    FIXTURE.write_text(json.dumps({**SCENARIO, "expected": compute_expected(SCENARIO)}, indent=2) + "\n")
-    print(f"wrote {FIXTURE}")
+    for path, scenario in ((FIXTURE, SCENARIO), (TIES_FIXTURE, TIES)):
+        path.write_text(json.dumps({**scenario, "expected": compute_expected(scenario)}, indent=2) + "\n")
+        print(f"wrote {path}")
 
 
 if __name__ == "__main__":

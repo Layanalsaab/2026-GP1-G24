@@ -87,8 +87,18 @@ def _parts(keys: dict[str, datetime], prefix: str, docs: dict[str, dict], kind: 
     return out
 
 
-def _signals(parts: list[Part], encoder: Encoder, strength: float = 1.0) -> list[Signal]:
-    return [Signal(_with_text(encoder.encode(values), vector), at, strength) for values, vector, at in parts]
+def _main_sector(values: Values) -> Values:
+    """A startup's main sector only: calibration counts a startup once, so ticking many sectors
+    does not make it look like a perfect mix."""
+    return {"sector": values.get("sector", [])[:1]}
+
+
+def _signals(parts: list[Part], encoder: Encoder, strength: float = 1.0, main_only: bool = False) -> list[Signal]:
+    return [
+        Signal(_with_text(encoder.encode(values), vector), at, strength,
+               encoder.encode(_main_sector(values))["sector"] if main_only else None)
+        for values, vector, at in parts
+    ]
 
 
 def for_you(ctx: UserContext, snap: Snapshot, now: datetime, limit: int = DEFAULT_LIMIT) -> list[Pick]:
@@ -125,7 +135,7 @@ def _for_investor(ctx: UserContext, snap: Snapshot, now: datetime, limit: int) -
     encoder = Encoder.covering([base_values, *candidates, *(p[0] for p in likes + ticket_likes + dislikes)])
     taste = build_taste(
         _with_text(encoder.encode(base_values), base_text),
-        _signals(likes, encoder) + _signals(ticket_likes, encoder, TICKET_STRENGTH),
+        _signals(likes, encoder, main_only=True) + _signals(ticket_likes, encoder, TICKET_STRENGTH),
         _signals(dislikes, encoder),
         now,
     )
@@ -135,7 +145,7 @@ def _for_investor(ctx: UserContext, snap: Snapshot, now: datetime, limit: int) -
     return recommend_best(
         ids, [d["name"] for d in docs], [v["sector"][0] if v["sector"] else None for v in candidates],
         scores, np.ones_like(scores, dtype=bool), bonus, limit=limit,
-        sectors=rows.get("sector"), target=taste.target,
+        sectors=encoder.encode_many([_main_sector(v) for v in candidates])["sector"], target=taste.target,
     )
 
 

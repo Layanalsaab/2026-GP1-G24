@@ -132,3 +132,25 @@ def test_without_a_target_the_order_is_by_score():
                                np.zeros_like(scores), limit=12, sectors=sectors, target=None)
     assert [p.id for p in plain] == [p.id for p in no_target]
     assert [p.id for p in plain[:10]] == [f"f{k}" for k in range(10)]
+
+
+def test_calibration_ties_go_to_the_earliest_candidate():
+    # Equal scores and a uniform target over k sectors: the order given wins every tie, never rounding
+    # noise in the sums (which broke it for 4, 6, 8, 9 and 10 sectors).
+    for k in (3, 4, 6, 8, 9, 10, 12):
+        ids = [f"c{i:02d}" for i in range(2 * k)]
+        scores = np.array([[0.7] * (2 * k)])
+        sectors = np.array([np.eye(k)[i % k] for i in range(2 * k)])
+        picks = recommend_best(ids, ids, [str(i % k) for i in range(2 * k)], scores, np.ones_like(scores, dtype=bool),
+                               np.zeros_like(scores), limit=2 * k + 2, sectors=sectors, target=np.ones(k) / k)
+        assert [p.id for p in picks] == ids, k
+
+
+def test_an_items_sectors_outside_the_target_do_not_count():
+    # A broad item (fintech plus sectors the user did not choose) counts as fintech for the mix.
+    ids = ["broad", "f1", "f2"]
+    scores = np.array([[0.77, 0.59, 0.58]])
+    sectors = np.array([[1, 1, 1, 1], [1, 0, 0, 0], [1, 0, 0, 0]], dtype=float)  # fintech, gaming, media, sports
+    picks = recommend_best(ids, ids, ["fintech"] * 3, scores, np.ones_like(scores, dtype=bool),
+                           np.zeros_like(scores), limit=5, sectors=sectors, target=np.array([1.0, 0, 0, 0]))
+    assert [p.id for p in picks] == ["broad", "f1", "f2"]

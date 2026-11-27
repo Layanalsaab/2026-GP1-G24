@@ -25,6 +25,9 @@ class Signal:
     groups: GroupVectors
     at: datetime
     strength: float = 1.0
+    # The sectors it adds to the calibration target (a startup: its main sector only);
+    # None: its sector feature.
+    sectors: np.ndarray | None = None
 
 
 @dataclass
@@ -44,9 +47,18 @@ def _mix(vector: np.ndarray | None) -> np.ndarray | None:
     return vector / total if total > 0 else None
 
 
+def _inside(vector: np.ndarray | None, base: np.ndarray | None) -> np.ndarray | None:
+    """Only the base's sectors when the vector has some of them (else all of its sectors)."""
+    if vector is None or base is None:
+        return vector
+    inside = vector * (base > 0)
+    return inside if np.any(inside) else vector
+
+
 def _target(base: GroupVectors, likes: list[Signal], weights: list[float], share: float) -> np.ndarray | None:
     from_base = _mix(base.get("sector"))
-    liked = [(w, _mix(s.groups.get("sector"))) for s, w in zip(likes, weights)]
+    liked = [(w, _mix(_inside(s.sectors if s.sectors is not None else s.groups.get("sector"), base.get("sector"))))
+             for s, w in zip(likes, weights)]
     liked = [(w, m) for w, m in liked if m is not None and w > 0]
     from_likes = sum(w * m for w, m in liked) / sum(w for w, _ in liked) if liked else None
     if from_base is None:

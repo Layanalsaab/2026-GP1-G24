@@ -12,6 +12,8 @@ from .catalog import finite_int, sector_label, stage_label, stored_sector, store
 # closeness to the user's sector mix, and the smoothing of the list's mix.
 CALIBRATION_WEIGHT = 0.5
 CALIBRATION_ALPHA = 0.01
+# Values this close count as equal, so ties follow the order given, not rounding noise.
+CALIBRATION_TIE = 1e-9
 
 TICKET_FIT_BONUS = 0.3
 TICKET_AMOUNT_BONUS = 0.1
@@ -155,14 +157,18 @@ def recommend_best(
 def _calibrated(order: list[int], totals: np.ndarray, sectors: np.ndarray, target: np.ndarray, places: int) -> list[int]:
     """Steck's greedy calibration: each place goes to the candidate with the best
     (1 - w) * score - w * KL(target || mix of the list with it), mix smoothed by alpha.
-    Ties go to the earliest candidate in order (score, fits, name)."""
+    Ties (within CALIBRATION_TIE) go to the earliest candidate in order (score, fits, name)."""
     if not order or places <= 0:
         return []
+    wanted = target > 0
     rows = sectors[order].astype(float)
+    # An item's sectors outside the target do not count when it has some inside it: an
+    # investor's list means "sectors I accept", not a mix.
+    inside = rows * wanted
+    rows = np.where(inside.sum(axis=1, keepdims=True) > 0, inside, rows)
     sums = rows.sum(axis=1, keepdims=True)
     mixes = np.divide(rows, sums, out=np.zeros_like(rows), where=sums > 0)
     scores = totals[order]
-    wanted = target > 0
     p = target[wanted]
     counts = np.zeros(len(target))
     left = list(range(len(order)))
@@ -173,7 +179,7 @@ def _calibrated(order: list[int], totals: np.ndarray, sectors: np.ndarray, targe
         smoothed = (1 - CALIBRATION_ALPHA) * q[:, wanted] + CALIBRATION_ALPHA * p
         kl = np.sum(p * np.log(p / smoothed), axis=1)
         value = (1 - CALIBRATION_WEIGHT) * scores[cand] - CALIBRATION_WEIGHT * kl
-        best = int(cand[int(np.argmax(value))])
+        best = int(cand[int(np.flatnonzero(value >= value.max() - CALIBRATION_TIE)[0])])
         chosen.append(best)
         counts += mixes[best]
         left.remove(best)

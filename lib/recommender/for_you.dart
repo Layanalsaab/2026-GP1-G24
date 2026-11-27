@@ -48,6 +48,7 @@ const int exploreSlots = 2;
 /// smoothing of the list's mix.
 const double calibrationWeight = 0.5;
 const double calibrationAlpha = 0.01;
+const double calibrationTie = 1e-9;
 
 /// Attribute -> weight, per group ('sector', 'stage', 'model').
 typedef Vec = Map<String, double>;
@@ -106,10 +107,18 @@ String? _modelOf(String label) {
 }
 
 /// A startup: "Other" counts as what the founder wrote ("other" when nothing was written).
+/// A startup's main sector as the features write it (a typed Other answer
+/// included).
+String? startupMainSector(Startup s) => s.sector.value == 'other'
+    ? _written(s.sectorOther, sectorValue)
+    : s.sector.value;
+
+/// Calibration counts a startup by its main sector only, so ticking many
+/// sectors does not make it look like a perfect mix (as the server).
+Vec startupCalibrationSectors(Startup s) => {?startupMainSector(s): 1};
+
 Features startupFeatures(Startup s) {
-  final main = s.sector.value == 'other'
-      ? _written(s.sectorOther, sectorValue)
-      : s.sector.value;
+  final main = startupMainSector(s);
   final sectors = <String, double>{?main: 1};
   for (final label in s.otherSectors) {
     final value = _sectorOf(label);
@@ -188,11 +197,15 @@ double similarity(Features a, Features b) {
 
 /// Something the person bookmarked (or an open ticket), and when.
 class Signal {
-  const Signal(this.features, this.at, {this.strength = 1});
+  const Signal(this.features, this.at, {this.strength = 1, this.sectors});
 
   final Features features;
   final DateTime at;
   final double strength;
+
+  /// The sectors it adds to the calibration target (a startup: its main sector
+  /// only); null: its sector feature.
+  final Vec? sectors;
 }
 
 class Taste {
@@ -288,11 +301,17 @@ class Taste {
     List<double> weights,
     double share,
   ) {
-    final fromBase = _mixOf(base.groups['sector']);
+    final baseSectors = base.groups['sector'];
+    final fromBase = _mixOf(baseSectors);
     final liked = <String, double>{};
     var total = 0.0;
     for (var i = 0; i < likes.length; i++) {
-      final mix = _mixOf(likes[i].features.groups['sector']);
+      final mix = _mixOf(
+        _inside(
+          likes[i].sectors ?? likes[i].features.groups['sector'],
+          baseSectors,
+        ),
+      );
       if (mix == null || weights[i] <= 0) continue;
       mix.forEach((k, v) => liked[k] = (liked[k] ?? 0) + weights[i] * v);
       total += weights[i];
@@ -309,6 +328,16 @@ class Taste {
   }
 }
 
+/// Only the [within] sectors of v when it has some of them (else all of v's).
+Vec? _inside(Vec? v, Vec? within) {
+  if (v == null || within == null) return v;
+  final inside = {
+    for (final e in v.entries)
+      if ((within[e.key] ?? 0) > 0 && e.value != 0) e.key: e.value,
+  };
+  return inside.isNotEmpty ? inside : v;
+}
+
 /// A sector vector as shares that add up to 1 (null when it has no sector).
 Vec? _mixOf(Vec? v) {
   if (v == null) return null;
@@ -317,12 +346,22 @@ Vec? _mixOf(Vec? v) {
 }
 
 class Candidate<T> {
-  const Candidate(this.item, this.name, this.features, this.mainSector);
+  const Candidate(
+    this.item,
+    this.name,
+    this.features,
+    this.mainSector, {
+    this.sectors,
+  });
 
   final T item;
   final String name;
   final Features features;
   final String? mainSector;
+
+  /// The sectors it counts as in calibration (a startup: its main sector
+  /// only); null: its sector feature.
+  final Vec? sectors;
 }
 
 class Pick<T> {
@@ -473,17 +512,19 @@ List<E> _calibrated<E extends ({Candidate c, double score, int fits})>(
   if (wanted.isEmpty || order.isEmpty || places <= 0) {
     return order.take(math.max(0, places)).toList();
   }
+  // An item's sectors outside the target do not count when it has some
+  // inside it: an investor's list means "sectors I accept", not a mix.
   final mixes = [
     for (final e in order)
-      _mixOf(e.c.features.groups['sector']) ?? const <String, double>{},
+      _mixOf(_inside(e.c.sectors ?? e.c.features.groups['sector'], wanted)) ??
+          const <String, double>{},
   ];
   final counts = <String, double>{};
   final left = List<int>.generate(order.length, (i) => i);
   final chosen = <E>[];
   final steps = math.min(places, order.length);
   for (var size = 1; size <= steps; size++) {
-    var best = -1;
-    var bestValue = double.negativeInfinity;
+    final values = <int, double>{};
     for (final i in left) {
       var kl = 0.0;
       wanted.forEach((g, p) {
@@ -491,13 +532,13 @@ List<E> _calibrated<E extends ({Candidate c, double score, int fits})>(
         final smoothed = (1 - calibrationAlpha) * q + calibrationAlpha * p;
         kl += p * math.log(p / smoothed);
       });
-      final value =
+      values[i] =
           (1 - calibrationWeight) * order[i].score - calibrationWeight * kl;
-      if (value > bestValue) {
-        best = i;
-        bestValue = value;
-      }
     }
+    // Values this close count as equal, so ties follow the order given, not
+    // rounding noise (as the server).
+    final top = values.values.reduce(math.max);
+    final best = left.firstWhere((i) => values[i]! >= top - calibrationTie);
     chosen.add(order[best]);
     mixes[best].forEach((g, w) => counts[g] = (counts[g] ?? 0) + w);
     left.remove(best);
