@@ -15,6 +15,12 @@ import '../../search/screens/hub_screen.dart';
 import '../../search/view_models/home_view_model.dart';
 import '../../search/widgets/home_layout.dart';
 
+/// The message after "Not interested": investor cards (a founder's For You)
+/// get the investors wording, startup cards the startups wording.
+String notInterestedMessage(HomeItemKind kind) => kind == HomeItemKind.investor
+    ? HomeStrings.fewerInvestorsLikeThis
+    : HomeStrings.fewerStartupsLikeThis;
+
 class ExploreScreen extends StatelessWidget {
   const ExploreScreen({super.key, required this.viewModel});
 
@@ -98,11 +104,14 @@ class ExploreScreen extends StatelessWidget {
     ),
   ];
 
-  /// The ✕: the card leaves For You at once; the message offers Undo (only
-  /// the latest hide can be undone, so a new message replaces the old one).
-  /// It goes away on its own after the usual 4 seconds.
+  /// The 👎: once its pop is over the card leaves For You, and the message
+  /// says what For You will show less of and offers Undo (only the latest
+  /// hide can be undone, so a new message replaces the old one). It goes away
+  /// on its own after the usual 4 seconds. The user may have left For You
+  /// during the pop: the hide still counts, without the message.
   void _hide(BuildContext context, HomeViewModel vm, HomeItem item) {
     vm.hideForYou(item);
+    if (!context.mounted) return;
     final messenger = ScaffoldMessenger.of(context)..hideCurrentSnackBar();
     messenger.showSnackBar(
       SnackBar(
@@ -111,7 +120,7 @@ class ExploreScreen extends StatelessWidget {
         backgroundColor: AppColors.toastFill,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-        content: Text(HomeStrings.hiddenFromForYou, style: AppText.toast),
+        content: Text(notInterestedMessage(item.kind), style: AppText.toast),
         action: SnackBarAction(
           label: HomeStrings.undo,
           textColor: AppColors.gold,

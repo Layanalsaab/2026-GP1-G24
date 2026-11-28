@@ -224,8 +224,8 @@ class AppRouter {
     BookmarkRepository.instance.clear();
     NotInterestedRepository.instance.clear();
     AppSession.instance.signOut();
-    // A message such as "Hidden from For You · Undo" must not follow the user
-    // to the next screen.
+    // A message such as "We’ll show fewer startups like this · Undo" must not
+    // follow the user to the next screen.
     messenger?.hideCurrentSnackBar();
     if (!context.mounted) return;
     if (toLogin) {

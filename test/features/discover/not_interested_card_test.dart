@@ -21,7 +21,9 @@ import 'package:startsa/helpers/app_session.dart';
 import 'package:startsa/models/app_user.dart';
 import 'package:startsa/models/home_item.dart';
 import 'package:startsa/navigation/app_router.dart';
+import 'package:startsa/shared_ui/icons/app_icons.dart';
 import 'package:startsa/shared_ui/theme/app_theme.dart';
+import 'package:startsa/shared_ui/widgets/cards/home_card.dart';
 
 import '../../support/fakes.dart';
 
@@ -142,6 +144,17 @@ void main() {
 
   List<String> ids(HomeViewModel vm) => [for (final i in vm.recommended) i.id];
 
+  test('the message names what For You will show less of', () {
+    expect(
+      notInterestedMessage(HomeItemKind.startup),
+      'We’ll show fewer startups like this',
+    );
+    expect(
+      notInterestedMessage(HomeItemKind.investor),
+      'We’ll show fewer investors like this',
+    );
+  });
+
   testWidgets('For You cards have a Not interested button; other lists '
       'don\'t', (t) async {
     final items = DiscoveryRepository.instance
@@ -166,10 +179,73 @@ void main() {
       await t.pumpAndSettle();
     }
 
+    Finder icon(String path) =>
+        find.byWidgetPredicate((w) => w is AppIcon && w.path == path);
+
     await pumpSlot((_) {});
     expect(find.bySemanticsLabel('Not interested'), findsNWidgets(2));
+    expect(icon(AppIcons.thumbDown), findsNWidgets(2));
+    expect(icon(AppIcons.close), findsNothing);
     await pumpSlot(null);
     expect(find.bySemanticsLabel('Not interested'), findsNothing);
+    expect(icon(AppIcons.thumbDown), findsNothing);
+  });
+
+  group('the thumb fills and pops before the card goes', () {
+    Finder icon(String path) =>
+        find.byWidgetPredicate((w) => w is AppIcon && w.path == path);
+
+    Future<List<int>> pumpCard(WidgetTester t) async {
+      final taps = <int>[];
+      await t.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.light,
+          home: Scaffold(
+            body: HomeCard(
+              name: 'Startup a',
+              tag: 'SaaS',
+              city: 'Riyadh',
+              body: 'A line',
+              animate: false,
+              onNotInterested: () => taps.add(1),
+            ),
+          ),
+        ),
+      );
+      return taps;
+    }
+
+    testWidgets('tapping fills the thumb, then tells the list once', (t) async {
+      final taps = await pumpCard(t);
+      expect(icon(AppIcons.thumbDown), findsOneWidget);
+      expect(icon(AppIcons.thumbDownFill), findsNothing);
+
+      await t.tap(find.bySemanticsLabel('Not interested'));
+      await t.pump();
+      expect(icon(AppIcons.thumbDownFill), findsOneWidget);
+      expect(icon(AppIcons.thumbDown), findsNothing);
+      expect(taps, isEmpty, reason: 'the card stays for the pop');
+
+      // A second tap during the pop counts for nothing.
+      await t.tap(find.bySemanticsLabel('Not interested'));
+      await t.pump(HomeCard.notInterestedPause);
+      expect(taps, hasLength(1));
+      await t.pumpAndSettle();
+      expect(taps, hasLength(1));
+    });
+
+    testWidgets('a card taken away during the pop still counts the tap', (
+      t,
+    ) async {
+      final taps = await pumpCard(t);
+      await t.tap(find.bySemanticsLabel('Not interested'));
+      await t.pump();
+      await t.pumpWidget(const SizedBox());
+      await t.pump();
+      expect(taps, hasLength(1));
+      await t.pump(HomeCard.notInterestedPause);
+      expect(taps, hasLength(1));
+    });
   });
 
   testWidgets('tapping it hides the card and Undo brings it back', (t) async {
@@ -179,7 +255,7 @@ void main() {
     await t.tap(find.bySemanticsLabel('Not interested').at(1));
     await t.pumpAndSettle();
     expect(find.text('Startup b'), findsNothing);
-    expect(find.text('Hidden from For You'), findsOneWidget);
+    expect(find.text('We’ll show fewer startups like this'), findsOneWidget);
     expect(ids(vm), ['a', 'c']);
     expect(db.store['users/u1/notInterested'], contains('s-b'));
 
@@ -197,6 +273,16 @@ void main() {
     expect(db.store['users/u1/notInterested'] ?? {}, isNot(contains('s-b')));
   });
 
+  testWidgets('leaving For You during the pop still hides the card', (t) async {
+    final vm = await pumpForYou(t, ['a', 'b', 'c']);
+    await t.tap(find.bySemanticsLabel('Not interested').at(1));
+    await t.pump();
+    await t.pumpWidget(const SizedBox());
+    await t.pumpAndSettle();
+    expect(ids(vm), ['a', 'c']);
+    expect(db.store['users/u1/notInterested'], contains('s-b'));
+  });
+
   testWidgets('a second hide replaces the message; Undo restores only the '
       'latest', (t) async {
     final vm = await pumpForYou(t, ['a', 'b', 'c']);
@@ -205,7 +291,7 @@ void main() {
     await t.tap(find.bySemanticsLabel('Not interested').at(0));
     await t.pumpAndSettle();
     expect(ids(vm), ['c']);
-    expect(find.text('Hidden from For You'), findsOneWidget);
+    expect(find.text('We’ll show fewer startups like this'), findsOneWidget);
     expect(find.text('Undo'), findsOneWidget);
 
     await t.tap(find.text('Undo'));
@@ -217,11 +303,11 @@ void main() {
     final vm = await pumpForYou(t, ['a', 'b', 'c']);
     await t.tap(find.bySemanticsLabel('Not interested').at(0));
     await t.pumpAndSettle();
-    expect(find.text('Hidden from For You'), findsOneWidget);
+    expect(find.text('We’ll show fewer startups like this'), findsOneWidget);
 
     await t.pump(const Duration(seconds: 5));
     await t.pumpAndSettle();
-    expect(find.text('Hidden from For You'), findsNothing);
+    expect(find.text('We’ll show fewer startups like this'), findsNothing);
     expect(ids(vm), ['b', 'c']);
   });
 
@@ -230,7 +316,7 @@ void main() {
     await pumpForYou(t, ['a', 'b', 'c']);
     await t.tap(find.bySemanticsLabel('Not interested').at(0));
     await t.pumpAndSettle();
-    expect(find.text('Hidden from For You'), findsOneWidget);
+    expect(find.text('We’ll show fewer startups like this'), findsOneWidget);
 
     unawaited(AppRouter.logOut(t.element(find.byType(ExploreScreen))));
     // Within the message's own 4 seconds.
@@ -239,7 +325,7 @@ void main() {
     await t.pump(const Duration(milliseconds: 600));
     await t.pump(const Duration(milliseconds: 600));
     expect(find.byType(WelcomeScreen), findsOneWidget);
-    expect(find.text('Hidden from For You'), findsNothing);
+    expect(find.text('We’ll show fewer startups like this'), findsNothing);
     await t.pump(const Duration(seconds: 3));
   });
 }
