@@ -28,7 +28,6 @@ class HomeItem {
     this.supportTypes = const [],
     this.ticketLow,
     this.ticketHigh,
-    this.programType,
     this.matchPercent,
     this.matchReason,
     this.highlight,
@@ -74,8 +73,6 @@ class HomeItem {
   final int? ticketLow;
   final int? ticketHigh;
 
-  /// "Accelerator" / "Incubator" / "Startup studio" (programs only).
-  final String? programType;
   final int? matchPercent;
   final String? matchReason;
 
@@ -129,7 +126,6 @@ class HomeItem {
     supportTypes: supportTypes,
     ticketLow: ticketLow,
     ticketHigh: ticketHigh,
-    programType: programType,
     matchPercent: matchPercent ?? this.matchPercent,
     matchReason: matchReason ?? this.matchReason,
     highlight: highlight ?? this.highlight,
@@ -197,6 +193,5 @@ class HomeItem {
     city: p.city,
     line: p.cardSummary,
     sectors: p.focusSectors,
-    programType: p.type.label,
   );
 }

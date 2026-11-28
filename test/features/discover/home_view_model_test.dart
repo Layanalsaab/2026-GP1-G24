@@ -172,7 +172,7 @@ void main() {
         'Status',
       ]);
       expect(HomeFilters.groups(HomeContext.explore).length, 3);
-      expect(HomeFilters.groups(HomeContext.support).first.title, 'Type');
+      expect(HomeFilters.groups(HomeContext.support), isEmpty);
       expect(HomeFilters.groups(HomeContext.investors)[1].title, 'Stages');
     });
   });

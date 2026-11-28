@@ -158,6 +158,7 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
   }
 
   Future<void> _openAdvanced() async {
+    if (_vm.filterOff) return;
     final result = await showAdvancedSearchSheet(
       context,
       groups: HomeFilters.sheetGroups(_vm.context),
@@ -168,6 +169,7 @@ class _MainScreenState extends State<MainScreen> with RouteAware {
   }
 
   Future<void> _openSort() async {
+    if (_vm.filterOff) return;
     final r = await showPickerSheet(
       context,
       title: HomeStrings.sortTitle,

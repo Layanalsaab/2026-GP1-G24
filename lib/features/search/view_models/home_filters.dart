@@ -37,7 +37,6 @@ enum HomeFilterField {
   sectors,
   stage,
   looking,
-  type,
   city,
   model,
 
@@ -79,34 +78,9 @@ class HomeFilters {
   /// The groups shown in the sheet for ctx.
   static List<HomeFilterGroup> groups(HomeContext ctx) {
     switch (ctx) {
+      // Support channels are searched by text only.
       case HomeContext.support:
-        return const [
-          HomeFilterGroup('Type', [
-            'Accelerator',
-            'Incubator',
-            'Startup studio',
-          ], field: HomeFilterField.type),
-          HomeFilterGroup('Sector focus', [
-            'HealthTech',
-            'Fintech',
-            'EdTech',
-            'Logistics',
-            'AgriTech',
-            'SaaS',
-            'DeepTech',
-          ], field: HomeFilterField.sectors),
-          HomeFilterGroup('Program length', [
-            'Under 6 months',
-            '6 – 12 months',
-            'Ongoing',
-          ]),
-          HomeFilterGroup('City', [
-            'Riyadh',
-            'Jeddah',
-            'Thuwal',
-            'Dammam',
-          ], field: HomeFilterField.city),
-        ];
+        return const [];
       case HomeContext.investors:
         return [
           HomeFilterGroup(
@@ -275,8 +249,6 @@ class HomeFilters {
         return it.models.contains(v);
       case HomeFilterField.looking:
         return it.lookingFor.contains(v);
-      case HomeFilterField.type:
-        return it.programType == v;
       case HomeFilterField.city:
         return it.city == v;
       case HomeFilterField.model:

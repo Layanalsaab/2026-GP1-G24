@@ -196,7 +196,15 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
   int get selectionCount =>
       advancedSelectionCount(HomeFilters.sheetGroups(context), selection);
 
-  bool get filtering => selectionCount > 0 || query.trim().isNotEmpty;
+  /// A guest can type in Explore's search, but nothing comes up.
+  bool get searchOff => isGuest && tab == HomeTab.explore;
+
+  /// Filter and sort do nothing: for a guest on Explore, and for everyone on
+  /// Support.
+  bool get filterOff => searchOff || tab == HomeTab.support;
+
+  bool get filtering =>
+      !searchOff && (selectionCount > 0 || query.trim().isNotEmpty);
 
   void setQuery(String value) {
     if (value == query) return;
