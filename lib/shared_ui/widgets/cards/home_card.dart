@@ -500,7 +500,8 @@ class _NotInterestedActionState extends State<_NotInterestedAction> {
               child: AppIcon.filled(
                 AppIcons.thumbDownFill,
                 size: 19,
-                color: AppColors.ink,
+                // The same fill as a bookmarked card's bookmark.
+                color: AppColors.bookmarkOn,
               ),
             )
           : AppIcon.filled(

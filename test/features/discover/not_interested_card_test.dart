@@ -22,6 +22,7 @@ import 'package:startsa/models/app_user.dart';
 import 'package:startsa/models/home_item.dart';
 import 'package:startsa/navigation/app_router.dart';
 import 'package:startsa/shared_ui/icons/app_icons.dart';
+import 'package:startsa/shared_ui/theme/app_colors.dart';
 import 'package:startsa/shared_ui/theme/app_theme.dart';
 import 'package:startsa/shared_ui/widgets/cards/home_card.dart';
 
@@ -224,6 +225,11 @@ void main() {
       await t.pump();
       expect(icon(AppIcons.thumbDownFill), findsOneWidget);
       expect(icon(AppIcons.thumbDown), findsNothing);
+      expect(
+        t.widget<AppIcon>(icon(AppIcons.thumbDownFill)).color,
+        AppColors.bookmarkOn,
+        reason: 'the same fill color as the bookmark',
+      );
       expect(taps, isEmpty, reason: 'the card stays for the pop');
 
       // A second tap during the pop counts for nothing.
