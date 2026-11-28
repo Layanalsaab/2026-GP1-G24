@@ -320,7 +320,7 @@ void main() {
     expect(find.text('Edit ticket'), findsOneWidget);
     expect(find.text('Close ticket'), findsOneWidget);
     expect(find.text('Investment Requests'), findsOneWidget);
-    expect(find.text('Sent with this ticket'), findsOneWidget);
+    expect(find.text('Sent with this ticket'), findsNothing);
     expect(find.text('No requests sent with this ticket yet.'), findsOneWidget);
     await t.scrollUntilVisible(
       find.text('Startups with an open round that matches this ticket'),
@@ -445,7 +445,7 @@ void main() {
     }
     await press(t, find.widgetWithText(AppFilterChip, 'Pending · 0'));
     expect(
-      find.text('No requests yet. Send one from a matching ticket.'),
+      find.text('No requests yet.'),
       findsOneWidget,
     );
   });

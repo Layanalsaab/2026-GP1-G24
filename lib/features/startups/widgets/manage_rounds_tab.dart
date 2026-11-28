@@ -43,7 +43,9 @@ class _ManageRoundsTabState extends State<ManageRoundsTab> {
     final close = await showDiscardDialog(
       context,
       title: 'Close Round ${open.number}?',
-      message: 'Investors won’t be able to send requests for this round anymore. You can add a new round after closing it.',
+      message:
+          'You won’t be able to edit or reopen this round, but you can add a '
+          'new round after closing it.',
       discardLabel: 'Close round',
       keepLabel: 'Cancel',
     );

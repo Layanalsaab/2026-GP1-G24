@@ -50,17 +50,14 @@ class AccountStrings {
 
   /// Someone who only joined teams (no startup of their own).
   static const deleteWarningMember =
-      'Your account and personal information will be permanently deleted. '
-      'You will leave every startup you joined, and your details will be '
-      'removed from their teams.';
+      'Your account and personal information will be permanently deleted, '
+      'and you will leave every startup you joined.';
 
   /// A founder account with no startup at all.
   static const deleteWarningNoStartup =
       'Your account and personal information will be permanently deleted.';
   static const deleteWarningInvestor =
-      'Your account and personal information will be permanently deleted. '
-      'Your requests and Investment Associations will also be removed, and '
-      "you will no longer appear on any startup's profile.";
+      'Your account and personal information will be permanently deleted.';
   static const cannotBeUndone = 'This cannot be undone.';
 
   /// The password step: only this line (the warning came before).

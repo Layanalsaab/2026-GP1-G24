@@ -63,7 +63,6 @@ class WalletStrings {
   static const receivedSub = 'Startups that sent you a request for this ticket';
   static const noReceived = 'No requests received for this ticket yet.';
   static const requestsHeading = 'Investment Requests';
-  static const requestsSub = 'Sent with this ticket';
   static const noTicketRequests = 'No requests sent with this ticket yet.';
   static const matchesHeading = 'Suggested Startups';
   static const matchesSub =
@@ -73,5 +72,5 @@ class WalletStrings {
       'Couldn’t load the suggested startups. Check your connection.';
 
   // Requests tab
-  static const noRequests = 'No requests yet. Send one from a matching ticket.';
+  static const noRequests = 'No requests yet.';
 }

@@ -193,7 +193,7 @@ void main() {
       await t.pumpAndSettle();
       expect(find.text('Close Round 2?'), findsOneWidget);
       expect(
-        find.textContaining('Investors won’t be able to send requests'),
+        find.textContaining('You won’t be able to edit or reopen this round'),
         findsOneWidget,
       );
       await t.tap(find.text('Cancel'));
