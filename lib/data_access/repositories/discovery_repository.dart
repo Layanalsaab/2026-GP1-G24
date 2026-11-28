@@ -195,6 +195,7 @@ class DiscoveryRepository {
     InvestorCriteria? criteria,
     String? investorId,
     Map<String, DateTime> bookmarks = const {},
+    Map<String, DateTime> notInterested = const {},
     DateTime? now,
   }) {
     final at = now ?? DateTime.now();
@@ -206,14 +207,24 @@ class DiscoveryRepository {
       [
         for (final e in bookmarks.entries)
           if (e.key.startsWith('s-'))
-            if (startupById(e.key.substring(2)) case final s?)
-              Signal(startupFeatures(s), e.value),
+            if (startupById(e.key.substring(2)) case final s? when s.isListed)
+              Signal(
+                startupFeatures(s),
+                e.value,
+                sectors: startupCalibrationSectors(s),
+              ),
         for (final t in tickets)
           Signal(
             ticketFeatures(t),
             t.createdAt ?? at,
             strength: ticketStrength,
           ),
+      ],
+      dislikes: [
+        for (final e in notInterested.entries)
+          if (e.key.startsWith('s-'))
+            if (startupById(e.key.substring(2)) case final s? when s.isListed)
+              Signal(startupFeatures(s), e.value),
       ],
       now: at,
     );
@@ -222,6 +233,7 @@ class DiscoveryRepository {
         if (s.isListed &&
             !excludeIds.contains(s.id) &&
             !bookmarks.containsKey('s-${s.id}') &&
+            !notInterested.containsKey('s-${s.id}') &&
             amountFits(
               s,
               tickets: tickets,
@@ -229,7 +241,13 @@ class DiscoveryRepository {
               roundMin: criteria?.roundMin,
               roundMax: criteria?.roundMax,
             ))
-          Candidate(s, s.name, startupFeatures(s), s.sector.value),
+          Candidate(
+            s,
+            s.name,
+            startupFeatures(s),
+            s.sector.value,
+            sectors: startupCalibrationSectors(s),
+          ),
     ];
     final picks = recommendBest<Startup>(
       [taste],
@@ -243,20 +261,28 @@ class DiscoveryRepository {
   List<HomeItem> recommendedInvestors({
     List<Startup> own = const [],
     Map<String, DateTime> bookmarks = const {},
+    Map<String, DateTime> notInterested = const {},
     DateTime? now,
   }) {
-    final signals = [
-      for (final e in bookmarks.entries)
+    List<Signal> signalsOf(Map<String, DateTime> marks) => [
+      for (final e in marks.entries)
         if (e.key.startsWith('i-'))
           if (investorById(e.key.substring(2)) case final i?)
             Signal(investorFeatures(i), e.value),
     ];
+    final signals = signalsOf(bookmarks);
+    final dislikes = signalsOf(notInterested);
     final at = now ?? DateTime.now();
     final tastes = own.isEmpty
-        ? [Taste.build(Features.empty, signals, now: at)]
+        ? [Taste.build(Features.empty, signals, dislikes: dislikes, now: at)]
         : [
             for (final s in own)
-              Taste.build(startupFeatures(s), signals, now: at),
+              Taste.build(
+                startupFeatures(s),
+                signals,
+                dislikes: dislikes,
+                now: at,
+              ),
           ];
     final tickets = <String, List<InvestmentTicket>>{};
     for (final t in _tickets) {
@@ -264,7 +290,8 @@ class DiscoveryRepository {
     }
     final candidates = <Candidate<InvestorProfile>>[
       for (final i in _investors)
-        if (!bookmarks.containsKey('i-${i.id}'))
+        if (!bookmarks.containsKey('i-${i.id}') &&
+            !notInterested.containsKey('i-${i.id}'))
           Candidate(
             i,
             i.name,
@@ -290,6 +317,17 @@ class DiscoveryRepository {
     );
     if (picks.isEmpty) return investors().take(3).toList();
     return [for (final p in picks) HomeItem.fromInvestor(p.item)];
+  }
+
+  /// Puts a ticket the user just saved (new, edited or closed) into the
+  /// loaded tickets, so the app's own For You ranking counts it at once.
+  void putTicket(InvestmentTicket ticket) {
+    final at = _tickets.indexWhere((t) => t.id == ticket.id);
+    if (at >= 0) {
+      _tickets[at] = ticket;
+    } else {
+      _tickets.add(ticket);
+    }
   }
 
   Startup? startupById(String id) {

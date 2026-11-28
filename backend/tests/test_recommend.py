@@ -90,6 +90,19 @@ def test_open_ticket_adds_the_bonus():
     assert picks[0].id == "fin" and picks[0].score == pytest.approx(1.3)
 
 
+def test_fresh_tickets_from_the_user_context_replace_the_snapshots():
+    ticket = {"investorId": "inv1", "name": "T1", "status": "open", "amountMin": 100_000, "amountMax": 2_000_000,
+              "sectors": ["Fintech"], "stages": ["Seed"], "createdAt": NOW}
+    s = snap({"fin": startup("Payly", "fintech", "seed")})  # the cached snapshot has not seen the ticket yet
+    ctx = investor_ctx(FINTECH_SEED)
+    ctx.own_tickets = [ticket]
+    picks = for_you(ctx, s, NOW)
+    assert picks[0].id == "fin" and picks[0].score == pytest.approx(1.3)
+    closed = snap({"fin": startup("Payly", "fintech", "seed")}, tickets=[ticket])  # closed since the snapshot
+    ctx.own_tickets = []
+    assert for_you(ctx, closed, NOW)[0].score == pytest.approx(1.0)
+
+
 def test_founder_amount_filter_and_best_taste():
     own = {
         "o1": startup("Mine1", "fintech", "seed", fundingRequirement=2_000_000, raisedInRound=1_500_000),  # 500K left
@@ -191,3 +204,57 @@ def test_written_other_matches_the_same_written_sector():
     picks = for_you(ctx, s, NOW)
     assert picks[0].id == "space" and picks[0].score == pytest.approx(1.0)
     assert picks[1].id == "fin" and picks[1].score == pytest.approx(0.29 / 0.70)
+
+
+def _dataset_snapshot():
+    """The dataset copy the app's matching tests use (startups with stage Other left out)."""
+    import json
+    from pathlib import Path
+
+    fixture = Path(__file__).resolve().parents[2] / "test/recommender/matching_fixture.json"
+    data = json.loads(fixture.read_text())
+    docs = {}
+    for s in data["startups"]:
+        if s["stage"] == "other":
+            continue
+        doc = {k: v for k, v in s.items() if k != "id" and v is not None}
+        docs[s["id"]] = {**doc, "location": "riyadh", "founderId": "f-" + s["id"]}
+    return snap(docs)
+
+
+def test_one_bookmark_brings_its_sector_into_the_top_10_and_keeps_the_onboarding_sectors():
+    s = _dataset_snapshot()
+    prefs = {"preferredSectors": ["HealthTech", "Fintech"], "preferredStages": ["Pre-seed", "Seed"],
+             "preferredCommerceModels": ["Business-to-Business (B2B)", "Business-to-Consumer (B2C)"],
+             "ticketSize": "SAR 100K – 500K"}
+    saas = sorted(k for k, d in s.startups.items() if d["sector"] == "saas" and d.get("isPublic") and d.get("status") != "closed")
+    sector = lambda pick: s.startups[pick.id]["sector"]
+    before = for_you(investor_ctx(prefs), s, NOW)
+    assert all(sector(p) in ("healthtech", "fintech") for p in before[:10])
+    after = for_you(investor_ctx(prefs, bookmarks={f"s-{saas[0]}": NOW}), s, NOW)
+    top10 = [sector(p) for p in after[:10]]
+    assert top10.count("saas") >= 1
+    assert sum(x in ("healthtech", "fintech") for x in top10) >= 7
+
+
+def test_a_startup_ticking_many_sectors_does_not_take_the_top_place():
+    prefs = {"preferredSectors": ["Fintech", "HealthTech"], "preferredStages": ["Seed"],
+             "preferredCommerceModels": ["Business-to-Business (B2B)"]}
+    docs = {f"f{k}": startup(f"Fin {k}", "fintech", "seed") for k in range(6)}
+    docs.update({f"h{k}": startup(f"Health {k}", "healthtech", "seed") for k in range(6)})
+    docs["wide"] = startup("Wide", "fintech", "seed", otherSectors=[
+        "HealthTech", "EdTech", "SaaS", "AI", "Logistics", "Media", "Gaming", "Retail", "Energy"])
+    picks = for_you(investor_ctx(prefs), snap(docs), NOW)
+    assert [p.id for p in picks].index("wide") >= 12  # it scores below all 12; ticking more sectors must not lift it
+
+
+def test_a_broad_investor_keeps_its_place_on_a_founders_list():
+    own = {"mine": startup("Mine", "fintech", "seed", fundingRequirement=300_000)}
+    investors = {"broad": {"fullName": "Broad Angel", "preferredSectors": ["Fintech", "Gaming", "Media", "Sports"],
+                           "preferredStages": ["Seed"], "preferredCommerceModels": ["Business-to-Business (B2B)"]}}
+    investors.update({f"n{k}": {"fullName": f"Narrow {k}", "preferredSectors": ["Fintech"],
+                                "preferredStages": ["Series A"], "preferredCommerceModels": ["Business-to-Business (B2B)"]}
+                      for k in range(4)})
+    ctx = UserContext("f1", "founder", {"role": "founder"}, {}, {}, own)
+    picks = for_you(ctx, snap(investors=investors), NOW)
+    assert picks[0].id == "broad"  # the best match: its other sectors are only what it also accepts

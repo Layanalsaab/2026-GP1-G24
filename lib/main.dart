@@ -11,6 +11,7 @@ import 'shared_ui/theme/app_colors.dart';
 import 'shared_ui/theme/app_theme.dart';
 import 'shared_ui/theme/theme_controller.dart';
 import 'shared_ui/widgets/overlays/app_toast.dart';
+import 'navigation/app_route_observer.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -43,6 +44,7 @@ class StartSaApp extends StatelessWidget {
         title: 'Start.sa',
         debugShowCheckedModeBanner: false,
         navigatorKey: AppToast.navigatorKey,
+        navigatorObservers: [appRouteObserver],
         themeMode: mode,
         theme: AppTheme.light,
         darkTheme: AppTheme.dark,

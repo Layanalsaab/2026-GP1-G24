@@ -85,3 +85,93 @@ def test_legacy_sector_and_stage_match_ticket_labels():
 def test_non_finite_amounts_do_not_crash():
     assert remaining({**RAISING, "fundingRequirement": float("nan")}) == 0
     assert ticket_bonus(RAISING, [{"amountMin": float("inf"), "amountMax": 600_000, "sectors": [], "stages": []}]) == 0.0
+
+
+# Calibration (Steck, "Calibrated Recommendations", RecSys 2018): the main places follow the
+# target sector mix instead of letting the best-scoring sector take them all.
+def _two_sectors(n_each: int, gap: float = 0.02):
+    """n_each fintech candidates scoring a little above n_each saas candidates (by gap);
+    sector rows [fintech, saas]."""
+    ids = [f"f{k}" for k in range(n_each)] + [f"s{k}" for k in range(n_each)]
+    names = list(ids)
+    scores = np.array([[0.8 - k / 1000 for k in range(n_each)] + [0.8 - gap - k / 1000 for k in range(n_each)]])
+    sectors = np.array([[1.0, 0.0]] * n_each + [[0.0, 1.0]] * n_each)
+    return ids, names, scores, sectors
+
+
+def test_calibration_follows_the_target_mix():
+    ids, names, scores, sectors = _two_sectors(10)
+    picks = recommend_best(ids, names, ["fintech"] * 10 + ["saas"] * 10, scores, np.ones_like(scores, dtype=bool),
+                           np.zeros_like(scores), limit=12, sectors=sectors, target=np.array([0.8, 0.2]))
+    top10 = [p.id for p in picks[:10]]
+    assert sum(i.startswith("s") for i in top10) == 2
+    assert [i for i in top10 if i.startswith("f")] == [f"f{k}" for k in range(8)]  # score order within a sector
+
+
+def test_calibration_trades_closeness_for_score_when_scores_are_far_apart():
+    # Steck's method balances the two (CALIBRATION_WEIGHT): a much weaker sector gets fewer places.
+    ids, names, scores, sectors = _two_sectors(10, gap=0.3)
+    picks = recommend_best(ids, names, ["fintech"] * 10 + ["saas"] * 10, scores, np.ones_like(scores, dtype=bool),
+                           np.zeros_like(scores), limit=12, sectors=sectors, target=np.array([0.8, 0.2]))
+    assert sum(p.id.startswith("s") for p in picks[:10]) == 1
+
+
+def test_calibration_with_only_the_onboarding_sector_keeps_other_sectors_out_of_the_main_places():
+    ids, names, scores, sectors = _two_sectors(10)
+    picks = recommend_best(ids, names, ["fintech"] * 10 + ["saas"] * 10, scores, np.ones_like(scores, dtype=bool),
+                           np.zeros_like(scores), limit=12, sectors=sectors, target=np.array([1.0, 0.0]))
+    assert [p.id for p in picks[:10]] == [f"f{k}" for k in range(10)]
+    assert picks[10].id == "s0"  # the other-sector places still offer something new
+
+
+def test_without_a_target_the_order_is_by_score():
+    ids, names, scores, sectors = _two_sectors(10)
+    plain = recommend_best(ids, names, ["fintech"] * 10 + ["saas"] * 10, scores, np.ones_like(scores, dtype=bool),
+                           np.zeros_like(scores), limit=12)
+    no_target = recommend_best(ids, names, ["fintech"] * 10 + ["saas"] * 10, scores, np.ones_like(scores, dtype=bool),
+                               np.zeros_like(scores), limit=12, sectors=sectors, target=None)
+    assert [p.id for p in plain] == [p.id for p in no_target]
+    assert [p.id for p in plain[:10]] == [f"f{k}" for k in range(10)]
+
+
+def test_calibration_ties_go_to_the_earliest_candidate():
+    # Equal scores and a uniform target over k sectors: the order given wins every tie, never rounding
+    # noise in the sums (which broke it for 4, 6, 8, 9 and 10 sectors).
+    for k in (3, 4, 6, 8, 9, 10, 12):
+        ids = [f"c{i:02d}" for i in range(2 * k)]
+        scores = np.array([[0.7] * (2 * k)])
+        sectors = np.array([np.eye(k)[i % k] for i in range(2 * k)])
+        picks = recommend_best(ids, ids, [str(i % k) for i in range(2 * k)], scores, np.ones_like(scores, dtype=bool),
+                               np.zeros_like(scores), limit=2 * k + 2, sectors=sectors, target=np.ones(k) / k)
+        assert [p.id for p in picks] == ids, k
+
+
+def test_an_items_sectors_outside_the_target_do_not_count():
+    # A broad item (fintech plus sectors the user did not choose) counts as fintech for the mix.
+    ids = ["broad", "f1", "f2"]
+    scores = np.array([[0.77, 0.59, 0.58]])
+    sectors = np.array([[1, 1, 1, 1], [1, 0, 0, 0], [1, 0, 0, 0]], dtype=float)  # fintech, gaming, media, sports
+    picks = recommend_best(ids, ids, ["fintech"] * 3, scores, np.ones_like(scores, dtype=bool),
+                           np.zeros_like(scores), limit=5, sectors=sectors, target=np.array([1.0, 0, 0, 0]))
+    assert [p.id for p in picks] == ["broad", "f1", "f2"]
+
+
+def test_the_best_match_keeps_the_first_place():
+    # Even when a learned interest (saas) is the largest share of the target, the first place goes to
+    # the best-scoring match; calibration arranges the rest.
+    ids, names, scores, sectors = _two_sectors(10, gap=0.3)
+    picks = recommend_best(ids, names, ["fintech"] * 10 + ["saas"] * 10, scores, np.ones_like(scores, dtype=bool),
+                           np.zeros_like(scores), limit=12, sectors=sectors, target=np.array([0.3, 0.7]))
+    assert picks[0].id == "f0"
+    assert any(p.id.startswith("s") for p in picks[1:3])  # the learned interest still shows right after
+
+
+def test_the_first_place_goes_to_the_best_match_in_the_users_sectors():
+    # A sectorless item (a legacy "Other" with no text) scores on stage and model alone and can top
+    # the scores; the first place still goes to the best match in a sector the user wants.
+    ids = ["nosector", "fin", "saas"]
+    scores = np.array([[1.0, 0.86, 0.6]])
+    sectors = np.array([[0, 0], [1, 0], [0, 1]], dtype=float)
+    picks = recommend_best(ids, ids, [None, "fintech", "saas"], scores, np.ones_like(scores, dtype=bool),
+                           np.zeros_like(scores), limit=5, sectors=sectors, target=np.array([0.6, 0.4]))
+    assert picks[0].id == "fin"

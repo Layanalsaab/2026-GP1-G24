@@ -26,6 +26,18 @@ class NotInterestedRepository {
 
   bool contains(String key) => _keys.value.contains(key);
 
+  /// When key was marked, if known (the backup ranking weighs newer marks
+  /// more, like the server does).
+  DateTime? savedAt(String key) => _savedAt[key];
+
+  /// Counts finished saves, successful or not (a mark written or deleted in
+  /// Firestore, or the attempt failing, e.g. offline): For You asks the
+  /// server again only once the server can see the change, and still asks
+  /// when it cannot (then the app's own ranking takes over).
+  ValueListenable<int> get settled => _settled;
+  final ValueNotifier<int> _settled = ValueNotifier<int>(0);
+  final Map<String, DateTime> _savedAt = {};
+
   /// users/{uid}/notInterested
   static String _collectionOf(String uid) =>
       '${FirestoreCollections.users}/$uid/${FirestoreCollections.notInterested}';
@@ -34,6 +46,7 @@ class NotInterestedRepository {
   /// logged and key is put back.
   Future<void> add(String key) async {
     if (contains(key)) return;
+    _savedAt[key] = DateTime.now();
     _keys.value = {..._keys.value, key};
     final uid = AppSession.instance.user?.uid;
     if (uid == null) return;
@@ -43,9 +56,12 @@ class NotInterestedRepository {
         'targetId': BookmarkRepository.targetIdOf(key),
         'createdAt': _firestore.serverTimestamp(),
       });
+      _settled.value++;
     } catch (e) {
       debugPrint('Not interested "$key" was not saved: $e');
+      _savedAt.remove(key);
       _keys.value = {..._keys.value}..remove(key);
+      _settled.value++;
     }
   }
 
@@ -53,14 +69,18 @@ class NotInterestedRepository {
   /// delete is logged and key is put back.
   Future<void> remove(String key) async {
     if (!contains(key)) return;
+    final at = _savedAt.remove(key);
     _keys.value = {..._keys.value}..remove(key);
     final uid = AppSession.instance.user?.uid;
     if (uid == null) return;
     try {
       await _firestore.deleteDocument(_collectionOf(uid), key);
+      _settled.value++;
     } catch (e) {
       debugPrint('Not interested "$key" was not removed: $e');
+      if (at != null) _savedAt[key] = at;
       _keys.value = {..._keys.value, key};
+      _settled.value++;
     }
   }
 
@@ -73,6 +93,10 @@ class NotInterestedRepository {
         limit: 1000,
       );
       if (_uid != uid) return; // Signed out (or another user) meanwhile.
+      for (final d in docs) {
+        final at = d.data['createdAt'];
+        if (at is DateTime) _savedAt.putIfAbsent(d.id, () => at);
+      }
       _keys.value = {..._keys.value, for (final d in docs) d.id};
     } catch (e) {
       debugPrint('Not interested could not be loaded: $e');
@@ -94,6 +118,7 @@ class NotInterestedRepository {
   /// Forgets the items in memory (log out).
   void clear() {
     _uid = null;
+    _savedAt.clear();
     _keys.value = {};
   }
 }

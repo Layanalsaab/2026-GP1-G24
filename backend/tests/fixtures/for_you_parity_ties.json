@@ -1,0 +1,184 @@
+{
+  "now": "2026-11-21T09:00:00Z",
+  "limit": 10,
+  "base": {
+    "sector": [
+      "fintech",
+      "saas",
+      "healthtech",
+      "ai"
+    ],
+    "stage": [
+      "seed"
+    ],
+    "model": [
+      "b2b"
+    ]
+  },
+  "likes": [],
+  "dislikes": [],
+  "candidates": [
+    {
+      "id": "ai0",
+      "name": "ai 0",
+      "mainSector": "ai",
+      "groups": {
+        "sector": [
+          "ai"
+        ],
+        "stage": [
+          "seed"
+        ],
+        "model": [
+          "b2b"
+        ]
+      }
+    },
+    {
+      "id": "fintech0",
+      "name": "fintech 0",
+      "mainSector": "fintech",
+      "groups": {
+        "sector": [
+          "fintech"
+        ],
+        "stage": [
+          "seed"
+        ],
+        "model": [
+          "b2b"
+        ]
+      }
+    },
+    {
+      "id": "healthtech0",
+      "name": "healthtech 0",
+      "mainSector": "healthtech",
+      "groups": {
+        "sector": [
+          "healthtech"
+        ],
+        "stage": [
+          "seed"
+        ],
+        "model": [
+          "b2b"
+        ]
+      }
+    },
+    {
+      "id": "saas0",
+      "name": "saas 0",
+      "mainSector": "saas",
+      "groups": {
+        "sector": [
+          "saas"
+        ],
+        "stage": [
+          "seed"
+        ],
+        "model": [
+          "b2b"
+        ]
+      }
+    },
+    {
+      "id": "ai1",
+      "name": "ai 1",
+      "mainSector": "ai",
+      "groups": {
+        "sector": [
+          "ai"
+        ],
+        "stage": [
+          "seed"
+        ],
+        "model": [
+          "b2b"
+        ]
+      }
+    },
+    {
+      "id": "fintech1",
+      "name": "fintech 1",
+      "mainSector": "fintech",
+      "groups": {
+        "sector": [
+          "fintech"
+        ],
+        "stage": [
+          "seed"
+        ],
+        "model": [
+          "b2b"
+        ]
+      }
+    },
+    {
+      "id": "healthtech1",
+      "name": "healthtech 1",
+      "mainSector": "healthtech",
+      "groups": {
+        "sector": [
+          "healthtech"
+        ],
+        "stage": [
+          "seed"
+        ],
+        "model": [
+          "b2b"
+        ]
+      }
+    },
+    {
+      "id": "saas1",
+      "name": "saas 1",
+      "mainSector": "saas",
+      "groups": {
+        "sector": [
+          "saas"
+        ],
+        "stage": [
+          "seed"
+        ],
+        "model": [
+          "b2b"
+        ]
+      }
+    }
+  ],
+  "expected": [
+    {
+      "id": "ai0",
+      "score": 0.7670454545454547
+    },
+    {
+      "id": "fintech0",
+      "score": 0.7670454545454547
+    },
+    {
+      "id": "healthtech0",
+      "score": 0.7670454545454547
+    },
+    {
+      "id": "saas0",
+      "score": 0.7670454545454547
+    },
+    {
+      "id": "ai1",
+      "score": 0.7670454545454547
+    },
+    {
+      "id": "fintech1",
+      "score": 0.7670454545454547
+    },
+    {
+      "id": "healthtech1",
+      "score": 0.7670454545454547
+    },
+    {
+      "id": "saas1",
+      "score": 0.7670454545454547
+    }
+  ]
+}

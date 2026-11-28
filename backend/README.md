@@ -60,7 +60,7 @@ Start the server on the Mac (set `FIREBASE_SERVICE_ACCOUNT_JSON` first, as descr
 .venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
 
-Then run the app from the repository root with the server's address:
+Every run and build of the app (VS Code's Run button, `flutter run`, `flutter build apk`) uses the deployed server, `https://startsa-for-you.onrender.com`, with no setting needed. To try a server running on your own Mac instead, run the app from the repository root with its address:
 
 ```bash
 flutter run --dart-define=FOR_YOU_API_URL=http://10.0.2.2:8000
@@ -73,7 +73,7 @@ flutter run --dart-define=FOR_YOU_API_URL=http://10.0.2.2:8000
 | Real phone on the same Wi-Fi | `http://<the Mac's network address>:8000` |
 | After deploying | `https://<service>.onrender.com` |
 
-Without `--dart-define=FOR_YOU_API_URL=...` the app uses its built-in Dart ranking and never calls the server.
+To turn the server off and use only the app's built-in Dart ranking, pass an empty address: `flutter run --dart-define=FOR_YOU_API_URL=`. Tests never call the server: `test/flutter_test_config.dart` turns it off for every test.
 
 If the server is asleep or unreachable, For You shows the list saved on the phone, then the Dart list.
 The first request after a sleep can take about a minute on Render Free.

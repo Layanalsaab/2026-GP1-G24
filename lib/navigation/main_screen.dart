@@ -33,6 +33,7 @@ import '../shared_ui/widgets/overlays/advanced_search_sheet.dart';
 import '../shared_ui/widgets/overlays/picker_sheet.dart';
 import '../shared_ui/widgets/overlays/app_bottom_sheet.dart';
 import 'app_router.dart';
+import 'app_route_observer.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -41,7 +42,7 @@ class MainScreen extends StatefulWidget {
   State<MainScreen> createState() => _MainScreenState();
 }
 
-class _MainScreenState extends State<MainScreen> {
+class _MainScreenState extends State<MainScreen> with RouteAware {
   late final HomeViewModel _vm;
   final ScrollController _scroll = ScrollController();
 
@@ -86,7 +87,23 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    if (route is PageRoute) appRouteObserver.subscribe(this, route);
+  }
+
+  /// Another screen (a profile, the wallet...) opened over this one.
+  @override
+  void didPushNext() => _vm.setCovered(true);
+
+  /// Back on this screen: For You shows what changed meanwhile.
+  @override
+  void didPopNext() => _vm.setCovered(false);
+
+  @override
   void dispose() {
+    appRouteObserver.unsubscribe(this);
     _session.removeListener(_onSession);
     _startups.changes.removeListener(_onStartupsChanged);
     _vm.dispose();

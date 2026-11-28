@@ -34,11 +34,21 @@ const int defaultLimit = 20;
 
 const double ticketStrength = 1.5;
 
+/// How far one unit of "Not interested" pushes the taste away (as the server).
+const double dislikeWeight = 0.2;
+
 const double ticketFitBonus = 0.3;
 const double ticketAmountBonus = 0.1;
 
 /// Slots at the end of the list kept for items unlike the rest.
 const int exploreSlots = 2;
+
+/// Calibration (Steck, "Calibrated Recommendations", RecSys 2018), as the
+/// server: relevance against closeness to the user's sector mix (tuned for
+/// Start.sa), and the smoothing of the list's mix (0.01, as in the paper).
+const double calibrationWeight = 0.7;
+const double calibrationAlpha = 0.01;
+const double calibrationTie = 1e-9;
 
 /// Attribute -> weight, per group ('sector', 'stage', 'model').
 typedef Vec = Map<String, double>;
@@ -97,10 +107,18 @@ String? _modelOf(String label) {
 }
 
 /// A startup: "Other" counts as what the founder wrote ("other" when nothing was written).
+/// A startup's main sector as the features write it (a typed Other answer
+/// included).
+String? startupMainSector(Startup s) => s.sector.value == 'other'
+    ? _written(s.sectorOther, sectorValue)
+    : s.sector.value;
+
+/// Calibration counts a startup by its main sector only, so ticking many
+/// sectors does not make it look like a perfect mix (as the server).
+Vec startupCalibrationSectors(Startup s) => {?startupMainSector(s): 1};
+
 Features startupFeatures(Startup s) {
-  final main = s.sector.value == 'other'
-      ? _written(s.sectorOther, sectorValue)
-      : s.sector.value;
+  final main = startupMainSector(s);
   final sectors = <String, double>{?main: 1};
   for (final label in s.otherSectors) {
     final value = _sectorOf(label);
@@ -179,15 +197,24 @@ double similarity(Features a, Features b) {
 
 /// Something the person bookmarked (or an open ticket), and when.
 class Signal {
-  const Signal(this.features, this.at, {this.strength = 1});
+  const Signal(this.features, this.at, {this.strength = 1, this.sectors});
 
   final Features features;
   final DateTime at;
   final double strength;
+
+  /// The sectors it adds to the calibration target (a startup: its main sector
+  /// only); null: its sector feature.
+  final Vec? sectors;
 }
 
 class Taste {
-  Taste._(this.features, this.learnedShare, this.signals);
+  Taste._(this.features, this.learnedShare, this.signals, this.target);
+
+  /// The sector mix the list should follow (calibration): the base's sectors
+  /// blended with the sectors of bookmarks and tickets by the learned share.
+  /// Null when there are no sectors.
+  final Vec? target;
 
   /// The person's onboarding answers pulled toward their bookmarks.
   final Features features;
@@ -198,26 +225,27 @@ class Taste {
 
   bool get isEmpty => features.isEmpty;
 
+  /// signals: bookmarks and open tickets (pull toward); dislikes: "Not
+  /// interested" marks (push away, weight [dislikeWeight]), as the server.
   factory Taste.build(
     Features base,
     List<Signal> signals, {
+    List<Signal> dislikes = const [],
     required DateTime now,
   }) {
-    final weights = [
-      for (final s in signals)
+    double decayed(Signal s) =>
         s.strength *
-            math.max(
-              oldestBookmarkWeight,
-              math
-                  .pow(
-                    0.5,
-                    math.max(0, now.difference(s.at).inHours) /
-                        24 /
-                        halfLifeDays,
-                  )
-                  .toDouble(),
-            ),
-    ];
+        math.max(
+          oldestBookmarkWeight,
+          math
+              .pow(
+                0.5,
+                math.max(0, now.difference(s.at).inHours) / 24 / halfLifeDays,
+              )
+              .toDouble(),
+        );
+    final weights = [for (final s in signals) decayed(s)];
+    final dislikeWeights = [for (final s in dislikes) decayed(s)];
     final fresh = weights.fold<double>(0, (a, w) => a + w);
     final share = maxLearnedShare * fresh / (fresh + _halfPullBookmarks);
 
@@ -240,18 +268,100 @@ class Taste {
             k: (1 - share) * (from[k] ?? 0) + share * (toward[k] ?? 0),
         };
       }
+      final unwanted = <String, double>{};
+      for (var i = 0; i < dislikes.length; i++) {
+        _unit(dislikes[i].features.groups[g] ?? const {}).forEach(
+          (k, w) => unwanted[k] = (unwanted[k] ?? 0) + w * dislikeWeights[i],
+        );
+      }
+      final away = _unit(unwanted);
+      final blended = groups[g]!;
+      if (away.isNotEmpty && blended.values.any((w) => w != 0)) {
+        // Below zero means "not wanted at all": dropped, as the server clips
+        // at 0 (and skips a group left with nothing).
+        groups[g] = {
+          for (final k in {...blended.keys, ...away.keys})
+            if ((blended[k] ?? 0) - dislikeWeight * (away[k] ?? 0) case final w
+                when w > 0)
+              k: w,
+        };
+      }
     }
-    return Taste._(Features(groups), signals.isEmpty ? 0 : share, signals);
+    return Taste._(
+      Features(groups),
+      signals.isEmpty ? 0 : share,
+      signals,
+      _target(base, signals, weights, share),
+    );
+  }
+
+  static Vec? _target(
+    Features base,
+    List<Signal> likes,
+    List<double> weights,
+    double share,
+  ) {
+    final baseSectors = base.groups['sector'];
+    final fromBase = _mixOf(baseSectors);
+    final liked = <String, double>{};
+    var total = 0.0;
+    for (var i = 0; i < likes.length; i++) {
+      final mix = _mixOf(
+        _inside(
+          likes[i].sectors ?? likes[i].features.groups['sector'],
+          baseSectors,
+        ),
+      );
+      if (mix == null || weights[i] <= 0) continue;
+      mix.forEach((k, v) => liked[k] = (liked[k] ?? 0) + weights[i] * v);
+      total += weights[i];
+    }
+    final fromLikes = total > 0
+        ? {for (final e in liked.entries) e.key: e.value / total}
+        : null;
+    if (fromBase == null) return fromLikes;
+    if (fromLikes == null) return fromBase;
+    return {
+      for (final k in {...fromBase.keys, ...fromLikes.keys})
+        k: (1 - share) * (fromBase[k] ?? 0) + share * (fromLikes[k] ?? 0),
+    };
   }
 }
 
+/// Only the [within] sectors of v when it has some of them (else all of v's).
+Vec? _inside(Vec? v, Vec? within) {
+  if (v == null || within == null) return v;
+  final inside = {
+    for (final e in v.entries)
+      if ((within[e.key] ?? 0) > 0 && e.value != 0) e.key: e.value,
+  };
+  return inside.isNotEmpty ? inside : v;
+}
+
+/// A sector vector as shares that add up to 1 (null when it has no sector).
+Vec? _mixOf(Vec? v) {
+  if (v == null) return null;
+  final total = v.values.fold<double>(0, (a, w) => a + w);
+  return total > 0 ? {for (final e in v.entries) e.key: e.value / total} : null;
+}
+
 class Candidate<T> {
-  const Candidate(this.item, this.name, this.features, this.mainSector);
+  const Candidate(
+    this.item,
+    this.name,
+    this.features,
+    this.mainSector, {
+    this.sectors,
+  });
 
   final T item;
   final String name;
   final Features features;
   final String? mainSector;
+
+  /// The sectors it counts as in calibration (a startup: its main sector
+  /// only); null: its sector feature.
+  final Vec? sectors;
 }
 
 class Pick<T> {
@@ -295,8 +405,18 @@ List<Pick<T>> recommendBest<T>(
     return byFits != 0 ? byFits : a.c.name.compareTo(b.c.name);
   });
 
-  final main = scored.take(math.max(0, limit - exploreSlots)).toList();
-  final rest = scored.skip(main.length).toList();
+  final places = math.max(0, limit - exploreSlots);
+  final targets = [
+    for (final t in tastes)
+      if (t.target case final v? when v.isNotEmpty) v,
+  ];
+  final main = targets.isEmpty
+      ? scored.take(places).toList()
+      : _calibrated(scored, _average(targets), places);
+  final rest = [
+    for (final e in scored)
+      if (!main.contains(e)) e,
+  ];
   final sectors = {for (final e in main) e.c.mainSector};
   final picked = [...main];
   for (final e in rest) {
@@ -367,4 +487,94 @@ bool sizesFit(Startup s, {String? ticketBand, int? roundMin, int? roundMax}) {
   if (roundMin != null && need < roundMin) return false;
   if (roundMax != null && need > roundMax) return false;
   return true;
+}
+
+Vec _average(List<Vec> all) {
+  final sum = <String, double>{};
+  for (final v in all) {
+    v.forEach((k, w) => sum[k] = (sum[k] ?? 0) + w);
+  }
+  return {for (final e in sum.entries) e.key: e.value / all.length};
+}
+
+/// Steck's greedy calibration after the best match, exactly as the server:
+/// each later place goes to the candidate with the best (1 - w) * score -
+/// w * KL(target || the list's mix with it), the mix smoothed by alpha. Ties go
+/// to the earliest candidate.
+List<E> _calibrated<E extends ({Candidate c, double score, int fits})>(
+  List<E> order,
+  Vec target,
+  int places,
+) {
+  final wanted = {
+    for (final e in target.entries)
+      if (e.value > 0) e.key: e.value,
+  };
+  if (wanted.isEmpty || order.isEmpty || places <= 0) {
+    return order.take(math.max(0, places)).toList();
+  }
+  // An item's sectors outside the target do not count when it has some
+  // inside it: an investor's list means "sectors I accept", not a mix.
+  final mixes = [
+    for (final e in order)
+      _mixOf(_inside(e.c.sectors ?? e.c.features.groups['sector'], wanted)) ??
+          const <String, double>{},
+  ];
+  final counts = <String, double>{};
+
+  /// KL(target || the list's mix with candidate i added), smoothed.
+  double closeness(int i, int size) {
+    var kl = 0.0;
+    wanted.forEach((g, p) {
+      final q = ((counts[g] ?? 0) + (mixes[i][g] ?? 0)) / size;
+      final smoothed = (1 - calibrationAlpha) * q + calibrationAlpha * p;
+      kl += p * math.log(p / smoothed);
+    });
+    return kl;
+  }
+
+  // The best match in the user's sectors keeps the first place; calibration
+  // arranges the rest (the first greedy pick would otherwise go to the largest
+  // single interest, however weak its best match). A sectorless item never
+  // takes it unless nothing else is in the user's sectors. Among equally good
+  // matches, the one closest to the user's interests comes first (as the
+  // server).
+  final inSectors = [
+    for (var i = 0; i < order.length; i++)
+      if (wanted.keys.any((g) => (mixes[i][g] ?? 0) > 0)) i,
+  ];
+  final pool = inSectors.isNotEmpty
+      ? inSectors
+      : List<int>.generate(order.length, (i) => i);
+  final bestScore = pool.map((i) => order[i].score).reduce(math.max);
+  final tied = [
+    for (final i in pool)
+      if (order[i].score >= bestScore - calibrationTie) i,
+  ];
+  final tiedKl = {for (final i in tied) i: closeness(i, 1)};
+  final leastKl = tiedKl.values.reduce(math.min);
+  final first = tied.firstWhere((i) => tiedKl[i]! <= leastKl + calibrationTie);
+  final chosen = <E>[order[first]];
+  mixes[first].forEach((g, w) => counts[g] = (counts[g] ?? 0) + w);
+  final left = [
+    for (var i = 0; i < order.length; i++)
+      if (i != first) i,
+  ];
+  final steps = math.min(places, order.length);
+  for (var size = 2; size <= steps; size++) {
+    final values = <int, double>{};
+    for (final i in left) {
+      values[i] =
+          (1 - calibrationWeight) * order[i].score -
+          calibrationWeight * closeness(i, size);
+    }
+    // Values this close count as equal, so ties follow the order given, not
+    // rounding noise (as the server).
+    final top = values.values.reduce(math.max);
+    final best = left.firstWhere((i) => values[i]! >= top - calibrationTie);
+    chosen.add(order[best]);
+    mixes[best].forEach((g, w) => counts[g] = (counts[g] ?? 0) + w);
+    left.remove(best);
+  }
+  return chosen;
 }

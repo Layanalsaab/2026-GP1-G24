@@ -17,6 +17,16 @@ void main() {
     expect(await cache.read('u2'), isEmpty);
   });
 
+  test('the saved list remembers when it was saved', () async {
+    final cache = ForYouCache();
+    expect(await cache.savedAt('u1'), isNull);
+    final before = DateTime.now().subtract(const Duration(seconds: 1));
+    await cache.write('u1', ['s-a']);
+    expect((await cache.savedAt('u1'))!.isAfter(before), isTrue);
+    await cache.remove('u1');
+    expect(await cache.savedAt('u1'), isNull);
+  });
+
   test('nothing saved reads as empty', () async {
     expect(await ForYouCache().read('u1'), isEmpty);
   });

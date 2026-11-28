@@ -24,19 +24,62 @@ Candidate<String> _c(String name, Features f, String? sector) =>
     Candidate(name, name, f, sector);
 
 void main() {
-  group('features', () {
-    test('a startup: all sectors count the same; an unnamed "Other" is left out', () {
-      final s = PrototypeSeed.rafeeq.copyWith(
-        sector: Sector.healthtech,
-        otherSectors: ['Fintech', 'Other'],
-        stage: StartupStage.seed,
-        commerceModel: CommerceModel.b2b,
-      );
-      final f = startupFeatures(s);
-      expect(f.groups['sector'], {'healthtech': 1.0, 'fintech': 1.0});
-      expect(f.groups['stage'], {'seed': 1.0});
-      expect(f.groups['model'], {'b2b': 1.0});
+  test('a Not interested mark pushes similar candidates down', () {
+    final now = DateTime.utc(2026, 11, 27);
+    final base = Features({
+      'sector': {'fintech': 1.0, 'healthtech': 1.0},
+      'stage': {'seed': 1.0},
     });
+    final candidates = [
+      Candidate<String>(
+        'alpha',
+        'Alpha',
+        Features({
+          'sector': {'fintech': 1.0},
+          'stage': {'seed': 1.0},
+          'model': {'b2b': 1.0},
+        }),
+        'fintech',
+      ),
+      Candidate<String>(
+        'beta',
+        'Beta',
+        Features({
+          'sector': {'healthtech': 1.0},
+          'stage': {'seed': 1.0},
+          'model': {'b2b': 1.0},
+        }),
+        'healthtech',
+      ),
+    ];
+    List<String> order(Taste taste) => [
+      for (final p in recommend(taste, candidates)) p.item,
+    ];
+
+    expect(order(Taste.build(base, const [], now: now)), ['alpha', 'beta']);
+    final marked = Signal(candidates.first.features, now);
+    expect(order(Taste.build(base, const [], dislikes: [marked], now: now)), [
+      'beta',
+      'alpha',
+    ]);
+  });
+
+  group('features', () {
+    test(
+      'a startup: all sectors count the same; an unnamed "Other" is left out',
+      () {
+        final s = PrototypeSeed.rafeeq.copyWith(
+          sector: Sector.healthtech,
+          otherSectors: ['Fintech', 'Other'],
+          stage: StartupStage.seed,
+          commerceModel: CommerceModel.b2b,
+        );
+        final f = startupFeatures(s);
+        expect(f.groups['sector'], {'healthtech': 1.0, 'fintech': 1.0});
+        expect(f.groups['stage'], {'seed': 1.0});
+        expect(f.groups['model'], {'b2b': 1.0});
+      },
+    );
 
     test('a written-in "Other" counts as what was written', () {
       final s = PrototypeSeed.rafeeq.copyWith(
@@ -91,7 +134,10 @@ void main() {
           commerceModelsOther: 'Subscriptions',
         ),
       );
-      expect(written.groups['sector'], {'fintech': 1.0, 'other:spacetech': 1.0});
+      expect(written.groups['sector'], {
+        'fintech': 1.0,
+        'other:spacetech': 1.0,
+      });
       expect(written.groups['model'], {'other:subscription': 1.0});
     });
 

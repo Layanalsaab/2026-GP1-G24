@@ -19,6 +19,11 @@ from app.scoring import score_candidates
 from app.taste import Signal, build_taste
 
 FIXTURE = Path(__file__).parent / "fixtures" / "for_you_parity.json"
+# Equal scores across 4 onboarding sectors: ties must follow the given order on both sides.
+TIES_FIXTURE = Path(__file__).parent / "fixtures" / "for_you_parity_ties.json"
+# The first place: a sectorless top scorer and a learned interest larger than either onboarding
+# sector; the best match in the user's sectors must still come first.
+FIRST_FIXTURE = Path(__file__).parent / "fixtures" / "for_you_parity_first.json"
 
 SCENARIO = {
     "now": "2026-11-21T09:00:00Z",
@@ -26,11 +31,17 @@ SCENARIO = {
     "base": {"sector": ["fintech", "ai", "saas"], "stage": ["seed", "series_a"], "model": ["b2b", "b2c"]},
     "likes": [
         # a bookmark 45 days old
-        {"groups": {"sector": ["healthtech", "ai"], "stage": ["seed"], "model": ["b2b"]}, "at": "2026-10-07T09:00:00Z", "strength": 1.0},
+        {"groups": {"sector": ["healthtech", "ai"], "stage": ["seed"], "model": ["b2b"]}, "at": "2026-10-07T09:00:00Z", "strength": 1.0, "mainSector": "healthtech"},
         # a bookmark 200 days old (weight floored at 0.4)
-        {"groups": {"sector": ["logistics"], "stage": ["series_b"], "model": ["b2c"]}, "at": "2026-05-05T09:00:00Z", "strength": 1.0},
+        {"groups": {"sector": ["logistics"], "stage": ["series_b"], "model": ["b2c"]}, "at": "2026-05-05T09:00:00Z", "strength": 1.0, "mainSector": "logistics"},
         # an open ticket from 11 days 5.5 hours ago (269 whole hours)
         {"groups": {"sector": ["fintech", "logistics"], "stage": ["seed"], "model": []}, "at": "2026-11-10T03:30:00Z", "strength": 1.5},
+    ],
+    "dislikes": [
+        # a "Not interested" mark 10 days old: pushes series_b (only an old bookmark wanted it) down to 0
+        {"groups": {"sector": ["logistics"], "stage": ["series_b"], "model": ["b2c"]}, "at": "2026-11-11T09:00:00Z", "strength": 1.0},
+        # a mark 120 days old (weight floored at 0.4), with no commerce model
+        {"groups": {"sector": ["saas"], "stage": ["series_a"], "model": []}, "at": "2026-07-24T09:00:00Z", "strength": 1.0},
     ],
     "candidates": [
         {"id": "c1", "name": "Payly", "mainSector": "fintech", "groups": {"sector": ["fintech"], "stage": ["seed"], "model": ["b2b"]}},
@@ -49,13 +60,53 @@ SCENARIO = {
 }
 
 
+TIES = {
+    "now": "2026-11-21T09:00:00Z",
+    "limit": 10,
+    "base": {"sector": ["fintech", "saas", "healthtech", "ai"], "stage": ["seed"], "model": ["b2b"]},
+    "likes": [],
+    "dislikes": [],
+    "candidates": [
+        {"id": f"{sector}{k}", "name": f"{sector} {k}", "mainSector": sector,
+         "groups": {"sector": [sector], "stage": ["seed"], "model": ["b2b"]}}
+        for k in range(2) for sector in ("ai", "fintech", "healthtech", "saas")
+    ],
+}
+
+
+FIRST = {
+    "now": "2026-11-21T09:00:00Z",
+    "limit": 8,
+    "base": {"sector": ["fintech", "healthtech"], "stage": ["seed"], "model": ["b2b"]},
+    "likes": [
+        {"groups": {"sector": ["saas"], "stage": ["series_a"], "model": ["b2b"]}, "at": "2026-11-21T08:00:00Z",
+         "strength": 1.0, "mainSector": "saas"}
+        for _ in range(6)
+    ],
+    "dislikes": [],
+    "candidates": [
+        {"id": "a-none", "name": "A None", "mainSector": None, "groups": {"sector": [], "stage": ["seed"], "model": ["b2b"]}},
+        {"id": "fin1", "name": "Fin One", "mainSector": "fintech", "groups": {"sector": ["fintech"], "stage": ["seed"], "model": ["b2b"]}},
+        {"id": "health1", "name": "Health One", "mainSector": "healthtech", "groups": {"sector": ["healthtech"], "stage": ["seed"], "model": ["b2b"]}},
+        {"id": "fin2", "name": "Fin Two", "mainSector": "fintech", "groups": {"sector": ["fintech"], "stage": ["seed"], "model": ["b2c"]}},
+    ] + [
+        {"id": f"saas{k}", "name": f"Saas {k}", "mainSector": "saas", "groups": {"sector": ["saas"], "stage": ["series_a"], "model": ["b2b"]}}
+        for k in range(1, 4)
+    ],
+}
+
+
 def _time(text: str) -> datetime:
     return datetime.fromisoformat(text.replace("Z", "+00:00"))
 
 
 def compute_expected(scenario: dict) -> list[dict]:
-    likes = [Signal(encode(l["groups"]), _time(l["at"]), l["strength"]) for l in scenario["likes"]]
-    taste = build_taste(encode(scenario["base"]), likes, [], _time(scenario["now"]))
+    def main_only(item: dict):
+        return encode({"sector": [item["mainSector"]]})["sector"] if item.get("mainSector") else None
+
+    likes = [Signal(encode(l["groups"]), _time(l["at"]), l["strength"], main_only(l)) for l in scenario["likes"]]
+    dislikes = [Signal(encode(d["groups"]), _time(d["at"]), d["strength"]) for d in scenario.get("dislikes", [])]
+    taste = build_taste(encode(scenario["base"]), likes, dislikes, _time(scenario["now"]))
     encoded = [encode(c["groups"]) for c in scenario["candidates"]]
     rows = {g: np.stack([e[g] for e in encoded]) for g in LABEL_GROUPS}
     scores = score_candidates(taste, rows)[None, :]
@@ -67,14 +118,18 @@ def compute_expected(scenario: dict) -> list[dict]:
         allowed=np.ones_like(scores, dtype=bool),
         bonus=np.zeros_like(scores),
         limit=scenario["limit"],
+        sectors=np.stack([encode({"sector": [c["mainSector"]] if c["mainSector"] else []})["sector"]
+                          for c in scenario["candidates"]]),
+        target=taste.target,
     )
     return [{"id": p.id, "score": p.score} for p in picks]
 
 
 def main() -> None:
     FIXTURE.parent.mkdir(parents=True, exist_ok=True)
-    FIXTURE.write_text(json.dumps({**SCENARIO, "expected": compute_expected(SCENARIO)}, indent=2) + "\n")
-    print(f"wrote {FIXTURE}")
+    for path, scenario in ((FIXTURE, SCENARIO), (TIES_FIXTURE, TIES), (FIRST_FIXTURE, FIRST)):
+        path.write_text(json.dumps({**scenario, "expected": compute_expected(scenario)}, indent=2) + "\n")
+        print(f"wrote {path}")
 
 
 if __name__ == "__main__":

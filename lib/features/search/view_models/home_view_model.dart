@@ -8,6 +8,7 @@ import '../../../data_access/repositories/bookmark_repository.dart';
 import '../../../data_access/repositories/discovery_repository.dart';
 import '../../../data_access/repositories/for_you_cache.dart';
 import '../../../data_access/repositories/not_interested_repository.dart';
+import '../../../data_access/repositories/ticket_repository.dart';
 import '../../../helpers/app_session.dart';
 import '../../../helpers/safe_notifier.dart';
 import '../../../models/app_user.dart';
@@ -43,6 +44,7 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
     ForYouSource? forYou,
     ForYouCache? forYouCache,
     NotInterestedRepository? notInterested,
+    TicketRepository? tickets,
     Duration forYouQuietTime = const Duration(seconds: 2),
   }) : _discovery = discovery ?? DiscoveryRepository.instance,
        _ownIds = ownStartupIds,
@@ -50,6 +52,7 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
        _server = forYou ?? ForYouApi.instance,
        _cache = forYouCache ?? ForYouCache.instance,
        _notInterested = notInterested ?? NotInterestedRepository.instance,
+       _tickets = tickets ?? TicketRepository.instance,
        _quietTime = forYouQuietTime {
     // The lists fill in when Firestore answers.
     _discovery.changes.addListener(_onDiscovery);
@@ -57,6 +60,9 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
     _bookmarks.keys.addListener(_onBookmarks);
     _seenNotInterested = {..._notInterested.keys.value};
     _notInterested.keys.addListener(_onNotInterested);
+    _bookmarks.settled.addListener(_askWhenQuiet);
+    _notInterested.settled.addListener(_askWhenQuiet);
+    _tickets.saved.addListener(_onTicketSaved);
     _server.profileTextDone.addListener(_onProfileTextDone);
     _startForYou();
   }
@@ -332,7 +338,29 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
 
   /// The user looks at For You (where cards must not jump).
   bool get _onForYou =>
-      tab == HomeTab.explore && effectiveExploreTab == 2 && !filtering;
+      tab == HomeTab.explore &&
+      effectiveExploreTab == 2 &&
+      !filtering &&
+      !_covered;
+
+  /// Another screen (a profile, the wallet...) is open over the home screen.
+  bool _covered = false;
+
+  /// Told by the main screen when another screen opens over it or closes.
+  /// Back on For You, what changed meanwhile shows at once: a newer answer,
+  /// the app's own ranking, and an answer still on its way when it arrives.
+  void setCovered(bool covered) {
+    if (_covered == covered) return;
+    _covered = covered;
+    if (covered) return;
+    if (_quietTimer != null) _quietAtOnce = true;
+    if (_request != null) {
+      _answerAtOnce = true;
+      _againAtOnce = true;
+    }
+    _forYou = null;
+    notifyListeners();
+  }
 
   List<HomeItem> _buildForYou() {
     // A server answer kept aside while For You was open shows now.
@@ -377,13 +405,22 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
       for (final k in _bookmarks.keys.value)
         k: _bookmarks.savedAt(k) ?? DateTime.now(),
     };
+    final hidden = {
+      for (final k in _notInterested.keys.value)
+        k: _notInterested.savedAt(k) ?? DateTime.now(),
+    };
     return isFounder
-        ? _discovery.recommendedInvestors(own: _own, bookmarks: saved)
+        ? _discovery.recommendedInvestors(
+            own: _own,
+            bookmarks: saved,
+            notInterested: hidden,
+          )
         : _discovery.recommendedStartups(
             excludeIds: _ownIds,
             criteria: user?.investorCriteria,
             investorId: user?.uid,
             bookmarks: saved,
+            notInterested: hidden,
           );
   }
 
@@ -405,19 +442,20 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
   /// A bookmark or "Not interested" change. While the user is on For You one
   /// change leaves the cards where they are (the bookmarked card stays; a
   /// hidden one was already taken out by [hideForYou]); a bulk change (load,
-  /// sign-out) or a change made elsewhere redraws the list. One change also
-  /// asks the server again once things have been quiet for a while.
+  /// sign-out) or a change made elsewhere redraws the list. The server is
+  /// asked again once the change is saved (the repositories' `settled`), so its
+  /// answer always includes it.
   void _onTasteChanged(Set<String> before, Set<String> now) {
     final added = now.difference(before).length;
     final removed = before.difference(now).length;
     // A reload that found the same keys (a new but equal set): nothing to do.
     if (added == 0 && removed == 0) return;
     final bulk = added > 1 || removed > 1;
+    if (!bulk) _tasteChangedAt = DateTime.now();
     if (bulk || !_onForYou) {
       _forYou = null;
       if (bulk) notifyListeners();
     }
-    if (!bulk) _askWhenQuiet();
   }
 
   // For You from the server, the saved list and the fallback.
@@ -425,6 +463,7 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
   final ForYouSource _server;
   final ForYouCache _cache;
   final NotInterestedRepository _notInterested;
+  final TicketRepository _tickets;
   final Duration _quietTime;
 
   /// The server's list for this user in this session (keys like `s-<id>`).
@@ -435,6 +474,16 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
 
   /// The list saved on the phone for this user.
   List<String>? _savedKeys;
+
+  /// When the server's list of this session and the saved list were made
+  /// (null: unknown), and when the user last changed their taste here
+  /// (a bookmark, a Not interested mark or a ticket).
+  DateTime? _serverAt;
+  DateTime? _savedListAt;
+  DateTime? _tasteChangedAt;
+
+  /// The last request to the server got no answer.
+  bool _noAnswer = false;
 
   /// Where each hidden card was, for Undo.
   final Map<String, int> _hiddenAt = {};
@@ -447,6 +496,9 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
   /// once.
   bool _againAtOnce = false;
   Timer? _quietTimer;
+
+  /// The request the quiet timer will send shows its answer at once.
+  bool _quietAtOnce = false;
   bool _closed = false;
 
   /// Signed in and a server address is set (otherwise the Dart list only).
@@ -458,9 +510,14 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
     _serverKeys = null;
     _waitingKeys = null;
     _savedKeys = null;
+    _serverAt = null;
+    _savedListAt = null;
+    _tasteChangedAt = null;
+    _noAnswer = false;
     _hiddenAt.clear();
     _quietTimer?.cancel();
     _quietTimer = null;
+    _quietAtOnce = false;
     _answerAtOnce = false;
     _againAtOnce = false;
     if (!_serverOn) return;
@@ -471,8 +528,18 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
 
   Future<void> _readSaved(String uid) async {
     final keys = await _cache.read(uid);
+    final at = await _cache.savedAt(uid);
     if (_closed || uid != user?.uid) return;
     _savedKeys = keys;
+    _savedListAt = at;
+    // The server already failed to answer: a saved list older than the
+    // user's latest change gives way to the app's own ranking.
+    if (_noAnswer && _serverKeys == null && _listIsStale) {
+      _savedKeys = null;
+      _forYou = null;
+      notifyListeners();
+      return;
+    }
     if (_serverKeys == null && _waitingKeys == null && keys.isNotEmpty) {
       _forYou = null;
       notifyListeners();
@@ -497,7 +564,9 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
     _quietTimer?.cancel();
     _quietTimer = Timer(_quietTime, () {
       _quietTimer = null;
-      unawaited(_ask(atOnce: false, again: true));
+      final atOnce = _quietAtOnce;
+      _quietAtOnce = false;
+      unawaited(_ask(atOnce: atOnce, again: true));
     });
   }
 
@@ -544,7 +613,23 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
     if (_closed || uid != user?.uid) return;
     final atOnce = _answerAtOnce;
     _answerAtOnce = false;
-    if (picks == null) return; // No answer: the list shown stays.
+    _noAnswer = picks == null;
+    if (picks == null) {
+      // No answer. A list made before the user's latest change would ignore
+      // it, so the app's own ranking (which learns from it) takes over; with
+      // nothing new the list shown stays.
+      if (_listIsStale) {
+        _serverKeys = null;
+        _savedKeys = null;
+        _waitingKeys = null;
+        if (atOnce || !_onForYou) {
+          _forYou = null;
+          notifyListeners();
+        }
+      }
+      return;
+    }
+    _serverAt = DateTime.now();
     final keys = [for (final p in picks) p.key];
     unawaited(_cache.write(uid, keys));
     if (!atOnce && _onForYou) {
@@ -555,6 +640,38 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
     _waitingKeys = null;
     _forYou = null;
     notifyListeners();
+  }
+
+  /// A ticket was created, edited or closed: the app's own ranking counts it
+  /// at once, and the server is asked again (it reads the investor's
+  /// tickets fresh).
+  void _onTicketSaved() {
+    final ticket = _tickets.lastSaved;
+    if (ticket != null) _discovery.putTicket(ticket);
+    _tasteChangedAt = DateTime.now();
+    if (!_onForYou) _forYou = null;
+    _askWhenQuiet();
+  }
+
+  /// True when the list in use (the server's or the saved one) was made
+  /// before the user's latest bookmark, Not interested mark or ticket change.
+  bool get _listIsStale {
+    if (_serverKeys == null && _savedKeys == null) return false;
+    final made = _serverKeys != null ? _serverAt : _savedListAt;
+    var newest = _tasteChangedAt;
+    void consider(DateTime? t) {
+      if (t != null && (newest == null || t.isAfter(newest!))) newest = t;
+    }
+
+    for (final k in _bookmarks.keys.value) {
+      consider(_bookmarks.savedAt(k));
+    }
+    for (final k in _notInterested.keys.value) {
+      consider(_notInterested.savedAt(k));
+    }
+    final latest = newest;
+    if (latest == null) return false;
+    return made == null || latest.isAfter(made);
   }
 
   /// "Not interested" (the card's ✕): the card leaves For You at once.
@@ -611,6 +728,9 @@ class HomeViewModel extends ChangeNotifier with SafeNotifier {
     _discovery.changes.removeListener(_onDiscovery);
     _bookmarks.keys.removeListener(_onBookmarks);
     _notInterested.keys.removeListener(_onNotInterested);
+    _bookmarks.settled.removeListener(_askWhenQuiet);
+    _notInterested.settled.removeListener(_askWhenQuiet);
+    _tickets.saved.removeListener(_onTicketSaved);
     _server.profileTextDone.removeListener(_onProfileTextDone);
     searchController.dispose();
     super.dispose();

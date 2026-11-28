@@ -74,6 +74,28 @@ void main() {
 
   tearDown(() => AppSession.instance.reset());
 
+  test(
+    'remembers when each mark was made (the backup ranking uses it)',
+    () async {
+      final before = DateTime.now();
+      await repo.add('s-x');
+      expect(repo.savedAt('s-x')!.isBefore(before), isFalse);
+      await repo.remove('s-x');
+      expect(repo.savedAt('s-x'), isNull);
+
+      final at = DateTime.utc(2026, 10, 1);
+      db.store[path] = {
+        's-old': {'type': 'startup', 'targetId': 'old', 'createdAt': at},
+        's-pending': {'type': 'startup', 'targetId': 'pending'},
+      };
+      await repo.load('u1');
+      expect(repo.savedAt('s-old'), at);
+      expect(repo.savedAt('s-pending'), isNull);
+      repo.clear();
+      expect(repo.savedAt('s-old'), isNull);
+    },
+  );
+
   test('add saves the key with type, target and time', () async {
     await repo.add('s-x');
     expect(db.store[path]!['s-x'], {

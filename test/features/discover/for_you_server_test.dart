@@ -11,10 +11,13 @@ import 'package:startsa/data_access/repositories/bookmark_repository.dart';
 import 'package:startsa/data_access/repositories/discovery_repository.dart';
 import 'package:startsa/data_access/repositories/for_you_cache.dart';
 import 'package:startsa/data_access/repositories/not_interested_repository.dart';
+import 'package:startsa/data_access/repositories/ticket_repository.dart';
+import 'package:startsa/models/investment_ticket.dart';
 import 'package:startsa/features/search/view_models/home_view_model.dart';
 import 'package:startsa/helpers/app_session.dart';
 import 'package:startsa/models/app_user.dart';
 import 'package:startsa/models/home_item.dart';
+import 'package:startsa/models/investor_criteria.dart';
 
 /// The For You server, answering from a queue: a list, null (no answer) or a
 /// future (for example a Completer's, to answer later or never).
@@ -82,6 +85,56 @@ class _MemoryFirestore extends FirestoreService {
     for (final e in (store[collection] ?? {}).entries)
       (id: e.key, data: Map<String, dynamic>.from(e.value)),
   ];
+}
+
+/// Firestore that is offline: every write and delete fails.
+class _FailingFirestore extends _MemoryFirestore {
+  @override
+  Future<void> setDocument(
+    String collection,
+    String id,
+    Map<String, Object?> data, {
+    bool merge = false,
+  }) async => throw Exception('offline');
+
+  @override
+  Future<void> deleteDocument(String collection, String id) async =>
+      throw Exception('offline');
+}
+
+/// Firestore whose writes and deletes finish when the test says so.
+class _HeldFirestore extends _MemoryFirestore {
+  final List<Completer<void>> pending = [];
+
+  Future<void> _held() {
+    final c = Completer<void>();
+    pending.add(c);
+    return c.future;
+  }
+
+  @override
+  Future<void> setDocument(
+    String collection,
+    String id,
+    Map<String, Object?> data, {
+    bool merge = false,
+  }) async {
+    await _held();
+    await super.setDocument(collection, id, data, merge: merge);
+  }
+
+  @override
+  Future<void> deleteDocument(String collection, String id) async {
+    await _held();
+    await super.deleteDocument(collection, id);
+  }
+
+  void finishAll() {
+    for (final c in pending) {
+      c.complete();
+    }
+    pending.clear();
+  }
 }
 
 /// A saved-list store whose reads finish when the test says so.
@@ -159,11 +212,16 @@ void main() {
   List<String> ids(HomeViewModel m) => [for (final i in m.recommended) i.id];
 
   /// What the app ranks by itself (the fallback).
-  List<String> dartList(String uid) => [
+  List<String> dartList(String uid, {InvestorCriteria? criteria}) => [
     for (final i in DiscoveryRepository.instance.recommendedStartups(
       investorId: uid,
+      criteria: criteria,
       bookmarks: {
         for (final k in marks.keys.value) k: marks.savedAt(k) ?? DateTime.now(),
+      },
+      notInterested: {
+        for (final k in hidden.keys.value)
+          k: hidden.savedAt(k) ?? DateTime.now(),
       },
     ))
       i.id,
@@ -594,6 +652,260 @@ void main() {
     expect(server.calls, 2);
     expect(ids(m), ['c']);
   });
+
+  test(
+    'the server is asked only after a Not interested mark is saved',
+    () async {
+      final slow = _HeldFirestore();
+      hidden = NotInterestedRepository(firestore: slow);
+      final server = FakeForYou()..then = [s('a'), s('b'), s('c')];
+      final m = vm(server);
+      await pumpEventQueue();
+      final before = server.calls;
+      m.hideForYou(m.recommended[1]);
+      await pumpEventQueue();
+      expect(server.calls, before, reason: 'the mark is not saved yet');
+      slow.finishAll();
+      await pumpEventQueue();
+      expect(server.calls, before + 1);
+    },
+  );
+
+  test('the server is asked only after a bookmark is saved', () async {
+    final slow = _HeldFirestore();
+    marks = BookmarkRepository(firestore: slow);
+    BookmarkRepository.instance = marks;
+    final server = FakeForYou()..then = [s('a'), s('b')];
+    final m = vm(server);
+    await pumpEventQueue();
+    final before = server.calls;
+    marks.toggle('s-a');
+    await pumpEventQueue();
+    expect(server.calls, before, reason: 'the bookmark is not saved yet');
+    slow.finishAll();
+    await pumpEventQueue();
+    expect(server.calls, before + 1);
+    expect(m.recommended, isNotEmpty);
+  });
+
+  group('the server cannot answer', () {
+    // An investor with real preferences, so the Dart list differs from the
+    // server's.
+    final liked = PrototypeSeed.startups[6];
+    final criteria = InvestorCriteria(
+      sectors: [liked.sector.label],
+      stages: [liked.stage.label],
+    );
+    HomeViewModel withTaste(FakeForYou server) {
+      final m = HomeViewModel(
+        role: SessionRole.investor,
+        user: AppUser(
+          uid: 'u1',
+          role: AccountRole.investor,
+          fullName: 'Layan Test',
+          email: 'u1@x.co',
+          investorCriteria: criteria,
+        ),
+        forYou: server,
+        forYouCache: ForYouCache(),
+        notInterested: hidden,
+        forYouQuietTime: Duration.zero,
+      );
+      addTearDown(m.dispose);
+      return m;
+    }
+
+    test(
+      'after a new Not interested: the Dart list, which learns from it',
+      () async {
+        final server = FakeForYou([
+          [s('a'), s('b'), s('c')],
+        ]); // every later call: no answer
+        final m = withTaste(server);
+        await pumpEventQueue();
+        expect(ids(m), ['a', 'b', 'c']);
+        await hidden.add('s-b'); // marked on another screen
+        await pumpEventQueue();
+        expect(server.calls, 2);
+        expect(ids(m), dartList('u1', criteria: criteria));
+        expect(ids(m), isNot(contains('b')));
+        expect(ids(m), isNot(equals(['a', 'c'])));
+      },
+    );
+
+    test('with nothing new: the list shown stays', () async {
+      final server = FakeForYou([
+        [s('a'), s('b'), s('c')],
+      ]);
+      final m = withTaste(server);
+      await pumpEventQueue();
+      await m.refreshForYou();
+      await pumpEventQueue();
+      expect(server.calls, 2);
+      expect(ids(m), ['a', 'b', 'c']);
+    });
+
+    test(
+      'a saved list older than the newest mark gives way to the Dart list',
+      () async {
+        await hidden.add('s-b');
+        SharedPreferences.setMockInitialValues({
+          'forYou.lastList.u1': ['s-a', 's-b', 's-c'],
+          'forYou.lastListAt.u1': DateTime(2020).millisecondsSinceEpoch,
+        });
+        final m = withTaste(FakeForYou());
+        await pumpEventQueue();
+        expect(ids(m), dartList('u1', criteria: criteria));
+        expect(ids(m), isNot(equals(['a', 'c'])));
+      },
+    );
+
+    test('a saved list newer than every mark stays', () async {
+      await hidden.add('s-b');
+      SharedPreferences.setMockInitialValues({
+        'forYou.lastList.u1': ['s-a', 's-b', 's-c'],
+        'forYou.lastListAt.u1': DateTime.now()
+            .add(const Duration(days: 1))
+            .millisecondsSinceEpoch,
+      });
+      final m = withTaste(FakeForYou());
+      await pumpEventQueue();
+      expect(ids(m), ['a', 'c']);
+    });
+  });
+
+  test('a saved ticket asks the server again', () async {
+    final tickets = TicketRepository(firestore: _MemoryFirestore());
+    final server = FakeForYou()..then = [s('a')];
+    final m = HomeViewModel(
+      role: SessionRole.investor,
+      user: investor('u1'),
+      forYou: server,
+      forYouCache: ForYouCache(),
+      notInterested: hidden,
+      tickets: tickets,
+      forYouQuietTime: Duration.zero,
+    );
+    addTearDown(m.dispose);
+    await pumpEventQueue();
+    final before = server.calls;
+    await tickets.create(
+      'u1',
+      const InvestmentTicket(
+        id: '',
+        investorId: 'u1',
+        name: 'T',
+        sectors: ['Fintech'],
+        stages: ['Seed'],
+        amountMin: 1,
+        amountMax: 2,
+      ),
+      const [],
+    );
+    await pumpEventQueue();
+    expect(server.calls, before + 1);
+  });
+
+  group('another screen opened over For You', () {
+    test('a bookmark made there shows when coming back', () async {
+      final server = FakeForYou([
+        [s('a'), s('b')],
+        [s('c')],
+      ]);
+      final m = vm(server);
+      await pumpEventQueue();
+      openForYou(m);
+      expect(ids(m), ['a', 'b']);
+      m.setCovered(true); // a profile opened from a For You card
+      marks.toggle('s-a');
+      await pumpEventQueue();
+      expect(server.calls, 2);
+      m.setCovered(false);
+      expect(ids(m), ['c']);
+    });
+
+    test('an answer still on its way when coming back shows at once', () async {
+      final late = Completer<List<ForYouPick>?>();
+      final server = FakeForYou([
+        [s('a'), s('b')],
+        late.future,
+      ]);
+      final m = vm(server);
+      await pumpEventQueue();
+      openForYou(m);
+      m.setCovered(true);
+      marks.toggle('s-a');
+      await pumpEventQueue();
+      expect(server.calls, 2);
+      m.setCovered(false);
+      late.complete([s('c')]);
+      await pumpEventQueue();
+      expect(ids(m), ['c']);
+    });
+
+    test('a ticket saved there shows when coming back', () async {
+      final tickets = TicketRepository(firestore: _MemoryFirestore());
+      final server = FakeForYou([
+        [s('a'), s('b'), s('c')],
+        [s('c'), s('b'), s('a')],
+      ]);
+      final m = HomeViewModel(
+        role: SessionRole.investor,
+        user: investor('u1'),
+        forYou: server,
+        forYouCache: ForYouCache(),
+        notInterested: hidden,
+        tickets: tickets,
+        forYouQuietTime: Duration.zero,
+      );
+      addTearDown(m.dispose);
+      await pumpEventQueue();
+      openForYou(m);
+      m.setCovered(true); // the wallet, opened from the menu
+      await tickets.create(
+        'u1',
+        const InvestmentTicket(
+          id: '',
+          investorId: 'u1',
+          name: 'T',
+          sectors: ['Fintech'],
+          stages: ['Seed'],
+          amountMin: 1,
+          amountMax: 2,
+        ),
+        const [],
+      );
+      await pumpEventQueue();
+      m.setCovered(false);
+      expect(ids(m), ['c', 'b', 'a']);
+    });
+  });
+
+  test('a bookmark that cannot be saved still asks the server', () async {
+    marks = BookmarkRepository(firestore: _FailingFirestore());
+    BookmarkRepository.instance = marks;
+    final server = FakeForYou()..then = [s('a'), s('b')];
+    vm(server);
+    await pumpEventQueue();
+    final before = server.calls;
+    marks.toggle('s-a');
+    await pumpEventQueue();
+    expect(server.calls, before + 1);
+  });
+
+  test(
+    'a Not interested mark that cannot be saved still asks the server',
+    () async {
+      hidden = NotInterestedRepository(firestore: _FailingFirestore());
+      final server = FakeForYou()..then = [s('a'), s('b')];
+      vm(server);
+      await pumpEventQueue();
+      final before = server.calls;
+      await hidden.add('s-a');
+      await pumpEventQueue();
+      expect(server.calls, before + 1);
+    },
+  );
 
   test('quick changes send one request', () {
     fakeAsync((async) {

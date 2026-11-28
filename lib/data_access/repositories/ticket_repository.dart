@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import '../../app_constants/firestore_collections.dart';
 import '../../models/investment_ticket.dart';
 import '../firebase_services/firestore_service.dart';
@@ -10,6 +12,20 @@ class TicketRepository {
   static TicketRepository instance = TicketRepository();
 
   final FirestoreService _firestore;
+
+  /// Counts tickets saved by this app (created, edited or closed); For You
+  /// listens so a ticket shapes it as soon as it is saved.
+  ValueListenable<int> get saved => _saved;
+  final ValueNotifier<int> _saved = ValueNotifier<int>(0);
+
+  /// The ticket saved last, as it is now.
+  InvestmentTicket? get lastSaved => _lastSaved;
+  InvestmentTicket? _lastSaved;
+
+  void _report(InvestmentTicket ticket) {
+    _lastSaved = ticket;
+    _saved.value++;
+  }
 
   /// More tickets than any investor has.
   static const _limit = 200;
@@ -52,7 +68,7 @@ class TicketRepository {
       TicketFields.startupId: null,
       TicketFields.createdAt: _firestore.serverTimestamp(),
     });
-    return InvestmentTicket(
+    final created = InvestmentTicket(
       id: id,
       investorId: investorId,
       name: draft.name,
@@ -62,21 +78,27 @@ class TicketRepository {
       amountMax: draft.amountMax,
       createdAt: DateTime.now(),
     );
+    _report(created);
+    return created;
   }
 
   /// Saves the edited name, sectors, stages and amounts of an open ticket.
-  Future<void> update(InvestmentTicket ticket) => _firestore.updateDocument(
-    FirestoreCollections.tickets,
-    ticket.id,
-    ticket.editableFields(),
-  );
+  Future<void> update(InvestmentTicket ticket) async {
+    await _firestore.updateDocument(
+      FirestoreCollections.tickets,
+      ticket.id,
+      ticket.editableFields(),
+    );
+    _report(ticket);
+  }
 
   /// Closes the ticket: it matches nothing and can't be used anymore.
-  Future<void> close(InvestmentTicket ticket) => _firestore.updateDocument(
-    FirestoreCollections.tickets,
-    ticket.id,
-    {TicketFields.status: TicketFields.closed},
-  );
+  Future<void> close(InvestmentTicket ticket) async {
+    await _firestore.updateDocument(FirestoreCollections.tickets, ticket.id, {
+      TicketFields.status: TicketFields.closed,
+    });
+    _report(ticket.copyWith(status: TicketStatus.closed));
+  }
 
   Future<void> removeAllFor(String investorId) async {
     final tickets = await _firestore.queryWhereEqual(

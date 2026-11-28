@@ -63,8 +63,17 @@ class ForYouApi implements ForYouSource {
   }) : _client = client ?? http.Client(),
        _idToken = idToken ?? (() => AuthService().idToken()),
        _baseUrl = _trimSlash(
-         baseUrl ?? const String.fromEnvironment('FOR_YOU_API_URL'),
+         baseUrl ??
+             const String.fromEnvironment(
+               'FOR_YOU_API_URL',
+               defaultValue: defaultBaseUrl,
+             ),
        );
+
+  /// The deployed server. Every run and build uses it unless
+  /// `--dart-define=FOR_YOU_API_URL=<url>` names another one (an empty value
+  /// turns the server off and leaves the app's own ranking).
+  static const defaultBaseUrl = 'https://startsa-for-you.onrender.com';
 
   /// The app-wide instance.
   static ForYouSource instance = ForYouApi();
