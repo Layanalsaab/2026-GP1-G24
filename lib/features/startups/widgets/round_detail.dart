@@ -140,12 +140,14 @@ class DetailBackLink extends StatelessWidget {
   }
 }
 
-/// A section heading (19 bold) with its grey 13 line under it; also used by the Investment Wallet.
+/// A section heading (19 bold) with an optional grey 13 line under it; also used by the Investment Wallet.
 class SectionTitle extends StatelessWidget {
-  const SectionTitle({super.key, required this.title, required this.subtitle});
+  const SectionTitle({super.key, required this.title, this.subtitle});
 
   final String title;
-  final String subtitle;
+
+  /// Null shows the title alone.
+  final String? subtitle;
 
   @override
   Widget build(BuildContext context) {
@@ -159,7 +161,11 @@ class SectionTitle extends StatelessWidget {
             style: AppText.sans(size: 19, height: 26, weight: FontWeight.w700),
           ),
         ),
-        Text(subtitle, style: AppText.sans(size: 13, color: AppColors.hint)),
+        if (subtitle != null)
+          Text(
+            subtitle!,
+            style: AppText.sans(size: 13, color: AppColors.hint),
+          ),
       ],
     );
   }

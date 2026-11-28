@@ -78,10 +78,7 @@ class TicketDetail extends StatelessWidget {
             onOpenStartup: () => _openStartup(context, ticket.startupId!),
           ),
           const SizedBox(height: 22),
-          const SectionTitle(
-            title: WalletStrings.requestsHeading,
-            subtitle: WalletStrings.requestsSub,
-          ),
+          const SectionTitle(title: WalletStrings.requestsHeading),
           const SizedBox(height: 10),
           const ManageCard(child: _Grey(WalletStrings.noTicketRequests)),
           const SizedBox(height: 22),

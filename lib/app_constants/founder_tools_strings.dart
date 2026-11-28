@@ -211,7 +211,7 @@ class FounderToolsStrings {
   static const tabSettings = 'Settings';
   static const activity = 'Activity';
   static const activityEmpty =
-      'Views, bookmarks and requests will show here once people discover your startup.';
+      'Views and bookmarks will show here once people discover your startup.';
   static const views = 'Views';
   static const bookmarks = 'Bookmarks';
   static const requests = 'Requests';
@@ -222,8 +222,7 @@ class FounderToolsStrings {
   static const noOpenRound = 'No open round';
   static const valuationCurrent = 'Current';
   static const associatedEmptyMember = 'No associated investors yet.';
-  static const associatedEmpty =
-      'Investors whose requests you accept appear here and on your profile.';
+  static const associatedEmpty = 'No associated investors yet.';
   static const calcCardTitle = 'Valuation Calculator';
   static const pending = 'Pending';
   static const accepted = 'Accepted';
@@ -266,15 +265,12 @@ class FounderToolsStrings {
   static String closeTitle(String name) => 'Close $name?';
 
   /// The confirmation.
-  static String closeMessage(String name, int teamCount) {
-    final where = teamCount <= 0
-        ? '$name will remain in your account as a closed startup.'
-        : '$name will remain in your account and your team’s as a closed '
-              'startup, and your team will be notified.';
-    return 'This cannot be undone. $where It can no longer be edited or '
-        'receive requests, and its open funding round will end. You can '
-        'choose whether it appears in the Hub from Settings.';
-  }
+  static String closeMessage(String name, int teamCount) => teamCount <= 0
+      ? '$name will remain in your account as a closed startup that can no '
+            'longer be edited. This cannot be undone.'
+      : '$name will remain in your account and your team’s as a closed '
+            'startup that can no longer be edited, and your team will be '
+            'notified. This cannot be undone.';
 
   /// People invited who haven't joined: their invitations are cancelled.
   static String invitationsCancelled(List<String> names) {
@@ -290,14 +286,14 @@ class FounderToolsStrings {
   static const closeFailed = 'We couldn’t close the startup. Please try again.';
   static const closedBannerTitle = 'Closed';
   static String closedBannerOwner(String? date) => date == null
-      ? 'This startup has been closed. It cannot be edited or reopened. You can choose whether it appears in the Hub from Settings.'
-      : 'This startup was closed on $date. It cannot be edited or reopened. You can choose whether it appears in the Hub from Settings.';
+      ? 'This startup was closed and can no longer be edited or reopened. You can choose from Settings whether it appears in the Hub.'
+      : 'This startup was closed on $date and can no longer be edited or reopened. You can choose from Settings whether it appears in the Hub.';
   static String closedBannerTeam(String? date) => date == null
       ? 'This startup has been closed.'
       : 'This startup was closed on $date.';
   static String closedBannerPublic(String? date) => date == null
-      ? 'This startup has been closed and is no longer accepting requests.'
-      : 'This startup was closed on $date and is no longer accepting requests.';
+      ? 'This startup has been closed.'
+      : 'This startup was closed on $date.';
 
   /// The Public / Private switch of a closed startup (its founder only).
   static const closedPublicText = 'Shown in the Hub as a closed startup.';
@@ -311,13 +307,14 @@ class FounderToolsStrings {
 
   static const deleteStartup = 'Delete startup';
   static const deleteStartupText =
-      'Permanently deletes the startup and all its details for everyone.';
+      'Permanently deletes the startup and all its details.';
   static String deleteTitle(String name) => 'Delete $name?';
 
   /// The confirmation.
   static String deleteMessage(String name, int teamCount) => teamCount <= 0
-      ? 'This cannot be undone. $name, its funding rounds and its requests will be permanently deleted.'
-      : 'This cannot be undone. $name, its funding rounds and its requests will be permanently deleted for everyone, and your team will be notified.';
+      ? '$name will be permanently deleted. This cannot be undone.'
+      : '$name will be permanently deleted, and your team will be notified. '
+            'This cannot be undone.';
   static const deletePasswordText =
       'Enter your password to delete this startup.';
   static String deletedToast(String name) => '$name has been deleted.';
@@ -425,7 +422,7 @@ class FounderToolsStrings {
   static const noticeNewFounderMessage =
       'You have full control of its team, visibility and settings.';
   static const noticeNewFounderClosedMessage =
-      'It is closed and can’t be edited. You can choose whether it appears in the Hub from Settings.';
+      'It is closed and can no longer be edited. You can choose from Settings whether it appears in the Hub.';
   static String noticeFounderChangedTitle(String name) =>
       '$name has a new founder';
   static String noticeFounderChangedMessage(String person, String name) =>
