@@ -10,6 +10,7 @@ import '../data_access/repositories/not_interested_repository.dart';
 import '../data_access/repositories/invitation_repository.dart';
 import '../data_access/repositories/team_lookup.dart';
 import '../app_constants/app_config.dart';
+import '../features/startups/widgets/founder_details_sheet.dart';
 import '../features/startups/widgets/invitation_dialogs.dart';
 import '../features/startups/widgets/startup_notices.dart';
 import '../helpers/invitation_claimer.dart';
@@ -22,6 +23,7 @@ import '../features/login_and_signup/view_models/signup_flow.dart';
 import '../features/startups/screens/startup_steps_screen.dart';
 import '../helpers/app_session.dart';
 import '../models/app_user.dart';
+import '../models/startup.dart';
 import '../shared_ui/navigation/app_route.dart';
 import '../shared_ui/widgets/overlays/app_toast.dart';
 import 'main_screen.dart';
@@ -62,9 +64,10 @@ class AppRouter {
     final joined = await _handleInvitations(context, user);
     if (!context.mounted) return;
     var needsStartup = false;
+    var mine = const <Startup>[];
     if (user.role == AccountRole.founder) {
       try {
-        final mine = await StartupRepository.instance.fetchMyStartups();
+        mine = await StartupRepository.instance.fetchMyStartups();
         AppSession.instance.setOwnStartupIds([for (final s in mine) s.id]);
         needsStartup = mine.isEmpty;
         if (needsStartup) {
@@ -91,6 +94,14 @@ class AppRouter {
       InvestorInvestmentsScreen.open(context, user, resume: true);
       return;
     }
+    // A handed-over startup whose new founder has not added his details yet.
+    for (final s in mine) {
+      final me = s.team.where((m) => m.isFounder).firstOrNull;
+      if (s.isClosed || me == null || me.hasDetails) continue;
+      if (!context.mounted) return;
+      await showFounderDetailsSheet(context, startupId: s.id, me: me);
+    }
+    if (!context.mounted) return;
     openHome(context);
     if (joined.isNotEmpty) {
       AppToast.showGlobal(InvitationClaimer.addedMessage(joined));
@@ -148,8 +159,15 @@ class AppRouter {
       }
       if (!accept) continue;
       try {
-        await repo.accept(invitation, fullName: user.fullName);
+        final founder = await repo.accept(invitation, fullName: user.fullName);
         joined.add(invitation.startupName);
+        if (founder != null && context.mounted) {
+          await showFounderDetailsSheet(
+            context,
+            startupId: invitation.startupId,
+            me: founder,
+          );
+        }
       } catch (_) {
         // Stays pending: it is offered again next time.
       }
@@ -170,8 +188,18 @@ class AppRouter {
       if (answer == null) continue;
       try {
         if (answer) {
-          await repo.accept(invitation, fullName: user.fullName);
+          final founder = await repo.accept(
+            invitation,
+            fullName: user.fullName,
+          );
           owned.add(invitation.startupName);
+          if (founder != null && context.mounted) {
+            await showFounderDetailsSheet(
+              context,
+              startupId: invitation.startupId,
+              me: founder,
+            );
+          }
         } else {
           await repo.decline(invitation);
         }

@@ -15,6 +15,7 @@ import '../../../shared_ui/widgets/cards/avatars.dart';
 import '../../../shared_ui/widgets/overlays/app_toast.dart';
 import '../../login_and_signup/screens/login_screen.dart';
 import '../../login_and_signup/screens/signup_screen.dart';
+import '../widgets/founder_details_sheet.dart';
 
 class InviteScreen extends StatefulWidget {
   const InviteScreen({super.key, required this.invitationId});
@@ -99,10 +100,17 @@ class _InviteScreenState extends State<InviteScreen> {
     setState(() => _busy = true);
     try {
       if (accept) {
-        await InvitationRepository.instance.accept(
+        final founder = await InvitationRepository.instance.accept(
           invitation,
           fullName: me.fullName,
         );
+        if (founder != null && mounted) {
+          await showFounderDetailsSheet(
+            context,
+            startupId: invitation.startupId,
+            me: founder,
+          );
+        }
       } else {
         await InvitationRepository.instance.decline(invitation);
       }

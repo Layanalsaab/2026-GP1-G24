@@ -345,7 +345,11 @@ class InvitationRepository {
     ];
   }
 
-  Future<void> accept(Invitation invitation, {required String fullName}) async {
+  /// Joins the team. For a handover, returns my new founder entry.
+  Future<TeamMember?> accept(
+    Invitation invitation, {
+    required String fullName,
+  }) async {
     if (invitation.isOwner) {
       return _acceptOwnership(invitation, fullName: fullName);
     }
@@ -390,9 +394,10 @@ class InvitationRepository {
     await _removeFromInviteIndex(invitation.emailLower, invitation.startupName);
     // My profile now lists this startup.
     unawaited(PublicProfileRepository.instance.refreshMyStartups(uid));
+    return null;
   }
 
-  Future<void> _acceptOwnership(
+  Future<TeamMember> _acceptOwnership(
     Invitation invitation, {
     required String fullName,
   }) async {
@@ -409,16 +414,18 @@ class InvitationRepository {
     }
     final previous = startup.founderId;
     final stay = invitation.previousFounderRole;
-    final team = <Map<String, Object?>>[
-      TeamMember(
-        name: fullName,
-        email: invitation.emailLower,
-        role: '',
-        contribution: '',
-        isFounder: true,
-        uid: uid,
-      ).toMap(),
-    ];
+    final before = startup.team
+        .where((m) => m.email == invitation.emailLower)
+        .firstOrNull;
+    final me = TeamMember(
+      name: fullName,
+      email: invitation.emailLower,
+      role: before?.role ?? '',
+      contribution: before?.contribution ?? '',
+      isFounder: true,
+      uid: uid,
+    );
+    final team = <Map<String, Object?>>[me.toMap()];
     for (final m in startup.team) {
       if (m.email == invitation.emailLower) continue;
       if (previous.isNotEmpty && m.uid == previous) {
@@ -478,6 +485,7 @@ class InvitationRepository {
     ]);
     await _removeFromInviteIndex(invitation.emailLower, invitation.startupName);
     unawaited(PublicProfileRepository.instance.refreshMyStartups(uid));
+    return me;
   }
 
   Future<void> decline(Invitation invitation) async {

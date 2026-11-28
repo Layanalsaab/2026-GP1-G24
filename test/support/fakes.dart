@@ -743,9 +743,13 @@ class FakeInvitationRepository implements InvitationRepository {
   ];
 
   @override
-  Future<void> accept(Invitation invitation, {required String fullName}) async {
+  Future<TeamMember?> accept(
+    Invitation invitation, {
+    required String fullName,
+  }) async {
     accepted.add(invitation.id);
     store.remove(invitation.id);
+    return null;
   }
 
   @override

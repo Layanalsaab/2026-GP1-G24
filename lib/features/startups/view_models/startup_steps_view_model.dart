@@ -755,8 +755,7 @@ class StartupStepsViewModel extends ChangeNotifier with SafeNotifier {
 
   bool get founderComplete {
     final f = founderMember;
-    return f == null ||
-        (f.role.trim().isNotEmpty && f.contribution.trim().isNotEmpty);
+    return f == null || f.hasDetails;
   }
 
   /// Show the "add your role and contribution" line under the founder card.

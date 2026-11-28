@@ -8,6 +8,7 @@ import 'package:startsa/data_access/repositories/bookmark_repository.dart';
 import 'package:startsa/data_access/repositories/funding_round_repository.dart';
 import 'package:startsa/helpers/app_session.dart';
 import 'package:startsa/data_access/repositories/invitation_repository.dart';
+import 'package:startsa/data_access/repositories/notice_repository.dart';
 import 'package:startsa/data_access/repositories/public_profile_repository.dart';
 import 'package:startsa/data_access/repositories/startup_repository.dart';
 import 'package:startsa/data_access/repositories/team_lookup.dart';
@@ -55,6 +56,7 @@ void main() {
     TeamLookup.instance = lookup;
     invitations = InvitationRepository(auth: auth, firestore: db);
     InvitationRepository.instance = invitations;
+    NoticeRepository.instance = NoticeRepository(auth: auth, firestore: db);
   });
 
   Startup base({
@@ -395,6 +397,31 @@ void main() {
     await invitations.decline(i2);
     await actor('f1', 'f1@gmail.com');
     await invitations.cancel(team.id, 'omar@gmail.com');
+
+    db.scenario = 'handover: accept, then the new founder adds his details';
+    await founderAccount(uid: 'n1', email: 'noura@gmail.com');
+    await actor('f1', 'f1@gmail.com');
+    final handed = await startups.create(base());
+    final owner = await invitations.inviteOwner(
+      startup: handed,
+      email: 'noura@gmail.com',
+      invitedByName: 'Fahad Alharbi',
+      stay: 'coFounder',
+    );
+    await actor('n1', 'noura@gmail.com');
+    final founder = await invitations.accept(owner, fullName: 'Noura');
+    expect(founder?.isFounder, isTrue);
+    final taken = (await startups.fetchById(handed.id))!;
+    await startups.setTeam(handed.id, [
+      for (final m in taken.team)
+        if (m.isFounder)
+          m.copyWith(
+            role: _text(TeamMember.roleMax),
+            contribution: _text(TeamMember.contributionMax),
+          )
+        else
+          m,
+    ]);
 
     db.scenario = 'founder changes their name';
     await actor('f1', 'f1@gmail.com');

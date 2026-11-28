@@ -68,6 +68,9 @@ class TeamMember {
   /// The sub-line on a team row: the role.
   String get meta => role;
 
+  bool get hasDetails =>
+      role.trim().isNotEmpty && contribution.trim().isNotEmpty;
+
   /// Two letters for the avatar (first letter of the first and last word).
   String get initials {
     final words = name.trim().split(RegExp(r'\s+')).where((w) => w.isNotEmpty);
