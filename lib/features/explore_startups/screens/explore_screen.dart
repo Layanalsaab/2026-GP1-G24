@@ -111,12 +111,14 @@ class ExploreScreen extends StatelessWidget {
     ),
   ];
 
-  /// The 👎: the card leaves For You at once; the message says what For You
-  /// will show less of and offers Undo (only the latest hide can be undone,
-  /// so a new message replaces the old one). It goes away on its own after
-  /// the usual 4 seconds.
+  /// The 👎: once its pop is over the card leaves For You, and the message
+  /// says what For You will show less of and offers Undo (only the latest
+  /// hide can be undone, so a new message replaces the old one). It goes away
+  /// on its own after the usual 4 seconds. The user may have left For You
+  /// during the pop: the hide still counts, without the message.
   void _hide(BuildContext context, HomeViewModel vm, HomeItem item) {
     vm.hideForYou(item);
+    if (!context.mounted) return;
     final messenger = ScaffoldMessenger.of(context)..hideCurrentSnackBar();
     messenger.showSnackBar(
       SnackBar(

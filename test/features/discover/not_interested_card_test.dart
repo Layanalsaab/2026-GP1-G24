@@ -23,6 +23,7 @@ import 'package:startsa/models/home_item.dart';
 import 'package:startsa/navigation/app_router.dart';
 import 'package:startsa/shared_ui/icons/app_icons.dart';
 import 'package:startsa/shared_ui/theme/app_theme.dart';
+import 'package:startsa/shared_ui/widgets/cards/home_card.dart';
 
 import '../../support/fakes.dart';
 
@@ -191,6 +192,63 @@ void main() {
     expect(icon(AppIcons.thumbDown), findsNothing);
   });
 
+  group('the thumb fills and pops before the card goes', () {
+    Finder icon(String path) =>
+        find.byWidgetPredicate((w) => w is AppIcon && w.path == path);
+
+    Future<List<int>> pumpCard(WidgetTester t) async {
+      final taps = <int>[];
+      await t.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.light,
+          home: Scaffold(
+            body: HomeCard(
+              name: 'Startup a',
+              tag: 'SaaS',
+              city: 'Riyadh',
+              body: 'A line',
+              animate: false,
+              onNotInterested: () => taps.add(1),
+            ),
+          ),
+        ),
+      );
+      return taps;
+    }
+
+    testWidgets('tapping fills the thumb, then tells the list once', (t) async {
+      final taps = await pumpCard(t);
+      expect(icon(AppIcons.thumbDown), findsOneWidget);
+      expect(icon(AppIcons.thumbDownFill), findsNothing);
+
+      await t.tap(find.bySemanticsLabel('Not interested'));
+      await t.pump();
+      expect(icon(AppIcons.thumbDownFill), findsOneWidget);
+      expect(icon(AppIcons.thumbDown), findsNothing);
+      expect(taps, isEmpty, reason: 'the card stays for the pop');
+
+      // A second tap during the pop counts for nothing.
+      await t.tap(find.bySemanticsLabel('Not interested'));
+      await t.pump(HomeCard.notInterestedPause);
+      expect(taps, hasLength(1));
+      await t.pumpAndSettle();
+      expect(taps, hasLength(1));
+    });
+
+    testWidgets('a card taken away during the pop still counts the tap', (
+      t,
+    ) async {
+      final taps = await pumpCard(t);
+      await t.tap(find.bySemanticsLabel('Not interested'));
+      await t.pump();
+      await t.pumpWidget(const SizedBox());
+      await t.pump();
+      expect(taps, hasLength(1));
+      await t.pump(HomeCard.notInterestedPause);
+      expect(taps, hasLength(1));
+    });
+  });
+
   testWidgets('tapping it hides the card and Undo brings it back', (t) async {
     final vm = await pumpForYou(t, ['a', 'b', 'c']);
     expect(ids(vm), ['a', 'b', 'c']);
@@ -214,6 +272,16 @@ void main() {
       lessThan(t.getTopLeft(find.text('Startup c')).dy),
     );
     expect(db.store['users/u1/notInterested'] ?? {}, isNot(contains('s-b')));
+  });
+
+  testWidgets('leaving For You during the pop still hides the card', (t) async {
+    final vm = await pumpForYou(t, ['a', 'b', 'c']);
+    await t.tap(find.bySemanticsLabel('Not interested').at(1));
+    await t.pump();
+    await t.pumpWidget(const SizedBox());
+    await t.pumpAndSettle();
+    expect(ids(vm), ['a', 'c']);
+    expect(db.store['users/u1/notInterested'], contains('s-b'));
   });
 
   testWidgets('a second hide replaces the message; Undo restores only the '

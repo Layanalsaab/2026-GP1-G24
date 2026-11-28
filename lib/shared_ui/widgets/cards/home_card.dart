@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../../app_constants/home_strings.dart';
@@ -35,6 +37,9 @@ class HomeCard extends StatelessWidget {
     this.imageUrl,
     this.imageData,
   });
+
+  /// How long the 👎 fills and pops before the card leaves (the pop's length).
+  static const notInterestedPause = Duration(milliseconds: 320);
 
   final String name;
 
@@ -241,15 +246,7 @@ class HomeCard extends StatelessWidget {
                                 ),
                         ),
                       if (onNotInterested != null)
-                        _CardAction(
-                          label: HomeStrings.notInterested,
-                          onTap: onNotInterested,
-                          child: AppIcon.filled(
-                            AppIcons.thumbDown,
-                            size: 19,
-                            color: AppColors.grey,
-                          ),
-                        ),
+                        _NotInterestedAction(onTap: onNotInterested!),
                     ],
                   ),
                 ),
@@ -454,6 +451,68 @@ class _HoverCardState extends State<_HoverCard> {
 }
 
 /// 36 x 38 icon button on a home card (share / bookmark).
+/// The 👎: on tap it fills and pops, like the bookmark, and the card leaves
+/// once the pop is over. The tap is never lost: a card taken away during the
+/// pop still passes it on.
+class _NotInterestedAction extends StatefulWidget {
+  const _NotInterestedAction({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  State<_NotInterestedAction> createState() => _NotInterestedActionState();
+}
+
+class _NotInterestedActionState extends State<_NotInterestedAction> {
+  bool _on = false;
+  Timer? _wait;
+
+  void _tap() {
+    if (_on) return;
+    setState(() => _on = true);
+    _wait = Timer(Motion.dur(context, HomeCard.notInterestedPause), _send);
+  }
+
+  void _send() {
+    widget.onTap();
+    // The card normally leaves in the next frame; if it stays, it is
+    // ready for another tap.
+    if (mounted) setState(() => _on = false);
+  }
+
+  @override
+  void dispose() {
+    if (_wait?.isActive ?? false) {
+      _wait!.cancel();
+      scheduleMicrotask(widget.onTap);
+    }
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return _CardAction(
+      label: HomeStrings.notInterested,
+      onTap: _tap,
+      child: _on
+          ? Pop(
+              key: const ValueKey('nd-on'),
+              child: AppIcon.filled(
+                AppIcons.thumbDownFill,
+                size: 19,
+                color: AppColors.ink,
+              ),
+            )
+          : AppIcon.filled(
+              AppIcons.thumbDown,
+              size: 19,
+              color: AppColors.grey,
+              key: const ValueKey('nd-off'),
+            ),
+    );
+  }
+}
+
 class _CardAction extends StatelessWidget {
   const _CardAction({
     required this.child,
