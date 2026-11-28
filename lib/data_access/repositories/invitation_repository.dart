@@ -156,6 +156,57 @@ class InvitationRepository {
     }
   }
 
+  /// The startup is deleted: every invitation it sent goes too (any status).
+  Future<void> deleteAllFor(Startup startup) async {
+    final ids = <String>{
+      for (final m in startup.team)
+        if (m.email.trim().isNotEmpty) Invitation.idOf(startup.id, m.email),
+    };
+    try {
+      ids.addAll([for (final i in await sentFor(startup.id)) i.id]);
+    } catch (e) {
+      debugPrint('Could not list the startup invitations: $e');
+    }
+    for (final id in ids) {
+      try {
+        final existing = Invitation.fromMap(
+          await _firestore.getDocument(_col, id),
+        );
+        if (existing == null) continue;
+        await _firestore.deleteDocument(_col, id);
+        await _removeFromInviteIndex(existing.emailLower, existing.startupName);
+      } catch (e) {
+        debugPrint('Could not delete the invitation $id: $e');
+      }
+    }
+  }
+
+  /// The account is deleted: every invitation to its e-mail (any status) and
+  /// its invite index entry go too.
+  Future<void> deleteAllForMe() async {
+    try {
+      final account = _auth.currentAccount;
+      if (account == null) return;
+      final email = account.email.trim().toLowerCase();
+      if (account.emailVerified) {
+        try {
+          for (final d in await _firestore.queryWhereEqual(
+            _col,
+            'emailLower',
+            email,
+          )) {
+            await _firestore.deleteDocument(_col, d.id);
+          }
+        } catch (e) {
+          debugPrint('Could not delete my invitations: $e');
+        }
+      }
+      await _firestore.deleteDocument(FirestoreCollections.inviteEmails, email);
+    } catch (e) {
+      debugPrint('Could not delete my invite index entry: $e');
+    }
+  }
+
   /// The team removed the person before they joined.
   Future<void> cancel(String startupId, String email) async {
     final id = Invitation.idOf(startupId, email);
@@ -315,8 +366,7 @@ class InvitationRepository {
               m.toMap(),
         ];
       }
-    } catch (_) {
-    }
+    } catch (_) {}
     await _firestore.commit([
       FirestoreWrite.update(
         FirestoreCollections.startups,

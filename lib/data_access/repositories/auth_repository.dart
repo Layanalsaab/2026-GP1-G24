@@ -256,14 +256,14 @@ class AuthRepository {
     await TicketRepository.instance.removeAllFor(account.uid);
     // Close or delete the founder's startups.
     await StartupRepository.instance.settleMineBeforeDeletion(fates);
+    final invitations = InvitationRepository.instance;
     try {
-      final invitations = InvitationRepository.instance;
+      // Declining first tells whoever invited me to take a startup over.
       for (final i in await invitations.pendingForMe()) {
         await invitations.decline(i);
       }
-    } catch (_) {
-      // Carry on: they simply stay unanswered.
-    }
+    } catch (_) {}
+    await invitations.deleteAllForMe();
     // Nobody can find or open a person who no longer exists.
     await TeamLookup.instance.remove(uid: account.uid, email: account.email);
     // Delete bookmarks.

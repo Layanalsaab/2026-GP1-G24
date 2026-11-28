@@ -482,12 +482,7 @@ class StartupRepository {
         startupName: startup.name,
       ),
     );
-    await InvitationRepository.instance.cancelAllFor(startup);
-    try {
-      await InvitationRepository.instance.cancelOwnerInvite(startup);
-    } catch (e) {
-      debugPrint('Could not cancel the founder invitation: $e');
-    }
+    await InvitationRepository.instance.deleteAllFor(startup);
     await _deleteDocumentAndRounds(startup);
     changes.value++;
     _refreshMyProfile();

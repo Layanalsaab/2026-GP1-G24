@@ -685,6 +685,17 @@ class FakeInvitationRepository implements InvitationRepository {
   }
 
   @override
+  Future<void> deleteAllFor(Startup startup) async =>
+      store.removeWhere((_, i) => i.startupId == startup.id);
+
+  @override
+  Future<void> deleteAllForMe() async {
+    final me = myEmail.toLowerCase();
+    store.removeWhere((_, i) => i.emailLower == me);
+    inviteIndex.remove(me);
+  }
+
+  @override
   Future<void> cancel(String startupId, String email) async {
     final id = Invitation.idOf(startupId, email);
     cancelled.add(id);

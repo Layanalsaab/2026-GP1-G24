@@ -683,7 +683,11 @@ service cloud.firestore {
            && request.resource.data.status in ['accepted', 'declined'])
         );
 
-      allow delete: if request.auth != null && canInvite(resource.data.startupId);
+      // The startup's owner (also when it is closed or being deleted), or the
+      // invited person deleting their account.
+      allow delete: if request.auth != null
+        && (ownsStartup(resource.data.startupId)
+            || myVerifiedEmail(resource.data));
     }
 
     // The names of the startups that invited an e-mail that has no account
